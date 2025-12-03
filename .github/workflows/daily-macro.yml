@@ -35,6 +35,11 @@ jobs:
         run: |
           python scripts/visualize_macro.py
 
+      - name: Summarize macro data (3줄 요약 생성)
+        run: |
+          python scripts/summarize_macro.py
+
+
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
