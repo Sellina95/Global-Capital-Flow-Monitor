@@ -1,0 +1,49 @@
+name: Daily Macro Data
+
+on:
+  # 매일 00:00 UTC 실행 (한국 시간 오전 9시)
+  schedule:
+    - cron: '0 0 * * *'
+  # 필요하면 GitHub 화면에서 수동 실행도 가능
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-macro-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas yfinance matplotlib
+
+      - name: Fetch macro data (CSV 업데이트)
+        run: |
+          python scripts/fetch_macro_data.py
+
+      - name: Visualize macro data (그래프 생성)
+        run: |
+          python scripts/visualize_macro.py
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/macro_data.csv insights/macro_timeseries.png || true
+          git commit -m "Auto update macro data" || echo "No changes to commit"
+          git push origin main
+
+
+
+
+
