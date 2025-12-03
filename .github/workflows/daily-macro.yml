@@ -3,58 +3,66 @@ name: Daily Macro Data
 on:
   # 수동 실행
   workflow_dispatch:
-  # (원하면 유지) 매일/주중 자동 실행 시간 설정 – 예시는 한국 오전 8시쯤
+  # (옵션) 자동 실행 – 한국 오전 8시(UTC 23시, 월~금)
   schedule:
-    - cron: '0 23 * * 0-4'  # UTC 23시 = KST 오전 8시 (월~금)
+    - cron: '0 23 * * 0-4'
 
 jobs:
   run-macro-pipeline:
     runs-on: ubuntu-latest
 
     steps:
+      # 1) 레포 체크아웃
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          # pull/rebase가 잘 되도록 전체 히스토리 가져오기
+          fetch-depth: 0
 
+      # 2) 파이썬 세팅
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      # 3) 라이브러리 설치
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pandas yfinance matplotlib
 
+      # 4) 매크로 데이터 수집 → data/macro_data.csv
       - name: Fetch macro data (CSV 업데이트)
         run: |
           python scripts/fetch_macro_data.py
 
+      # 5) 그래프 생성 → insights/macro_timeseries.png
       - name: Visualize macro data (그래프 생성)
         run: |
           python scripts/visualize_macro.py
 
+      # 6) 3줄 요약 생성 → insights/daily_summary.txt
       - name: Summarize macro data (3줄 요약 생성)
         run: |
           python scripts/summarize_macro.py
 
+      # 7) 변경사항 커밋 + 푸시
       - name: Commit and push changes
         run: |
-          # 커밋할 때 사용할 봇 계정 정보
+          # 봇 계정 이름/이메일 설정
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 1) 원격(main) 최신 상태를 가져와서 병합
-          git fetch origin main
-          git merge origin/main || true
+          # (중요) 먼저 원격 main 최신 상태를 로컬로 가져오기
+          git pull --rebase origin main
 
-          # 2) 변경된 파일 스테이징
+          # 변경된 아티팩트 스테이징
           git add data/macro_data.csv
           git add insights/macro_timeseries.png
           git add insights/daily_summary.txt
 
-          # 3) 변경이 있을 때만 커밋 (없으면 넘어감)
+          # 변경이 있을 때만 커밋
           git commit -m "Auto update macro data" || echo "No changes to commit"
 
-          # 4) main 브랜치로 푸시
-          git push origin HEAD:main
-
+          # main 브랜치로 푸시
+          git push origin main
