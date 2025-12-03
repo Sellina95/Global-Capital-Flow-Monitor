@@ -1,25 +1,24 @@
 name: Daily Macro Data
 
 on:
-  workflow_dispatch:   # 수동 실행
+  # 수동 실행
+  workflow_dispatch:
+  # (원하면 유지) 매일/주중 자동 실행 시간 설정 – 예시는 한국 오전 8시쯤
   schedule:
-    - cron: "0 9 * * *"   # 매일 한국시간 18:00 자동 실행 (UTC 09:00)
+    - cron: '0 23 * * 0-4'  # UTC 23시 = KST 오전 8시 (월~금)
 
 jobs:
   run-macro-pipeline:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up job
-        uses: actions/checkout@v3
-
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
@@ -40,22 +39,22 @@ jobs:
 
       - name: Commit and push changes
         run: |
+          # 커밋할 때 사용할 봇 계정 정보
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 1) 원격 업데이트 먼저 가져오기 (충돌 방지)
-          git pull --rebase origin main || true
+          # 1) 원격(main) 최신 상태를 가져와서 병합
+          git fetch origin main
+          git merge origin/main || true
 
-          # 2) 바뀐 파일 스테이징
+          # 2) 변경된 파일 스테이징
           git add data/macro_data.csv
           git add insights/macro_timeseries.png
           git add insights/daily_summary.txt
 
-          # 3) 변경이 있을 때만 커밋
+          # 3) 변경이 있을 때만 커밋 (없으면 넘어감)
           git commit -m "Auto update macro data" || echo "No changes to commit"
 
           # 4) main 브랜치로 푸시
           git push origin HEAD:main
-
-
 
