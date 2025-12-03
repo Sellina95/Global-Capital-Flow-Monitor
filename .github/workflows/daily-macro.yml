@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 전체 히스토리 가져오기 (pull 위해)
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -44,11 +46,20 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        # 1) 원격(main) 기준으로 먼저 맞추기
+          git pull --rebase origin main || true
+
+    # 2) 바뀐 파일들 스테이징
           git add data/macro_data.csv
           git add insights/macro_timeseries.png
-          git add insights/daily_summary.txt   # ← 요 줄이 추가된 것!
-          git commit -m "Auto update macro data"
-          git push
+          git add insights/daily_summary.txt
+
+    # 3) 변경이 없을 수도 있으니까, 없으면 그냥 통과시키기
+          git commit -m "Auto update macro data" || echo "No changes to commit"
+
+    # 4) main 브랜치로 푸시
+          git push origin HEAD:main
 
 
 
