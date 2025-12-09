@@ -1,13 +1,11 @@
 name: Daily Macro Data
 
 on:
+  # 1) 수동 실행
   workflow_dispatch:
+  # 2) 자동 실행 – 한국시간 기준 오전 8시 (UTC 23시, 월~금)
   schedule:
-    - cron: '0 23 * * 0-4'   # 한국 오전 8시 실행 (월~금)
-
-# GitHub Actions 봇이 레포에 push할 수 있도록 권한 부여
-permissions:
-  contents: write
+    - cron: '0 23 * * 0-4'
 
 jobs:
   run-macro-pipeline:
@@ -18,10 +16,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
+          # 전체 히스토리 가져오기 (나중에 필요할 수 있어서)
           fetch-depth: 0
-          ref: main
 
-      # 2) Python 설정
+      # 2) 파이썬 세팅
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -33,42 +31,41 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas yfinance matplotlib
 
-      # 4) 매크로 데이터 수집 → data/macro_data.csv 업데이트
-      - name: Fetch macro data
+      # 4) 매크로 지표 데이터 수집 → data/macro_data.csv
+      - name: Fetch macro data (CSV 업데이트)
         run: |
           python scripts/fetch_macro_data.py
 
-      # 5) 그래프 생성 → insights/macro_timeseries.png 업데이트
-      - name: Visualize macro data
+      # 5) 타임시리즈 그래프 생성 → insights/macro_timeseries.png
+      - name: Visualize macro data (그래프 생성)
         run: |
           python scripts/visualize_macro.py
 
-      # 6) 요약 텍스트 생성 → insights/daily_summary.txt
-      - name: Summarize macro data
+      # 6) 3줄 요약 생성 → insights/daily_summary.txt
+      - name: Summarize macro data (3줄 요약 생성)
         run: |
           python scripts/summarize_macro.py
 
-      # 7) 변경사항 커밋 & 푸시
+      # 7) 리스크 경고 생성 → insights/risk_alerts.txt
+      - name: Generate risk alerts (리스크 경고 생성)
+        run: |
+          python scripts/risk_alerts.py
+
+      # 8) 변경사항 커밋 + 푸시
       - name: Commit and push changes
         run: |
+          # 깃허브 액션 봇 계정 정보
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # main 브랜치 명확히 체크아웃
-          git checkout main
+          # 변경된 아티팩트 스테이징
+          git add data/macro_data.csv
+          git add insights/macro_timeseries.png
+          git add insights/daily_summary.txt
+          git add insights/risk_alerts.txt
 
-          # 원격 최신 상태 가져오기 (충돌 자동 처리)
-          git pull --rebase --autostash origin main || true
+          # 변경이 있을 때만 커밋
+          git commit -m "Auto update macro data & risk alerts" || echo "No changes to commit"
 
-          # 변경된 결과물 스테이징
-          git add data/macro_data.csv || true
-          git add insights/macro_timeseries.png || true
-          git add insights/daily_summary.txt || true
-
-          # 변경이 있을 경우에만 커밋 + 푸시
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Auto update macro data"
-            git push origin main
-          fi
+          # main 브랜치로 푸시
+          git push origin main
