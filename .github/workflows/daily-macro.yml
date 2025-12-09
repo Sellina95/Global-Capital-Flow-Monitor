@@ -1,9 +1,10 @@
 name: Daily Macro Data
 
 on:
-  # 수동 실행
+  # 1) 수동 실행
   workflow_dispatch:
-  # (옵션) 자동 실행 – 한국 오전 8시(UTC 23시, 월~금)
+
+  # 2) (옵션) 자동 실행 – 한국 시간 오전 8시 (UTC 23시, 월~금)
   schedule:
     - cron: '0 23 * * 0-4'
 
@@ -12,12 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) 레포 체크아웃
+      # 1) 레포 체크아웃 (브랜치 main을 직접 체크아웃)
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          # pull/rebase가 잘 되도록 전체 히스토리 가져오기
           fetch-depth: 0
+          ref: main
 
       # 2) 파이썬 세팅
       - name: Set up Python
@@ -49,20 +50,25 @@ jobs:
       # 7) 변경사항 커밋 + 푸시
       - name: Commit and push changes
         run: |
-          # 봇 계정 이름/이메일 설정
+          # 깃헙 액션 봇 계정 정보
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # (중요) 먼저 원격 main 최신 상태를 로컬로 가져오기
-          git pull --rebase origin main
+          # 혹시 모를 detached HEAD 대비: main 브랜치로 이동
+          git checkout main
 
-          # 변경된 아티팩트 스테이징
-          git add data/macro_data.csv
-          git add insights/macro_timeseries.png
-          git add insights/daily_summary.txt
+          # 원격 main 기준으로 최신 상태 맞추기 (충돌 없으면 알아서 rebase)
+          git pull --rebase origin main || true
 
-          # 변경이 있을 때만 커밋
-          git commit -m "Auto update macro data" || echo "No changes to commit"
+          # 변경된 파일만 스테이징
+          git add data/macro_data.csv || true
+          git add insights/macro_timeseries.png || true
+          git add insights/daily_summary.txt || true
 
-          # main 브랜치로 푸시
-          git push origin main
+          # 커밋할 게 있는지 확인 후, 있으면 커밋+푸시
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto update macro data"
+            git push origin main
+          fi
