@@ -51,17 +51,34 @@ jobs:
         run: |
           python scripts/risk_alerts.py
 
+      # 7.5) 디버그: 실제 폴더 안에 뭐가 있는지 확인
+      - name: Debug scripts & insights contents
+        run: |
+          echo "=== PWD ==="
+          pwd
+          echo "=== ls ==="
+          ls
+          echo "=== ls scripts ==="
+          ls scripts || echo "scripts 폴더 없음"
+          echo "=== find risk_alerts.py ==="
+          find . -maxdepth 4 -name "risk_alerts.py" || echo "risk_alerts.py not found"
+          echo "=== ls insights ==="
+          ls insights || echo "insights 폴더 없음"
+          echo "=== cat insights/risk_alerts.txt ==="
+          cat insights/risk_alerts.txt || echo "risk_alerts.txt not found"
+
       - name: Commit and push changes
         run: |
-          # 깃허브 액션 봇 계정 정보
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 변경된 아티팩트 스테이징
           git add data/macro_data.csv || true
           git add insights/macro_timeseries.png || true
           git add insights/daily_summary.txt || true
           git add insights/risk_alerts.txt || true
+
+          git commit -m "Auto update macro data & risk alerts" || echo "No changes to commit"
+          git push origin main
 
           # 변경이 있을 때만 커밋
           git commit -m "Auto update macro data & risk alerts" || echo "No changes to commit"
