@@ -16,7 +16,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          # 전체 히스토리 가져오기 (나중에 필요할 수 있어서)
           fetch-depth: 0
 
       # 2) 파이썬 세팅
@@ -51,22 +50,12 @@ jobs:
         run: |
           python scripts/risk_alerts.py
 
-      # 7.5) 디버그: 실제 폴더 안에 뭐가 있는지 확인
-      - name: Debug scripts & insights contents
+      # 8) 데일리 리포트 생성 → insights/daily_report_YYYY-MM-DD.md
+      - name: Generate daily report (markdown)
         run: |
-          echo "=== PWD ==="
-          pwd
-          echo "=== ls ==="
-          ls
-          echo "=== ls scripts ==="
-          ls scripts || echo "scripts 폴더 없음"
-          echo "=== find risk_alerts.py ==="
-          find . -maxdepth 4 -name "risk_alerts.py" || echo "risk_alerts.py not found"
-          echo "=== ls insights ==="
-          ls insights || echo "insights 폴더 없음"
-          echo "=== cat insights/risk_alerts.txt ==="
-          cat insights/risk_alerts.txt || echo "risk_alerts.txt not found"
+          python scripts/generate_report.py
 
+      # 9) 변경사항 커밋 + 푸시
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
@@ -76,13 +65,7 @@ jobs:
           git add insights/macro_timeseries.png || true
           git add insights/daily_summary.txt || true
           git add insights/risk_alerts.txt || true
+          git add insights/daily_report_*.md || true
 
-          git commit -m "Auto update macro data & risk alerts" || echo "No changes to commit"
+          git commit -m "Auto update macro data, insights & report" || echo "No changes to commit"
           git push origin main
-
-          # 변경이 있을 때만 커밋
-          git commit -m "Auto update macro data & risk alerts" || echo "No changes to commit"
-
-          # main 브랜치로 푸시
-          git push origin main
-
