@@ -1,123 +1,131 @@
-import pandas as pd
+# generate_report.py
+
+import sys
 from pathlib import Path
+from datetime import date
+import pandas as pd
 
-# 경로 설정
+# 🔧 프로젝트 루트 경로를 모듈 검색 경로에 추가
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_PATH = BASE_DIR / "data" / "macro_data.csv"
-INSIGHTS_DIR = BASE_DIR / "insights"
+sys.path.append(str(BASE_DIR))
 
-SUMMARY_PATH = INSIGHTS_DIR / "daily_summary.txt"
-RISK_PATH = INSIGHTS_DIR / "risk_alerts.txt"
+from filters.strategist_filters import build_strategist_commentary
 
 
-def load_latest_row():
-    """macro_data.csv에서 가장 최근 날짜 한 줄을 가져옴."""
-    if not DATA_PATH.exists():
-        raise FileNotFoundError(f"{DATA_PATH} not found")
-
-    # 1) 그냥 읽고
-    df = pd.read_csv(DATA_PATH)
-
-    # 2) date 컬럼이 없으면 첫 번째 컬럼을 date 로 간주
-    if "date" not in df.columns:
-        first_col = df.columns[0]
-        df = df.rename(columns={first_col: "date"})
-
-    # 3) 문자열 → datetime 변환
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-
-    # 유효한 날짜만
-    df = df.dropna(subset=["date"])
-
-    # 4) 날짜 기준 정렬 후 마지막 행 선택
-    df = df.sort_values("date")
-    latest = df.iloc[-1]
-
-    return latest
+# ---------------------------------------
+# 1) 데이터 로딩: macro_data.xlsx 읽기
+# ---------------------------------------
 
 
-def read_text_file(path: Path) -> str:
-    """텍스트 파일이 있으면 내용 읽고, 없으면 빈 문자열 반환."""
-    if not path.exists():
-        return ""
-    return path.read_text(encoding="utf-8").strip()
+def load_market_data_for_today():
+    """
+    data 폴더에서 macro_data 파일을 찾아서
+    가장 최근 row(today)와 이전 row(yesterday)를 읽어온다.
+    - macro_data.xlsx 가 있으면 그걸 사용
+    - 없으면 macro_data.csv 를 사용
+    """
 
+    base_dir = Path(__file__).resolve().parent.parent
+    data_dir = base_dir / "data"
 
-def generate_report():
-    latest = load_latest_row()
+    xlsx_path = data_dir / "macro_data.xlsx"
+    csv_path = data_dir / "macro_data.csv"
 
-    date = latest["date"]
-    if isinstance(date, str):
-        date_for_title = date[:10]
+    if xlsx_path.exists():
+        df = pd.read_excel(xlsx_path)
+    elif csv_path.exists():
+        df = pd.read_csv(csv_path)
     else:
-        date_for_title = date.strftime("%Y-%m-%d")
+        raise FileNotFoundError(
+            f"data 폴더에 macro_data.xlsx 나 macro_data.csv 가 없습니다. "
+            f"현재 경로: {data_dir}"
+        )
 
-    us10y = latest.get("US10Y", None)
-    dxy = latest.get("DXY", None)
-    wti = latest.get("WTI", None)
-    vix = latest.get("VIX", None)
-    usdkrw = latest.get("USDKRW", None)
+    # datetime 기준 정렬
+    if "datetime" in df.columns:
+        df = df.sort_values("datetime")
 
-    # 요약/리스크 텍스트 읽기
-    summary_text = read_text_file(SUMMARY_PATH)
-    risk_text = read_text_file(RISK_PATH)
+    # 최근 값 2개
+    today_row = df.iloc[-1]
+    yesterday_row = df.iloc[-2]
 
-    # 파일 이름: daily_report_YYYY-MM-DD.md
-    report_filename = f"daily_report_{date_for_title}.md"
-    report_path = INSIGHTS_DIR / report_filename
+    market_data = {
+        "US10Y": {
+            "today": float(today_row["US10Y"]),
+            "yesterday": float(yesterday_row["US10Y"]),
+        },
+        "DXY": {
+            "today": float(today_row["DXY"]),
+            "yesterday": float(yesterday_row["DXY"]),
+        },
+        "WTI": {
+            "today": float(today_row["WTI"]),
+            "yesterday": float(yesterday_row["WTI"]),
+        },
+        "VIX": {
+            "today": float(today_row["VIX"]),
+            "yesterday": float(yesterday_row["VIX"]),
+        },
+        "USDKRW": {
+            "today": float(today_row["USDKRW"]),
+            "yesterday": float(yesterday_row["USDKRW"]),
+        },
+    }
+    return market_data
 
-    # 마크다운 내용 구성 (Mirror 에디터에 바로 붙여넣기용)
+
+# ---------------------------------------
+# 2) Daily Macro Signals 섹션 작성
+# ---------------------------------------
+
+def build_macro_signals_section(market_data):
     lines = []
+    lines.append("## 📊 Daily Macro Signals\n")
 
-    lines.append(f"# Daily Macro Report – {date_for_title}")
-    lines.append("")
-    lines.append("## 1. Today’s Macro Snapshot")
-    lines.append("")
+    for key, label in {
+        "US10Y": "미국 10년물 금리",
+        "DXY": "달러 인덱스",
+        "WTI": "WTI 유가",
+        "VIX": "변동성 지수 (VIX)",
+        "USDKRW": "원/달러 환율",
+    }.items():
 
-    def fmt(label, value, suffix=""):
-        if value is None or pd.isna(value):
-            return f"- **{label}**: N/A"
-        if suffix:
-            return f"- **{label}**: {value:.2f}{suffix}"
-        return f"- **{label}**: {value:.2f}"
+        today = market_data[key]["today"]
+        yesterday = market_data[key]["yesterday"]
+        pct = (today - yesterday) / yesterday * 100
 
-    lines.append(fmt("US 10Y Yield", us10y, "%"))
-    lines.append(fmt("DXY (Dollar Index)", dxy))
-    lines.append(fmt("WTI Crude Oil (USD/bbl)", wti))
-    lines.append(fmt("VIX (Volatility Index)", vix))
-    lines.append(fmt("USD/KRW", usdkrw))
-    lines.append("")
+        lines.append(f"- **{label}**: {today:.3f}  ({pct:+.2f}% vs {yesterday:.3f})")
 
-    lines.append("## 2. Auto Summary (3 Lines)")
-    lines.append("")
-    if summary_text:
-        lines.append(summary_text)
-    else:
-        lines.append("_No summary generated yet._")
-    lines.append("")
+    return "\n".join(lines)
 
-    lines.append("## 3. Risk Alerts")
-    lines.append("")
-    if risk_text:
-        lines.append(risk_text)
-    else:
-        lines.append("_No specific risk alerts for today._")
-    lines.append("")
 
-    lines.append("## 4. Strategist Memo (세연 메모)")
-    lines.append("")
-    lines.append("> 오늘 시장에서 전략가 관점에서 체크할 포인트를 간단히 적어보세요.")
-    lines.append("")
-    lines.append("- 오늘 눈에 띄는 지표 / 움직임:")
-    lines.append("- 내일/이번 주 추가로 확인할 이벤트 (FOMC, CPI, 고용지표 등):")
-    lines.append("- 포지셔닝/리스크 관리에 대한 개인 메모:")
+# ---------------------------------------
+# 3) 전체 리포트 만들기
+# ---------------------------------------
 
-    # 파일로 저장
-    INSIGHTS_DIR.mkdir(parents=True, exist_ok=True)
-    report_path.write_text("\n".join(lines), encoding="utf-8")
+def generate_daily_report():
+    today = date.today().isoformat()
+    report_path = Path(f"reports/daily_report_{today}.md")
 
-    print(f"[OK] Generated report: {report_path}")
+    market_data = load_market_data_for_today()
+    macro_section = build_macro_signals_section(market_data)
+    strategist_section = "\n".join(build_strategist_commentary(market_data))
+
+    text = f"""
+# 🌍 Global Capital Flow Daily Report — {today}
+
+{macro_section}
+
+---
+
+{strategist_section}
+
+"""
+
+    report_path.write_text(text, encoding="utf-8")
+    print(f"[INFO] Report generated → {report_path}")
+    return report_path
 
 
 if __name__ == "__main__":
-    generate_report()
+    generate_daily_report()
