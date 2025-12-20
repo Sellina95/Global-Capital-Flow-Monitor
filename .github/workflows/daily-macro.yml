@@ -1,71 +1,59 @@
-name: Daily Macro Data
+name: Daily Macro Report
 
 on:
-  # 1) 수동 실행
-  workflow_dispatch:
-  # 2) 자동 실행 – 한국시간 기준 오전 8시 (UTC 23시, 월~금)
+  workflow_dispatch:   # 수동 실행 버튼
   schedule:
-    - cron: '0 23 * * 0-4'
+    # 매일 UTC 22:00 → 한국시간 오전 7시
+    - cron: "0 22 * * *"
+
+permissions:
+  contents: write   # 🔥 자동 커밋/푸시를 위해 필수
 
 jobs:
-  run-macro-pipeline:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) 레포 체크아웃
-      - name: Checkout repo
+      # 1️⃣ 레포 체크아웃
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # 2) 파이썬 세팅
+      # 2️⃣ 파이썬 세팅
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      # 3) 필요한 라이브러리 설치
+      # 3️⃣ 라이브러리 설치
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas yfinance matplotlib
+          pip install pandas openpyxl
 
-      # 4) 매크로 지표 데이터 수집 → data/macro_data.csv
-      - name: Fetch macro data (CSV 업데이트)
+      # 4️⃣ 디렉토리 보장 (💥 이거 안 하면 에러남)
+      - name: Ensure required directories exist
         run: |
-          python scripts/fetch_macro_data.py
+          mkdir -p reports
+          mkdir -p data
 
-      # 5) 타임시리즈 그래프 생성 → insights/macro_timeseries.png
-      - name: Visualize macro data (그래프 생성)
-        run: |
-          python scripts/visualize_macro.py
-
-      # 6) 3줄 요약 생성 → insights/daily_summary.txt
-      - name: Summarize macro data (3줄 요약 생성)
-        run: |
-          python scripts/summarize_macro.py
-
-      # 7) 리스크 경고 생성 → insights/risk_alerts.txt
-      - name: Generate risk alerts (리스크 경고 생성)
-        run: |
-          python scripts/risk_alerts.py
-
-      # 8) 데일리 리포트 생성 → insights/daily_report_YYYY-MM-DD.md
-      - name: Generate daily report (markdown)
+      # 5️⃣ 데일리 리포트 생성
+      - name: Generate daily macro report
         run: |
           python scripts/generate_report.py
 
-      # 9) 변경사항 커밋 + 푸시
-      - name: Commit and push changes
+      # 6️⃣ 결과 자동 커밋 & 푸시
+      - name: Commit and push report
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add data/macro_data.csv || true
-          git add insights/macro_timeseries.png || true
-          git add insights/daily_summary.txt || true
-          git add insights/risk_alerts.txt || true
-          git add insights/daily_report_*.md || true
+          git add reports/*.md || true
 
-          git commit -m "Auto update macro data, insights & report" || echo "No changes to commit"
-          git push origin main
+          # 변경 없으면 커밋 안 함
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: auto-generate daily macro report"
+          git push
