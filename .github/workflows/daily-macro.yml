@@ -37,10 +37,12 @@ jobs:
           mkdir -p data
 
       # 5️⃣ 데일리 리포트 생성
-      - name: Generate daily macro report
+      
+      - name: Run report generator
         run: |
-          python scripts/generate_report.py
-
+         export PYTHONPATH="$GITHUB_WORKSPACE"
+         python scripts/generate_report.py
+ 
       # 6️⃣ 결과 자동 커밋 & 푸시
       - name: Commit and push report
         run: |
