@@ -14,15 +14,18 @@ def load_latest_row():
     if not DATA_PATH.exists():
         raise FileNotFoundError(f"{DATA_PATH} not found. Run fetch_macro_data.py first.")
 
+    # 일단 그냥 읽기 (parse_dates 안 씀)
     df = pd.read_csv(DATA_PATH)
 
     if df.empty:
         raise ValueError("macro_data.csv is empty.")
 
+    # date 컬럼이 없으면, 첫 번째 컬럼을 date로 간주해서 이름 바꾸기
     if "date" not in df.columns:
         first_col = df.columns[0]
         df = df.rename(columns={first_col: "date"})
 
+    # date 컬럼을 datetime으로 변환 (문자열이면)
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
     latest = df.iloc[-1]
@@ -30,6 +33,10 @@ def load_latest_row():
 
 
 def evaluate_risks(row):
+    """
+    row: 마지막 행 (Series)
+    리스크 조건에 맞는 메시지 리스트와 전체 레벨을 반환
+    """
     alerts = []
 
     if hasattr(row["date"], "strftime"):
@@ -43,6 +50,7 @@ def evaluate_risks(row):
     krw = float(row.get("USDKRW", float("nan")))
     vix = float(row.get("VIX", float("nan")))
 
+    # 각 지표별 기준
     if dxy >= 105:
         alerts.append(f"⚠️ DXY {dxy:.2f} (>=105) → 강달러·리스크오프 구간, EM 통화/위험자산 압박 가능성")
 
@@ -60,6 +68,7 @@ def evaluate_risks(row):
     elif wti >= 90:
         alerts.append(f"🟡 WTI {wti:.2f} (>=90) → 인플레이션 압력 재점화, 정책 부담 증가")
 
+    # 전체 레벨 대충 분류 (알림 개수 기준 간단 버전)
     if not alerts:
         level = "GREEN"
         headline = "✅ TODAY RISK STATUS: GREEN (주요 리스크 신호 없음)"
@@ -78,6 +87,7 @@ def send_email_alert(regime_change):
     receiver_email = "seyeon8163@gmail.com"  # 수신자 이메일 주소 (세연의 이메일)
     password = "Kyung1995!"  # 발신자 이메일 비밀번호
 
+    # 이메일 내용
     subject = "Regime Change Alert"
     body = f"Regime change detected: {regime_change}"
 
@@ -88,6 +98,7 @@ def send_email_alert(regime_change):
 
     msg.attach(MIMEText(body, "plain"))
 
+    # 이메일 서버 설정 (예: Gmail)
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(sender_email, password)
@@ -119,6 +130,13 @@ def write_alert_file(date_str, level, headline, alerts):
 
     ALERT_PATH.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Risk alerts written to {ALERT_PATH}")
+
+
+def check_regime_change_and_alert(market_data):
+    regime_change = market_regime_filter(market_data)
+    if regime_change != "NO_CHANGE":
+        print(f"Regime change detected: {regime_change}")
+        send_email_alert(regime_change)  # Trigger email alert
 
 
 if __name__ == "__main__":
