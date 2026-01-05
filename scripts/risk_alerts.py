@@ -1,6 +1,9 @@
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 import pandas as pd
-from send_email_alert import send_email_alert
+
 
 # ---- 경로 설정 ----
 BASE_DIR = Path(__file__).resolve().parent.parent  # repo 루트
@@ -80,11 +83,30 @@ def evaluate_risks(row):
     return date_str, level, headline, alerts
 
 
-def check_regime_change_and_alert(market_data):
-    regime_change = market_regime_filter(market_data)
-    if regime_change != "NO_CHANGE":  # 예시: "NO_CHANGE"는 변화 없을 때 상태
-        print("Regime change detected!")
-        send_email_alert(regime_change)  # 이메일 알림 보내기
+def send_email_alert(regime_change):
+    sender_email = "your_email@example.com"  # 발신자 이메일 주소
+    receiver_email = "seyeon8163@gmail.com"  # 수신자 이메일 주소 (세연의 이메일)
+    password = "your_password"  # 발신자 이메일 비밀번호
+
+    # 이메일 내용
+    subject = "Regime Change Alert"
+    body = f"Regime change detected: {regime_change}"
+
+    msg = MIMEMultipart()
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+    msg["Subject"] = subject
+
+    msg.attach(MIMEText(body, "plain"))
+
+    # 이메일 서버 설정 (예: Gmail)
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender_email, password)
+            server.sendmail(sender_email, receiver_email, msg.as_string())
+        print(f"Email sent successfully to {receiver_email}")
+    except Exception as e:
+        print(f"Error sending email: {e}")
 
 
 def write_alert_file(date_str, level, headline, alerts):
@@ -115,3 +137,5 @@ if __name__ == "__main__":
     latest = load_latest_row()
     date_str, level, headline, alerts = evaluate_risks(latest)
     write_alert_file(date_str, level, headline, alerts)
+    if level == "RED":
+        send_email_alert("Regime change detected!")  # 이메일 알림 추가
