@@ -82,6 +82,14 @@ def evaluate_risks(row):
 
     return date_str, level, headline, alerts
 
+# risk_alerts.py
+
+def check_regime_change_and_alert(market_data):
+    regime_change = market_regime_filter(market_data)
+    if regime_change != "NO_CHANGE":
+        print("Regime change detected!")
+        send_email_alert(regime_change)  # 이메일 알림 보내기
+
 
 def send_email_alert(regime_change):
     sender_email = "your_email@example.com"  # 발신자 이메일 주소
