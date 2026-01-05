@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd
 from risk_alerts import check_regime_change_and_alert, send_email_alert  # 이메일 알림 추가
 from filters.strategist_filters import build_strategist_commentary
+from risk_alerts import market_regime_filter  # <-- 이 부분 추가
 
 
 # --------------------------------------------------
