@@ -3,7 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 import pandas as pd
-from filters.strategist_filters import market_regime_filter  # <-- 추가
+
 
 # ---- 경로 설정 ----
 BASE_DIR = Path(__file__).resolve().parent.parent  # repo 루트
@@ -137,7 +137,7 @@ def check_regime_change_and_alert(market_data):
     regime_change = market_regime_filter(market_data)
     if regime_change != "NO_CHANGE":
         print(f"Regime change detected: {regime_change}")
-        send_email_alert(regime_change)  # Trigger email alert
+        send_email_alert(regime_change)  # 이메일 알림 보내기
 
 
 if __name__ == "__main__":
@@ -145,4 +145,4 @@ if __name__ == "__main__":
     date_str, level, headline, alerts = evaluate_risks(latest)
     write_alert_file(date_str, level, headline, alerts)
     if level == "RED":
-        send_email_alert("Regime change detected!")  # 이메일 알림 추가
+        check_regime_change_and_alert(latest)  # Regime 변화 감지 및 알림
