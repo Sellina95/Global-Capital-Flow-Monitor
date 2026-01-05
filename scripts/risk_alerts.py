@@ -84,9 +84,9 @@ def evaluate_risks(row):
 
 
 def send_email_alert(regime_change):
-    sender_email = "your_email@example.com"  # 발신자 이메일 주소
+    sender_email = "seyeon8163@gmail.com"  # 발신자 이메일 주소
     receiver_email = "seyeon8163@gmail.com"  # 수신자 이메일 주소 (세연의 이메일)
-    password = "your_password"  # 발신자 이메일 비밀번호
+    password = "Kyung1995!"  # 발신자 이메일 비밀번호
 
     # 이메일 내용
     subject = "Regime Change Alert"
