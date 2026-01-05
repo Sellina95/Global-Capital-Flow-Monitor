@@ -4,7 +4,8 @@ import smtplib
 from email.mime.text import MIMEText
 import pandas as pd
 
-from filters.strategist_filters import build_strategist_commentary
+from filters.strategist_filters import build_strategist_commentary, market_regime_filter
+
 
 
 # --------------------------------------------------
