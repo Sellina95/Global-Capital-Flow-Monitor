@@ -2,8 +2,8 @@ from pathlib import Path
 from datetime import datetime
 import pandas as pd
 from filters.strategist_filters import build_strategist_commentary
-from send_email_alert import send_email_alert
-from regime_change import check_regime_change_and_alert
+from risk_alerts import check_regime_change_and_alert, send_email_alert  # 이메일 알림 추가
+
 
 # --------------------------------------------------
 # Load market data (today vs prev)
