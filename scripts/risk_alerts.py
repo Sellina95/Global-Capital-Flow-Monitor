@@ -3,6 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 import pandas as pd
+from filters.strategist_filters import market_regime_filter  # <-- 추가
 
 # ---- 경로 설정 ----
 BASE_DIR = Path(__file__).resolve().parent.parent  # repo 루트
@@ -83,9 +84,9 @@ def evaluate_risks(row):
 
 
 def send_email_alert(regime_change):
-    sender_email = "seyeon8163@example.com"  # 발신자 이메일 주소
+    sender_email = "your_email@example.com"  # 발신자 이메일 주소
     receiver_email = "seyeon8163@gmail.com"  # 수신자 이메일 주소 (세연의 이메일)
-    password = "Kyung1995!"  # 발신자 이메일 비밀번호
+    password = "your_password"  # 발신자 이메일 비밀번호
 
     # 이메일 내용
     subject = "Regime Change Alert"
