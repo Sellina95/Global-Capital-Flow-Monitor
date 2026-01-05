@@ -78,6 +78,13 @@ def evaluate_risks(row):
 
     return date_str, level, headline, alerts
 
+def check_regime_change_and_alert(market_data):
+    regime_change = market_regime_filter(market_data)
+    if regime_change != "NO_CHANGE":  # 예시: "NO_CHANGE"는 변화 없을 때 상태
+        print("Regime change detected!")
+        send_email_alert(regime_change)  # 이메일 알림 보내기
+
+
 
 def write_alert_file(date_str, level, headline, alerts):
     ALERT_PATH.parent.mkdir(parents=True, exist_ok=True)
