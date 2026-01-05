@@ -1,9 +1,9 @@
-from datetime import datetime
 from pathlib import Path
+from datetime import datetime
 import pandas as pd
-from filters.strategist_filters import build_strategist_commentary, market_regime_filter
-from risk_alerts import check_regime_change_and_alert, send_email_alert  # 이메일 알림 추가
-
+from filters.strategist_filters import build_strategist_commentary
+from send_email_alert import send_email_alert
+from regime_change import check_regime_change_and_alert
 
 # --------------------------------------------------
 # Load market data (today vs prev)
@@ -15,6 +15,7 @@ def load_market_data_for_today():
     - macro_data.xlsx 가 있으면 그걸 사용
     - 없으면 macro_data.csv 를 사용
     """
+
     base_dir = Path(__file__).resolve().parent.parent
     data_dir = base_dir / "data"
 
@@ -101,20 +102,16 @@ def build_macro_signals_section(market_data):
 def generate_daily_report():
     market_data = load_market_data_for_today()
 
+    # Regime Change and Risk Alerts
+    regime_change = check_regime_change_and_alert(market_data)  # Regime 변화 감지 및 알림
+    if regime_change:
+        send_email_alert(regime_change)  # 이메일 알림 보내기
+
     macro_section = build_macro_signals_section(market_data)
     strategist_section = build_strategist_commentary(market_data)
-    
-    # Regime 변화 감지 및 알림
-    regime_change = market_regime_filter(market_data)  # Regime 변화 감지
-    regime_change_section = f"### Regime Change Detected: {regime_change}"  # 변화 감지 섹션 추가
-    print(f"[INFO] Regime Change Detected: {regime_change}")  # 로그로 출력
-    
-    # Regime 변화 감지에 따른 이메일 알림
-    if regime_change != "NO_CHANGE":  # 변화가 있을 때만 이메일 알림
-        send_email_alert(regime_change)  # 이메일 발송
-    
+
     today_str = datetime.now().strftime("%Y-%m-%d")
-    
+
     report_text = f"""# 🌍 Global Capital Flow – Daily Brief
 **Date:** {today_str}
 
@@ -123,11 +120,7 @@ def generate_daily_report():
 ---
 
 {strategist_section}
-
----
-
-{regime_change_section}
-"""  # 리포트에 Regime 변화 감지 내용 추가
+"""
 
     base_dir = Path(__file__).resolve().parent.parent
     report_dir = base_dir / "reports"
@@ -144,4 +137,3 @@ def generate_daily_report():
 # --------------------------------------------------
 if __name__ == "__main__":
     generate_daily_report()
-
