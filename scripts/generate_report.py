@@ -1,5 +1,7 @@
 from pathlib import Path
 from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
 import pandas as pd
 
 from filters.strategist_filters import build_strategist_commentary
@@ -97,10 +99,38 @@ def build_macro_signals_section(market_data):
 
 
 # --------------------------------------------------
+# Send email alert
+# --------------------------------------------------
+def send_alert_if_needed(regime: str):
+    # 예시: 변화가 있을 때마다 이메일 알림 보내기
+    if regime == "RISK-ON (완화 기대·리스크 선호)" or regime == "RISK-OFF (긴축/불안·리스크 회피)":
+        subject = f"Market Regime Changed: {regime}"
+        body = f"Alert: The market regime has changed to {regime}.\nPlease review the latest trends."
+        send_email_alert(subject, body)
+
+def send_email_alert(subject: str, body: str):
+    # 이메일 설정
+    sender_email = "your_email@example.com"
+    receiver_email = "seyeon8163@gmail.com"  # 세연님 이메일로 알림 전송
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+
+    with smtplib.SMTP('smtp.example.com') as server:
+        server.login("your_email@example.com", "password")  # 이메일 로그인 설정
+        server.sendmail(sender_email, receiver_email, msg.as_string())
+
+
+# --------------------------------------------------
 # Daily report generator
 # --------------------------------------------------
 def generate_daily_report():
     market_data = load_market_data_for_today()
+
+    # Regime 변화 감지
+    regime = market_regime_filter(market_data)
+    send_alert_if_needed(regime)
 
     macro_section = build_macro_signals_section(market_data)
     strategist_section = build_strategist_commentary(market_data)
