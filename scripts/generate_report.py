@@ -1,9 +1,9 @@
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
-from risk_alerts import check_regime_change_and_alert, send_email_alert  # 이메일 알림 추가
+from risk_alerts import check_regime_change_and_alert, send_email_alert
 from filters.strategist_filters import build_strategist_commentary
-from risk_alerts import market_regime_filter  # <-- 이 부분 추가
+from filters.strategist_filters import market_regime_filter
 
 
 # --------------------------------------------------
@@ -104,10 +104,13 @@ def generate_daily_report():
     market_data = load_market_data_for_today()
 
     # Regime Change Check
-    check_regime_change_and_alert(market_data)
+    regime_change = check_regime_change_and_alert(market_data)  # 알림 및 리스크 변화 감지
 
     macro_section = build_macro_signals_section(market_data)
     strategist_section = build_strategist_commentary(market_data)
+
+    # Regime 변화 상태를 리포트에 반영
+    regime_change_section = f"### Regime Change: {regime_change}"
 
     today_str = datetime.now().strftime("%Y-%m-%d")
 
@@ -119,6 +122,10 @@ def generate_daily_report():
 ---
 
 {strategist_section}
+
+---
+
+{regime_change_section}  # Regime 변화 감지 결과
 """
 
     base_dir = Path(__file__).resolve().parent.parent
