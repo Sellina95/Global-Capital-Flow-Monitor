@@ -1,8 +1,8 @@
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
-from filters.strategist_filters import build_strategist_commentary
 from risk_alerts import check_regime_change_and_alert, send_email_alert  # 이메일 알림 추가
+from filters.strategist_filters import build_strategist_commentary
 
 
 # --------------------------------------------------
@@ -102,10 +102,8 @@ def build_macro_signals_section(market_data):
 def generate_daily_report():
     market_data = load_market_data_for_today()
 
-    # Regime Change and Risk Alerts
-    regime_change = check_regime_change_and_alert(market_data)  # Regime 변화 감지 및 알림
-    if regime_change:
-        send_email_alert(regime_change)  # 이메일 알림 보내기
+    # Regime Change Check
+    check_regime_change_and_alert(market_data)
 
     macro_section = build_macro_signals_section(market_data)
     strategist_section = build_strategist_commentary(market_data)
