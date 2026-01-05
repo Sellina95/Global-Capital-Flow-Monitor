@@ -1,116 +1,111 @@
 from pathlib import Path
 import pandas as pd
+from filters.strategist_filters import build_strategist_commentary
+from risk_alerts import check_regime_change_and_alert, write_alert_file
 
-# ---- 경로 설정 ----
-BASE_DIR = Path(__file__).resolve().parent.parent  # repo 루트
-DATA_PATH = BASE_DIR / "data" / "macro_data.csv"
-ALERT_PATH = BASE_DIR / "insights" / "risk_alerts.txt"
-
-
-def load_latest_row():
-    if not DATA_PATH.exists():
-        raise FileNotFoundError(f"{DATA_PATH} not found. Run fetch_macro_data.py first.")
-
-    # 일단 그냥 읽기 (parse_dates 안 씀)
-    df = pd.read_csv(DATA_PATH)
-
-    if df.empty:
-        raise ValueError("macro_data.csv is empty.")
-
-    # date 컬럼이 없으면, 첫 번째 컬럼을 date로 간주해서 이름 바꾸기
-    if "date" not in df.columns:
-        first_col = df.columns[0]
-        df = df.rename(columns={first_col: "date"})
-
-    # date 컬럼을 datetime으로 변환 (문자열이면)
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-
-    latest = df.iloc[-1]
-    return latest
-
-
-def evaluate_risks(row):
+# --------------------------------------------------
+# Load market data (today vs prev)
+# --------------------------------------------------
+def load_market_data_for_today():
     """
-    row: 마지막 행 (Series)
-    리스크 조건에 맞는 메시지 리스트와 전체 레벨을 반환
+    data 폴더에서 macro_data 파일을 찾아서
+    가장 최근 row(today)와 이전 row(prev)를 읽어온다.
+    - macro_data.xlsx 가 있으면 그걸 사용
+    - 없으면 macro_data.csv 를 사용
     """
-    alerts = []
 
-    if hasattr(row["date"], "strftime"):
-        date_str = row["date"].strftime("%Y-%m-%d")
+    base_dir = Path(__file__).resolve().parent.parent
+    data_dir = base_dir / "data"
+
+    xlsx_path = data_dir / "macro_data.xlsx"
+    csv_path = data_dir / "macro_data.csv"
+
+    if xlsx_path.exists():
+        df = pd.read_excel(xlsx_path)
+    elif csv_path.exists():
+        df = pd.read_csv(csv_path)
     else:
-        date_str = str(row["date"])
+        raise FileNotFoundError(
+            f"data 폴더에 macro_data.xlsx 또는 macro_data.csv 가 없습니다: {data_dir}"
+        )
 
-    us10y = float(row.get("US10Y", float("nan")))
-    dxy = float(row.get("DXY", float("nan")))
-    wti = float(row.get("WTI", float("nan")))
-    krw = float(row.get("USDKRW", float("nan")))
-    vix = float(row.get("VIX", float("nan")))
+    # 시간 기준 정렬
+    if "datetime" in df.columns:
+        df = df.sort_values("datetime")
 
-    # 각 지표별 기준
-    if dxy >= 105:
-        alerts.append(f"⚠️ DXY {dxy:.2f} (>=105) → 강달러·리스크오프 구간, EM 통화/위험자산 압박 가능성")
+    if len(df) < 2:
+        raise ValueError("macro_data에 최소 2개 이상의 row가 필요합니다.")
 
-    if vix >= 20:
-        alerts.append(f"⚠️ VIX {vix:.2f} (>=20) → 변동성 확대, 위험회피 심리 강화 가능성")
+    today_row = df.iloc[-1]
+    prev_row = df.iloc[-2]
 
-    if us10y >= 5.0:
-        alerts.append(f"⚠️ 미 10년물 금리 {us10y:.2f}% (>=5%) → 장기금리 쇼크, 밸류에이션/유동성 압박")
+    market_data = {
+        "US10Y": {
+            "today": float(today_row["US10Y"]),
+            "prev": float(prev_row["US10Y"]),
+        },
+        "DXY": {
+            "today": float(today_row["DXY"]),
+            "prev": float(prev_row["DXY"]),
+        },
+        "WTI": {
+            "today": float(today_row["WTI"]),
+            "prev": float(prev_row["WTI"]),
+        },
+        "VIX": {
+            "today": float(today_row["VIX"]),
+            "prev": float(prev_row["VIX"]),
+        },
+        "USDKRW": {
+            "today": float(today_row["USDKRW"]),
+            "prev": float(prev_row["USDKRW"]),
+        },
+    }
 
-    if krw >= 1450:
-        alerts.append(f"⚠️ USD/KRW {krw:.2f} (>=1450) → 원화 약세, 외국인 자금 이탈/커버링 수요 가능성")
-
-    if wti <= 70:
-        alerts.append(f"🟡 WTI {wti:.2f} (<=70) → 경기 둔화/수요 약화 우려")
-    elif wti >= 90:
-        alerts.append(f"🟡 WTI {wti:.2f} (>=90) → 인플레이션 압력 재점화, 정책 부담 증가")
-
-    # 전체 레벨 대충 분류 (알림 개수 기준 간단 버전)
-    if not alerts:
-        level = "GREEN"
-        headline = "✅ TODAY RISK STATUS: GREEN (주요 리스크 신호 없음)"
-    elif len(alerts) == 1:
-        level = "YELLOW"
-        headline = "🟡 TODAY RISK STATUS: YELLOW (국지적/부분 리스크 신호)"
-    else:
-        level = "RED"
-        headline = "🚨 TODAY RISK STATUS: RED (복수의 리스크 신호 감지)"
-
-    return date_str, level, headline, alerts
-
-def check_regime_change_and_alert(market_data):
-    regime_change = market_regime_filter(market_data)
-    if regime_change != "NO_CHANGE":  # 예시: "NO_CHANGE"는 변화 없을 때 상태
-        print("Regime change detected!")
-        send_email_alert(regime_change)  # 이메일 알림 보내기
+    return market_data
 
 
+# --------------------------------------------------
+# Daily report generator
+# --------------------------------------------------
+def generate_daily_report():
+    market_data = load_market_data_for_today()
 
-def write_alert_file(date_str, level, headline, alerts):
-    ALERT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    # Regime Change and Risk Alerts
+    check_regime_change_and_alert(market_data)  # Regime 변화 감지 및 알림
 
-    lines = []
-    lines.append(f"[{date_str}] Daily Risk Alerts ({level})")
-    lines.append(headline)
-    lines.append("")
+    macro_section = build_macro_signals_section(market_data)
+    strategist_section = build_strategist_commentary(market_data)
 
-    if alerts:
-        lines.append("■ 트리거 신호 목록")
-        for msg in alerts:
-            lines.append(f"- {msg}")
-    else:
-        lines.append("오늘은 설정된 기준을 넘어서는 리스크 신호가 없습니다.")
+    today_str = datetime.now().strftime("%Y-%m-%d")
 
-    lines.append("")
-    lines.append("※ 기준값은 개인 학습·연구 목적의 임시 설정이며, 추후 조정 가능")
-    lines.append("-" * 60)
-    lines.append("")
+    report_text = f"""# 🌍 Global Capital Flow – Daily Brief
+**Date:** {today_str}
 
-    ALERT_PATH.write_text("\n".join(lines), encoding="utf-8")
-    print(f"[OK] Risk alerts written to {ALERT_PATH}")
+{macro_section}
 
+---
 
-if __name__ == "__main__":
+{strategist_section}
+"""
+
+    base_dir = Path(__file__).resolve().parent.parent
+    report_dir = base_dir / "reports"
+    report_dir.mkdir(exist_ok=True)
+
+    report_path = report_dir / f"daily_report_{today_str}.md"
+    report_path.write_text(report_text, encoding="utf-8")
+
+    print(f"[INFO] Report generated → {report_path}")
+
+    # Risk Alerts File Write (추가)
     latest = load_latest_row()
     date_str, level, headline, alerts = evaluate_risks(latest)
     write_alert_file(date_str, level, headline, alerts)
+
+
+# --------------------------------------------------
+# Entry point
+# --------------------------------------------------
+if __name__ == "__main__":
+    generate_daily_report()
