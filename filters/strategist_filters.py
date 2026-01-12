@@ -695,7 +695,7 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
         rationale = "유가 하락과 변동성 확대는 세계 경제 성장 둔화와 리스크 회피 성향을 강화함"
 
     lines = []
-    lines.append("### 🏗️ 9) Structural Filter")
+    lines.append("### 🏗️ 11) Structural Filter")
     lines.append("- **질문:** 이 변화가 글로벌 경제 구조나 패권 구조와 어떻게 연결되는지?")
     lines.append(
         f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / "
