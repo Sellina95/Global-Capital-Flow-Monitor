@@ -510,6 +510,59 @@ def incentive_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
+def cause_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Cause Filter (v0.3-4)
+    Answers: What caused the market movement?
+    Analyzes key factors like US10Y, DXY, and WTI to identify the main causes of the market movement.
+    **추가 이유:** 이 움직임이 나온 직접 이유를 파악하기 위함
+    """
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    wti = _get_series(market_data, "WTI")
+    vix = _get_series(market_data, "VIX")
+
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    wti_dir = _sign_from(wti)
+    vix_dir = _sign_from(vix)
+
+    # Determining the cause of the movement
+    cause = ""
+    if us10y_dir == 1:
+        cause += "금리 상승(US10Y 상승) "
+    elif us10y_dir == -1:
+        cause += "금리 하락(US10Y 하락) "
+
+    if dxy_dir == 1:
+        cause += "달러 강세(DXY 상승) "
+    elif dxy_dir == -1:
+        cause += "달러 약세(DXY 하락) "
+
+    if wti_dir == 1:
+        cause += "유가 상승(WTI 상승) "
+    elif wti_dir == -1:
+        cause += "유가 하락(WTI 하락) "
+
+    if vix_dir == 1:
+        cause += "변동성 증가(VIX 상승) "
+    elif vix_dir == -1:
+        cause += "변동성 감소(VIX 하락) "
+
+    # Final statement for the cause
+    if cause == "":
+        cause = "원인 불명"
+    
+    lines = []
+    lines.append("### 🔍 8) Cause Filter")
+    lines.append("- **질문:** 무엇이 이 시장 움직임을 일으켰는가?")
+    lines.append(f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / WTI({_dir_str(wti_dir)}) / VIX({_dir_str(vix_dir)})")
+    lines.append(f"- **판정:** **{cause}**")
+    lines.append("- **이유:** 직접적인 원인 파악")
+
+    return "\n".join(lines)
+
+
 
 
 
@@ -532,4 +585,6 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(risk_exposure_filter(market_data))
     sections.append("")
     sections.append(incentive_filter(market_data))
+    sections.append("")
+    sections.append(cause_filter(market_data))
     return "\n".join(sections)
