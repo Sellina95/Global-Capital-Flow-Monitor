@@ -442,6 +442,75 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
+def incentive_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Incentive Filter (v0.3-3)
+    Answers: Who benefits from the market movement? 
+    Analyzes key assets (US10Y, DXY, WTI) and identifies winners and losers.
+    **추가 이유:** 이 결정/변화로 가장 크게 혜택을 보는 집단은 누구인지 파악하기 위함
+    """
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    wti = _get_series(market_data, "WTI")
+
+    # Direction signs
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    wti_dir = _sign_from(wti)
+
+    # Winners and losers
+    winners = []
+    losers = []
+
+    # If US10Y is up → Interest rates rise, banks benefit
+    if us10y_dir == 1:
+        winners.append("Banks/Financial Institutions (due to higher interest rates)")
+    else:
+        losers.append("Consumers (higher loan costs)")
+
+    # If DXY is up → Dollar strengthens, exporters lose, importers gain
+    if dxy_dir == 1:
+        losers.append("Exporters (due to stronger USD)")
+        winners.append("Importers (cheaper foreign goods)")
+    else:
+        winners.append("Exporters (weaker USD helps exports)")
+
+    # If WTI is up → Oil prices rise, oil producers benefit
+    if wti_dir == 1:
+        winners.append("Oil Producers (higher oil prices)")
+        losers.append("Consumers (due to higher energy costs)")
+    else:
+        winners.append("Consumers (lower energy prices)")
+        losers.append("Oil Producers (lower oil prices)")
+
+    # If all indicators are in a risk-off direction
+    if not winners:
+        incentive_status = "Risk-off: No clear beneficiaries"
+    else:
+        incentive_status = "Beneficiaries identified"
+
+    # Generating the output
+    lines = []
+    lines.append("### 💸 4) Incentive Filter")
+    lines.append("- **질문:** 누가 이득을 보고 있는가?")
+    lines.append(f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / WTI({_dir_str(wti_dir)})")
+    lines.append(f"- **판정:** **{incentive_status}**")
+    lines.append("- **이득을 보는 주체:**")
+    if winners:
+        for winner in winners:
+            lines.append(f"  - {winner}")
+    else:
+        lines.append("  - None")
+    lines.append("- **손해를 보는 주체:**")
+    if losers:
+        for loser in losers:
+            lines.append(f"  - {loser}")
+    else:
+        lines.append("  - None")
+
+    return "\n".join(lines)
+
+
 
 
 # =========================
@@ -461,4 +530,6 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(cross_asset_filter(market_data))
     sections.append("")
     sections.append(risk_exposure_filter(market_data))
+    sections.append("")
+    sections.append(incentive_filter(market_data))
     return "\n".join(sections)
