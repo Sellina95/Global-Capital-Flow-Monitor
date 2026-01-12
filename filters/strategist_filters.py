@@ -392,6 +392,55 @@ def cross_asset_filter(market_data: Dict[str, Any]) -> str:
         lines.append("- **유가 변화 없음(WTI→)** → 금리는 큰 변화 없음")
 
     return "\n".join(lines)
+def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Risk Exposure Filter (v0.3-3)
+    이 필터는 숫자는 괜찮아 보일 수 있지만 그 뒤에 숨은 리스크를 식별하는 역할을 합니다.
+    """
+
+    # Get data for key market indicators
+    us10y = _get_series(market_data, "US10Y")  # 미국 10년물 금리
+    dxy = _get_series(market_data, "DXY")  # 달러 인덱스
+    wti = _get_series(market_data, "WTI")  # WTI 유가
+    vix = _get_series(market_data, "VIX")  # 변동성 지수
+
+    # Calculate direction signs for each asset
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    wti_dir = _sign_from(wti)
+    vix_dir = _sign_from(vix)
+
+    # Generate risk exposure commentary
+    lines = []
+    lines.append("### 🧩 6) Risk Exposure Filter (숨은 리스크 분석)")
+    lines.append("- **추가 이유:** 숫자는 괜찮아 보여도 그 뒤에 숨은 리스크를 식별하기 위함")
+    lines.append("")
+
+    # 분석: VIX (변동성 지수) 높으면 리스크 상승
+    if vix_dir == 1:
+        lines.append("- **VIX 상승(VIX↑)** → **리스크 증가**: 변동성이 커지면 시장 불안정성 증가")
+    else:
+        lines.append("- **VIX 하락(VIX↓)** → **리스크 감소**: 불안정성이 줄어들고 상대적 안정성 증가")
+
+    # 분석: 금리(US10Y) 상승하면 유동성 위기
+    if us10y_dir == 1:
+        lines.append("- **금리 상승(US10Y↑)** → **리스크 증가**: 금리 상승은 유동성 축소와 부담 증가")
+    elif us10y_dir == -1:
+        lines.append("- **금리 하락(US10Y↓)** → **리스크 증가**: 금리 하락은 경기 둔화 및 저금리 상황 지속")
+
+    # 분석: 달러 강세(DXY↑)가 리스크를 확대하는 경우
+    if dxy_dir == 1:
+        lines.append("- **달러 강세(DXY↑)** → **리스크 증가**: 달러 강세는 글로벌 자산에 부담을 줄 수 있음")
+    elif dxy_dir == -1:
+        lines.append("- **달러 약세(DXY↓)** → **리스크 완화**: 달러 약세는 신흥국 자산 선호 증가 가능성")
+
+    # 분석: 유가(WTI) 급등은 물가 압박
+    if wti_dir == 1:
+        lines.append("- **유가 상승(WTI↑)** → **리스크 증가**: 유가 급등은 인플레이션 압력과 경제적 부담 증가")
+    elif wti_dir == -1:
+        lines.append("- **유가 하락(WTI↓)** → **리스크 감소**: 유가 하락은 경기 둔화 우려 완화")
+
+    return "\n".join(lines)
 
 
 
@@ -410,4 +459,6 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(legacy_directional_filters(market_data))
     sections.append("")
     sections.append(cross_asset_filter(market_data))
+    sections.append("")
+    sections.append(risk_exposure_filter(market_data))
     return "\n".join(sections)
