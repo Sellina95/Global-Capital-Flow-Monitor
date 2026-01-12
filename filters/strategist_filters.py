@@ -665,6 +665,49 @@ def timing_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
+def structural_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Structural Filter (v0.3-8)
+    Answers: How does this change connect to the global economic structure or power dynamics?
+    **추가 이유:** 시장 변화가 글로벌 경제 구조나 패권 구조와 어떻게 연결되는지 파악하기 위해
+    """
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    vix = _get_series(market_data, "VIX")
+    wti = _get_series(market_data, "WTI")
+
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    vix_dir = _sign_from(vix)
+    wti_dir = _sign_from(wti)
+
+    # Default state
+    state = "NEUTRAL"
+    rationale = "세계 경제 구조와의 상관관계가 명확하지 않음"
+
+    # Structural impact example
+    if us10y_dir == 1 and dxy_dir == 1:
+        state = "TIGHTENING GLOBAL STRUCTURE (글로벌 긴축)"
+        rationale = "금리 상승과 달러 강세는 글로벌 금융 긴축을 예고하며, 신흥국 및 자산 시장에 큰 영향을 미침"
+
+    elif wti_dir == -1 and vix_dir == 1:
+        state = "WEAK GLOBAL DEMAND / RISK-OFF (세계 수요 약화 / 리스크 회피)"
+        rationale = "유가 하락과 변동성 확대는 세계 경제 성장 둔화와 리스크 회피 성향을 강화함"
+
+    lines = []
+    lines.append("### 🏗️ 9) Structural Filter")
+    lines.append("- **질문:** 이 변화가 글로벌 경제 구조나 패권 구조와 어떻게 연결되는지?")
+    lines.append(
+        f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / "
+        f"DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)}) / "
+        f"WTI({_dir_str(wti_dir)})"
+    )
+    lines.append(f"- **판정:** **{state}**")
+    lines.append(f"- **근거:** {rationale}")
+
+    return "\n".join(lines)
+
+
 
 
 
@@ -696,4 +739,6 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(direction_filter(market_data))
     sections.append("")
     sections.append(timing_filter(market_data))
+    sections.append("")
+    sections.append(structural_filter(market_data))
     return "\n".join(sections)
