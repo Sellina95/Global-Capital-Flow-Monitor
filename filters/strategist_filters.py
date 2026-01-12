@@ -491,7 +491,7 @@ def incentive_filter(market_data: Dict[str, Any]) -> str:
 
     # Generating the output
     lines = []
-    lines.append("### 💸 4) Incentive Filter")
+    lines.append("### 💸 7) Incentive Filter")
     lines.append("- **질문:** 누가 이득을 보고 있는가?")
     lines.append(f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / WTI({_dir_str(wti_dir)})")
     lines.append(f"- **판정:** **{incentive_status}**")
