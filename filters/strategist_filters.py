@@ -343,6 +343,58 @@ def legacy_directional_filters(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def cross_asset_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Cross-Asset Filter (v0.3-2)
+    이 필터는 한 자산의 변화가 다른 자산군에 어떻게 전파되는지, 즉 연쇄효과를 분석합니다.
+    """
+
+    # Get data for key market indicators
+    us10y = _get_series(market_data, "US10Y")  # 미국 10년물 금리
+    dxy = _get_series(market_data, "DXY")  # 달러 인덱스
+    wti = _get_series(market_data, "WTI")  # WTI 유가
+    vix = _get_series(market_data, "VIX")  # 변동성 지수
+
+    # Calculate direction signs for each asset
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    wti_dir = _sign_from(wti)
+    vix_dir = _sign_from(vix)
+
+    # Generate cross-asset relationship commentary
+    lines = []
+    lines.append("### 🧩 5) Cross-Asset Filter (연쇄효과 분석)")
+    lines.append("- **추가 이유:** 한 지표의 변화가 다른 자산군에 어떻게 전파되는지, 즉 연쇄효과를 파악하기 위함")
+    lines.append("")
+
+    # 분석: 금리가 오르면, 달러는 어떻게 움직이는가?
+    if us10y_dir == 1:
+        lines.append("- **금리 상승(US10Y↑)** → **달러 강세(DXY↑)** 및 **유가 하락(WTI↓)** 경향")
+    elif us10y_dir == -1:
+        lines.append("- **금리 하락(US10Y↓)** → **달러 약세(DXY↓)** 및 **유가 상승(WTI↑)** 경향")
+    else:
+        lines.append("- **금리 변화 없음(US10Y→)** → 달러와 유가는 큰 변화 없음")
+
+    # 분석: 변동성 지수 (VIX) 변화
+    if vix_dir == 1:
+        lines.append("- **변동성 상승(VIX↑)** → **리스크 회피, 달러 강세(DXY↑)** 및 **유가 하락(WTI↓)**")
+    elif vix_dir == -1:
+        lines.append("- **변동성 하락(VIX↓)** → **리스크 선호, 달러 약세(DXY↓)** 및 **유가 상승(WTI↑)**")
+    else:
+        lines.append("- **변동성 변화 없음(VIX→)** → 달러와 유가는 큰 변화 없음")
+
+    # 분석: 유가(WTI)와 금리(US10Y) 간 관계
+    if wti_dir == 1:
+        lines.append("- **유가 상승(WTI↑)** → **리스크 선호, 금리 인상(US10Y↑)**")
+    elif wti_dir == -1:
+        lines.append("- **유가 하락(WTI↓)** → **리스크 회피, 금리 인하(US10Y↓)**")
+    else:
+        lines.append("- **유가 변화 없음(WTI→)** → 금리는 큰 변화 없음")
+
+    return "\n".join(lines)
+
+
+
 # =========================
 # Build
 # =========================
@@ -356,4 +408,6 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(policy_filter(market_data))
     sections.append("")
     sections.append(legacy_directional_filters(market_data))
+    sections.append("")
+    sections.append(cross_asset_filter(market_data))
     return "\n".join(sections)
