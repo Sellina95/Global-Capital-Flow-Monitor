@@ -562,6 +562,56 @@ def cause_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
+def direction_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Direction Filter (v0.3-5)
+    Answers: How much has the market moved? 
+    Analyzes key assets and their movement to determine if it's noise or meaningful movement.
+    **추가 이유:** 숫자가 어느 방향으로, 얼마나 움직였는가 즉 변화폭이 작은 ‘노이즈’야, 인지 '의미 있는 움직임' 인지를 파악하기위함
+    """
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    wti = _get_series(market_data, "WTI")
+    vix = _get_series(market_data, "VIX")
+
+    # Calculate the direction and strength of each asset
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    wti_dir = _sign_from(wti)
+    vix_dir = _sign_from(vix)
+
+    # Calculate strength labels based on pct_change
+    us10y_strength = _strength_label("US10Y", us10y.get("pct_change"))
+    dxy_strength = _strength_label("DXY", dxy.get("pct_change"))
+    wti_strength = _strength_label("WTI", wti.get("pct_change"))
+    vix_strength = _strength_label("VIX", vix.get("pct_change"))
+
+    # Combine the information into a narrative
+    direction_info = f"US10Y({us10y_strength}, {_dir_str(us10y_dir)}) / DXY({dxy_strength}, {_dir_str(dxy_dir)}) / " \
+                     f"WTI({wti_strength}, {_dir_str(wti_dir)}) / VIX({vix_strength}, {_dir_str(vix_dir)})"
+
+    # Default state
+    state = "NO MOVEMENT"
+    rationale = "변화가 미미한 '노이즈' 또는 '의미 있는 변화'인지 분석 중"
+
+    # Identify meaningful movements
+    if us10y_strength in ["Clear", "Strong"] or dxy_strength in ["Clear", "Strong"]:
+        state = "SIGNIFICANT MOVEMENT (의미 있는 움직임)"
+        rationale = "금리나 달러의 변동이 크고 뚜렷함"
+    elif wti_strength in ["Clear", "Strong"] or vix_strength in ["Clear", "Strong"]:
+        state = "SIGNIFICANT MOVEMENT (의미 있는 움직임)"
+        rationale = "유가나 변동성의 변화가 큰 경우"
+    
+    lines = []
+    lines.append("### 🔄 9) Direction Filter")
+    lines.append("- **질문:** 시장이 어느 방향으로, 얼마나 움직였는가?")
+    lines.append(f"- **핵심 신호:** {direction_info}")
+    lines.append(f"- **판정:** **{state}**")
+    lines.append(f"- **근거:** {rationale}")
+
+    return "\n".join(lines)
+
+
 
 
 
@@ -587,4 +637,6 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(incentive_filter(market_data))
     sections.append("")
     sections.append(cause_filter(market_data))
+    sections.append("")
+    sections.append(direction_filter(market_data))
     return "\n".join(sections)
