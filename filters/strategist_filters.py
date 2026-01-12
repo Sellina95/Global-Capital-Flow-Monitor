@@ -609,7 +609,62 @@ def direction_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
 
+
+
     return "\n".join(lines)
+
+def timing_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Timing Filter (v0.3-6)
+    Answers: When is the key signal most important? 
+    Analyzes short-term, medium-term, and long-term trends.
+    **추가 이유:** 시장 변화가 단기, 중기, 장기 관점에서 어떤 영향을 미치는지 파악하기 위해
+    """
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    vix = _get_series(market_data, "VIX")
+
+    # Extracting short-term, medium-term, and long-term trends
+    short_term_us10y = us10y["pct_change"]
+    medium_term_us10y = us10y["prev"]
+    long_term_us10y = us10y["today"]
+
+    short_term_dxy = dxy["pct_change"]
+    medium_term_dxy = dxy["prev"]
+    long_term_dxy = dxy["today"]
+
+    short_term_vix = vix["pct_change"]
+    medium_term_vix = vix["prev"]
+    long_term_vix = vix["today"]
+
+    # Default state
+    state = "NO SIGNIFICANT MOVEMENT"
+    rationale = "단기, 중기, 장기적으로 시장 변화가 균일하게 발생하고 있음"
+
+    # Define thresholds for different timeframes
+    if short_term_us10y > 0.02 and medium_term_us10y > 0.05 and long_term_us10y > 0.1:
+        state = "LONG-TERM RISK TREND (장기적 위험 신호)"
+        rationale = "금리가 계속해서 상승하고 있으며, 장기적인 리스크가 확대되고 있음"
+    
+    elif short_term_dxy < -0.03 and medium_term_dxy < -0.07 and long_term_dxy < -0.1:
+        state = "DOLLAR WEAKNESS TREND (달러 약세)"
+        rationale = "달러가 약세를 지속하고 있어, 리스크 선호가 높아지고 있음"
+
+    elif short_term_vix > 1.2 and medium_term_vix > 1.5 and long_term_vix > 2.0:
+        state = "HIGH VOLATILITY (고변동성)"
+        rationale = "변동성이 지속적으로 확대되고 있으며, 시장의 불확실성이 커지고 있음"
+
+    lines = []
+    lines.append("### ⏳ 10) Timing Filter")
+    lines.append("- **질문:** 시장 변화가 단기, 중기, 장기 관점에서 어떤 영향을 미치는지?")
+    lines.append(f"- **핵심 신호:** US10Y({short_term_us10y:.2f}% short-term, {medium_term_us10y:.2f}% medium-term, {long_term_us10y:.2f}% long-term) / "
+                 f"DXY({short_term_dxy:.2f}% short-term, {medium_term_dxy:.2f}% medium-term, {long_term_dxy:.2f}% long-term) / "
+                 f"VIX({short_term_vix:.2f}% short-term, {medium_term_vix:.2f}% medium-term, {long_term_vix:.2f}% long-term)")
+    lines.append(f"- **판정:** **{state}**")
+    lines.append(f"- **근거:** {rationale}")
+
+    return "\n".join(lines)
+
 
 
 
@@ -639,4 +694,6 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(cause_filter(market_data))
     sections.append("")
     sections.append(direction_filter(market_data))
+    sections.append("")
+    sections.append(timing_filter(market_data))
     return "\n".join(sections)
