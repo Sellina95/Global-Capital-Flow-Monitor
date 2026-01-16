@@ -1,5 +1,5 @@
-[2026-01-12] 🚨 Regime Change Detected
-- Previous: RISK-ON (부분 정렬)
-- Current : RISK-OFF (부분 정렬)
+[2026-01-16] 🚨 Regime Change Detected
+- Previous: RISK-OFF (부분 정렬)
+- Current : RISK-OFF (긴축/불안·리스크 회피)
 
 ※ 이 파일은 '시장 국면(Regime) 변화'가 감지되었을 때만 생성됩니다.
