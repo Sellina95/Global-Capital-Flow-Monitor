@@ -1,6 +1,5 @@
 from pathlib import Path
 from datetime import datetime
-
 import pandas as pd
 import yfinance as yf
 
@@ -57,6 +56,15 @@ def fetch_etf_data(etfs):
         etf_data = yf.Ticker(etf)
         data[etf] = etf_data.history(period="1d", start="2023-01-01", end="2026-01-01")
     return data
+
+# 경제 데이터 가져오기 (US10Y, VIX, DXY)
+def fetch_economic_data():
+    # 경제 지표 데이터 다운로드
+    us10y_data = yf.Ticker("US10Y=RR").history(period="1d", start="2023-01-01", end="2026-01-01")
+    vix_data = yf.Ticker("^VIX").history(period="1d", start="2023-01-01", end="2026-01-01")
+    dxy_data = yf.Ticker("DX-Y.NYB").history(period="1d", start="2023-01-01", end="2026-01-01")
+    
+    return us10y_data, vix_data, dxy_data
 
 # 상관관계 계산 (Pearson correlation 사용)
 def calculate_correlation(etf_data, economic_data):
