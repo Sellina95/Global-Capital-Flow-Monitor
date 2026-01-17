@@ -59,12 +59,17 @@ def fetch_etf_data(etfs):
 
 # 경제 데이터 가져오기 (US10Y, VIX, DXY)
 def fetch_economic_data():
-    # 경제 지표 데이터 다운로드
-    us10y_data = yf.Ticker("US10Y=RR").history(period="1d", start="2023-01-01", end="2026-01-01")
-    vix_data = yf.Ticker("^VIX").history(period="1d", start="2023-01-01", end="2026-01-01")
-    dxy_data = yf.Ticker("DX-Y.NYB").history(period="1d", start="2023-01-01", end="2026-01-01")
-    
+    # US10Y (미국 10년물 금리) 데이터를 가져오기
+    us10y_data = yf.Ticker("US10Y=RR").history(period="1d")  # period만 사용
+
+    # VIX (변동성 지수) 데이터를 가져오기
+    vix_data = yf.Ticker("^VIX").history(period="1d")  # period만 사용
+
+    # DXY (달러 인덱스) 데이터를 가져오기
+    dxy_data = yf.Ticker("DX-Y.NYB").history(period="1d")  # period만 사용
+
     return us10y_data, vix_data, dxy_data
+
 
 # 상관관계 계산 (Pearson correlation 사용)
 def calculate_correlation(etf_data, economic_data):
