@@ -267,6 +267,50 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **근거:** {rationale}")
     return "\n".join(lines)
 
+def fed_plumbing_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Fed Plumbing Filter (TGA/RRP/NET_LIQ)
+    목적: 유동성(달러)이 '시장 안'에 남아있는지, '시장 밖'으로 빠져나가고 있는지 확인
+    """
+    tga = _get_series(market_data, "TGA")
+    rrp = _get_series(market_data, "RRP")
+    net = _get_series(market_data, "NET_LIQ")
+
+    # 데이터 없으면 섹션만 표시
+    if tga["today"] is None or rrp["today"] is None or net["today"] is None:
+        return "\n".join([
+            "### 🧰 5) Fed Plumbing Filter (TGA/RRP/Net Liquidity)",
+            "- **질문:** 시장의 ‘달러 체력’은 늘고 있나, 줄고 있나?",
+            "- **추가 이유:** 금리·달러가 안정적이어도 유동성이 빠지면 리스크 자산은 쉽게 흔들릴 수 있음",
+            "- **Status:** Not enough liquidity history (need TGA/RRP/NET_LIQ)",
+        ])
+
+    tga_dir = _sign_from(tga)
+    rrp_dir = _sign_from(rrp)
+    net_dir = _sign_from(net)
+
+    # 해석 로직(간단하지만 방향성 핵심)
+    state = "LIQUIDITY NEUTRAL"
+    rationale = "유동성 신호가 혼조"
+    if net_dir == 1 and tga_dir != 1 and rrp_dir != 1:
+        state = "LIQUIDITY SUPPORTIVE (완만한 유동성 우호)"
+        rationale = "Net Liquidity↑ (시장 내 달러 여력 개선) → 리스크자산 방어력 상승"
+    elif net_dir == -1 and (tga_dir == 1 or rrp_dir == 1):
+        state = "LIQUIDITY DRAINING (유동성 흡수)"
+        rationale = "TGA↑ 또는 RRP↑와 함께 Net Liquidity↓ → 시장에서 달러가 빠져나갈 가능성"
+
+    lines = []
+    lines.append("### 🧰 5) Fed Plumbing Filter (TGA/RRP/Net Liquidity)")
+    lines.append("- **질문:** 시장의 ‘달러 체력’은 늘고 있나, 줄고 있나?")
+    lines.append("- **추가 이유:** 금리·달러가 안정적이어도 유동성이 빠지면 리스크 자산은 쉽게 흔들릴 수 있음")
+    lines.append(
+        f"- **방향(전일 대비):** TGA({_dir_str(tga_dir)}) / RRP({_dir_str(rrp_dir)}) / NET_LIQ({_dir_str(net_dir)})"
+    )
+    lines.append(f"- **판정:** **{state}**")
+    lines.append(f"- **근거:** {rationale}")
+    return "\n".join(lines)
+
+
 def liquidity_plumbing_filter(market_data: Dict[str, Any]) -> str:
     tga = _get_series(market_data, "TGA")
     rrp = _get_series(market_data, "RRP")
