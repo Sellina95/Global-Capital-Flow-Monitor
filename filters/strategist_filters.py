@@ -267,6 +267,42 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **근거:** {rationale}")
     return "\n".join(lines)
 
+def liquidity_plumbing_filter(market_data: Dict[str, Any]) -> str:
+    tga = _get_series(market_data, "TGA")
+    rrp = _get_series(market_data, "RRP")
+    net = _get_series(market_data, "NET_LIQ")
+
+    tga_dir = _sign_from(tga)
+    rrp_dir = _sign_from(rrp)
+    net_dir = _sign_from(net)
+
+    # 해석: TGA↓ = 정부 지출로 시중 유동성 ↑ / RRP↓ = 잠긴 돈이 시장으로
+    score = 0
+    score += (1 if tga_dir == -1 else (-1 if tga_dir == 1 else 0))
+    score += (1 if rrp_dir == -1 else (-1 if rrp_dir == 1 else 0))
+    score += (1 if net_dir == 1 else (-1 if net_dir == -1 else 0))
+
+    state = "PLUMBING MIXED (유동성 배관 혼조)"
+    rationale = "TGA/RRP/Net Liquidity 신호가 엇갈림"
+
+    if score >= 2:
+        state = "PLUMBING SUPPORTIVE (유동성 우호)"
+        rationale = "TGA↓/RRP↓/Net↑ 중 다수가 ‘시장으로 돈이 나오는’ 방향"
+    elif score <= -2:
+        state = "PLUMBING TIGHTENING (유동성 압박)"
+        rationale = "TGA↑/RRP↑/Net↓ 중 다수가 ‘시장 유동성 흡수’ 방향"
+
+    lines = []
+    lines.append("### 🧰 2-2) Liquidity Plumbing (TGA/RRP)")
+    lines.append("- **질문:** ‘연준-재무부 배관’에서 돈이 시장으로 나오고 있는가?")
+    lines.append(
+        f"- **핵심 신호:** TGA({_dir_str(tga_dir)}) / RRP({_dir_str(rrp_dir)}) / NET_LIQ({_dir_str(net_dir)})"
+    )
+    lines.append(f"- **판정:** **{state}**")
+    lines.append(f"- **근거:** {rationale}")
+    return "\n".join(lines)
+
+
 
 # =========================
 # Policy Filter
@@ -741,4 +777,11 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(timing_filter(market_data))
     sections.append("")
     sections.append(structural_filter(market_data))
+    sections.append("")
+    sections.append(liquidity_filter(market_data))
+    sections.append("")
+    sections.append(liquidity_plumbing_filter(market_data))
+    sections.append("")
+    sections.append(policy_filter(market_data))
+
     return "\n".join(sections)
