@@ -3,19 +3,17 @@
 
 ## 📊 Daily Macro Signals
 
-- **미국 10년물 금리**: 4.187  (+0.00% vs 4.187)
-- **달러 인덱스**: 98.738  (+0.04% vs 98.703)
-- **WTI 유가**: 57.050  (-0.31% vs 57.230)
-- **변동성 지수 (VIX)**: 14.510  (+0.00% vs 14.510)
-- **원/달러 환율**: 1446.670  (-0.15% vs 1448.800)
+- **미국 10년물 금리**: 4.187 (+0.00% vs 4.187)
+- **달러 인덱스**: 98.738 (+0.04% vs 98.703)
+- **WTI 유가**: 57.050 (-0.31% vs 57.230)
+- **변동성 지수 (VIX)**: 14.510 (+0.00% vs 14.510)
+- **원/달러 환율**: 1446.670 (-0.15% vs 1448.800)
 
 ---
 
 ## 🚨 Regime Change Monitor (always-on)
 - **Status:** ✅ DETECTED
 - **Prev → Current:** RISK-OFF (긴축/불안·리스크 회피) → EVENT-WATCHING (이벤트 관망)
-- **File:** `insights/risk_alerts.txt` ✅ created
-- **Email:** ❌ not sent (RESEND env missing (RESEND_API_KEY/RESEND_FROM/RESEND_TO))
 
 ---
 
@@ -100,3 +98,22 @@
 - **핵심 신호:** US10Y(→) / DXY(↑) / VIX(→) / WTI(↓)
 - **판정:** **NEUTRAL**
 - **근거:** 세계 경제 구조와의 상관관계가 명확하지 않음
+
+### 💧 2) Liquidity Filter
+- **질문:** 시장에 새 돈이 들어오는가, 말라가는가?
+- **핵심 신호:** US10Y(→, Noise) / DXY(↑, Noise) / VIX(→, Noise)
+- **판정:** **LIQUIDITY MIXED / FRAGILE (혼조·취약)**
+- **근거:** 유동성 신호가 한 방향으로 정렬되지 않음
+
+### 🧰 2-2) Liquidity Plumbing (TGA/RRP)
+- **질문:** ‘연준-재무부 배관’에서 돈이 시장으로 나오고 있는가?
+- **핵심 신호:** TGA(→) / RRP(→) / NET_LIQ(→)
+- **판정:** **PLUMBING MIXED (유동성 배관 혼조)**
+- **근거:** TGA/RRP/Net Liquidity 신호가 엇갈림
+
+### 🏛️ 3) Policy Filter
+- **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
+- **추가 이유:** 정책 흐름과 반대로 움직이는 자산은 지속 가능성이 낮기 때문
+- **핵심 신호:** US10Y(→) / DXY(↑) / VIX(→)
+- **판정:** **POLICY MIXED (정책 신호 혼조)**
+- **근거:** 금리와 달러 신호가 일관되지 않음
