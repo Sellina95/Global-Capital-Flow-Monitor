@@ -89,7 +89,10 @@ def generate_daily_report() -> None:
 
     as_of_date = today_row["date"].strftime("%Y-%m-%d")
     market_data = build_market_data(today_row, prev_row)
-        # ---- Liquidity Layer (TGA/RRP/NET_LIQ) ----
+        as_of_date = today_row["date"].strftime("%Y-%m-%d")
+    market_data = build_market_data(today_row, prev_row)
+
+    # ---- Liquidity Layer (TGA/RRP/NET_LIQ) ----
     liq_df = load_liquidity_df()
     liq_today, liq_prev = get_latest_liquidity_pair(liq_df, pd.to_datetime(today_row["date"]))
 
@@ -106,12 +109,6 @@ def generate_daily_report() -> None:
         add_liq_key("RRP", liq_today.get("RRP"), liq_prev.get("RRP"))
         add_liq_key("NET_LIQ", liq_today.get("NET_LIQ"), liq_prev.get("NET_LIQ"))
 
-    # 경제 데이터 가져오기
-    us10y_data, vix_data, dxy_data = fetch_economic_data()
-
-    # ✅ Regime 변화 감지 결과(항상 리포트에 표시)
-    regime_result = check_regime_change_and_alert(market_data, as_of_date)
-
     # ---- Report ----
     lines = []
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
@@ -124,7 +121,8 @@ def generate_daily_report() -> None:
     lines.append(f"- **WTI 유가**: {market_data['WTI']['today']:.3f}  ({market_data['WTI']['pct_change']:+.2f}% vs {market_data['WTI']['prev']:.3f})")
     lines.append(f"- **변동성 지수 (VIX)**: {market_data['VIX']['today']:.3f}  ({market_data['VIX']['pct_change']:+.2f}% vs {market_data['VIX']['prev']:.3f})")
     lines.append(f"- **원/달러 환율**: {market_data['USDKRW']['today']:.3f}  ({market_data['USDKRW']['pct_change']:+.2f}% vs {market_data['USDKRW']['prev']:.3f})")
-        if "TGA" in market_data:
+
+    if "TGA" in market_data:
         lines.append(f"- **TGA(연준 금고 현금)**: {market_data['TGA']['today']:.1f}  ({market_data['TGA']['pct_change']:+.2f}% vs {market_data['TGA']['prev']:.1f})")
     if "RRP" in market_data:
         lines.append(f"- **RRP(연준 역레포)**: {market_data['RRP']['today']:.1f}  ({market_data['RRP']['pct_change']:+.2f}% vs {market_data['RRP']['prev']:.1f})")
