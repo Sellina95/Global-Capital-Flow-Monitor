@@ -48,6 +48,14 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/generate_report.py
+
+
+
+      - name: Debug liquidity file
+        run: |
+          ls -la data || true
+          head -n 5 data/liquidity_data.csv || true
+
       
       # 6️⃣ 결과 자동 커밋 & 푸시
       - name: Commit and push report
