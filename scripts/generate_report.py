@@ -89,12 +89,12 @@ def generate_daily_report() -> None:
 
     as_of_date = today_row["date"].strftime("%Y-%m-%d")
     market_data = build_market_data(today_row, prev_row)
-        as_of_date = today_row["date"].strftime("%Y-%m-%d")
-    market_data = build_market_data(today_row, prev_row)
 
     # ---- Liquidity Layer (TGA/RRP/NET_LIQ) ----
     liq_df = load_liquidity_df()
-    liq_today, liq_prev = get_latest_liquidity_pair(liq_df, pd.to_datetime(today_row["date"]))
+    liq_today, liq_prev = get_latest_liquidity_pair(
+        liq_df, pd.to_datetime(today_row["date"])
+    )
 
     def add_liq_key(key: str, today_val, prev_val):
         if today_val is None or prev_val is None:
@@ -102,12 +102,19 @@ def generate_daily_report() -> None:
         today_val = float(today_val)
         prev_val = float(prev_val)
         pct = 0.0 if prev_val == 0 else ((today_val - prev_val) / prev_val) * 100.0
-        market_data[key] = {"today": today_val, "prev": prev_val, "pct_change": pct}
+        market_data[key] = {
+            "today": today_val,
+            "prev": prev_val,
+            "pct_change": pct,
+        }
 
     if liq_today is not None and liq_prev is not None:
         add_liq_key("TGA", liq_today.get("TGA"), liq_prev.get("TGA"))
         add_liq_key("RRP", liq_today.get("RRP"), liq_prev.get("RRP"))
         add_liq_key("NET_LIQ", liq_today.get("NET_LIQ"), liq_prev.get("NET_LIQ"))
+
+    # ---- Regime Detection ----
+    regime_result = check_regime_change_and_alert(market_data, as_of_date)
 
     # ---- Report ----
     lines = []
@@ -116,35 +123,57 @@ def generate_daily_report() -> None:
     lines.append("")
     lines.append("## 📊 Daily Macro Signals")
     lines.append("")
-    lines.append(f"- **미국 10년물 금리**: {market_data['US10Y']['today']:.3f}  ({market_data['US10Y']['pct_change']:+.2f}% vs {market_data['US10Y']['prev']:.3f})")
-    lines.append(f"- **달러 인덱스**: {market_data['DXY']['today']:.3f}  ({market_data['DXY']['pct_change']:+.2f}% vs {market_data['DXY']['prev']:.3f})")
-    lines.append(f"- **WTI 유가**: {market_data['WTI']['today']:.3f}  ({market_data['WTI']['pct_change']:+.2f}% vs {market_data['WTI']['prev']:.3f})")
-    lines.append(f"- **변동성 지수 (VIX)**: {market_data['VIX']['today']:.3f}  ({market_data['VIX']['pct_change']:+.2f}% vs {market_data['VIX']['prev']:.3f})")
-    lines.append(f"- **원/달러 환율**: {market_data['USDKRW']['today']:.3f}  ({market_data['USDKRW']['pct_change']:+.2f}% vs {market_data['USDKRW']['prev']:.3f})")
+
+    lines.append(
+        f"- **미국 10년물 금리**: {market_data['US10Y']['today']:.3f} "
+        f"({market_data['US10Y']['pct_change']:+.2f}% vs {market_data['US10Y']['prev']:.3f})"
+    )
+    lines.append(
+        f"- **달러 인덱스**: {market_data['DXY']['today']:.3f} "
+        f"({market_data['DXY']['pct_change']:+.2f}% vs {market_data['DXY']['prev']:.3f})"
+    )
+    lines.append(
+        f"- **WTI 유가**: {market_data['WTI']['today']:.3f} "
+        f"({market_data['WTI']['pct_change']:+.2f}% vs {market_data['WTI']['prev']:.3f})"
+    )
+    lines.append(
+        f"- **변동성 지수 (VIX)**: {market_data['VIX']['today']:.3f} "
+        f"({market_data['VIX']['pct_change']:+.2f}% vs {market_data['VIX']['prev']:.3f})"
+    )
+    lines.append(
+        f"- **원/달러 환율**: {market_data['USDKRW']['today']:.3f} "
+        f"({market_data['USDKRW']['pct_change']:+.2f}% vs {market_data['USDKRW']['prev']:.3f})"
+    )
 
     if "TGA" in market_data:
-        lines.append(f"- **TGA(연준 금고 현금)**: {market_data['TGA']['today']:.1f}  ({market_data['TGA']['pct_change']:+.2f}% vs {market_data['TGA']['prev']:.1f})")
+        lines.append(
+            f"- **TGA(연준 금고 현금)**: {market_data['TGA']['today']:.1f} "
+            f"({market_data['TGA']['pct_change']:+.2f}% vs {market_data['TGA']['prev']:.1f})"
+        )
+
     if "RRP" in market_data:
-        lines.append(f"- **RRP(연준 역레포)**: {market_data['RRP']['today']:.1f}  ({market_data['RRP']['pct_change']:+.2f}% vs {market_data['RRP']['prev']:.1f})")
+        lines.append(
+            f"- **RRP(연준 역레포)**: {market_data['RRP']['today']:.1f} "
+            f"({market_data['RRP']['pct_change']:+.2f}% vs {market_data['RRP']['prev']:.1f})"
+        )
 
     lines.append("")
     lines.append("---")
     lines.append("")
     lines.append("## 🚨 Regime Change Monitor (always-on)")
+
     if regime_result["status"] == "DETECTED":
-        lines.append(f"- **Status:** ✅ DETECTED")
-        lines.append(f"- **Prev → Current:** {regime_result['prev_regime']} → {regime_result['current_regime']}")
-        lines.append(f"- **File:** `insights/risk_alerts.txt` ✅ created")
-        lines.append(f"- **Email:** {'✅ sent' if regime_result['email_sent'] else '❌ not sent'} ({regime_result['email_note']})")
+        lines.append("- **Status:** ✅ DETECTED")
+        lines.append(
+            f"- **Prev → Current:** {regime_result['prev_regime']} → {regime_result['current_regime']}"
+        )
     elif regime_result["status"] == "NOT_DETECTED":
-        lines.append(f"- **Status:** ❎ NOT DETECTED")
+        lines.append("- **Status:** ❎ NOT DETECTED")
         lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
-        lines.append(f"- **File:** not created")
-        lines.append(f"- **Email:** not sent")
-    else:  # BASELINE_SET
-        lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
+    else:
+        lines.append("- **Status:** ⚪ BASELINE SET")
         lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
-        lines.append(f"- **File/Email:** not created (no previous regime to compare)")
+
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -152,7 +181,9 @@ def generate_daily_report() -> None:
 
     report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
+
     print(f"[OK] Report written: {report_path}")
+
 
 
 if __name__ == "__main__":
