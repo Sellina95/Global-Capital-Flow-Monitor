@@ -1,161 +1,62 @@
+# scripts/fetch_liquidity_data.py
+from __future__ import annotations
 from pathlib import Path
-from datetime import datetime
 import pandas as pd
-import yfinance as yf
-
-from filters.strategist_filters import build_strategist_commentary
-from scripts.risk_alerts import check_regime_change_and_alert
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
-REPORTS_DIR = BASE_DIR / "reports"
+OUT_CSV = DATA_DIR / "liquidity_data.csv"
 
-KEYS = ["US10Y", "DXY", "WTI", "VIX", "USDKRW"]
+FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
 
-# 데이터 가져오기 함수
-def fetch_economic_data():
-    # US10Y (미국 10년물 금리) 데이터를 가져오기
-    us10y_data = yf.Ticker("US10Y=RR").history(period="1d")  # period만 사용
+SERIES = {
+    "TGA": "WTREGEN",     # Treasury General Account
+    "RRP": "RRPONTSYD",   # Reverse Repo
+    "WALCL": "WALCL",     # Fed Total Assets
+}
 
-    # VIX (변동성 지수) 데이터를 가져오기
-    vix_data = yf.Ticker("^VIX").history(period="1d")  # period만 사용
+def fetch_fred(series_id: str) -> pd.DataFrame:
+    df = pd.read_csv(f"{FRED_CSV}{series_id}")
+    df.columns = ["date", series_id]
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
+    return df.dropna().sort_values("date").reset_index(drop=True)
 
-    # DXY (달러 인덱스) 데이터를 가져오기
-    dxy_data = yf.Ticker("DX-Y.NYB").history(period="1d")  # period만 사용
+def main():
+    DATA_DIR.mkdir(exist_ok=True)
 
-    return us10y_data, vix_data, dxy_data
+    tga = fetch_fred(SERIES["TGA"])
+    rrp = fetch_fred(SERIES["RRP"])
+    walcl = fetch_fred(SERIES["WALCL"])
 
+    as_of = min(tga.iloc[-1]["date"], rrp.iloc[-1]["date"])
 
-def load_macro_df() -> pd.DataFrame:
-    xlsx_path = DATA_DIR / "macro_data.xlsx"
-    csv_path = DATA_DIR / "macro_data.csv"
+    def last(df, col):
+        return float(df[df["date"] <= as_of].iloc[-1][col])
 
-    if xlsx_path.exists():
-        df = pd.read_excel(xlsx_path)
-    elif csv_path.exists():
-        df = pd.read_csv(csv_path)
+    tga_v = last(tga, SERIES["TGA"])
+    rrp_v = last(rrp, SERIES["RRP"])
+    walcl_v = last(walcl, SERIES["WALCL"])
+
+    net_liq = walcl_v - tga_v - rrp_v
+
+    new = pd.DataFrame([{
+        "date": as_of.strftime("%Y-%m-%d"),
+        "TGA": tga_v,
+        "RRP": rrp_v,
+        "WALCL": walcl_v,
+        "NET_LIQ": net_liq,
+    }])
+
+    if OUT_CSV.exists():
+        old = pd.read_csv(OUT_CSV)
+        df = pd.concat([old, new]).drop_duplicates("date", keep="last")
     else:
-        raise FileNotFoundError(f"data 폴더에 macro_data.xlsx 또는 macro_data.csv 가 없습니다: {DATA_DIR}")
+        df = new
 
-    if df.empty or len(df) < 2:
-        raise ValueError("macro_data에 최소 2개 이상의 row가 필요합니다.")
-
-    # date 컬럼 정리
-    if "date" not in df.columns:
-        df = df.rename(columns={df.columns[0]: "date"})
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df = df.dropna(subset=["date"]).reset_index(drop=True)
-
-    return df
-
-def load_liquidity_df() -> pd.DataFrame:
-    csv_path = DATA_DIR / "liquidity_data.csv"
-    if not csv_path.exists():
-        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
-
-    df = pd.read_csv(csv_path)
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
-    return df
-
-def get_latest_liquidity_pair(liq_df: pd.DataFrame, as_of_date: pd.Timestamp):
-    # as_of_date 이하에서 최신 2개 row를 가져와 today/prev 구성
-    sub = liq_df[liq_df["date"] <= as_of_date].copy()
-    if len(sub) < 2:
-        return None, None
-    return sub.iloc[-1], sub.iloc[-2]
-
-
-
-def build_market_data(today_row: pd.Series, prev_row: pd.Series) -> dict:
-    market_data = {}
-    for k in KEYS:
-        today = float(today_row.get(k))
-        prev = float(prev_row.get(k))
-        pct = 0.0
-        if prev != 0:
-            pct = ((today - prev) / prev) * 100.0
-        market_data[k] = {"today": today, "prev": prev, "pct_change": pct}
-    return market_data
-
-
-def generate_daily_report() -> None:
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-
-    df = load_macro_df()
-    today_row = df.iloc[-1]
-    prev_row = df.iloc[-2]
-
-    as_of_date = today_row["date"].strftime("%Y-%m-%d")
-    market_data = build_market_data(today_row, prev_row)
-        # ---- Liquidity Layer (TGA/RRP/NET_LIQ) ----
-    liq_df = load_liquidity_df()
-    liq_today, liq_prev = get_latest_liquidity_pair(liq_df, pd.to_datetime(today_row["date"]))
-
-    def add_liq_key(key: str, today_val, prev_val):
-        if today_val is None or prev_val is None:
-            return
-        today_val = float(today_val)
-        prev_val = float(prev_val)
-        pct = 0.0 if prev_val == 0 else ((today_val - prev_val) / prev_val) * 100.0
-        market_data[key] = {"today": today_val, "prev": prev_val, "pct_change": pct}
-
-    if liq_today is not None and liq_prev is not None:
-        add_liq_key("TGA", liq_today.get("TGA"), liq_prev.get("TGA"))
-        add_liq_key("RRP", liq_today.get("RRP"), liq_prev.get("RRP"))
-        add_liq_key("NET_LIQ", liq_today.get("NET_LIQ"), liq_prev.get("NET_LIQ"))
-
-    # 경제 데이터 가져오기
-    us10y_data, vix_data, dxy_data = fetch_economic_data()
-
-    # ✅ Regime 변화 감지 결과(항상 리포트에 표시)
-    regime_result = check_regime_change_and_alert(market_data, as_of_date)
-
-    # ---- Report ----
-    lines = []
-    lines.append("# 🌍 Global Capital Flow – Daily Brief")
-    lines.append(f"**Date:** {as_of_date}")
-    lines.append("")
-    lines.append("## 📊 Daily Macro Signals")
-    lines.append("")
-    lines.append(f"- **미국 10년물 금리**: {market_data['US10Y']['today']:.3f}  ({market_data['US10Y']['pct_change']:+.2f}% vs {market_data['US10Y']['prev']:.3f})")
-    lines.append(f"- **달러 인덱스**: {market_data['DXY']['today']:.3f}  ({market_data['DXY']['pct_change']:+.2f}% vs {market_data['DXY']['prev']:.3f})")
-    lines.append(f"- **WTI 유가**: {market_data['WTI']['today']:.3f}  ({market_data['WTI']['pct_change']:+.2f}% vs {market_data['WTI']['prev']:.3f})")
-    lines.append(f"- **변동성 지수 (VIX)**: {market_data['VIX']['today']:.3f}  ({market_data['VIX']['pct_change']:+.2f}% vs {market_data['VIX']['prev']:.3f})")
-    lines.append(f"- **원/달러 환율**: {market_data['USDKRW']['today']:.3f}  ({market_data['USDKRW']['pct_change']:+.2f}% vs {market_data['USDKRW']['prev']:.3f})")
-        if "TGA" in market_data:
-        lines.append(f"- **TGA(연준 금고 현금)**: {market_data['TGA']['today']:.1f}  ({market_data['TGA']['pct_change']:+.2f}% vs {market_data['TGA']['prev']:.1f})")
-    if "RRP" in market_data:
-        lines.append(f"- **RRP(연준 역레포)**: {market_data['RRP']['today']:.1f}  ({market_data['RRP']['pct_change']:+.2f}% vs {market_data['RRP']['prev']:.1f})")
-
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append("## 🚨 Regime Change Monitor (always-on)")
-    if regime_result["status"] == "DETECTED":
-        lines.append(f"- **Status:** ✅ DETECTED")
-        lines.append(f"- **Prev → Current:** {regime_result['prev_regime']} → {regime_result['current_regime']}")
-        lines.append(f"- **File:** `insights/risk_alerts.txt` ✅ created")
-        lines.append(f"- **Email:** {'✅ sent' if regime_result['email_sent'] else '❌ not sent'} ({regime_result['email_note']})")
-    elif regime_result["status"] == "NOT_DETECTED":
-        lines.append(f"- **Status:** ❎ NOT DETECTED")
-        lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
-        lines.append(f"- **File:** not created")
-        lines.append(f"- **Email:** not sent")
-    else:  # BASELINE_SET
-        lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
-        lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
-        lines.append(f"- **File/Email:** not created (no previous regime to compare)")
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append(build_strategist_commentary(market_data))
-
-    report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
-    report_path.write_text("\n".join(lines), encoding="utf-8")
-    print(f"[OK] Report written: {report_path}")
-
+    df.to_csv(OUT_CSV, index=False)
+    print("[OK] liquidity_data.csv updated")
 
 if __name__ == "__main__":
-    generate_daily_report()
+    main()
+
