@@ -77,6 +77,9 @@ def _fmt_num(x: Optional[float], nd: int = 3) -> str:
 
 
 def _strength_label(key: str, pct_change: Optional[float]) -> str:
+    """
+    Noise vs meaningful move heuristics (pct change 기준)
+    """
     if pct_change is None:
         return "N/A"
 
@@ -124,6 +127,16 @@ def _strength_label(key: str, pct_change: Optional[float]) -> str:
         if p < 0.20:
             return "Mild"
         if p < 0.50:
+            return "Clear"
+        return "Strong"
+
+    # Liquidity series는 “레벨/방향”이 더 중요해서 강도는 보수적으로
+    if key in ("TGA", "RRP", "NET_LIQ", "WALCL"):
+        if p < 0.10:
+            return "Noise"
+        if p < 0.30:
+            return "Mild"
+        if p < 0.80:
             return "Clear"
         return "Strong"
 
@@ -223,7 +236,7 @@ def market_regime_filter(market_data: Dict[str, Any]) -> str:
 
 
 # =========================
-# Liquidity Filter
+# Liquidity Filter (macro)
 # =========================
 def liquidity_filter(market_data: Dict[str, Any]) -> str:
     us10y = _get_series(market_data, "US10Y")
@@ -256,7 +269,7 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
         rationale = "금리↑ + 달러↑ → 글로벌 금융여건 타이트"
 
     lines = []
-    lines.append("### 💧 2) Liquidity Filter")
+    lines.append("### 💧 2) Liquidity Filter (Macro)")
     lines.append("- **질문:** 시장에 새 돈이 들어오는가, 말라가는가?")
     lines.append(
         f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}, {us10y_str}) / "
@@ -267,40 +280,45 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **근거:** {rationale}")
     return "\n".join(lines)
 
+
+# =========================
+# Fed Plumbing Filter (NEW)
+# =========================
 def fed_plumbing_filter(market_data: Dict[str, Any]) -> str:
     """
     Fed Plumbing Filter (TGA/RRP/NET_LIQ)
-    목적: 유동성(달러)이 '시장 안'에 남아있는지, '시장 밖'으로 빠져나가고 있는지 확인
+    목적: 달러가 '시장 안'에 남아있는지, '시장 밖'으로 빠져나가는지(흡수되는지) 확인.
     """
     tga = _get_series(market_data, "TGA")
     rrp = _get_series(market_data, "RRP")
     net = _get_series(market_data, "NET_LIQ")
 
-    # 데이터 없으면 섹션만 표시
+    # data not ready (or not injected into market_data)
     if tga["today"] is None or rrp["today"] is None or net["today"] is None:
         return "\n".join([
-            "### 🧰 5) Fed Plumbing Filter (TGA/RRP/Net Liquidity)",
+            "### 🧰 3) Fed Plumbing Filter (TGA/RRP/Net Liquidity)",
             "- **질문:** 시장의 ‘달러 체력’은 늘고 있나, 줄고 있나?",
             "- **추가 이유:** 금리·달러가 안정적이어도 유동성이 빠지면 리스크 자산은 쉽게 흔들릴 수 있음",
-            "- **Status:** Not enough liquidity history (need TGA/RRP/NET_LIQ)",
+            "- **Status:** Not enough liquidity history (need TGA/RRP/NET_LIQ in market_data)",
         ])
 
     tga_dir = _sign_from(tga)
     rrp_dir = _sign_from(rrp)
     net_dir = _sign_from(net)
 
-    # 해석 로직(간단하지만 방향성 핵심)
     state = "LIQUIDITY NEUTRAL"
     rationale = "유동성 신호가 혼조"
+
+    # 아주 단순하지만 실전에서 유용한 방향성 프레임
     if net_dir == 1 and tga_dir != 1 and rrp_dir != 1:
         state = "LIQUIDITY SUPPORTIVE (완만한 유동성 우호)"
-        rationale = "Net Liquidity↑ (시장 내 달러 여력 개선) → 리스크자산 방어력 상승"
+        rationale = "Net Liquidity↑ → 시장 내 달러 여력 개선(리스크자산 방어력↑)"
     elif net_dir == -1 and (tga_dir == 1 or rrp_dir == 1):
         state = "LIQUIDITY DRAINING (유동성 흡수)"
-        rationale = "TGA↑ 또는 RRP↑와 함께 Net Liquidity↓ → 시장에서 달러가 빠져나갈 가능성"
+        rationale = "TGA↑ 또는 RRP↑ 동반 Net Liquidity↓ → 시장에서 달러가 빠져나갈 가능성"
 
     lines = []
-    lines.append("### 🧰 5) Fed Plumbing Filter (TGA/RRP/Net Liquidity)")
+    lines.append("### 🧰 3) Fed Plumbing Filter (TGA/RRP/Net Liquidity)")
     lines.append("- **질문:** 시장의 ‘달러 체력’은 늘고 있나, 줄고 있나?")
     lines.append("- **추가 이유:** 금리·달러가 안정적이어도 유동성이 빠지면 리스크 자산은 쉽게 흔들릴 수 있음")
     lines.append(
@@ -309,43 +327,6 @@ def fed_plumbing_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
     return "\n".join(lines)
-
-
-def liquidity_plumbing_filter(market_data: Dict[str, Any]) -> str:
-    tga = _get_series(market_data, "TGA")
-    rrp = _get_series(market_data, "RRP")
-    net = _get_series(market_data, "NET_LIQ")
-
-    tga_dir = _sign_from(tga)
-    rrp_dir = _sign_from(rrp)
-    net_dir = _sign_from(net)
-
-    # 해석: TGA↓ = 정부 지출로 시중 유동성 ↑ / RRP↓ = 잠긴 돈이 시장으로
-    score = 0
-    score += (1 if tga_dir == -1 else (-1 if tga_dir == 1 else 0))
-    score += (1 if rrp_dir == -1 else (-1 if rrp_dir == 1 else 0))
-    score += (1 if net_dir == 1 else (-1 if net_dir == -1 else 0))
-
-    state = "PLUMBING MIXED (유동성 배관 혼조)"
-    rationale = "TGA/RRP/Net Liquidity 신호가 엇갈림"
-
-    if score >= 2:
-        state = "PLUMBING SUPPORTIVE (유동성 우호)"
-        rationale = "TGA↓/RRP↓/Net↑ 중 다수가 ‘시장으로 돈이 나오는’ 방향"
-    elif score <= -2:
-        state = "PLUMBING TIGHTENING (유동성 압박)"
-        rationale = "TGA↑/RRP↑/Net↓ 중 다수가 ‘시장 유동성 흡수’ 방향"
-
-    lines = []
-    lines.append("### 🧰 2-2) Liquidity Plumbing (TGA/RRP)")
-    lines.append("- **질문:** ‘연준-재무부 배관’에서 돈이 시장으로 나오고 있는가?")
-    lines.append(
-        f"- **핵심 신호:** TGA({_dir_str(tga_dir)}) / RRP({_dir_str(rrp_dir)}) / NET_LIQ({_dir_str(net_dir)})"
-    )
-    lines.append(f"- **판정:** **{state}**")
-    lines.append(f"- **근거:** {rationale}")
-    return "\n".join(lines)
-
 
 
 # =========================
@@ -380,7 +361,7 @@ def policy_filter(market_data: Dict[str, Any]) -> str:
         vix_note = " / 정책 신호 신뢰도 개선(VIX↓)"
 
     lines = []
-    lines.append("### 🏛️ 3) Policy Filter")
+    lines.append("### 🏛️ 4) Policy Filter")
     lines.append("- **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?")
     lines.append("- **추가 이유:** 정책 흐름과 반대로 움직이는 자산은 지속 가능성이 낮기 때문")
     lines.append(
@@ -413,7 +394,7 @@ def legacy_directional_filters(market_data: Dict[str, Any]) -> str:
         return f"- {label} **({strength}, {pct_txt})** → {msg}"
 
     lines = []
-    lines.append("### 📌 4) Directional Signals (Legacy Filters)")
+    lines.append("### 📌 5) Directional Signals (Legacy Filters)")
     lines.append("**추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함")
     lines.append(line("US10Y", "미국 금리(US10Y)", "완화 기대 약화/금리 부담", "완화 기대 강화", "보합(관망)"))
     lines.append(line("DXY", "DXY", "달러 강세/신흥국 부담", "달러 약세/리스크 선호", "달러 보합(방향성 약함)"))
@@ -425,29 +406,24 @@ def legacy_directional_filters(market_data: Dict[str, Any]) -> str:
 
 def cross_asset_filter(market_data: Dict[str, Any]) -> str:
     """
-    Cross-Asset Filter (v0.3-2)
+    Cross-Asset Filter
     이 필터는 한 자산의 변화가 다른 자산군에 어떻게 전파되는지, 즉 연쇄효과를 분석합니다.
     """
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    wti = _get_series(market_data, "WTI")
+    vix = _get_series(market_data, "VIX")
 
-    # Get data for key market indicators
-    us10y = _get_series(market_data, "US10Y")  # 미국 10년물 금리
-    dxy = _get_series(market_data, "DXY")  # 달러 인덱스
-    wti = _get_series(market_data, "WTI")  # WTI 유가
-    vix = _get_series(market_data, "VIX")  # 변동성 지수
-
-    # Calculate direction signs for each asset
     us10y_dir = _sign_from(us10y)
     dxy_dir = _sign_from(dxy)
     wti_dir = _sign_from(wti)
     vix_dir = _sign_from(vix)
 
-    # Generate cross-asset relationship commentary
     lines = []
-    lines.append("### 🧩 5) Cross-Asset Filter (연쇄효과 분석)")
+    lines.append("### 🧩 6) Cross-Asset Filter (연쇄효과 분석)")
     lines.append("- **추가 이유:** 한 지표의 변화가 다른 자산군에 어떻게 전파되는지, 즉 연쇄효과를 파악하기 위함")
     lines.append("")
 
-    # 분석: 금리가 오르면, 달러는 어떻게 움직이는가?
     if us10y_dir == 1:
         lines.append("- **금리 상승(US10Y↑)** → **달러 강세(DXY↑)** 및 **유가 하락(WTI↓)** 경향")
     elif us10y_dir == -1:
@@ -455,7 +431,6 @@ def cross_asset_filter(market_data: Dict[str, Any]) -> str:
     else:
         lines.append("- **금리 변화 없음(US10Y→)** → 달러와 유가는 큰 변화 없음")
 
-    # 분석: 변동성 지수 (VIX) 변화
     if vix_dir == 1:
         lines.append("- **변동성 상승(VIX↑)** → **리스크 회피, 달러 강세(DXY↑)** 및 **유가 하락(WTI↓)**")
     elif vix_dir == -1:
@@ -463,139 +438,127 @@ def cross_asset_filter(market_data: Dict[str, Any]) -> str:
     else:
         lines.append("- **변동성 변화 없음(VIX→)** → 달러와 유가는 큰 변화 없음")
 
-    # 분석: 유가(WTI)와 금리(US10Y) 간 관계
     if wti_dir == 1:
-        lines.append("- **유가 상승(WTI↑)** → **리스크 선호, 금리 인상(US10Y↑)**")
+        lines.append("- **유가 상승(WTI↑)** → **물가 재자극/금리 부담(US10Y↑) 가능성**")
     elif wti_dir == -1:
-        lines.append("- **유가 하락(WTI↓)** → **리스크 회피, 금리 인하(US10Y↓)**")
+        lines.append("- **유가 하락(WTI↓)** → **물가 부담 완화/금리 부담↓(US10Y↓) 가능성**")
     else:
         lines.append("- **유가 변화 없음(WTI→)** → 금리는 큰 변화 없음")
 
     return "\n".join(lines)
+
+
 def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
     """
-    Risk Exposure Filter (v0.3-3)
-    이 필터는 숫자는 괜찮아 보일 수 있지만 그 뒤에 숨은 리스크를 식별하는 역할을 합니다.
+    Risk Exposure Filter
+    숫자는 괜찮아 보일 수 있지만 그 뒤에 숨은 리스크를 식별합니다.
     """
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    wti = _get_series(market_data, "WTI")
+    vix = _get_series(market_data, "VIX")
 
-    # Get data for key market indicators
-    us10y = _get_series(market_data, "US10Y")  # 미국 10년물 금리
-    dxy = _get_series(market_data, "DXY")  # 달러 인덱스
-    wti = _get_series(market_data, "WTI")  # WTI 유가
-    vix = _get_series(market_data, "VIX")  # 변동성 지수
-
-    # Calculate direction signs for each asset
     us10y_dir = _sign_from(us10y)
     dxy_dir = _sign_from(dxy)
     wti_dir = _sign_from(wti)
     vix_dir = _sign_from(vix)
 
-    # Generate risk exposure commentary
     lines = []
-    lines.append("### 🧩 6) Risk Exposure Filter (숨은 리스크 분석)")
+    lines.append("### 🧩 7) Risk Exposure Filter (숨은 리스크 분석)")
     lines.append("- **추가 이유:** 숫자는 괜찮아 보여도 그 뒤에 숨은 리스크를 식별하기 위함")
     lines.append("")
 
-    # 분석: VIX (변동성 지수) 높으면 리스크 상승
     if vix_dir == 1:
-        lines.append("- **VIX 상승(VIX↑)** → **리스크 증가**: 변동성이 커지면 시장 불안정성 증가")
+        lines.append("- **VIX 상승(VIX↑)** → **리스크 증가**: 시장 불안/헤지 수요 확대")
+    elif vix_dir == -1:
+        lines.append("- **VIX 하락(VIX↓)** → **리스크 완화**: 시장 심리 개선")
     else:
-        lines.append("- **VIX 하락(VIX↓)** → **리스크 감소**: 불안정성이 줄어들고 상대적 안정성 증가")
+        lines.append("- **VIX 보합(VIX→)** → 심리 변화 제한")
 
-    # 분석: 금리(US10Y) 상승하면 유동성 위기
     if us10y_dir == 1:
-        lines.append("- **금리 상승(US10Y↑)** → **리스크 증가**: 금리 상승은 유동성 축소와 부담 증가")
+        lines.append("- **금리 상승(US10Y↑)** → **리스크 증가**: 할인율↑/유동성 부담↑")
     elif us10y_dir == -1:
-        lines.append("- **금리 하락(US10Y↓)** → **리스크 증가**: 금리 하락은 경기 둔화 및 저금리 상황 지속")
+        lines.append("- **금리 하락(US10Y↓)** → **완화 기대** 또는 **경기 둔화 우려**(맥락 점검 필요)")
+    else:
+        lines.append("- **금리 보합(US10Y→)** → 금리 변수 중립")
 
-    # 분석: 달러 강세(DXY↑)가 리스크를 확대하는 경우
     if dxy_dir == 1:
-        lines.append("- **달러 강세(DXY↑)** → **리스크 증가**: 달러 강세는 글로벌 자산에 부담을 줄 수 있음")
+        lines.append("- **달러 강세(DXY↑)** → **리스크 증가**: 글로벌 금융여건 타이트, 신흥국 부담")
     elif dxy_dir == -1:
-        lines.append("- **달러 약세(DXY↓)** → **리스크 완화**: 달러 약세는 신흥국 자산 선호 증가 가능성")
+        lines.append("- **달러 약세(DXY↓)** → **리스크 완화**: 위험자산 선호 확대 가능")
+    else:
+        lines.append("- **달러 보합(DXY→)** → 달러 변수 중립")
 
-    # 분석: 유가(WTI) 급등은 물가 압박
     if wti_dir == 1:
-        lines.append("- **유가 상승(WTI↑)** → **리스크 증가**: 유가 급등은 인플레이션 압력과 경제적 부담 증가")
+        lines.append("- **유가 상승(WTI↑)** → **리스크 증가**: 인플레 재자극/마진 압박")
     elif wti_dir == -1:
-        lines.append("- **유가 하락(WTI↓)** → **리스크 감소**: 유가 하락은 경기 둔화 우려 완화")
+        lines.append("- **유가 하락(WTI↓)** → **리스크 완화**(물가) 또는 **수요 둔화 신호**(경기) 점검")
+    else:
+        lines.append("- **유가 보합(WTI→)** → 물가 변수 제한")
 
     return "\n".join(lines)
+
 
 def incentive_filter(market_data: Dict[str, Any]) -> str:
     """
-    Incentive Filter (v0.3-3)
-    Answers: Who benefits from the market movement? 
-    Analyzes key assets (US10Y, DXY, WTI) and identifies winners and losers.
-    **추가 이유:** 이 결정/변화로 가장 크게 혜택을 보는 집단은 누구인지 파악하기 위함
+    Incentive Filter
+    누가 이득을 보는가? (승자/패자)
     """
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
     wti = _get_series(market_data, "WTI")
 
-    # Direction signs
     us10y_dir = _sign_from(us10y)
     dxy_dir = _sign_from(dxy)
     wti_dir = _sign_from(wti)
 
-    # Winners and losers
     winners = []
     losers = []
 
-    # If US10Y is up → Interest rates rise, banks benefit
     if us10y_dir == 1:
-        winners.append("Banks/Financial Institutions (due to higher interest rates)")
-    else:
-        losers.append("Consumers (higher loan costs)")
+        winners.append("Banks/Financials (higher yields)")
+    elif us10y_dir == -1:
+        winners.append("Duration assets (growth/tech) if risk sentiment holds")
 
-    # If DXY is up → Dollar strengthens, exporters lose, importers gain
     if dxy_dir == 1:
-        losers.append("Exporters (due to stronger USD)")
-        winners.append("Importers (cheaper foreign goods)")
-    else:
-        winners.append("Exporters (weaker USD helps exports)")
+        winners.append("USD cash / USD assets (strong dollar)")
+        losers.append("EM assets / USD funding-sensitive borrowers")
+    elif dxy_dir == -1:
+        winners.append("EM risk / non-USD assets (weaker dollar)")
 
-    # If WTI is up → Oil prices rise, oil producers benefit
     if wti_dir == 1:
-        winners.append("Oil Producers (higher oil prices)")
-        losers.append("Consumers (due to higher energy costs)")
-    else:
-        winners.append("Consumers (lower energy prices)")
-        losers.append("Oil Producers (lower oil prices)")
+        winners.append("Oil producers / energy sector")
+        losers.append("Energy consumers (cost pressure)")
+    elif wti_dir == -1:
+        winners.append("Energy consumers (cost relief)")
+        losers.append("Oil producers (price pressure)")
 
-    # If all indicators are in a risk-off direction
-    if not winners:
-        incentive_status = "Risk-off: No clear beneficiaries"
-    else:
-        incentive_status = "Beneficiaries identified"
-
-    # Generating the output
     lines = []
-    lines.append("### 💸 7) Incentive Filter")
+    lines.append("### 💸 8) Incentive Filter")
     lines.append("- **질문:** 누가 이득을 보고 있는가?")
-    lines.append(f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / WTI({_dir_str(wti_dir)})")
-    lines.append(f"- **판정:** **{incentive_status}**")
-    lines.append("- **이득을 보는 주체:**")
+    lines.append(
+        f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / WTI({_dir_str(wti_dir)})"
+    )
+    lines.append("- **이득:**")
     if winners:
-        for winner in winners:
-            lines.append(f"  - {winner}")
+        for w in winners:
+            lines.append(f"  - {w}")
     else:
         lines.append("  - None")
-    lines.append("- **손해를 보는 주체:**")
+    lines.append("- **손해:**")
     if losers:
-        for loser in losers:
-            lines.append(f"  - {loser}")
+        for l in losers:
+            lines.append(f"  - {l}")
     else:
         lines.append("  - None")
 
     return "\n".join(lines)
+
 
 def cause_filter(market_data: Dict[str, Any]) -> str:
     """
-    Cause Filter (v0.3-4)
-    Answers: What caused the market movement?
-    Analyzes key factors like US10Y, DXY, and WTI to identify the main causes of the market movement.
-    **추가 이유:** 이 움직임이 나온 직접 이유를 파악하기 위함
+    Cause Filter
+    무엇이 움직임을 만들었나? (신호 요약)
     """
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
@@ -607,149 +570,101 @@ def cause_filter(market_data: Dict[str, Any]) -> str:
     wti_dir = _sign_from(wti)
     vix_dir = _sign_from(vix)
 
-    # Determining the cause of the movement
-    cause = ""
+    parts = []
     if us10y_dir == 1:
-        cause += "금리 상승(US10Y 상승) "
+        parts.append("금리↑")
     elif us10y_dir == -1:
-        cause += "금리 하락(US10Y 하락) "
+        parts.append("금리↓")
 
     if dxy_dir == 1:
-        cause += "달러 강세(DXY 상승) "
+        parts.append("달러↑")
     elif dxy_dir == -1:
-        cause += "달러 약세(DXY 하락) "
+        parts.append("달러↓")
 
     if wti_dir == 1:
-        cause += "유가 상승(WTI 상승) "
+        parts.append("유가↑")
     elif wti_dir == -1:
-        cause += "유가 하락(WTI 하락) "
+        parts.append("유가↓")
 
     if vix_dir == 1:
-        cause += "변동성 증가(VIX 상승) "
+        parts.append("VIX↑")
     elif vix_dir == -1:
-        cause += "변동성 감소(VIX 하락) "
+        parts.append("VIX↓")
 
-    # Final statement for the cause
-    if cause == "":
-        cause = "원인 불명"
-    
+    cause = " / ".join(parts) if parts else "원인 불명(보합/혼조)"
+
     lines = []
-    lines.append("### 🔍 8) Cause Filter")
+    lines.append("### 🔍 9) Cause Filter")
     lines.append("- **질문:** 무엇이 이 시장 움직임을 일으켰는가?")
-    lines.append(f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / WTI({_dir_str(wti_dir)}) / VIX({_dir_str(vix_dir)})")
+    lines.append(
+        f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / WTI({_dir_str(wti_dir)}) / VIX({_dir_str(vix_dir)})"
+    )
     lines.append(f"- **판정:** **{cause}**")
-    lines.append("- **이유:** 직접적인 원인 파악")
-
     return "\n".join(lines)
+
 
 def direction_filter(market_data: Dict[str, Any]) -> str:
     """
-    Direction Filter (v0.3-5)
-    Answers: How much has the market moved? 
-    Analyzes key assets and their movement to determine if it's noise or meaningful movement.
-    **추가 이유:** 숫자가 어느 방향으로, 얼마나 움직였는가 즉 변화폭이 작은 ‘노이즈’야, 인지 '의미 있는 움직임' 인지를 파악하기위함
+    Direction Filter
+    노이즈인가, 의미있는 움직임인가?
     """
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
     wti = _get_series(market_data, "WTI")
     vix = _get_series(market_data, "VIX")
 
-    # Calculate the direction and strength of each asset
-    us10y_dir = _sign_from(us10y)
-    dxy_dir = _sign_from(dxy)
-    wti_dir = _sign_from(wti)
-    vix_dir = _sign_from(vix)
-
-    # Calculate strength labels based on pct_change
     us10y_strength = _strength_label("US10Y", us10y.get("pct_change"))
     dxy_strength = _strength_label("DXY", dxy.get("pct_change"))
     wti_strength = _strength_label("WTI", wti.get("pct_change"))
     vix_strength = _strength_label("VIX", vix.get("pct_change"))
 
-    # Combine the information into a narrative
-    direction_info = f"US10Y({us10y_strength}, {_dir_str(us10y_dir)}) / DXY({dxy_strength}, {_dir_str(dxy_dir)}) / " \
-                     f"WTI({wti_strength}, {_dir_str(wti_dir)}) / VIX({vix_strength}, {_dir_str(vix_dir)})"
+    state = "NOISE / SMALL MOVE (노이즈 가능)"
+    rationale = "핵심 지표 변동 폭이 작음"
 
-    # Default state
-    state = "NO MOVEMENT"
-    rationale = "변화가 미미한 '노이즈' 또는 '의미 있는 변화'인지 분석 중"
+    if us10y_strength in ("Clear", "Strong") or dxy_strength in ("Clear", "Strong"):
+        state = "SIGNIFICANT MOVE (의미 있는 움직임)"
+        rationale = "금리/달러 변동이 뚜렷함"
+    elif wti_strength in ("Clear", "Strong") or vix_strength in ("Clear", "Strong"):
+        state = "SIGNIFICANT MOVE (의미 있는 움직임)"
+        rationale = "유가/VIX 변동이 뚜렷함"
 
-    # Identify meaningful movements
-    if us10y_strength in ["Clear", "Strong"] or dxy_strength in ["Clear", "Strong"]:
-        state = "SIGNIFICANT MOVEMENT (의미 있는 움직임)"
-        rationale = "금리나 달러의 변동이 크고 뚜렷함"
-    elif wti_strength in ["Clear", "Strong"] or vix_strength in ["Clear", "Strong"]:
-        state = "SIGNIFICANT MOVEMENT (의미 있는 움직임)"
-        rationale = "유가나 변동성의 변화가 큰 경우"
-    
     lines = []
-    lines.append("### 🔄 9) Direction Filter")
+    lines.append("### 🔄 10) Direction Filter")
     lines.append("- **질문:** 시장이 어느 방향으로, 얼마나 움직였는가?")
-    lines.append(f"- **핵심 신호:** {direction_info}")
+    lines.append(
+        f"- **강도:** US10Y({us10y_strength}) / DXY({dxy_strength}) / WTI({wti_strength}) / VIX({vix_strength})"
+    )
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
-
-
-
     return "\n".join(lines)
+
 
 def timing_filter(market_data: Dict[str, Any]) -> str:
     """
-    Timing Filter (v0.3-6)
-    Answers: When is the key signal most important? 
-    Analyzes short-term, medium-term, and long-term trends.
-    **추가 이유:** 시장 변화가 단기, 중기, 장기 관점에서 어떤 영향을 미치는지 파악하기 위해
+    Timing Filter
+    단기/중기/장기 중 어떤 프레임이 중요한가?
+    (현재는 단순 표시용. 추후 rolling/MA로 확장 추천)
     """
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
     vix = _get_series(market_data, "VIX")
 
-    # Extracting short-term, medium-term, and long-term trends
-    short_term_us10y = us10y["pct_change"]
-    medium_term_us10y = us10y["prev"]
-    long_term_us10y = us10y["today"]
-
-    short_term_dxy = dxy["pct_change"]
-    medium_term_dxy = dxy["prev"]
-    long_term_dxy = dxy["today"]
-
-    short_term_vix = vix["pct_change"]
-    medium_term_vix = vix["prev"]
-    long_term_vix = vix["today"]
-
-    # Default state
-    state = "NO SIGNIFICANT MOVEMENT"
-    rationale = "단기, 중기, 장기적으로 시장 변화가 균일하게 발생하고 있음"
-
-    # Define thresholds for different timeframes
-    if short_term_us10y > 0.02 and medium_term_us10y > 0.05 and long_term_us10y > 0.1:
-        state = "LONG-TERM RISK TREND (장기적 위험 신호)"
-        rationale = "금리가 계속해서 상승하고 있으며, 장기적인 리스크가 확대되고 있음"
-    
-    elif short_term_dxy < -0.03 and medium_term_dxy < -0.07 and long_term_dxy < -0.1:
-        state = "DOLLAR WEAKNESS TREND (달러 약세)"
-        rationale = "달러가 약세를 지속하고 있어, 리스크 선호가 높아지고 있음"
-
-    elif short_term_vix > 1.2 and medium_term_vix > 1.5 and long_term_vix > 2.0:
-        state = "HIGH VOLATILITY (고변동성)"
-        rationale = "변동성이 지속적으로 확대되고 있으며, 시장의 불확실성이 커지고 있음"
-
     lines = []
-    lines.append("### ⏳ 10) Timing Filter")
-    lines.append("- **질문:** 시장 변화가 단기, 중기, 장기 관점에서 어떤 영향을 미치는지?")
-    lines.append(f"- **핵심 신호:** US10Y({short_term_us10y:.2f}% short-term, {medium_term_us10y:.2f}% medium-term, {long_term_us10y:.2f}% long-term) / "
-                 f"DXY({short_term_dxy:.2f}% short-term, {medium_term_dxy:.2f}% medium-term, {long_term_dxy:.2f}% long-term) / "
-                 f"VIX({short_term_vix:.2f}% short-term, {medium_term_vix:.2f}% medium-term, {long_term_vix:.2f}% long-term)")
-    lines.append(f"- **판정:** **{state}**")
-    lines.append(f"- **근거:** {rationale}")
-
+    lines.append("### ⏳ 11) Timing Filter")
+    lines.append("- **질문:** 이 신호는 단기/중기/장기 중 어디에 더 영향이 큰가?")
+    lines.append(
+        f"- **단기 변화(pct):** US10Y({_fmt_num(us10y.get('pct_change'), 2)}%) / "
+        f"DXY({_fmt_num(dxy.get('pct_change'), 2)}%) / "
+        f"VIX({_fmt_num(vix.get('pct_change'), 2)}%)"
+    )
+    lines.append("- **메모:** 장기 프레임 분석은 추후 이동평균/추세선으로 확장 권장")
     return "\n".join(lines)
+
 
 def structural_filter(market_data: Dict[str, Any]) -> str:
     """
-    Structural Filter (v0.3-8)
-    Answers: How does this change connect to the global economic structure or power dynamics?
-    **추가 이유:** 시장 변화가 글로벌 경제 구조나 패권 구조와 어떻게 연결되는지 파악하기 위해
+    Structural Filter
+    이 변화가 글로벌 구조(성장/패권/수요)와 어떻게 연결되는가?
     """
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
@@ -761,37 +676,25 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
     vix_dir = _sign_from(vix)
     wti_dir = _sign_from(wti)
 
-    # Default state
     state = "NEUTRAL"
-    rationale = "세계 경제 구조와의 상관관계가 명확하지 않음"
+    rationale = "세계 경제 구조와의 연결이 뚜렷하지 않음"
 
-    # Structural impact example
     if us10y_dir == 1 and dxy_dir == 1:
-        state = "TIGHTENING GLOBAL STRUCTURE (글로벌 긴축)"
-        rationale = "금리 상승과 달러 강세는 글로벌 금융 긴축을 예고하며, 신흥국 및 자산 시장에 큰 영향을 미침"
-
+        state = "GLOBAL TIGHTENING (글로벌 긴축 구조)"
+        rationale = "금리↑ + 달러↑ → 신흥국/레버리지/리스크자산 부담 확대"
     elif wti_dir == -1 and vix_dir == 1:
-        state = "WEAK GLOBAL DEMAND / RISK-OFF (세계 수요 약화 / 리스크 회피)"
-        rationale = "유가 하락과 변동성 확대는 세계 경제 성장 둔화와 리스크 회피 성향을 강화함"
+        state = "WEAK DEMAND / RISK-OFF"
+        rationale = "유가↓ + 변동성↑ → 수요 둔화 우려와 회피 심리 확대"
 
     lines = []
-    lines.append("### 🏗️ 11) Structural Filter")
-    lines.append("- **질문:** 이 변화가 글로벌 경제 구조나 패권 구조와 어떻게 연결되는지?")
+    lines.append("### 🏗️ 12) Structural Filter")
+    lines.append("- **질문:** 이 변화가 글로벌 경제 구조/패권 구조와 어떻게 연결되는가?")
     lines.append(
-        f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / "
-        f"DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)}) / "
-        f"WTI({_dir_str(wti_dir)})"
+        f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)}) / WTI({_dir_str(wti_dir)})"
     )
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
-
     return "\n".join(lines)
-
-
-
-
-
-
 
 
 # =========================
@@ -804,11 +707,11 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(liquidity_filter(market_data))
     sections.append("")
+    sections.append(fed_plumbing_filter(market_data))  # ✅ NEW
+    sections.append("")
     sections.append(policy_filter(market_data))
     sections.append("")
     sections.append(legacy_directional_filters(market_data))
-    sections.append("")
-    sections.append(fed_plumbing_filter(market_data))
     sections.append("")
     sections.append(cross_asset_filter(market_data))
     sections.append("")
@@ -823,11 +726,4 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(timing_filter(market_data))
     sections.append("")
     sections.append(structural_filter(market_data))
-    sections.append("")
-    sections.append(liquidity_filter(market_data))
-    sections.append("")
-    sections.append(liquidity_plumbing_filter(market_data))
-    sections.append("")
-    sections.append(policy_filter(market_data))
-
     return "\n".join(sections)
