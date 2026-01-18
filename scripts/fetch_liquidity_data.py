@@ -1,1 +1,60 @@
+name: Daily Macro Report
 
+on:
+  workflow_dispatch:   # 수동 실행 버튼
+  schedule:
+    # 매일 UTC 22:00 → 한국시간 오전 7시
+    - cron: "0 22 * * *"
+
+permissions:
+  contents: write   # 🔥 자동 커밋/푸시를 위해 필수
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ 레포 체크아웃
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ 파이썬 세팅
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3️⃣ 라이브러리 설치
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # requirements.txt 파일에 명시된 모든 라이브러리 설치
+
+      # 4️⃣ 디렉토리 보장 (💥 이거 안 하면 에러남)
+      - name: Ensure required directories exist
+        run: |
+          mkdir -p reports
+          mkdir -p data
+
+      # 5️⃣ 데일리 리포트 생성
+      - name: Run report generator
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/generate_report.py
+      
+      # 6️⃣ 결과 자동 커밋 & 푸시
+      - name: Commit and push report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add reports/*.md || true
+
+          # 변경 없으면 커밋 안 함
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: auto-generate daily macro report"
+          git push
