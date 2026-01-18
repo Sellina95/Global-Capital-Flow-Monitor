@@ -49,6 +49,24 @@ def load_macro_df() -> pd.DataFrame:
 
     return df
 
+def load_liquidity_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "liquidity_data.csv"
+    if not csv_path.exists():
+        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+
+    df = pd.read_csv(csv_path)
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
+def get_latest_liquidity_pair(liq_df: pd.DataFrame, as_of_date: pd.Timestamp):
+    # as_of_date 이하에서 최신 2개 row를 가져와 today/prev 구성
+    sub = liq_df[liq_df["date"] <= as_of_date].copy()
+    if len(sub) < 2:
+        return None, None
+    return sub.iloc[-1], sub.iloc[-2]
+
+
 
 def build_market_data(today_row: pd.Series, prev_row: pd.Series) -> dict:
     market_data = {}
@@ -71,6 +89,22 @@ def generate_daily_report() -> None:
 
     as_of_date = today_row["date"].strftime("%Y-%m-%d")
     market_data = build_market_data(today_row, prev_row)
+        # ---- Liquidity Layer (TGA/RRP/NET_LIQ) ----
+    liq_df = load_liquidity_df()
+    liq_today, liq_prev = get_latest_liquidity_pair(liq_df, pd.to_datetime(today_row["date"]))
+
+    def add_liq_key(key: str, today_val, prev_val):
+        if today_val is None or prev_val is None:
+            return
+        today_val = float(today_val)
+        prev_val = float(prev_val)
+        pct = 0.0 if prev_val == 0 else ((today_val - prev_val) / prev_val) * 100.0
+        market_data[key] = {"today": today_val, "prev": prev_val, "pct_change": pct}
+
+    if liq_today is not None and liq_prev is not None:
+        add_liq_key("TGA", liq_today.get("TGA"), liq_prev.get("TGA"))
+        add_liq_key("RRP", liq_today.get("RRP"), liq_prev.get("RRP"))
+        add_liq_key("NET_LIQ", liq_today.get("NET_LIQ"), liq_prev.get("NET_LIQ"))
 
     # 경제 데이터 가져오기
     us10y_data, vix_data, dxy_data = fetch_economic_data()
@@ -90,6 +124,11 @@ def generate_daily_report() -> None:
     lines.append(f"- **WTI 유가**: {market_data['WTI']['today']:.3f}  ({market_data['WTI']['pct_change']:+.2f}% vs {market_data['WTI']['prev']:.3f})")
     lines.append(f"- **변동성 지수 (VIX)**: {market_data['VIX']['today']:.3f}  ({market_data['VIX']['pct_change']:+.2f}% vs {market_data['VIX']['prev']:.3f})")
     lines.append(f"- **원/달러 환율**: {market_data['USDKRW']['today']:.3f}  ({market_data['USDKRW']['pct_change']:+.2f}% vs {market_data['USDKRW']['prev']:.3f})")
+        if "TGA" in market_data:
+        lines.append(f"- **TGA(연준 금고 현금)**: {market_data['TGA']['today']:.1f}  ({market_data['TGA']['pct_change']:+.2f}% vs {market_data['TGA']['prev']:.1f})")
+    if "RRP" in market_data:
+        lines.append(f"- **RRP(연준 역레포)**: {market_data['RRP']['today']:.1f}  ({market_data['RRP']['pct_change']:+.2f}% vs {market_data['RRP']['prev']:.1f})")
+
     lines.append("")
     lines.append("---")
     lines.append("")
