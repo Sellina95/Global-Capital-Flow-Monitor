@@ -808,6 +808,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(legacy_directional_filters(market_data))
     sections.append("")
+    sections.append(fed_plumbing_filter(market_data))
+    sections.append("")
     sections.append(cross_asset_filter(market_data))
     sections.append("")
     sections.append(risk_exposure_filter(market_data))
