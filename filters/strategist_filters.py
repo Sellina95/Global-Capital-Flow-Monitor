@@ -332,7 +332,8 @@ def fed_plumbing_filter(market_data: Dict[str, Any]) -> str:
     # ✅ generate_report.py: "_LIQ_ASOF"
     # ✅ legacy/other: "LIQUIDITY_ASOF"
     as_of = None
-    raw_as_of = market_data.get("_LIQ_ASOF") or market_data.get("LIQUIDITY_ASOF")
+    raw_as_of = market_data.get("_LIQ_ASOF")
+
     if isinstance(raw_as_of, str) and raw_as_of.strip():
         as_of = raw_as_of.strip()
 
