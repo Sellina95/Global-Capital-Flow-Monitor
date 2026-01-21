@@ -173,8 +173,8 @@ def generate_daily_report() -> None:
     market_data = build_market_data(today_row, prev_row)
 
     # ✅ attach liquidity (last available)
-    market_data = attach_liquidity_layer(market_data)
-
+ 
+    market_data = attach_liquidity_layer(market_data) or market_data
     # ✅ regime change monitor
     regime_result = check_regime_change_and_alert(market_data, as_of_date)
 
@@ -182,8 +182,12 @@ def generate_daily_report() -> None:
     market_data = attach_liquidity_layer(market_data)
 
     # ✅ attach HY OAS spread (last available)
-    market_data = attach_credit_spread_layer(market_data)
+ 
+    market_data = attach_credit_spread_layer(market_data) or market_data
 
+    # ✅ 최종 방탄: 혹시라도 None이면 dict로 복구
+    if market_data is None:
+    market_data = {}
 
     # ---- Report ----
     lines = []
