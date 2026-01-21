@@ -102,6 +102,47 @@ def attach_liquidity_layer(market_data: dict) -> dict:
     market_data["_LIQ_ASOF"] = liq_asof
 
     liq_prev = liq_df.iloc[-2] if len(liq_df) >= 2 else None
+def load_credit_spread_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "credit_spread_data.csv"
+    if not csv_path.exists():
+        return pd.DataFrame(columns=["date", "HY_OAS"])
+
+    df = pd.read_csv(csv_path)
+    if df.empty:
+        return pd.DataFrame(columns=["date", "HY_OAS"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
+
+def attach_credit_spread_layer(market_data: dict) -> dict:
+    """
+    Attach HY_OAS (FRED last available) into market_data.
+    - Adds: HY_OAS = {today, prev, pct_change}
+    - Adds meta: _HY_ASOF = 'YYYY-MM-DD'
+    """
+    df = load_credit_spread_df()
+    if df.empty:
+        market_data["_HY_ASOF"] = None
+        return market_data
+
+    today_row = df.iloc[-1]
+    asof = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
+    market_data["_HY_ASOF"] = asof
+
+    prev_row = df.iloc[-2] if len(df) >= 2 else None
+
+    today_val = float(today_row.get("HY_OAS"))
+    if prev_row is None:
+        market_data["HY_OAS"] = {"today": today_val, "prev": None, "pct_change": None}
+        return market_data
+
+    prev_val = float(prev_row.get("HY_OAS"))
+    pct = 0.0 if prev_val == 0 else ((today_val - prev_val) / prev_val) * 100.0
+    market_data["HY_OAS"] = {"today": today_val, "prev": prev_val, "pct_change": pct}
+    return market_data
+
 
     def add_liq_key(key: str, today_val, prev_val):
         if today_val is None or pd.isna(today_val):
@@ -136,6 +177,13 @@ def generate_daily_report() -> None:
 
     # ✅ regime change monitor
     regime_result = check_regime_change_and_alert(market_data, as_of_date)
+
+    # ✅ attach liquidity (last available)
+    market_data = attach_liquidity_layer(market_data)
+
+    # ✅ attach HY OAS spread (last available)
+    market_data = attach_credit_spread_layer(market_data)
+
 
     # ---- Report ----
     lines = []
