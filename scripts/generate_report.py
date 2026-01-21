@@ -25,7 +25,9 @@ def load_macro_df() -> pd.DataFrame:
         df = pd.read_csv(csv_path)
     else:
         raise FileNotFoundError(f"data 폴더에 macro_data.xlsx 또는 macro_data.csv 가 없습니다: {DATA_DIR}")
-
+    # ✅ 컬럼명 안전장치 (HYG/LQD 인식 문제 방지)
+    df.columns = [str(c).strip() for c in df.columns]
+    
     if df.empty or len(df) < 2:
         raise ValueError("macro_data에 최소 2개 이상의 row가 필요합니다.")
 
