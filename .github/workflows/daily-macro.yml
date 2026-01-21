@@ -43,6 +43,13 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_liquidity_data.py
 
+      # ✅ 하이일드 스프레드(HY OAS) 데이터 업데이트
+      - name: Fetch credit spread data (HY OAS)
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/fetch_credit_spread_data.py
+
+
       # ✅ 3) 리포트 생성
       - name: Run report generator
         run: |
@@ -66,6 +73,8 @@ jobs:
           git add reports/*.md || true
           git add data/macro_data.csv || true
           git add data/liquidity_data.csv || true
+          git add data/credit_spread_data.csv || true
+
 
           if git diff --cached --quiet; then
             echo "No changes to commit"
