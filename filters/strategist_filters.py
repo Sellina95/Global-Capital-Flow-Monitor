@@ -819,11 +819,10 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(fed_plumbing_filter(market_data))
     sections.append("")
-
+    sections.append(high_yield_spread_filter(market_data))
+    sections.append("")
     # ✅ 새 필터 끼워넣기 (Fed Plumbing 다음, Legacy 이전이 제일 자연스러움)
     sections.append(credit_stress_filter(market_data))
-    sections.append("")
-    sections.append(high_yield_spread_filter(market_data))
     sections.append("")
     sections.append(legacy_directional_filters(market_data))
     sections.append("")
