@@ -164,21 +164,7 @@ def generate_daily_report() -> None:
     line_if_exists("HYG", "HYG (High Yield ETF)", 3)
     line_if_exists("LQD", "LQD (IG Bond ETF)", 3)
 
-    # Liquidity summary line (always show as-of if available)
-    liq_asof = market_data.get("_LIQ_ASOF")
-    if liq_asof:
-        tga = market_data.get("TGA", {}).get("today")
-        rrp = market_data.get("RRP", {}).get("today")
-        net = market_data.get("NET_LIQ", {}).get("today")
-        lines.append("")
-        lines.append("## 💧 Liquidity Snapshot (FRED last available)")
-        lines.append(f"- **Liquidity as of**: **{liq_asof}** *(FRED latest)*")
-        if tga is not None:
-            lines.append(f"- **TGA**: {float(tga):.1f}")
-        if rrp is not None:
-            lines.append(f"- **RRP**: {float(rrp):.3f}")
-        if net is not None:
-            lines.append(f"- **NET_LIQ**: {float(net):.1f}")
+
 
     lines.append("")
     lines.append("---")
