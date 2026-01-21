@@ -434,6 +434,70 @@ def credit_stress_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **근거:** {rationale}")
     return "\n".join(lines)
 
+def high_yield_spread_filter(market_data: Dict[str, Any]) -> str:
+    """
+    4.2) High Yield Spread Filter (HY OAS)
+    - HY OAS level = 크레딧 공포의 '온도'
+    - Level이 높을수록: 디폴트/자금조달/리스크 프리미엄 스트레스 ↑
+    """
+    hy = _get_series(market_data, "HY_OAS")
+    asof = market_data.get("_HY_ASOF")
+
+    if hy.get("today") is None:
+        lines = [
+            "### 🌡️ 4.2) High Yield Spread Filter (HY OAS)",
+            "- **질문:** 시장 공포의 ‘온도’는 올라가고 있나, 내려가고 있나?",
+            "- **추가 이유:** HYG/LQD가 ‘방향’이라면, HY Spread는 ‘강도(얼마나 무서워하는지)’를 보여줌",
+            "- **Status:** Not ready (need HY_OAS in market_data)",
+        ]
+        return "\n".join(lines)
+
+    level = float(hy["today"])
+    d = _sign_from(hy)
+    pct = hy.get("pct_change")
+    pct_txt = f"{pct:+.2f}%" if pct is not None else "N/A"
+
+    # ✅ 간단/실무형 레벨 구간 (퍼센트 단위)
+    # (너 프로젝트에 맞춰 추후 조정 가능)
+    if level < 3.0:
+        temp = "COOL (낮은 공포)"
+        base_state = "CREDIT CALM"
+        base_reason = "HY 스프레드 낮음 → 크레딧 스트레스 제한"
+    elif level < 4.0:
+        temp = "WARM (경계)"
+        base_state = "CREDIT WATCH"
+        base_reason = "스프레드 상승 구간 진입 → 리스크 프리미엄 확대 가능"
+    elif level < 6.0:
+        temp = "HOT (스트레스)"
+        base_state = "CREDIT STRESS"
+        base_reason = "스프레드 의미 있게 높음 → 위험자산 변동성↑ 가능"
+    else:
+        temp = "BURNING (위기 수준)"
+        base_state = "CREDIT CRISIS"
+        base_reason = "스프레드 급등 구간 → 디폴트/유동성 경색 우려"
+
+    # 방향까지 반영해 한 줄 더 “온도 해석”을 얹기
+    if d == 1:
+        nuance = "스프레드가 벌어지는 중 → 공포 온도 상승"
+    elif d == -1:
+        nuance = "스프레드가 좁혀지는 중 → 공포 온도 완화"
+    else:
+        nuance = "방향성 제한 → 레벨 중심 해석"
+
+    lines = []
+    lines.append("### 🌡️ 4.2) High Yield Spread Filter (HY OAS)")
+    lines.append("- **질문:** 시장 공포의 ‘온도’는 올라가고 있나, 내려가고 있나?")
+    lines.append("- **추가 이유:** HYG/LQD가 ‘방향’이라면, HY Spread는 ‘강도(얼마나 무서워하는지)’를 보여줌")
+    if asof:
+        lines.append(f"- **Spread as of:** {asof} (FRED latest)")
+    lines.append(f"- **HY_OAS level:** {_fmt_num(level, 2)}% → **{temp}**")
+    lines.append(f"- **방향(전일 대비):** HY_OAS({_dir_str(d)}) / {pct_txt}")
+    lines.append(f"- **판정:** **{base_state}**")
+    lines.append(f"- **근거:** {base_reason} / {nuance}")
+    lines.append("- **Note:** HY OAS는 매일 갱신되지 않을 수 있어, ‘최근 available 값’을 반영함")
+    return "\n".join(lines)
+
+
 
 # =========================
 # 5) Directional signals (legacy)
@@ -759,7 +823,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     # ✅ 새 필터 끼워넣기 (Fed Plumbing 다음, Legacy 이전이 제일 자연스러움)
     sections.append(credit_stress_filter(market_data))
     sections.append("")
-
+    sections.append(high_yield_spread_filter(market_data))
+    sections.append("")
     sections.append(legacy_directional_filters(market_data))
     sections.append("")
     sections.append(cross_asset_filter(market_data))
