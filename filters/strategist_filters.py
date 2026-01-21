@@ -127,6 +127,16 @@ def _strength_label(key: str, pct_change: Optional[float]) -> str:
             return "Clear"
         return "Strong"
 
+    # ✅ ETF류(HYG/LQD 등)는 좀 더 넓게
+    if key in ("HYG", "LQD"):
+        if p < 0.10:
+            return "Noise"
+        if p < 0.40:
+            return "Mild"
+        if p < 0.90:
+            return "Clear"
+        return "Strong"
+
     if p < 0.10:
         return "Noise"
     if p < 0.30:
@@ -320,9 +330,10 @@ def fed_plumbing_filter(market_data: Dict[str, Any]) -> str:
     rrp = _get_series(market_data, "RRP")
     net = _get_series(market_data, "NET_LIQ")
 
-    # as-of label (optional)
+    # ✅ generate_report.py: "_LIQ_ASOF"
+    # ✅ legacy/other: "LIQUIDITY_ASOF"
     as_of = None
-    raw_as_of = market_data.get("LIQUIDITY_ASOF")
+    raw_as_of = market_data.get("_LIQ_ASOF") or market_data.get("LIQUIDITY_ASOF")
     if isinstance(raw_as_of, str) and raw_as_of.strip():
         as_of = raw_as_of.strip()
 
@@ -373,6 +384,58 @@ def fed_plumbing_filter(market_data: Dict[str, Any]) -> str:
 
 
 # =========================
+# 4.5) Credit Stress Filter (HYG vs LQD)
+# =========================
+def credit_stress_filter(market_data: Dict[str, Any]) -> str:
+    """
+    If HYG ↓ and LQD ↑ or → :
+        Credit Stress ↑ (Risk-off warning)
+
+    해석:
+      - 하이일드(저신용) 채권이 약해지고,
+      - IG(우량) 채권은 버티거나 강해지면,
+      → 시장이 '위험을 감수할 이유가 없다'고 판단하며
+        크레딧 리스크를 먼저 줄이는 신호로 해석
+    """
+    hyg = _get_series(market_data, "HYG")
+    lqd = _get_series(market_data, "LQD")
+
+    if hyg["today"] is None or lqd["today"] is None:
+        lines = [
+            "### 🧾 4.5) Credit Stress Filter (HYG vs LQD)",
+            "- **질문:** 크레딧 시장이 먼저 ‘리스크오프’를 말하고 있는가?",
+            "- **추가 이유:** HYG가 LQD보다 약해지면, 시장이 ‘위험을 감수할 이유가 없다’고 판단하기 시작했을 가능성",
+            "- **Status:** Not ready (need HYG & LQD in market_data)",
+        ]
+        return "\n".join(lines)
+
+    hyg_dir = _sign_from(hyg)
+    lqd_dir = _sign_from(lqd)
+
+    state = "CREDIT NEUTRAL"
+    rationale = "HYG/LQD 방향성이 뚜렷하지 않음"
+
+    # 핵심 룰
+    if hyg_dir == -1 and lqd_dir in (0, 1):
+        state = "CREDIT STRESS ↑ (Risk-off warning)"
+        rationale = "하이일드 약세(HYG↓) + 우량채 방어(LQD→/↑) → 위험회피로 크레딧 프리미엄 재평가 가능"
+    elif hyg_dir == 1 and lqd_dir in (0, -1):
+        state = "CREDIT RISK-ON (risk appetite improving)"
+        rationale = "하이일드 강세(HYG↑) + 우량채 약세/보합(LQD→/↓) → 위험선호 회복 가능"
+
+    lines = []
+    lines.append("### 🧾 4.5) Credit Stress Filter (HYG vs LQD)")
+    lines.append("- **질문:** 크레딧 시장이 먼저 ‘리스크오프’를 말하고 있는가?")
+    lines.append("- **추가 이유:** HYG가 LQD보다 약해지면, 시장이 ‘위험을 감수할 이유가 없다’고 판단하기 시작했을 가능성")
+    lines.append(f"- **방향(전일 대비):** HYG({_dir_str(hyg_dir)}) / LQD({_dir_str(lqd_dir)})")
+    lines.append(f"- **HYG:** today {_fmt_num(hyg['today'], 3)} / prev {_fmt_num(hyg['prev'], 3)} / pct {_fmt_num(hyg['pct_change'], 2)}%")
+    lines.append(f"- **LQD:** today {_fmt_num(lqd['today'], 3)} / prev {_fmt_num(lqd['prev'], 3)} / pct {_fmt_num(lqd['pct_change'], 2)}%")
+    lines.append(f"- **판정:** **{state}**")
+    lines.append(f"- **근거:** {rationale}")
+    return "\n".join(lines)
+
+
+# =========================
 # 5) Directional signals (legacy)
 # =========================
 def legacy_directional_filters(market_data: Dict[str, Any]) -> str:
@@ -400,6 +463,8 @@ def legacy_directional_filters(market_data: Dict[str, Any]) -> str:
     lines.append(line("WTI", "WTI", "인플레 재자극 가능성", "물가 부담 완화", "유가 보합(물가 변수 제한)"))
     lines.append(line("VIX", "VIX", "심리 악화/리스크오프", "심리 개선/리스크온", "변동성 보합(심리 변화 제한)"))
     lines.append(line("USDKRW", "원/달러(USDKRW)", "원화 약세/수급 부담", "원화 강세/수급 개선", "환율 보합(수급 압력 제한)"))
+    lines.append(line("HYG", "HYG (High Yield ETF)", "크레딧 위험선호↑", "크레딧 스트레스↑", "보합(크레딧 변화 제한)"))
+    lines.append(line("LQD", "LQD (IG Bond ETF)", "우량채 강세(리스크오프 성향)", "우량채 약세(리스크온 성향)", "보합(방향성 제한)"))
     return "\n".join(lines)
 
 
@@ -407,9 +472,6 @@ def legacy_directional_filters(market_data: Dict[str, Any]) -> str:
 # 6) Cross-Asset Filter
 # =========================
 def cross_asset_filter(market_data: Dict[str, Any]) -> str:
-    """
-    한 자산의 변화가 다른 자산군에 어떻게 전파되는지(연쇄효과) 요약
-    """
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
     wti = _get_series(market_data, "WTI")
@@ -693,6 +755,11 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(fed_plumbing_filter(market_data))
     sections.append("")
+
+    # ✅ 새 필터 끼워넣기 (Fed Plumbing 다음, Legacy 이전이 제일 자연스러움)
+    sections.append(credit_stress_filter(market_data))
+    sections.append("")
+
     sections.append(legacy_directional_filters(market_data))
     sections.append("")
     sections.append(cross_asset_filter(market_data))
