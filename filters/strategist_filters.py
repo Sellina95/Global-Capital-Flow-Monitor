@@ -16,12 +16,10 @@ def _to_float(x: Any) -> Optional[float]:
 
 
 def _get_series(market_data: Dict[str, Any], key: str) -> Dict[str, Any]:
-    """
-    Normalize input to dict with today/prev/pct_change/delta.
-    market_data[key] can be:
-      - float (today only)
-      - dict: {"today": ..., "prev": ..., "pct_change": ...}
-    """
+    # ✅ 방탄: market_data가 None으로 들어와도 죽지 않게
+    if market_data is None:
+        market_data = {}
+
     raw = market_data.get(key)
 
     if isinstance(raw, dict):
@@ -39,6 +37,7 @@ def _get_series(market_data: Dict[str, Any], key: str) -> Dict[str, Any]:
 
     today = _to_float(raw)
     return {"today": today, "prev": None, "pct_change": None, "delta": None}
+
 
 
 def _sign_from(series: Dict[str, Any]) -> int:
