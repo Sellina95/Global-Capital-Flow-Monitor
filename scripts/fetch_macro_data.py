@@ -1,88 +1,90 @@
+# scripts/fetch_macro_data.py
+from __future__ import annotations
+
 import os
-import pandas as pd
-import yfinance as yf
+from pathlib import Path
 from datetime import datetime
 
-# ===== 1. 경로 설정 =====
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-CSV_PATH = os.path.join(DATA_DIR, "macro_data.csv")
+import pandas as pd
+import yfinance as yf
 
-os.makedirs(DATA_DIR, exist_ok=True)
 
-# ===== 2. 데이터 가져오기 =====
+# ===== 1) Paths =====
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
+CSV_PATH = DATA_DIR / "macro_data.csv"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# ===== 2) Tickers =====
 INDICATORS = {
-    "US10Y": "^TNX",      # 미국 10년물 (주의: 경우에 따라 42.95 형태로 올 수 있음)
-    "DXY": "DX-Y.NYB",    # 달러 인덱스
-    "WTI": "CL=F",        # 유가
-    "VIX": "^VIX",        # 변동성
-    "USDKRW": "KRW=X",    # 원/달러
-    "HYG": "HYG",         # High Yield bond ETF (가격)
-    "LQD": "LQD",         # Investment Grade bond ETF (가격)
+    "US10Y": "^TNX",      # US 10Y yield (Yahoo: TNX is yield*10; you already handle as-is)
+    "DXY": "DX-Y.NYB",    # Dollar Index
+    "WTI": "CL=F",        # WTI Crude
+    "VIX": "^VIX",        # VIX
+    "USDKRW": "KRW=X",    # USD/KRW
+    # (추가 지표가 있으면 여기만 늘리면 됨: "HYG": "HYG", "LQD": "LQD" ...)
 }
 
-def fetch_macro_data():
-    results = {}
+def _extract_last_close(hist: pd.DataFrame, ticker: str) -> float:
+    """
+    yfinance 결과가 어떤 형태로 와도 마지막 Close 값을 'float 1개'로 확정해서 반환.
+    """
+    if hist is None or hist.empty:
+        raise ValueError(f"{ticker}: empty history")
+
+    if "Close" not in hist.columns:
+        raise ValueError(f"{ticker}: 'Close' column missing. cols={list(hist.columns)}")
+
+    close = hist["Close"]
+
+    # Case A) close가 Series인 경우 (정상)
+    if isinstance(close, pd.Series):
+        val = close.dropna().iloc[-1]
+        return float(val)
+
+    # Case B) close가 DataFrame인 경우 (멀티 인덱스/특이 케이스)
+    if isinstance(close, pd.DataFrame):
+        last_row = close.dropna(how="all").iloc[-1]   # Series
+        # 여러 컬럼이면 첫 번째 유효값을 선택
+        for v in last_row.tolist():
+            if pd.notna(v):
+                return float(v)
+        raise ValueError(f"{ticker}: Close row exists but all NaN")
+
+    # Case C) 예상 밖 타입
+    raise TypeError(f"{ticker}: unexpected Close type: {type(close)}")
+
+
+def fetch_macro_data() -> dict:
+    results: dict[str, float] = {}
+
     for name, ticker in INDICATORS.items():
         print(f"Fetching {name} ({ticker}) ...")
-        df = yf.download(ticker, period="2d", progress=False)
 
-        if df.empty or "Close" not in df.columns:
-            raise ValueError(f"No data returned for {name} ({ticker})")
-
-        last_close = df["Close"].dropna().iloc[-1]
-        value = float(last_close)
-
-        # ✅ US10Y 보정: ^TNX가 42.95처럼 오면 4.295로 변환
-        if name == "US10Y" and value > 20:
-            value = value / 10.0
+        # yf.download보다 Ticker().history가 단일 티커에서 더 안정적임
+        hist = yf.Ticker(ticker).history(period="5d")  # 최근 5영업일에서 마지막 값
+        value = _extract_last_close(hist, ticker)
 
         results[name] = value
         print(f"  → {name}: {value}")
+
     return results
 
-def safe_append_row(row: dict):
-    """
-    CSV 컬럼이 늘어날 때(예: HYG/LQD 추가) CSV가 깨지지 않도록:
-    - 기존 파일이 있으면 읽어서 컬럼 union
-    - 새 row를 append
-    - 전체를 다시 저장(헤더 포함)
-    """
-    new_df = pd.DataFrame([row])
 
-    if not os.path.isfile(CSV_PATH) or os.path.getsize(CSV_PATH) == 0:
-        new_df.to_csv(CSV_PATH, index=False)
-        print(f"\n✅ Created {CSV_PATH}")
-        print(new_df)
-        return
+def append_to_csv(values: dict) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    row = {"datetime": now}
+    row.update(values)
 
-    old_df = pd.read_csv(CSV_PATH)
+    df_row = pd.DataFrame([row])
 
-    # 컬럼 union
-    for c in new_df.columns:
-        if c not in old_df.columns:
-            old_df[c] = pd.NA
-    for c in old_df.columns:
-        if c not in new_df.columns:
-            new_df[c] = pd.NA
+    file_exists = CSV_PATH.exists()
+    df_row.to_csv(CSV_PATH, mode="a", index=False, header=not file_exists)
 
-    # 컬럼 순서: 기존 순서 유지 + 새 컬럼은 뒤로
-    new_df = new_df[old_df.columns]
+    print(f"\n✅ Saved row to {CSV_PATH}")
+    print(df_row)
 
-    combined = pd.concat([old_df, new_df], ignore_index=True)
-
-    # datetime 정리
-    if "datetime" in combined.columns:
-        combined["datetime"] = pd.to_datetime(combined["datetime"], errors="coerce")
-        combined = combined.dropna(subset=["datetime"]).sort_values("datetime").reset_index(drop=True)
-        combined["datetime"] = combined["datetime"].dt.strftime("%Y-%m-%d %H:%M:%S")
-
-    combined.to_csv(CSV_PATH, index=False)
-    print(f"\n✅ Updated {CSV_PATH} (rows={len(combined)})")
-    print(new_df)
 
 if __name__ == "__main__":
     vals = fetch_macro_data()
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    row = {"datetime": now, **vals}
-    safe_append_row(row)
+    append_to_csv(vals)
