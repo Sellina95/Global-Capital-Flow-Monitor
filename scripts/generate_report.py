@@ -64,6 +64,56 @@ def load_macro_df() -> pd.DataFrame:
     return df
 
 
+def load_fred_extras_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "fred_macro_extras.csv"
+    if not csv_path.exists():
+        return pd.DataFrame(columns=["date", "FCI", "REAL_RATE"])
+
+    df = pd.read_csv(csv_path)
+    if df.empty:
+        return pd.DataFrame(columns=["date", "FCI", "REAL_RATE"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
+
+def attach_fred_extras_layer(market_data: dict) -> dict:
+    """
+    Attach FCI & REAL_RATE using FRED 'last available' values.
+    Adds meta:
+      - _FCI_ASOF, _REAL_ASOF (same as last row date)
+    Adds series:
+      - FCI, REAL_RATE as {today, prev, pct_change}
+    """
+    df = load_fred_extras_df()
+    if df.empty:
+        market_data["_FCI_ASOF"] = None
+        market_data["_REAL_ASOF"] = None
+        return market_data
+
+    today_row = df.iloc[-1]
+    asof = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
+    market_data["_FCI_ASOF"] = asof
+    market_data["_REAL_ASOF"] = asof
+
+    prev_row = df.iloc[-2] if len(df) >= 2 else None
+
+    def add_key(key: str):
+        today_val = float(today_row.get(key))
+        if prev_row is None:
+            market_data[key] = {"today": today_val, "prev": None, "pct_change": None}
+            return
+        prev_val = float(prev_row.get(key))
+        pct = 0.0 if prev_val == 0 else ((today_val - prev_val) / prev_val) * 100.0
+        market_data[key] = {"today": today_val, "prev": prev_val, "pct_change": pct}
+
+    add_key("FCI")
+    add_key("REAL_RATE")
+    return market_data
+
+
+
 def load_liquidity_df() -> pd.DataFrame:
     csv_path = DATA_DIR / "liquidity_data.csv"
     if not csv_path.exists():
@@ -246,6 +296,7 @@ def generate_daily_report() -> None:
     # Attach layers (never allow None overwrite)
     market_data = attach_liquidity_layer(market_data) or market_data
     market_data = attach_credit_spread_layer(market_data) or market_data
+    market_data = attach_fred_extras_layer(market_data)
 
     # ✅ regime change monitor
     regime_result = check_regime_change_and_alert(market_data, as_of_date)
