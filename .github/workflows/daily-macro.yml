@@ -48,6 +48,12 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_credit_spread_data.py
+          
+      # (추가) FRED 금융여건/실질금리 데이터 업데이트
+      - name: Fetch FRED macro extras (FCI / Real Rates)
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/fetch_fred_macro_extras.py
 
 
       # ✅ 3) 리포트 생성
