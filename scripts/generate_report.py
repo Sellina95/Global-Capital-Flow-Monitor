@@ -63,19 +63,6 @@ def load_macro_df() -> pd.DataFrame:
     return df
 
 
-def load_fred_extras_df() -> pd.DataFrame:
-    csv_path = DATA_DIR / "fred_macro_extras.csv"
-    if not csv_path.exists():
-        return pd.DataFrame(columns=["date", "FCI", "REAL_RATE"])
-
-    df = pd.read_csv(csv_path)
-    if df.empty:
-        return pd.DataFrame(columns=["date", "FCI", "REAL_RATE"])
-
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
-    return df
-
 
 def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
