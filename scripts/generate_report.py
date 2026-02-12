@@ -9,7 +9,6 @@ from filters.strategist_filters import policy_filter_with_expectations
 from scripts.risk_alerts import check_regime_change_and_alert
 from scripts.fetch_expectation_data import fetch_expectation_data  # external expectations
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 REPORTS_DIR = BASE_DIR / "reports"
