@@ -17,29 +17,7 @@ SERIES = {
     "WALCL": "WALCL",     # Fed Total Assets (Millions of $) - weekly
 }
 
-def fetch_fred(series_id: str) -> pd.DataFrame:
-    """Fetch a FRED series via CSV download (no API key) and return clean dataframe."""
-    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-    
-    attempt = 1
-    max_attempts = 3
-    while attempt <= max_attempts:
-        try:
-            print(f"Attempt {attempt}/{max_attempts} fetching {series_id}...")
-            df = pd.read_csv(url)
-            # FRED CSV format: DATE,<SERIESID>
-            df.columns = ["date", series_id]
-            df["date"] = pd.to_datetime(df["date"], errors="coerce")
-            df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
-            df = df.dropna(subset=["date", series_id]).sort_values("date").reset_index(drop=True)
-            return df
-        except Exception as e:
-            print(f"Attempt {attempt} failed. Error: {e}")
-            if attempt < max_attempts:
-                print("Retrying in 5 seconds...")
-                time.sleep(5)  # 5초 대기 후 재시도
-            attempt += 1
-    raise Exception(f"Failed to fetch {series_id} after {max_attempts} attempts.")
+
     
 
 def safe_read_existing(csv_path: Path) -> pd.DataFrame:
