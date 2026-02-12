@@ -379,44 +379,54 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
 # =========================
 # 3) Policy
 # =========================
-def policy_filter(market_data: Dict[str, Any]) -> str:
+def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
+    """
+    Upgraded Policy Filter with "Expectation vs Actual" analysis and surprise judgment.
+    """
+    # 기대치 (Expectation) 불러오기
+    expectations = market_data.get("EXPECTATIONS", {})
+    if not expectations:
+        return "Expectations data is missing."
+
+    # 실제 값 (Actual) 불러오기
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
     vix = _get_series(market_data, "VIX")
 
-    us10y_dir = _sign_from(us10y)
-    dxy_dir = _sign_from(dxy)
-    vix_dir = _sign_from(vix)
+    # 실제 값과 기대치 비교 (surprise 판별)
+    def surprise_check(actual, expected):
+        if actual is None or expected is None:
+            return "N/A"
+        surprise = actual - expected
+        return f"{_fmt_num(surprise, 2)} (actual - expected)"
 
+    us10y_surprise = surprise_check(us10y["today"], expectations.get("US10Y"))
+    dxy_surprise = surprise_check(dxy["today"], expectations.get("DXY"))
+    vix_surprise = surprise_check(vix["today"], expectations.get("VIX"))
+
+    # 판정: 기대보다 실제가 더 높은지 낮은지
     regime = "POLICY MIXED (정책 신호 혼조)"
     reason = "금리와 달러 신호가 일관되지 않음"
+    surprise_direction = "Mixed surprises"
+    
+    if us10y_surprise != "N/A" and dxy_surprise != "N/A" and vix_surprise != "N/A":
+        surprise_direction = "Some surprises detected"
 
-    if us10y_dir == -1 and dxy_dir == -1:
-        regime = "POLICY EASING (완화 기대)"
-        reason = "금리↓ + 달러↓ → 통화환경 완화 기대 확대"
-    elif us10y_dir == 1 and dxy_dir == 1:
-        regime = "POLICY TIGHTENING (긴축 압력)"
-        reason = "금리↑ + 달러↑ → 정책 긴축 압력 강화"
-    elif us10y_dir == 0 and dxy_dir == 0:
-        regime = "POLICY NEUTRAL (정책 공백)"
-        reason = "정책 방향성 명확하지 않음"
+    if us10y_surprise != "N/A" and dxy_surprise != "N/A" and vix_surprise != "N/A":
+        regime = "POLICY EASING (완화 기대)" if float(us10y_surprise.split()[0]) < 0 else "POLICY TIGHTENING (긴축 압력)"
 
-    vix_note = ""
-    if vix_dir == 1:
-        vix_note = " / 정책 불확실성 확대(VIX↑)"
-    elif vix_dir == -1:
-        vix_note = " / 정책 신호 신뢰도 개선(VIX↓)"
-
+    # 리포트 내용 구성
     lines = []
-    lines.append("### 🏛️ 3) Policy Filter")
+    lines.append("### 🏛️ 3) Policy Filter (with Expectations)")
     lines.append("- **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?")
     lines.append("- **추가 이유:** 정책 흐름과 반대로 움직이는 자산은 지속 가능성이 낮기 때문")
-    lines.append(
-        f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / "
-        f"DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})"
-    )
+    lines.append(f"- **Expectations Check (Surprises):**")
+    lines.append(f"  - **US10Y Surprise:** {us10y_surprise}")
+    lines.append(f"  - **DXY Surprise:** {dxy_surprise}")
+    lines.append(f"  - **VIX Surprise:** {vix_surprise}")
     lines.append(f"- **판정:** **{regime}**")
-    lines.append(f"- **근거:** {reason}{vix_note}")
+    lines.append(f"- **기대와 실제의 차이 (Surprise 판별):** {surprise_direction}")
+    
     return "\n".join(lines)
 
 
