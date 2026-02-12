@@ -1,5 +1,6 @@
-import time  # time 모듈 추가# scripts/fetch_liquidity_data.py
 from __future__ import annotations
+import time  # time 모듈 추가# scripts/fetch_liquidity_data.py
+
 
 from pathlib import Path
 import pandas as pd
