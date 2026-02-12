@@ -1,4 +1,4 @@
-# scripts/fetch_liquidity_data.py
+import time  # time 모듈 추가# scripts/fetch_liquidity_data.py
 from __future__ import annotations
 
 from pathlib import Path
