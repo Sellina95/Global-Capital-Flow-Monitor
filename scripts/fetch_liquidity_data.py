@@ -16,15 +16,25 @@ SERIES = {
     "WALCL": "WALCL",     # Fed Total Assets (Millions of $) - weekly
 }
 
-def fetch_fred(series_id: str) -> pd.DataFrame:
-    """Fetch a FRED series via CSV download (no API key) and return clean dataframe."""
-    df = pd.read_csv(f"{FRED_CSV}{series_id}")
-    # FRED CSV format: DATE,<SERIESID>
-    df.columns = ["date", series_id]
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
-    df = df.dropna(subset=["date", series_id]).sort_values("date").reset_index(drop=True)
-    return df
+def fetch_fred(series_id: str, retries: int = 3, delay: int = 5) -> pd.DataFrame:
+    """Fetch a FRED series with retries and delay in case of timeout"""
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    for attempt in range(retries):
+        try:
+            df = pd.read_csv(url)
+            # FRED CSV format: DATE,<SERIESID>
+            df.columns = ["date", series_id]
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+            df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
+            df = df.dropna(subset=["date", series_id]).sort_values("date").reset_index(drop=True)
+            return df
+        except Exception as e:
+            print(f"Attempt {attempt + 1}/{retries} failed. Error: {e}")
+            if attempt < retries - 1:
+                print(f"Retrying in {delay} seconds...")
+                time.sleep(delay)
+            else:
+                raise Exception(f"Failed to fetch data after {retries} attempts")
 
 def safe_read_existing(csv_path: Path) -> pd.DataFrame:
     """
