@@ -29,10 +29,11 @@ def fetch_fred(series_id: str, retries: int = 3, delay: int = 5) -> pd.DataFrame
             df = df.dropna(subset=["date", series_id]).sort_values("date").reset_index(drop=True)
             return df
         except Exception as e:
-            print(f"Attempt {attempt + 1}/{retries} failed. Error: {e}")
-            if attempt < retries - 1:
-                print(f"Retrying in {delay} seconds...")
-                time.sleep(delay)
+              print(f"Attempt {attempt} failed. Error: {e}")
+            if attempt < max_attempts:
+                print("Retrying in 5 seconds...")
+                time.sleep(5)  # 5초 대기 후 재시도
+            attempt += 1
             else:
                 raise Exception(f"Failed to fetch data after {retries} attempts")
 
