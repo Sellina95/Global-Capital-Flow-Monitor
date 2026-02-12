@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 import pandas as pd
 
 from filters.strategist_filters import build_strategist_commentary
 from scripts.risk_alerts import check_regime_change_and_alert
+from scripts.fetch_expectation_data import fetch_expectation_data  # external expectations
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -48,7 +49,6 @@ def load_macro_df() -> pd.DataFrame:
     # 첫 컬럼이 날짜일 가능성이 높으므로 통일
     cols = list(df.columns)
     if "date" not in cols and "datetime" not in cols:
-        # 첫 컬럼을 date로 가정
         df = df.rename(columns={cols[0]: "date"})
 
     # datetime -> date로 통일
@@ -78,7 +78,7 @@ def load_fred_extras_df() -> pd.DataFrame:
     return df
 
 
-def attach_fred_extras_layer(market_data: dict) -> dict:
+def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Attach FCI & REAL_RATE using FRED 'last available' values.
     Adds meta:
@@ -100,18 +100,27 @@ def attach_fred_extras_layer(market_data: dict) -> dict:
     prev_row = df.iloc[-2] if len(df) >= 2 else None
 
     def add_key(key: str):
-        today_val = float(today_row.get(key))
-        if prev_row is None:
-            market_data[key] = {"today": today_val, "prev": None, "pct_change": None}
+        today_val = pd.to_numeric(today_row.get(key), errors="coerce")
+        if pd.isna(today_val):
             return
-        prev_val = float(prev_row.get(key))
-        pct = 0.0 if prev_val == 0 else ((today_val - prev_val) / prev_val) * 100.0
-        market_data[key] = {"today": today_val, "prev": prev_val, "pct_change": pct}
+        today_val_f = float(today_val)
+
+        if prev_row is None:
+            market_data[key] = {"today": today_val_f, "prev": None, "pct_change": None}
+            return
+
+        prev_val = pd.to_numeric(prev_row.get(key), errors="coerce")
+        if pd.isna(prev_val):
+            market_data[key] = {"today": today_val_f, "prev": None, "pct_change": None}
+            return
+
+        prev_val_f = float(prev_val)
+        pct = 0.0 if prev_val_f == 0 else ((today_val_f - prev_val_f) / prev_val_f) * 100.0
+        market_data[key] = {"today": today_val_f, "prev": prev_val_f, "pct_change": pct}
 
     add_key("FCI")
     add_key("REAL_RATE")
     return market_data
-
 
 
 def load_liquidity_df() -> pd.DataFrame:
@@ -119,7 +128,6 @@ def load_liquidity_df() -> pd.DataFrame:
     if not csv_path.exists():
         return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
 
-    # empty/parse-safe
     try:
         if csv_path.stat().st_size == 0:
             return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
@@ -170,24 +178,24 @@ def build_market_data(today_row: pd.Series, prev_row: pd.Series) -> Dict[str, An
     for k in KEYS:
         if k not in today_row.index or k not in prev_row.index:
             continue
+
         today = pd.to_numeric(today_row.get(k), errors="coerce")
         prev = pd.to_numeric(prev_row.get(k), errors="coerce")
         if pd.isna(today) or pd.isna(prev):
             continue
+
         today_f = float(today)
         prev_f = float(prev)
         pct = 0.0 if prev_f == 0 else ((today_f - prev_f) / prev_f) * 100.0
         market_data[k] = {"today": today_f, "prev": prev_f, "pct_change": pct}
 
     # 2) 추가 지표들 (macro_data.csv에 있으면 자동으로 포함)
-    # date 컬럼 제외하고 숫자 변환 가능한 것들만
     for col in today_row.index:
         if col == "date":
             continue
         if col in market_data:
             continue
 
-        # numeric으로 바뀌는 컬럼만 market_data로
         t = pd.to_numeric(today_row.get(col), errors="coerce")
         p = pd.to_numeric(prev_row.get(col), errors="coerce")
         if pd.isna(t) or pd.isna(p):
@@ -259,7 +267,6 @@ def attach_credit_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
     prev_row = df.iloc[-2] if len(df) >= 2 else None
     today_val = pd.to_numeric(today_row.get("HY_OAS"), errors="coerce")
-
     if pd.isna(today_val):
         return market_data
 
@@ -280,6 +287,73 @@ def attach_credit_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     return market_data
 
 
+def attach_expectation_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Attach external expectation data into market_data safely.
+    We don't assume any specific schema from fetch_expectation_data().
+    Supported return types:
+      - dict
+      - list[dict]
+      - pandas.DataFrame
+    We store it under:
+      - market_data["_EXP_ASOF"] (optional)
+      - market_data["EXPECTATIONS"] (raw, lightweight)
+    So it won't break existing filters until you explicitly use it.
+    """
+    if market_data is None:
+        market_data = {}
+
+    try:
+        exp = fetch_expectation_data()
+    except Exception as e:
+        market_data["_EXP_ERROR"] = f"{type(e).__name__}: {e}"
+        return market_data
+
+    # normalize "as of" if provided
+    asof = None
+
+    # DataFrame
+    if isinstance(exp, pd.DataFrame):
+        if not exp.empty:
+            # if it has date column
+            for c in ("date", "as_of", "asof", "updated_at"):
+                if c in exp.columns:
+                    try:
+                        asof = pd.to_datetime(exp.iloc[-1][c]).strftime("%Y-%m-%d")
+                    except Exception:
+                        pass
+                    break
+            market_data["EXPECTATIONS"] = exp.tail(30).to_dict(orient="records")
+        else:
+            market_data["EXPECTATIONS"] = []
+        market_data["_EXP_ASOF"] = asof
+        return market_data
+
+    # dict
+    if isinstance(exp, dict):
+        # common patterns: {"as_of": "...", "items": [...]}
+        for c in ("as_of", "asof", "date", "updated_at"):
+            v = exp.get(c)
+            if isinstance(v, str) and v.strip():
+                asof = v.strip()
+                break
+        items = exp.get("items", exp)
+        market_data["EXPECTATIONS"] = items
+        market_data["_EXP_ASOF"] = asof
+        return market_data
+
+    # list
+    if isinstance(exp, list):
+        market_data["EXPECTATIONS"] = exp
+        market_data["_EXP_ASOF"] = None
+        return market_data
+
+    # fallback
+    market_data["EXPECTATIONS"] = {"raw": str(exp)}
+    market_data["_EXP_ASOF"] = None
+    return market_data
+
+
 # -------------------------
 # Report
 # -------------------------
@@ -296,7 +370,8 @@ def generate_daily_report() -> None:
     # Attach layers (never allow None overwrite)
     market_data = attach_liquidity_layer(market_data) or market_data
     market_data = attach_credit_spread_layer(market_data) or market_data
-    market_data = attach_fred_extras_layer(market_data)
+    market_data = attach_fred_extras_layer(market_data) or market_data
+    market_data = attach_expectation_layer(market_data) or market_data
 
     # ✅ regime change monitor
     regime_result = check_regime_change_and_alert(market_data, as_of_date)
@@ -386,3 +461,4 @@ def generate_daily_report() -> None:
 
 if __name__ == "__main__":
     generate_daily_report()
+
