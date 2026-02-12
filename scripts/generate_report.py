@@ -5,6 +5,7 @@ from typing import Dict, Any
 import pandas as pd
 
 from filters.strategist_filters import build_strategist_commentary
+from filters.strategist_filters import policy_filter_with_expectations
 from scripts.risk_alerts import check_regime_change_and_alert
 from scripts.fetch_expectation_data import fetch_expectation_data  # external expectations
 
@@ -453,6 +454,8 @@ def generate_daily_report() -> None:
     lines.append("---")
     lines.append("")
     lines.append(build_strategist_commentary(market_data))
+    lines.append(policy_filter_with_expectations(market_data))  # 여기서 필터 호출
+    
 
     report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
