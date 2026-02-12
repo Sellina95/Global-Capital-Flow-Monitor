@@ -924,7 +924,7 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(liquidity_filter(market_data))
     sections.append("")
-    sections.append(policy_filter(market_data))
+    sections.append(policy_filter_with_expectations(market_data))
     sections.append("")
     sections.append(fed_plumbing_filter(market_data))
     sections.append("")
