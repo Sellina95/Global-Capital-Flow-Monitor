@@ -373,12 +373,12 @@ def generate_daily_report() -> None:
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
     # 기대치 데이터가 없는 경우 예외 처리
-    if "EXPECTATIONS" not in market_data or not market_data["EXPECTATIONS"]:
-    lines.append("Expectations data is missing.")
-    else:
-    # Expectations data 처리
-    lines.append("Expectations data is available.")
-    # (기대치 관련 리포트 내용 추가)
+        if "EXPECTATIONS" not in market_data or not market_data["EXPECTATIONS"]:
+        lines.append("Expectations data is missing.")
+        else:
+        # Expectations data 처리
+        lines.append("Expectations data is available.")
+        # (기대치 관련 리포트 내용 추가)
 
 
     # ✅ regime change monitor
