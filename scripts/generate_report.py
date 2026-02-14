@@ -5,8 +5,9 @@ from typing import Dict, Any
 import pandas as pd
 
 from filters.strategist_filters import build_strategist_commentary
-from filters.strategist_filters import policy_filter_with_expectations
 from scripts.risk_alerts import check_regime_change_and_alert
+from scripts.fetch_expectation_data import fetch_expectation_data  # external expectations
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -62,6 +63,19 @@ def load_macro_df() -> pd.DataFrame:
 
     return df
 
+
+def load_fred_extras_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "fred_macro_extras.csv"
+    if not csv_path.exists():
+        return pd.DataFrame(columns=["date", "FCI", "REAL_RATE"])
+
+    df = pd.read_csv(csv_path)
+    if df.empty:
+        return pd.DataFrame(columns=["date", "FCI", "REAL_RATE"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
 
 
 def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -439,8 +453,6 @@ def generate_daily_report() -> None:
     lines.append("---")
     lines.append("")
     lines.append(build_strategist_commentary(market_data))
-    lines.append(policy_filter_with_expectations(market_data))  # 여기서 필터 호출
-    
 
     report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
@@ -449,4 +461,3 @@ def generate_daily_report() -> None:
 
 if __name__ == "__main__":
     generate_daily_report()
-
