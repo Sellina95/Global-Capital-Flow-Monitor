@@ -17,18 +17,7 @@ SERIES = {
     "WALCL": "WALCL",     # Fed Total Assets (Millions of $) - weekly
 }
 
-def fetch_fred(series_id: str) -> pd.DataFrame:
-    """Fetch a FRED series via CSV download (no API key) and return clean dataframe."""
-    url = f"{FRED_CSV}{series_id}"
-    df = pd.read_csv(url)
-    
-    # FRED CSV format: DATE,<SERIESID>
-    df.columns = ["date", series_id]
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
-    df = df.dropna(subset=["date", series_id]).sort_values("date").reset_index(drop=True)
-    
-    return df
+
     
 
 def safe_read_existing(csv_path: Path) -> pd.DataFrame:
