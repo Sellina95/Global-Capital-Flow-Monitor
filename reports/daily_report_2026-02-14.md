@@ -1,4 +1,3 @@
-Expectations data is missing.
 # 🌍 Global Capital Flow – Daily Brief
 **Date:** 2026-02-14
 
