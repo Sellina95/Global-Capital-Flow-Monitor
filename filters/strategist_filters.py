@@ -384,10 +384,11 @@ def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
     Upgraded Policy Filter with "Expectation vs Actual" analysis and surprise judgment.
     """
     # 기대치 (Expectation) 불러오기
-    expectations = market_data.get("EXPECTATIONS", {})
+    expectations = market_data.get("EXPECTATIONS", [])
+    
     if not expectations:
         return "Expectations data is missing."
-
+    
     # 실제 값 (Actual) 불러오기
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
@@ -400,6 +401,7 @@ def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
         surprise = actual - expected
         return f"{_fmt_num(surprise, 2)} (actual - expected)"
 
+    # 기대치와 실제 값 비교 및 surprise 계산
     us10y_surprise = surprise_check(us10y["today"], expectations.get("US10Y"))
     dxy_surprise = surprise_check(dxy["today"], expectations.get("DXY"))
     vix_surprise = surprise_check(vix["today"], expectations.get("VIX"))
