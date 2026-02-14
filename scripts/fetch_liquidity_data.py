@@ -9,6 +9,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 OUT_CSV = DATA_DIR / "liquidity_data.csv"
 
+FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
+
+# FRED SERIES 정의
+SERIES = {
+    "TGA": "WTREGEN",     # Treasury General Account (Millions of $)
+    "RRP": "RRPONTSYD",   # Overnight Reverse Repo (Millions of $)
+    "WALCL": "WALCL",     # Fed Total Assets (Millions of $) - weekly
+}
+
+
 def fetch_fred(series_id: str) -> pd.DataFrame:
     """Fetch a FRED series via CSV download (no API key) and return clean dataframe."""
     url = f"{FRED_CSV}{series_id}"
