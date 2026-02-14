@@ -290,32 +290,22 @@ def attach_credit_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 def attach_expectation_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Attach external expectation data into market_data safely.
-    We don't assume any specific schema from fetch_expectation_data().
-    Supported return types:
-      - dict
-      - list[dict]
-      - pandas.DataFrame
-    We store it under:
-      - market_data["_EXP_ASOF"] (optional)
-      - market_data["EXPECTATIONS"] (raw, lightweight)
-    So it won't break existing filters until you explicitly use it.
     """
     if market_data is None:
         market_data = {}
 
     try:
-        exp = fetch_expectation_data()
+        exp = fetch_expectation_data()  # 외부에서 기대치 데이터 가져오기
     except Exception as e:
         market_data["_EXP_ERROR"] = f"{type(e).__name__}: {e}"
-        return market_data
+        return market_data  # 에러 발생 시 추가적인 데이터 전달을 하지 않음
 
-    # normalize "as of" if provided
+    # "as_of" 데이터가 있으면 정상화
     asof = None
 
-    # DataFrame
+    # DataFrame 형식으로 데이터를 받았다면 처리
     if isinstance(exp, pd.DataFrame):
         if not exp.empty:
-            # if it has date column
             for c in ("date", "as_of", "asof", "updated_at"):
                 if c in exp.columns:
                     try:
@@ -325,13 +315,12 @@ def attach_expectation_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
                     break
             market_data["EXPECTATIONS"] = exp.tail(30).to_dict(orient="records")
         else:
-            market_data["EXPECTATIONS"] = []
+            market_data["EXPECTATIONS"] = []  # 데이터가 비어있는 경우 빈 리스트
         market_data["_EXP_ASOF"] = asof
         return market_data
 
-    # dict
+    # dict 형식으로 데이터 받기
     if isinstance(exp, dict):
-        # common patterns: {"as_of": "...", "items": [...]}
         for c in ("as_of", "asof", "date", "updated_at"):
             v = exp.get(c)
             if isinstance(v, str) and v.strip():
@@ -342,16 +331,17 @@ def attach_expectation_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         market_data["_EXP_ASOF"] = asof
         return market_data
 
-    # list
+    # list 형식으로 데이터 받기
     if isinstance(exp, list):
         market_data["EXPECTATIONS"] = exp
         market_data["_EXP_ASOF"] = None
         return market_data
 
-    # fallback
+    # 예외 처리: 데이터가 이상한 경우
     market_data["EXPECTATIONS"] = {"raw": str(exp)}
     market_data["_EXP_ASOF"] = None
     return market_data
+
 
 
 # -------------------------
