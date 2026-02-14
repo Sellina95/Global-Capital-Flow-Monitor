@@ -360,9 +360,6 @@ def attach_expectation_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # lines 리스트 초기화
-    lines = []
-
     df = load_macro_df()
     today_row = df.iloc[-1]
     prev_row = df.iloc[-2]
@@ -375,19 +372,14 @@ def generate_daily_report() -> None:
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
+  
 
-    # 기대치 데이터가 없는 경우 예외 처리
-    if "EXPECTATIONS" not in market_data or not market_data["EXPECTATIONS"]:
-        lines.append("Expectations data is missing.")
-    else:
-        # Expectations data 처리
-        lines.append("Expectations data is available.")
-        # (기대치 관련 리포트 내용 추가)
 
     # ✅ regime change monitor
     regime_result = check_regime_change_and_alert(market_data, as_of_date)
 
     # ---- Report ----
+    lines = []
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
     lines.append(f"**Date:** {as_of_date}")
     lines.append("")
