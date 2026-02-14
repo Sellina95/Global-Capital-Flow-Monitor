@@ -1,6 +1,5 @@
+# scripts/fetch_liquidity_data.py
 from __future__ import annotations
-import time  # time 모듈 추가# scripts/fetch_liquidity_data.py
-
 
 from pathlib import Path
 import pandas as pd
@@ -11,49 +10,31 @@ OUT_CSV = DATA_DIR / "liquidity_data.csv"
 
 FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
 
-# FRED SERIES 정의
 SERIES = {
     "TGA": "WTREGEN",     # Treasury General Account (Millions of $)
     "RRP": "RRPONTSYD",   # Overnight Reverse Repo (Millions of $)
     "WALCL": "WALCL",     # Fed Total Assets (Millions of $) - weekly
 }
 
-
-def fetch_fred(series_id: str) -> pd.DataFrame:
-    """Fetch a FRED series via CSV download (no API key) and return clean dataframe."""
-    url = f"{FRED_CSV}{series_id}"
-    df = pd.read_csv(url)
-    
-    # FRED CSV format: DATE,<SERIESID>
-    df.columns = ["date", series_id]
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
-    df = df.dropna(subset=["date", series_id]).sort_values("date").reset_index(drop=True)
-    
-    return df
-
-def load_liquidity_df() -> pd.DataFrame:
-    csv_path = DATA_DIR / "liquidity_data.csv"
-    if not csv_path.exists():
-        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
-
-    try:
-        if csv_path.stat().st_size == 0:
-            return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
-        df = pd.read_csv(csv_path)
-    except Exception:
-        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
-
-    if df.empty or "date" not in df.columns:
-        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
-
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
-    return df
-
-
-
-    
+def fetch_fred(series_id: str, retries: int = 3, delay: int = 5) -> pd.DataFrame:
+    """Fetch a FRED series with retries and delay in case of timeout"""
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    for attempt in range(retries):
+        try:
+            df = pd.read_csv(url)
+            # FRED CSV format: DATE,<SERIESID>
+            df.columns = ["date", series_id]
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+            df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
+            df = df.dropna(subset=["date", series_id]).sort_values("date").reset_index(drop=True)
+            return df
+        except Exception as e:
+            print(f"Attempt {attempt + 1}/{retries} failed. Error: {e}")
+            if attempt < retries - 1:
+                print(f"Retrying in {delay} seconds...")
+                time.sleep(delay)
+            else:
+                raise Exception(f"Failed to fetch data after {retries} attempts")
 
 def safe_read_existing(csv_path: Path) -> pd.DataFrame:
     """
@@ -123,4 +104,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
