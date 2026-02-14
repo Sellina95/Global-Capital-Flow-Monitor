@@ -1,11 +1,12 @@
+Expectations data is missing.
 # 🌍 Global Capital Flow – Daily Brief
 **Date:** 2026-02-14
 
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.056  (+0.00% vs 4.056)
-- **달러 인덱스**: 96.880  (-0.00% vs 96.882)
-- **WTI 유가**: 62.890  (+0.13% vs 62.810)
+- **달러 인덱스**: 96.880  (+0.00% vs 96.880)
+- **WTI 유가**: 62.890  (+0.00% vs 62.890)
 - **변동성 지수 (VIX)**: 20.600  (+0.00% vs 20.600)
 - **원/달러 환율**: 1443.300  (+0.00% vs 1443.300)
 
@@ -13,7 +14,7 @@
 
 ## 🚨 Regime Change Monitor (always-on)
 - **Status:** ✅ DETECTED
-- **Prev → Current:** RISK-OFF (긴축/불안·리스크 회피) → EVENT-WATCHING (이벤트 관망)
+- **Prev → Current:** RISK-OFF (긴축/불안·리스크 회피) → WAITING / RANGE (대기·박스권)
 - **File:** `insights/risk_alerts.txt` ✅ created
 - **Email:** ❌ not sent (RESEND env missing (RESEND_API_KEY/RESEND_FROM/RESEND_TO))
 
@@ -26,15 +27,15 @@
 - **추가 이유:** 같은 지표도 ‘국면’에 따라 의미가 완전히 달라지기 때문
 
 - **VIX 레벨:** 20.60 → **High (Risk-off bias)**
-- **핵심 조합(전일 대비 방향):** US10Y(→) / DXY(↓) / VIX(→)
-- **판정:** **EVENT-WATCHING (이벤트 관망)**
-- **근거:** 변동성은 눌려있지만 금리/달러가 움직임 → 데이터/이벤트 대기
+- **핵심 조합(전일 대비 방향):** US10Y(→) / DXY(→) / VIX(→)
+- **판정:** **WAITING / RANGE (대기·박스권)**
+- **근거:** 핵심 축(금리/달러/변동성) 모두 보합 → 방향성 부재
 
 ### 💧 2) Liquidity Filter (Enhanced)
 - **질문:** 시장에 새 돈이 들어오는가, 말라가는가?
 - **추가 이유:** US10Y/DXY/VIX는 ‘시장의 기대’를 보여주고, FCI는 ‘현실의 압박’을, Real Rates는 ‘위험을 감수할 유인’을 보여준다.
 
-- **기대(가격) 신호:** US10Y(→) / DXY(↓) / VIX(→)
+- **기대(가격) 신호:** US10Y(→) / DXY(→) / VIX(→)
 - **현실(FCI):** level=EASY (완화) / dir(→) | as of: 2026-02-06 (FRED last available)
 - **유인(Real Rates):** level=NEUTRAL (중립) / dir(→) | as of: 2026-02-06 (FRED last available)
 - **판정:** **LIQUIDITY MIXED / FRAGILE (혼조·취약)**
@@ -77,8 +78,8 @@ Expectations data is missing.
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
-- DXY **(Noise, -0.00%)** → 달러 약세/리스크 선호
-- WTI **(Noise, +0.13%)** → 인플레 재자극 가능성
+- DXY **(Noise, +0.00%)** → 달러 보합(방향성 약함)
+- WTI **(Noise, +0.00%)** → 유가 보합(물가 변수 제한)
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
 - 원/달러(USDKRW) **(Noise, +0.00%)** → 환율 보합(수급 압력 제한)
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
@@ -89,30 +90,28 @@ Expectations data is missing.
 
 - **금리 보합(US10Y→)** → 할인율 변수 제한
 - **변동성 보합(VIX→)** → 심리 변화 제한
-- **유가 상승(WTI↑)** → 인플레 재자극 가능성 / 금리 상방 압력
+- **유가 보합(WTI→)** → 물가 변수 제한
 
 ### 🧩 7) Risk Exposure Filter (숨은 리스크 분석)
 - **추가 이유:** 숫자는 괜찮아 보여도 그 뒤에 숨은 리스크를 식별하기 위함
 
 - **VIX 보합(VIX→)** → 심리 변화 제한
 - **금리 보합(US10Y→)** → 금리 변수 제한
-- **달러 약세(DXY↓)** → 위험자산 선호/신흥국 부담 완화 가능
-- **유가 상승(WTI↑)** → 인플레 압력/실질소득 부담 가능
+- **달러 보합(DXY→)** → 달러 변수 제한
+- **유가 보합(WTI→)** → 물가 변수 제한
 
 ### 💸 8) Incentive Filter
 - **질문:** 누가 이득을 보고 있는가?
-- **핵심 신호:** US10Y(→) / DXY(↓) / WTI(↑)
+- **핵심 신호:** US10Y(→) / DXY(→) / WTI(→)
 - **이득을 보는 주체:**
-  - EM assets / risk trades
-  - Energy producers
+  - None
 - **손해를 보는 주체:**
-  - USD strength trades
-  - Energy consumers
+  - None
 
 ### 🔍 9) Cause Filter
 - **질문:** 무엇이 이 움직임을 만들었는가?
-- **핵심 신호:** US10Y(→) / DXY(↓) / WTI(↑) / VIX(→)
-- **판정:** **달러 약세(DXY↓) + 유가 상승(WTI↑)**
+- **핵심 신호:** US10Y(→) / DXY(→) / WTI(→) / VIX(→)
+- **판정:** **원인 신호 뚜렷하지 않음**
 
 ### 🔄 10) Direction Filter
 - **질문:** 오늘 움직임은 ‘노이즈’인가 ‘의미 있는 변화’인가?
@@ -128,6 +127,6 @@ Expectations data is missing.
 
 ### 🏗️ 12) Structural Filter
 - **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
-- **핵심 신호:** US10Y(→) / DXY(↓) / VIX(→) / WTI(↑)
+- **핵심 신호:** US10Y(→) / DXY(→) / VIX(→) / WTI(→)
 - **판정:** **NEUTRAL**
 - **근거:** 패권/구조 신호가 뚜렷하지 않음
