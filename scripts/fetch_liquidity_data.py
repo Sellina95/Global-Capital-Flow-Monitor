@@ -22,6 +22,24 @@ def fetch_fred(series_id: str) -> pd.DataFrame:
     
     return df
 
+def load_liquidity_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "liquidity_data.csv"
+    if not csv_path.exists():
+        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+
+    try:
+        if csv_path.stat().st_size == 0:
+            return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
 
 
 
