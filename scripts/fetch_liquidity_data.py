@@ -9,13 +9,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 OUT_CSV = DATA_DIR / "liquidity_data.csv"
 
-FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
-
-SERIES = {
-    "TGA": "WTREGEN",     # Treasury General Account (Millions of $)
-    "RRP": "RRPONTSYD",   # Overnight Reverse Repo (Millions of $)
-    "WALCL": "WALCL",     # Fed Total Assets (Millions of $) - weekly
-}
 
 
     
