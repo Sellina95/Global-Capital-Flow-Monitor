@@ -305,7 +305,18 @@ def attach_expectation_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
     try:
         exp = fetch_expectation_data()
+        # ✅ DEBUG: 액션 로그에서 확인 가능
+        print("[DEBUG] fetch_expectation_data() type:", type(exp))
+        if isinstance(exp, list):
+            print("[DEBUG] expectations list len:", len(exp))
+            print("[DEBUG] first item:", exp[0] if len(exp) > 0 else None)
+        elif isinstance(exp, dict):
+            print("[DEBUG] expectations dict keys:", list(exp.keys())[:30])
+        else:
+            print("[DEBUG] expectations repr:", repr(exp)[:500])
     except Exception as e:
+        # ✅ DEBUG: 왜 실패했는지 액션 로그에 찍힘
+        print("[DEBUG] fetch_expectation_data() ERROR:", type(e).__name__, str(e))
         market_data["_EXP_ERROR"] = f"{type(e).__name__}: {e}"
         return market_data
 
