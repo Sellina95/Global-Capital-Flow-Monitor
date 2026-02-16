@@ -1,90 +1,139 @@
-# scripts/fetch_expectation_data.py
-from __future__ import annotations
-
-import time
-from typing import List, Dict, Any
-
+import re
+import datetime as dt
 import requests
 from bs4 import BeautifulSoup
 
 
-CAL_URL = "https://www.investing.com/economic-calendar/"
+AJAX_URL = "https://www.investing.com/economic-calendar/Service/getCalendarFilteredData"
 HOME_URL = "https://www.investing.com/"
 
 
-def fetch_expectation_data() -> List[Dict[str, Any]]:
-    """
-    Fetch expectation-like data from Investing.com economic calendar.
+def _to_float(x: str):
+    if x is None:
+        return None
+    s = str(x).strip()
+    if not s or s in ("-", "N/A"):
+        return None
 
-    NOTE:
-    - GitHub Actions 환경에서는 Investing이 403(봇 차단)을 줄 수 있음.
-    - 헤더/쿠키 세팅으로 우회 시도하지만, Cloudflare 정책에 따라 실패할 수 있음.
-    """
-    session = requests.Session()
+    # remove commas, percent, etc.
+    s = s.replace(",", "").replace("%", "").strip()
 
-    # 브라우저 흉내 헤더 (최소 세트)
+    # handle K/M/B
+    m = re.match(r"^(-?\d+(\.\d+)?)([KMB])$", s, re.IGNORECASE)
+    if m:
+        val = float(m.group(1))
+        unit = m.group(3).upper()
+        if unit == "K":
+            return val * 1_000
+        if unit == "M":
+            return val * 1_000_000
+        if unit == "B":
+            return val * 1_000_000_000
+        return val
+
+    # plain number
+    try:
+        return float(s)
+    except Exception:
+        return None
+
+
+def fetch_expectation_data(
+    days_back: int = 0,
+    days_forward: int = 1,
+    countries: list[str] | None = None,
+    time_zone: str = "55",  # Investing internal TZ id; not critical for our use
+    limit_from: int = 0,
+):
+    """
+    Fetch Investing.com economic calendar via AJAX endpoint (works even when HTML table is JS-rendered).
+    Returns: list[dict]
+      keys: time, currency, event, importance, actual, forecast, previous
+    """
+
+    # Default: United States only (country id commonly "5")
+    if countries is None:
+        countries = ["5"]
+
+    today = dt.date.today()
+    date_from = (today - dt.timedelta(days=days_back)).strftime("%Y-%m-%d")
+    date_to = (today + dt.timedelta(days=days_forward)).strftime("%Y-%m-%d")
+
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/121.0.0.0 Safari/537.36"
-        ),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
         "Accept-Language": "en-US,en;q=0.9",
-        "Referer": HOME_URL,
-        "Connection": "keep-alive",
+        "X-Requested-With": "XMLHttpRequest",
+        "Referer": "https://www.investing.com/economic-calendar/",
+        "Origin": "https://www.investing.com",
     }
 
-    # 1) 홈 한번 찍어서 쿠키/세션 받기 (안 하면 403 잘 남)
-    session.get(HOME_URL, headers=headers, timeout=20)
+    s = requests.Session()
 
-    # 2) 캘린더 요청 (403면 재시도)
-    last_err = None
-    for attempt in range(3):
-        try:
-            r = session.get(CAL_URL, headers=headers, timeout=25)
-            r.raise_for_status()
-            html = r.text
-            break
-        except Exception as e:
-            last_err = e
-            time.sleep(1.5 * (attempt + 1))
-    else:
-        # 여기로 오면 3번 다 실패
-        raise RuntimeError(f"Investing calendar fetch failed after retries: {type(last_err).__name__}: {last_err}")
+    # 1) warm-up to set cookies (helps reduce 403)
+    s.get(HOME_URL, headers=headers, timeout=20)
 
-    soup = BeautifulSoup(html, "html.parser")
+    payload = {
+        "dateFrom": date_from,
+        "dateTo": date_to,
+        "timeZone": time_zone,
+        "timeFilter": "timeRemain",
+        "currentTab": "custom",
+        "limit_from": str(limit_from),
+    }
 
-    # Investing 페이지 구조가 바뀌거나 JS 렌더링이면 table이 없을 수 있음
-    events_table = soup.find("table", {"class": "economicCalendarTable"})
-    if not events_table:
-        # HTML 일부를 힌트로 남겨서 디버깅 가능하게
-        title = soup.title.get_text(strip=True) if soup.title else "N/A"
-        raise ValueError(f"Economic Calendar table not found. page_title={title}")
+    # repeated keys for country[]
+    # requests supports lists for same key
+    payload["country[]"] = countries
 
-    rows = events_table.find_all("tr")
-    data: List[Dict[str, Any]] = []
+    r = s.post(AJAX_URL, data=payload, headers=headers, timeout=25)
+    r.raise_for_status()
 
-    for row in rows:
-        cols = row.find_all("td")
-        if len(cols) > 5:
-            event_name = cols[1].get_text(strip=True)
-            actual = cols[2].get_text(strip=True)
-            forecast = cols[3].get_text(strip=True)
-            previous = cols[4].get_text(strip=True)
+    j = r.json()
+    html = j.get("data")
+    if not html or not isinstance(html, str):
+        raise ValueError("Investing AJAX returned empty 'data' HTML.")
 
-            # 비어있는 라인 제거
-            if not event_name:
-                continue
+    soup = BeautifulSoup(html, "lxml")
+    rows = soup.select("tr")
+    if not rows:
+        raise ValueError("No rows found in Investing AJAX HTML.")
 
-            data.append(
-                {
-                    "event": event_name,
-                    "forecast": forecast,
-                    "actual": actual,
-                    "previous": previous,
-                    "source": "investing_economic_calendar",
-                }
-            )
+    out = []
+    for tr in rows:
+        tds = tr.select("td")
+        if len(tds) < 6:
+            continue
 
-    return data
+        # Investing calendar row typical columns:
+        # 0 time | 1 currency | 2 importance | 3 event | 4 actual | 5 forecast | 6 previous (sometimes)
+        time_txt = tds[0].get_text(strip=True) if len(tds) > 0 else ""
+        cur_txt = tds[1].get_text(strip=True) if len(tds) > 1 else ""
+        imp_td = tds[2] if len(tds) > 2 else None
+        event_txt = tds[3].get_text(strip=True) if len(tds) > 3 else ""
+        actual_txt = tds[4].get_text(strip=True) if len(tds) > 4 else ""
+        forecast_txt = tds[5].get_text(strip=True) if len(tds) > 5 else ""
+        previous_txt = tds[6].get_text(strip=True) if len(tds) > 6 else ""
+
+        # importance: count "sentiment" icons if present
+        importance = None
+        if imp_td is not None:
+            # Many implementations use <i class="grayFullBullishIcon"> etc.
+            importance = len(imp_td.select("i"))
+            if importance == 0:
+                # fallback: sometimes spans
+                importance = len(imp_td.select("span"))
+
+        out.append(
+            {
+                "time": time_txt,
+                "currency": cur_txt,
+                "event": event_txt,
+                "importance": importance,
+                "actual": _to_float(actual_txt),
+                "forecast": _to_float(forecast_txt),
+                "previous": _to_float(previous_txt),
+            }
+        )
+
+    return out
