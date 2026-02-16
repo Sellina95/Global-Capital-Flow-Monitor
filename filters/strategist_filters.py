@@ -382,53 +382,128 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
 def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
     """
     Upgraded Policy Filter with "Expectation vs Actual" analysis and surprise judgment.
+    EXPECTATIONS can be:
+      - dict: {"US10Y": x, "DXY": x, "VIX": x}
+      - list[dict]: economic calendar events from Investing.com
     """
-    # 기대치 (Expectation) 불러오기
-    expectations = market_data.get("EXPECTATIONS", {})
-    if not expectations:
-        return "Expectations data is missing."
 
-    # 실제 값 (Actual) 불러오기
+    expectations_raw = market_data.get("EXPECTATIONS")
+
+    def _to_float_maybe(x):
+        if x is None:
+            return None
+        if isinstance(x, (int, float)):
+            return float(x)
+        s = str(x).strip()
+        if not s or s in ("N/A", "-", "—"):
+            return None
+        # remove commas and percent
+        s = s.replace(",", "").replace("%", "")
+        try:
+            return float(s)
+        except Exception:
+            return None
+
+    # 1) Normalize expectations into a dict
+    exp: Dict[str, float] = {}
+    exp_note = None
+
+    if isinstance(expectations_raw, dict):
+        # already dict-like
+        exp = {k: _to_float_maybe(v) for k, v in expectations_raw.items()}
+    elif isinstance(expectations_raw, list):
+        # We got economic calendar events (most likely). Try to extract something usable.
+        # NOTE: Investing calendar doesn't directly provide "US10Y/DXY/VIX expectations"
+        # so usually these will be missing. We'll just detect "we have events but not those keys".
+        exp_note = f"EXPECTATIONS is a list (len={len(expectations_raw)}); no direct US10Y/DXY/VIX forecast keys found."
+
+        # (Optional heuristic) If later you decide to map specific events -> proxies, do it here.
+        # For now, keep exp empty so we fall back gracefully.
+        exp = {}
+    else:
+        exp = {}
+
+    # 2) Get actual series values
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
     vix = _get_series(market_data, "VIX")
 
-    # 실제 값과 기대치 비교 (surprise 판별)
     def surprise_check(actual, expected):
-        if actual is None or expected is None:
-            return "N/A"
-        surprise = actual - expected
-        return f"{_fmt_num(surprise, 2)} (actual - expected)"
+        a = _to_float_maybe(actual)
+        e = _to_float_maybe(expected)
+        if a is None or e is None:
+            return None
+        return a - e
 
-    us10y_surprise = surprise_check(us10y["today"], expectations.get("US10Y"))
-    dxy_surprise = surprise_check(dxy["today"], expectations.get("DXY"))
-    vix_surprise = surprise_check(vix["today"], expectations.get("VIX"))
+    us10y_s = surprise_check(us10y.get("today"), exp.get("US10Y"))
+    dxy_s = surprise_check(dxy.get("today"), exp.get("DXY"))
+    vix_s = surprise_check(vix.get("today"), exp.get("VIX"))
 
-    # 판정: 기대보다 실제가 더 높은지 낮은지
-    regime = "POLICY MIXED (정책 신호 혼조)"
-    reason = "금리와 달러 신호가 일관되지 않음"
-    surprise_direction = "Mixed surprises"
-    
-    if us10y_surprise != "N/A" and dxy_surprise != "N/A" and vix_surprise != "N/A":
-        surprise_direction = "Some surprises detected"
+    # 3) Base policy signal (fallback) using direction only
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    vix_dir = _sign_from(vix)
 
-    if us10y_surprise != "N/A" and dxy_surprise != "N/A" and vix_surprise != "N/A":
-        regime = "POLICY EASING (완화 기대)" if float(us10y_surprise.split()[0]) < 0 else "POLICY TIGHTENING (긴축 압력)"
+    # Simple baseline regime from price action
+    base_regime = "POLICY MIXED (정책 신호 혼조)"
+    base_reason = "금리/달러/변동성 신호가 완전히 정렬되지 않음"
+    if us10y_dir == -1 and dxy_dir == -1 and vix_dir in (-1, 0):
+        base_regime = "POLICY EASING (완화)"
+        base_reason = "금리↓ + 달러↓ (+VIX 안정) → 완화 쪽"
+    elif us10y_dir == 1 and dxy_dir == 1:
+        base_regime = "POLICY TIGHTENING (긴축)"
+        base_reason = "금리↑ + 달러↑ → 긴축 압력"
 
-    # 리포트 내용 구성
+    # 4) If we have usable surprises, upgrade judgment
+    has_surprise = (us10y_s is not None) or (dxy_s is not None) or (vix_s is not None)
+
+    # If you want stricter: require all three present
+    all_three = (us10y_s is not None) and (dxy_s is not None) and (vix_s is not None)
+
+    regime = base_regime
+    rationale = base_reason
+
+    if all_three:
+        # Example logic: if US10Y surprise is negative -> easing surprise
+        regime = "POLICY EASING (Surprise-led) (서프라이즈: 완화)" if us10y_s < 0 else "POLICY TIGHTENING (Surprise-led) (서프라이즈: 긴축)"
+        rationale = "기대 대비 실제(US10Y/DXY/VIX) 서프라이즈가 정책 체감 방향을 강화"
+    elif has_surprise:
+        regime = base_regime
+        rationale = "일부만 서프라이즈 계산 가능 → 기본 가격 신호 기반으로 유지"
+
+    # 5) Build report lines
     lines = []
     lines.append("### 🏛️ 3) Policy Filter (with Expectations)")
     lines.append("- **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?")
     lines.append("- **추가 이유:** 정책 흐름과 반대로 움직이는 자산은 지속 가능성이 낮기 때문")
-    lines.append(f"- **Expectations Check (Surprises):**")
-    lines.append(f"  - **US10Y Surprise:** {us10y_surprise}")
-    lines.append(f"  - **DXY Surprise:** {dxy_surprise}")
-    lines.append(f"  - **VIX Surprise:** {vix_surprise}")
-    lines.append(f"- **판정:** **{regime}**")
-    lines.append(f"- **기대와 실제의 차이 (Surprise 판별):** {surprise_direction}")
-    
-    return "\n".join(lines)
+    lines.append("")
+    lines.append(f"- **가격(현재) 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})")
 
+    if expectations_raw is None:
+        lines.append("- **Expectations:** N/A (no data attached)")
+    elif isinstance(expectations_raw, list):
+        lines.append(f"- **Expectations:** received economic-calendar events (len={len(expectations_raw)}), but no direct US10Y/DXY/VIX forecasts.")
+        if exp_note:
+            lines.append(f"  - Note: {exp_note}")
+    elif isinstance(expectations_raw, dict):
+        lines.append("- **Expectations:** dict received.")
+    else:
+        lines.append(f"- **Expectations:** unsupported type: {type(expectations_raw).__name__}")
+
+    def fmt_surprise(x):
+        if x is None:
+            return "N/A"
+        return f"{_fmt_num(x, 2)} (actual - expected)"
+
+    lines.append("- **Expectations Check (Surprises):**")
+    lines.append(f"  - **US10Y Surprise:** {fmt_surprise(us10y_s)}")
+    lines.append(f"  - **DXY Surprise:** {fmt_surprise(dxy_s)}")
+    lines.append(f"  - **VIX Surprise:** {fmt_surprise(vix_s)}")
+
+    lines.append(f"- **판정:** **{regime}**")
+    lines.append(f"- **근거:** {rationale}")
+
+    return "\n".join(lines)
 
 
 # =========================
