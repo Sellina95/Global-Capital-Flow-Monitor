@@ -94,7 +94,7 @@ def fetch_expectation_data(
     if not html or not isinstance(html, str):
         raise ValueError("Investing AJAX returned empty 'data' HTML.")
 
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html.parser")
     rows = soup.select("tr")
     if not rows:
         raise ValueError("No rows found in Investing AJAX HTML.")
