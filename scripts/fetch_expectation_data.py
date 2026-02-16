@@ -137,3 +137,9 @@ def fetch_expectation_data(
         )
 
     return out
+    if __name__ == "__main__":
+    data = fetch_expectation_data()
+    print("[DEBUG] expectations list len:", len(data))
+    for i, item in enumerate(data):
+        print(f"[DEBUG] item[{i}]:", item)
+
