@@ -102,6 +102,11 @@ def fetch_expectation_data():
                 "previous": previous,
             }
         )
+        usable = [x for x in data if x.get("actual") not in (None, "", "N/A") and x.get("forecast") not in (None, "", "N/A")]
+        print(f"[DEBUG] usable events (actual+forecast present): {len(usable)}")
+        if usable:
+        print(f"[DEBUG] sample usable: {usable[0]}")
+
 
     return data
 
