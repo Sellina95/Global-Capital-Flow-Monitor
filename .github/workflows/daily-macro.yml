@@ -80,6 +80,11 @@ jobs:
           git add data/macro_data.csv || true
           git add data/liquidity_data.csv || true
           git add data/credit_spread_data.csv || true
+          git add data/fred_macro_extras.csv || true
+          echo "== fred_macro_extras tail =="
+          tail -n 3 data/fred_macro_extras.csv || true
+
+
 
 
           if git diff --cached --quiet; then
