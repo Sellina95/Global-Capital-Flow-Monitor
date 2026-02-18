@@ -1041,9 +1041,6 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     → Final Risk Action
     """
 
-    # ---------------------------
-    # 1️⃣ Pull core signals
-    # ---------------------------
     policy_bias_line = market_data.get("POLICY_BIAS_LINE", "")
     liquidity_state = market_data.get("NET_LIQ", {})
     hy_oas = market_data.get("HY_OAS", {})
@@ -1054,21 +1051,15 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     easing = "EASING" in policy_bias_line
     tightening = "TIGHTENING" in policy_bias_line
 
-    # Credit calm 기준
     credit_calm = False
     if hy_oas and hy_oas.get("today") is not None:
         credit_calm = hy_oas["today"] < 4.0
 
-    # Liquidity 방향
     liq_supportive = False
     if liquidity_state and liquidity_state.get("pct_change") is not None:
         liq_supportive = liquidity_state["pct_change"] > 0
 
-    # ---------------------------
-    # 2️⃣ Sentiment 판단
-    # ---------------------------
     sentiment_state = "NEUTRAL"
-
     if fear is not None:
         if fear < 30:
             sentiment_state = "FEAR"
@@ -1078,62 +1069,54 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
             sentiment_state = "NEUTRAL"
 
     # ---------------------------
-    # 3️⃣ Phase 판단 (핵심)
+    # Phase
     # ---------------------------
     phase = "TRANSITION"
-
     if easing and credit_calm and sentiment_state == "FEAR":
         phase = "EARLY EASING"
-
     elif easing and credit_calm and sentiment_state in ["NEUTRAL", "GREED"]:
         phase = "RISK-ON EXPANSION"
-
     elif tightening and sentiment_state == "GREED":
         phase = "LATE CYCLE / FROTH"
-
     elif tightening and sentiment_state == "FEAR":
         phase = "DEFENSIVE / STRESS"
 
     # ---------------------------
-    # 4️⃣ Final Risk Action
+    # Action
     # ---------------------------
     action = "HOLD"
-
     if phase == "EARLY EASING":
         action = "GRADUAL INCREASE"
-
     elif phase == "RISK-ON EXPANSION":
         action = "INCREASE"
-
     elif phase == "LATE CYCLE / FROTH":
         action = "REDUCE"
-
     elif phase == "DEFENSIVE / STRESS":
         action = "DEFENSIVE"
 
-    # ---------------------------
-    # 5️⃣ Narrative 한줄
-    # ---------------------------
+    # Narrative 1-liner
+    structure_head = policy_bias_line.split("|")[0].strip() if policy_bias_line else "N/A"
     narrative = (
-        f"구조={policy_bias_line.split('|')[0].strip()} / "
-        f"심리={sentiment_state} / "
-        f"크레딧={'안정' if credit_calm else '불안'} → "
-        f"현재 Phase는 {phase}"
+        f"구조={structure_head} / 심리={sentiment_state} / "
+        f"크레딧={'안정' if credit_calm else '불안'} / 유동성={'우호' if liq_supportive else '비우호'} "
+        f"→ Phase={phase}"
     )
 
     # ---------------------------
-    # 6️⃣ Report 출력 (기존 스타일 유지)
+    # Output (match previous filters)
     # ---------------------------
     lines = []
-    lines.append("🧠 13) Narrative Engine (v2)")
-    lines.append(f"- Structure Bias: {policy_bias_line}")
-    lines.append(f"- Sentiment (Fear&Greed): {fear if fear is not None else 'N/A'} ({sentiment_state})")
-    lines.append(f"- Credit Calm: {credit_calm}")
-    lines.append(f"- Liquidity Supportive: {liq_supportive}")
+    lines.append("### 🧠 13) Narrative Engine (v2)")
+    lines.append("- **질문:** 오늘 시장이 믿는 스토리(심리)와 구조(거시/크레딧/유동성)는 정렬되는가?")
+    lines.append("- **추가 이유:** 숫자(구조)와 심리(내러티브)의 불일치는 ‘전환 구간’ 신호가 되기 때문")
     lines.append("")
-    lines.append(f"- **Phase:** {phase}")
-    lines.append(f"- 🎯 Final Risk Action: **{action}**")
-    lines.append(f"- Narrative: {narrative}")
+    lines.append(f"- **Structure Bias:** {policy_bias_line if policy_bias_line else 'N/A'}")
+    lines.append(f"- **Sentiment (Fear&Greed):** {fear if fear is not None else 'N/A'} ({sentiment_state})")
+    lines.append(f"- **Credit Calm:** {'Yes' if credit_calm else 'No'}")
+    lines.append(f"- **Liquidity Supportive:** {'Yes' if liq_supportive else 'No'}")
+    lines.append(f"- **Phase:** **{phase}**")
+    lines.append(f"- **Final Risk Action:** **{action}**")
+    lines.append(f"- **Narrative (1-liner):** {narrative}")
 
     return "\n".join(lines)
 
