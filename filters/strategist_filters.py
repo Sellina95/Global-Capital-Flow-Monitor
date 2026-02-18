@@ -1035,8 +1035,9 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
 
 def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     """
-    Narrative Engine v1.1
+    Narrative Engine v2
     Structure + Credit + Liquidity + Sentiment
+    → Phase 판단
     → Final Risk Action
     """
 
@@ -1050,76 +1051,91 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
     fear = sentiment.get("fear_greed")
 
-    # Structure proxy
     easing = "EASING" in policy_bias_line
     tightening = "TIGHTENING" in policy_bias_line
 
-    # Credit condition (HY spread < 4% = calm)
+    # Credit calm 기준
     credit_calm = False
     if hy_oas and hy_oas.get("today") is not None:
         credit_calm = hy_oas["today"] < 4.0
 
-    # Liquidity direction (Net Liquidity improving)
+    # Liquidity 방향
     liq_supportive = False
     if liquidity_state and liquidity_state.get("pct_change") is not None:
         liq_supportive = liquidity_state["pct_change"] > 0
 
     # ---------------------------
-    # 2️⃣ Sentiment classification (proper ranges)
+    # 2️⃣ Sentiment 판단
     # ---------------------------
-    sentiment_state = "N/A"
+    sentiment_state = "NEUTRAL"
 
     if fear is not None:
-        if fear <= 24:
-            sentiment_state = "EXTREME_FEAR"
-        elif fear <= 44:
+        if fear < 30:
             sentiment_state = "FEAR"
-        elif fear <= 55:
-            sentiment_state = "NEUTRAL"
-        elif fear <= 75:
+        elif fear > 70:
             sentiment_state = "GREED"
         else:
-            sentiment_state = "EXTREME_GREED"
+            sentiment_state = "NEUTRAL"
 
     # ---------------------------
-    # 3️⃣ Decision logic (refined)
+    # 3️⃣ Phase 판단 (핵심)
+    # ---------------------------
+    phase = "TRANSITION"
+
+    if easing and credit_calm and sentiment_state == "FEAR":
+        phase = "EARLY EASING"
+
+    elif easing and credit_calm and sentiment_state in ["NEUTRAL", "GREED"]:
+        phase = "RISK-ON EXPANSION"
+
+    elif tightening and sentiment_state == "GREED":
+        phase = "LATE CYCLE / FROTH"
+
+    elif tightening and sentiment_state == "FEAR":
+        phase = "DEFENSIVE / STRESS"
+
+    # ---------------------------
+    # 4️⃣ Final Risk Action
     # ---------------------------
     action = "HOLD"
-    narrative = "구조·심리·유동성 정렬이 불완전"
 
-    if easing and credit_calm and liq_supportive:
-        if sentiment_state in ("FEAR", "EXTREME_FEAR"):
-            action = "INCREASE (SELECTIVE)"
-            narrative = "구조 완화 + 크레딧 안정 + 유동성 우호이나 심리는 Fear → 선별적 리스크 확대"
-        else:
-            action = "INCREASE"
-            narrative = "구조 완화 + 크레딧 안정 + 유동성 우호 → 리스크 확대 가능"
+    if phase == "EARLY EASING":
+        action = "GRADUAL INCREASE"
 
-    elif tightening and sentiment_state in ("FEAR", "EXTREME_FEAR"):
+    elif phase == "RISK-ON EXPANSION":
+        action = "INCREASE"
+
+    elif phase == "LATE CYCLE / FROTH":
         action = "REDUCE"
-        narrative = "긴축 구조 + 공포 심리 정렬 → 리스크 축소 우선"
 
-    elif tightening and not credit_calm:
-        action = "REDUCE"
-        narrative = "긴축 구조 + 크레딧 악화 → 방어적 포지션 필요"
+    elif phase == "DEFENSIVE / STRESS":
+        action = "DEFENSIVE"
 
     # ---------------------------
-    # 4️⃣ Output (기존 필터와 동일 포맷)
+    # 5️⃣ Narrative 한줄
+    # ---------------------------
+    narrative = (
+        f"구조={policy_bias_line.split('|')[0].strip()} / "
+        f"심리={sentiment_state} / "
+        f"크레딧={'안정' if credit_calm else '불안'} → "
+        f"현재 Phase는 {phase}"
+    )
+
+    # ---------------------------
+    # 6️⃣ Report 출력 (기존 스타일 유지)
     # ---------------------------
     lines = []
-    lines.append("### 🧠 13) Narrative Engine (v1.1)")
-    lines.append("- **질문:** 오늘 시장 스토리는 무엇이며, 나는 리스크를 늘려야 하는가 줄여야 하는가?")
+    lines.append("🧠 13) Narrative Engine (v2)")
+    lines.append(f"- Structure Bias: {policy_bias_line}")
+    lines.append(f"- Sentiment (Fear&Greed): {fear if fear is not None else 'N/A'} ({sentiment_state})")
+    lines.append(f"- Credit Calm: {credit_calm}")
+    lines.append(f"- Liquidity Supportive: {liq_supportive}")
     lines.append("")
-    lines.append(f"- **Structure Bias:** {policy_bias_line}")
-    lines.append(f"- **Sentiment (Fear&Greed):** {fear if fear is not None else 'N/A'} ({sentiment_state})")
-    lines.append(f"- **Credit Calm:** {credit_calm}")
-    lines.append(f"- **Liquidity Supportive:** {liq_supportive}")
-    lines.append("")
-    lines.append(f"- **🎯 Final Risk Action:** **{action}**")
-    lines.append(f"- **Narrative:** {narrative}")
+    lines.append(f"- **Phase:** {phase}")
+    lines.append(f"- 🎯 Final Risk Action: **{action}**")
+    lines.append(f"- Narrative: {narrative}")
 
     return "\n".join(lines)
-
 
 
 # =========================
