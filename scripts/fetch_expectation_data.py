@@ -1,130 +1,219 @@
+# scripts/fetch_expectation_data.py
+from __future__ import annotations
+
+import time
+from typing import Dict, Any, Optional, Tuple
+
+import pandas as pd
 import requests
-from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
 
 
-def _safe_text(td):
-    return td.get_text(strip=True) if td else None
+# Keyless FRED CSV endpoint
+# Example: https://fred.stlouisfed.org/graph/fredgraph.csv?id=CPIAUCSL
+FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv"
 
 
-def fetch_expectation_data():
+# You can adjust series choices anytime (all are public + stable IDs)
+SERIES = {
+    # Inflation
+    "CPI": "CPIAUCSL",       # CPI-U (SA), Index 1982-84=100 (monthly)
+    "PCE": "PCEPI",          # PCE price index (monthly)
+
+    # Labor
+    "UNRATE": "UNRATE",      # Unemployment rate (monthly)
+    "PAYEMS": "PAYEMS",      # Nonfarm payrolls (monthly level, thousands)
+
+    # Policy / expectations
+    "FEDFUNDS": "FEDFUNDS",  # Effective Fed Funds Rate (monthly)
+    "T10YIE": "T10YIE",      # 10-Year Breakeven Inflation Rate (daily)
+}
+
+
+def _fetch_fred_series_df(series_id: str, timeout: int = 20) -> pd.DataFrame:
     """
-    Fetch economic calendar events from Investing.com via its AJAX endpoint.
-    Returns: list[dict] with keys:
-      - time, currency, event, importance, actual, forecast, previous
+    Fetch a single FRED series as a dataframe with columns: date, value
+    Uses keyless fredgraph.csv endpoint.
     """
+    url = f"{FRED_CSV}?id={series_id}"
 
-    base_url = "https://www.investing.com/economic-calendar/"
-    ajax_url = "https://www.investing.com/economic-calendar/Service/getCalendarFilteredData"
-
-    headers_base = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Referer": base_url,
+    headers = {
+        # Helps reduce occasional blocking / weird responses
+        "User-Agent": "Mozilla/5.0 (compatible; Global-Capital-Flow-Monitor/1.0; +https://github.com/)",
+        "Accept": "text/csv,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     }
 
-    s = requests.Session()
+    # Small retry (network hiccup safe)
+    last_err = None
+    for i in range(3):
+        try:
+            r = requests.get(url, headers=headers, timeout=timeout)
+            r.raise_for_status()
+            # fredgraph.csv is tiny; parse via pandas from string
+            from io import StringIO
+            df = pd.read_csv(StringIO(r.text))
+            # Expected columns: DATE, <SERIES_ID>
+            if df.empty or "DATE" not in df.columns:
+                raise ValueError(f"Unexpected CSV format for {series_id}")
+            value_col = series_id
+            if value_col not in df.columns:
+                # sometimes column name can differ; fallback to last column
+                value_col = df.columns[-1]
 
-    # 1) First GET to set cookies/session
-    try:
-        r0 = s.get(base_url, headers=headers_base, timeout=15)
-        r0.raise_for_status()
-    except Exception as e:
-        print(f"[DEBUG] fetch_expectation_data() ERROR: initial GET failed: {type(e).__name__} {e}")
-        return []
-
-    # 2) POST to AJAX endpoint
-    # date range: today -> today+1 (Investing expects mm/dd/YYYY)
-    today = datetime.utcnow().date()
-    date_from = today.strftime("%m/%d/%Y")
-    date_to = (today + timedelta(days=1)).strftime("%m/%d/%Y")
-
-    payload = {
-        # typical params used by Investing calendar
-        "dateFrom": date_from,
-        "dateTo": date_to,
-        "timeZone": "55",          # 55 is often "GMT" in their internal mapping; ok as placeholder
-        "timeFilter": "timeRemain",
-        "currentTab": "custom",
-        "limit_from": 0,
-    }
-
-    headers_ajax = {
-        **headers_base,
-        "X-Requested-With": "XMLHttpRequest",
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "Accept": "application/json, text/javascript, */*; q=0.01",
-    }
-
-    try:
-        r = s.post(ajax_url, data=payload, headers=headers_ajax, timeout=15)
-        r.raise_for_status()
-    except Exception as e:
-        print(f"[DEBUG] fetch_expectation_data() ERROR: AJAX POST failed: {type(e).__name__} {e}")
-        return []
-
-    # 3) Parse JSON -> HTML fragment
-    try:
-        j = r.json()
-    except Exception as e:
-        print(f"[DEBUG] fetch_expectation_data() ERROR: JSON parse failed: {type(e).__name__} {e}")
-        return []
-
-    html = j.get("data") or j.get("html") or ""
-    if not html or not isinstance(html, str):
-        print("[DEBUG] fetch_expectation_data() ERROR: AJAX returned no HTML fragment.")
-        return []
-
-    soup = BeautifulSoup(html, "html.parser")
-    rows = soup.find_all("tr")
-
-    out = []
-    for tr in rows:
-        tds = tr.find_all("td")
-        if len(tds) < 5:
+            out = df.rename(columns={"DATE": "date", value_col: "value"})[["date", "value"]]
+            out["date"] = pd.to_datetime(out["date"], errors="coerce")
+            out["value"] = pd.to_numeric(out["value"], errors="coerce")
+            out = out.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+            return out
+        except Exception as e:
+            last_err = e
+            # backoff
+            time.sleep(0.7 * (i + 1))
             continue
 
-        # Investing markup varies. We try to be resilient:
-        time = _safe_text(tds[0])
-        currency = _safe_text(tds[1])
-        event = _safe_text(tds[2])
+    raise last_err  # type: ignore
 
-        # Importance: often represented by icons/spans; fallback = count of "bull" icons if present
-        importance = 0
+
+def _latest_and_prev(df: pd.DataFrame) -> Tuple[Optional[float], Optional[float], Optional[str]]:
+    """
+    Return latest_value, prev_value, asof_date(YYYY-MM-DD) based on last non-NaN rows.
+    """
+    if df is None or df.empty:
+        return None, None, None
+
+    d = df.dropna(subset=["value"]).copy()
+    if d.empty:
+        return None, None, None
+
+    latest = d.iloc[-1]
+    latest_val = float(latest["value"])
+    asof = pd.to_datetime(latest["date"]).strftime("%Y-%m-%d")
+
+    prev_val = None
+    if len(d) >= 2:
+        prev = d.iloc[-2]
+        prev_val = float(prev["value"])
+
+    return latest_val, prev_val, asof
+
+
+def _delta(latest: Optional[float], prev: Optional[float]) -> Optional[float]:
+    if latest is None or prev is None:
+        return None
+    return latest - prev
+
+
+def _fmt(x: Optional[float], nd: int = 2) -> str:
+    if x is None:
+        return "N/A"
+    try:
+        return f"{x:.{nd}f}"
+    except Exception:
+        return "N/A"
+
+
+def fetch_expectation_data() -> Dict[str, Any]:
+    """
+    Keyless, stable "Policy Event Surprise Proxy" from FRED.
+
+    Returns a dict that attach_expectation_layer() will store under market_data["EXPECTATIONS"].
+    Recommended usage in strategist_filters:
+      - Use EXPECTATIONS["proxy"]["CPI_delta"], ["UNRATE_delta"], ["PAYEMS_delta"], etc.
+      - Add a one-line bias: inflation cooling vs heating, labor cooling vs overheating, policy easing vs tightening.
+    """
+    out: Dict[str, Any] = {
+        "source": "FRED (keyless) policy-event proxies",
+        "as_of": None,
+        "series": {},
+        "proxy": {},
+        "bias_line": None,
+    }
+
+    errors = {}
+
+    # Fetch all series
+    asof_candidates = []
+
+    for name, sid in SERIES.items():
         try:
-            # common: <i class="grayFullBullishIcon"> or similar
-            importance = len(tr.select("i.grayFullBullishIcon, i.bullishIcon, i.fullBullishIcon"))
-            if importance == 0:
-                # some layouts use spans
-                importance = len(tr.select("span.grayFullBullishIcon, span.bullishIcon, span.fullBullishIcon"))
-        except Exception:
-            importance = 0
+            df = _fetch_fred_series_df(sid)
+            latest, prev, asof = _latest_and_prev(df)
+            asof_candidates.append(asof)
 
-        # columns for actual/forecast/previous may shift; we try typical positions:
-        actual = _safe_text(tds[3]) if len(tds) > 3 else None
-        forecast = _safe_text(tds[4]) if len(tds) > 4 else None
-        previous = _safe_text(tds[5]) if len(tds) > 5 else None
-
-        # filter out speech/remarks
-        if event:
-            low = event.lower()
-            if any(k in low for k in ["speaks", "speech", "testifies", "remarks"]):
-                continue
-
-        out.append(
-            {
-                "time": time,
-                "currency": currency,
-                "event": event,
-                "importance": importance,
-                "actual": actual if actual not in ("", "N/A", "-", "—") else None,
-                "forecast": forecast if forecast not in ("", "N/A", "-", "—") else None,
-                "previous": previous if previous not in ("", "N/A", "-", "—") else None,
+            out["series"][name] = {
+                "fred_id": sid,
+                "asof": asof,
+                "latest": latest,
+                "prev": prev,
+                "delta": _delta(latest, prev),
             }
-        )
+        except Exception as e:
+            errors[name] = f"{type(e).__name__}: {e}"
 
-    print(f"[DEBUG] fetch_expectation_data() AJAX events count: {len(out)}")
-    if out:
-        print(f"[DEBUG] sample event: {out[0]}")
+    if errors:
+        out["errors"] = errors
+
+    # Choose most recent non-null as_of
+    asof_candidates = [d for d in asof_candidates if d]
+    out["as_of"] = max(asof_candidates) if asof_candidates else None
+
+    # Build proxies we care about
+    def get_delta(key: str) -> Optional[float]:
+        s = out["series"].get(key, {})
+        return s.get("delta")
+
+    cpi_d = get_delta("CPI")
+    pce_d = get_delta("PCE")
+    unrate_d = get_delta("UNRATE")
+    payems_d = get_delta("PAYEMS")
+    ffr_d = get_delta("FEDFUNDS")
+    be10y_d = get_delta("T10YIE")
+
+    out["proxy"] = {
+        "CPI_delta": cpi_d,
+        "PCE_delta": pce_d,
+        "UNRATE_delta": unrate_d,
+        "PAYEMS_delta": payems_d,
+        "FEDFUNDS_delta": ffr_d,
+        "T10YIE_delta": be10y_d,
+    }
+
+    # One-line bias heuristic (simple but stable)
+    # Interpretation:
+    # - Inflation cooling if CPI/PCE delta < 0
+    # - Labor cooling if UNRATE delta > 0 or PAYEMS delta < 0
+    # - Policy easing if FEDFUNDS delta < 0
+    inflation = "Inflation: N/A"
+    if cpi_d is not None or pce_d is not None:
+        # prefer CPI, fallback PCE
+        base = cpi_d if cpi_d is not None else pce_d
+        inflation = "Inflation: cooling" if (base is not None and base < 0) else "Inflation: heating/firm"
+
+    labor = "Labor: N/A"
+    if unrate_d is not None or payems_d is not None:
+        # If unemployment up OR payrolls down => cooling
+        cooling = (unrate_d is not None and unrate_d > 0) or (payems_d is not None and payems_d < 0)
+        labor = "Labor: cooling" if cooling else "Labor: firm"
+
+    policy = "Policy: N/A"
+    if ffr_d is not None:
+        policy = "Policy: easing" if ffr_d < 0 else ("Policy: tightening/hold" if ffr_d > 0 else "Policy: hold")
+
+    breakeven = "Infl. expectations(10y): N/A"
+    if be10y_d is not None:
+        breakeven = "Infl. expectations(10y): down" if be10y_d < 0 else ("Infl. expectations(10y): up" if be10y_d > 0 else "Infl. expectations(10y): flat")
+
+    out["bias_line"] = (
+        f"{inflation} (CPIΔ {_fmt(cpi_d,2)} / PCEΔ {_fmt(pce_d,2)}) | "
+        f"{labor} (URΔ {_fmt(unrate_d,2)} / PAYEMSΔ {_fmt(payems_d,1)}) | "
+        f"{policy} (FFRΔ {_fmt(ffr_d,2)}) | "
+        f"{breakeven} (T10YIEΔ {_fmt(be10y_d,2)})"
+    )
 
     return out
+
+
+if __name__ == "__main__":
+    # Local quick test
+    data = fetch_expectation_data()
+    print(data.get("source"), data.get("as_of"))
+    print(data.get("bias_line"))
