@@ -35,53 +35,31 @@ def safe_read_existing(csv_path: Path) -> pd.DataFrame:
         return pd.DataFrame(columns=["date", "FCI", "REAL_RATE"])
 
 def main() -> None:
+    def main() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    fci_df = fetch_fred(SERIES["FCI"])
-    real_df = fetch_fred(SERIES["REAL_RATE"])
+    fci_df = fetch_fred(SERIES["FCI"]).rename(columns={SERIES["FCI"]: "FCI"})
+    real_df = fetch_fred(SERIES["REAL_RATE"]).rename(columns={SERIES["REAL_RATE"]: "REAL_RATE"})
 
-    # as_of = 둘 중 더 "느린 최신일" 기준으로 스냅샷
-    as_of = min(fci_df.iloc[-1]["date"], real_df.iloc[-1]["date"])
+    # 최근 구간만 넉넉히 (ffill용)
+    fci_df = fci_df.tail(180)
+    real_df = real_df.tail(180)
 
-    def last_value_on_or_before(df: pd.DataFrame, col: str) -> float:
-        sub = df[df["date"] <= as_of]
-        if sub.empty:
-            raise ValueError(f"No data on or before {as_of.date()} for {col}")
-        return float(sub.iloc[-1][col])
+    merged = pd.merge(fci_df, real_df, on="date", how="outer")
+    merged = merged.sort_values("date").drop_duplicates(subset=["date"], keep="last")
 
-    fci = last_value_on_or_before(fci_df, SERIES["FCI"])
-    real_rate = last_value_on_or_before(real_df, SERIES["REAL_RATE"])
+    # ✅ 주간/결측을 일간으로 메꾸기
+    merged["FCI"] = merged["FCI"].ffill()
+    merged["REAL_RATE"] = merged["REAL_RATE"].ffill()
 
-    new_row = pd.DataFrame([{
-        "date": as_of.strftime("%Y-%m-%d"),
-        "FCI": fci,
-        "REAL_RATE": real_rate,
-    }])
+    # 마지막 90행 정도만 저장
+    merged = merged.dropna(subset=["date"]).tail(90)
 
-    old = safe_read_existing(OUT_CSV)
-    # ✅ 초기 1회: 파일이 비었으면 최근 60개 관측치 백필
-    if old.empty:
-        # 두 시계열을 date로 merge해서 공통 날짜만 사용
-        fci_df2 = fci_df.rename(columns={SERIES["FCI"]: "FCI"})
-        real_df2 = real_df.rename(columns={SERIES["REAL_RATE"]: "REAL_RATE"})
-        merged = pd.merge(fci_df2[["date", "FCI"]], real_df2[["date", "REAL_RATE"]], on="date", how="inner")
-        merged = merged.dropna(subset=["date", "FCI", "REAL_RATE"]).sort_values("date").reset_index(drop=True)
+    merged["date"] = merged["date"].dt.strftime("%Y-%m-%d")
+    merged.to_csv(OUT_CSV, index=False)
 
-        # 최근 60개만 저장 (원하면 90/120으로 늘려도 됨)
-        backfill = merged.tail(60).copy()
-        backfill["date"] = backfill["date"].dt.strftime("%Y-%m-%d")
-        backfill.to_csv(OUT_CSV, index=False)
-        print(f"[OK] fred_macro_extras backfilled: {OUT_CSV} (rows={len(backfill)})")
-        return
-        
-    combined = pd.concat([old, new_row], ignore_index=True)
-    combined["date"] = pd.to_datetime(combined["date"], errors="coerce")
-    combined = combined.dropna(subset=["date"]).sort_values("date")
-    combined = combined.drop_duplicates(subset=["date"], keep="last")
-    combined["date"] = combined["date"].dt.strftime("%Y-%m-%d")
+    print(f"[OK] fred_macro_extras updated: {OUT_CSV} (rows={len(merged)})")
 
-    combined.to_csv(OUT_CSV, index=False)
-    print(f"[OK] fred_macro_extras updated: {OUT_CSV} (rows={len(combined)})")
 
 if __name__ == "__main__":
     main()
