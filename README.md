@@ -1,207 +1,296 @@
-# 🌍 Global Capital Flow Monitor
+🌍 Global Capital Flow Monitor
 
-> **A strategist‑oriented macro & capital‑flow monitoring system**
-> combining **quant signals** with **human strategic filters**.
+A 13-Layer Macro Structure & Narrative Engine
 
----
+“Markets are not random.
+They are structure + liquidity + incentives + psychology interacting in motion.”
 
-## 🔍 What is this project?
+This project is a personal macro-structure engine designed to monitor:
+	•	Global capital flow direction
+	•	Policy bias & liquidity regime
+	•	Credit stress conditions
+	•	Market psychology & narrative alignment
 
-**Global Capital Flow Monitor** is a personal research & automation project designed to:
+It does NOT generate buy/sell signals.
+It builds structural interpretation discipline.
 
-* Track **global capital flow** through core macro indicators
-* Detect **market regime shifts** (risk‑on / risk‑off / transition)
-* Translate raw data into **strategist‑level interpretation**, not just numbers
+⸻
 
-This is **not a trading bot** and **not a pure quant model**.
+🎯 Why This Project Exists
 
-It is a **strategy thinking framework** that sits between:
+Most dashboards show data.
 
-* Quantitative signals (rates, FX, volatility)
-* Macro / policy context
-* Human judgment & scenario awareness
+This engine interprets:
+	1.	What moved?
+	2.	Why did it move?
+	3.	Was it expected?
+	4.	Who benefits?
+	5.	What regime are we in?
+	6.	How does it propagate cross-asset?
+	7.	What hidden risks exist?
+	8.	What narrative is the market believing?
+	9.	Is this short-term noise or structural shift?
+	10.	Where might global capital flow next?
 
----
+This is a structure-reading framework, not a prediction machine.
 
-## 🧠 Why this matters (for recruiters & reviewers)
+⸻
 
-Most dashboards answer:
+🧠 The 13 Strategic Filters
 
-> *“What moved today?”*
+1️⃣ Market Regime Filter
 
-This project answers:
+Defines current market phase:
+	•	Risk-On
+	•	Risk-Off
+	•	Transition / Mixed
 
-> **“Why does this move matter *now*, under this regime?”**
+Core inputs:
+US10Y / DXY / VIX alignment
 
-Key differentiators:
+⸻
 
-* ✅ **Regime‑aware interpretation** (same signal ≠ same meaning)
-* ✅ **Liquidity & policy filters** layered on top of raw data
-* ✅ Daily automation via **GitHub Actions**
-* ✅ Clear separation between *signal*, *filter*, and *judgment*
+2️⃣ Liquidity Filter (Enhanced)
 
-This reflects how **global strategists**, **macro researchers**, and **investment committees** actually think.
+Combines:
+	•	Price expectation signals
+	•	Financial Conditions (FCI)
+	•	Real Rates
 
----
+Determines:
+Liquidity Supportive / Fragile / Tight
 
-## 📊 Core Indicators Monitored
+⸻
 
-* **US 10Y Treasury Yield (US10Y)** – global discount rate
-* **DXY (US Dollar Index)** – global funding & risk barometer
-* **WTI Crude Oil** – inflation & real‑economy pressure
-* **VIX** – market stress & risk perception
-* **USD/KRW** – EM capital flow & dollar liquidity proxy
+3️⃣ Policy Filter (Macro-Δ Structure Engine)
 
----
+Uses structural deltas:
+	•	REAL_RATE
+	•	FCI
+	•	DXY
+	•	US10Y
 
-## 🧭 Strategist Filter Framework (Core Design)
+Creates:
+	•	Policy Bias Score
+	•	Structural Tightening / Easing Classification
+	•	Price vs Structure comparison
 
-Daily reports are built using layered filters:
+This is a structure-first interpretation model.
 
-### 🧩 1) Market Regime Filter
+⸻
 
-**Purpose:** Identify *what kind of market we are in*
+4️⃣ Fed Plumbing Filter
 
-* Risk‑On / Risk‑Off
-* Transition / Mixed
-* Event‑watching / Range
-
-> Same data behaves differently depending on regime.
-
----
-
-### 💧 2) Liquidity Filter
-
-**Question:** *Is fresh money entering the system or drying up?*
-
-Uses:
-
-* US10Y direction
-* DXY pressure
-* VIX behavior
-
-Outputs:
-
-* Liquidity expansion
-* Liquidity tightening
-* Mixed / fragile liquidity
-
----
-
-### 🏛️ 3) Policy Filter
-
-**Question:** *Is policy acting as a tailwind or a headwind?*
-
-Rationale:
-
-* Markets cannot sustainably move **against policy gravity**
+Tracks:
+	•	TGA
+	•	RRP
+	•	WALCL
+	•	NET_LIQ
 
 Detects:
+Dollar system internal liquidity shifts.
 
-* Easing bias
-* Tightening bias
-* Policy uncertainty / mixed signals
+⸻
 
----
+4.2️⃣ High Yield Spread Filter (HY OAS)
 
-### 📌 4) Directional Signals (Legacy Filters)
+Measures:
+	•	Credit stress temperature
 
-**Purpose:** Provide *asset‑level directional context*
+Low spread = calm
+Widening spread = risk temperature rising
 
-Includes:
+⸻
 
-* Direction (up / down / flat)
-* **Signal strength** classification:
+4.5️⃣ Credit Stress Filter (HYG vs LQD)
 
-  * Noise
-  * Mild
-  * Clear
-  * Strong
+Detects:
+Risk appetite inside credit markets.
 
-> Added to prevent over‑interpreting small daily noise.
+Credit often leads equities.
 
----
+⸻
 
-## 📁 Project Structure
+5️⃣ Directional Signals
 
-```text
-Global-Capital-Flow-Monitor/
-│
-├── data/
-│   └── macro_data.csv        # Auto‑updated macro time series
-│
-├── scripts/
-│   ├── fetch_macro_data.py   # Fetch & append daily macro data
-│   ├── generate_report.py    # Build daily strategist report
-│   ├── summarize_macro.py    # Optional summary helpers
-│   ├── visualize_macro.py    # Charts & visuals
-│   └── risk_alerts.py        # Risk‑signal experiments
-│
-├── filters/
-│   └── strategist_filters.py # Core strategist logic (regime, liquidity, policy)
-│
-├── reports/
-│   └── daily_report_YYYY-MM-DD.md
-│
-├── .github/workflows/
-│   └── daily-macro.yml       # GitHub Actions automation
-│
-└── README.md
-```
+Separates:
+Noise vs Meaningful Move
 
----
+Prevents overinterpretation of small changes.
 
-## ⚙️ Automation
+⸻
 
-* Runs **daily via GitHub Actions**
-* Automatically:
+6️⃣ Cross-Asset Filter
 
-  1. Updates macro data
-  2. Generates strategist report
-  3. Commits results back to repository
+Tracks propagation:
 
-This ensures:
+Example:
+VIX ↑ → USD ↑ → EM pressure → commodities impact
 
-* No manual execution
-* Time‑consistent analysis
-* Reproducible daily history
+Capital flow rarely moves in isolation.
 
----
+⸻
 
-## 🎯 Who this project is for
+7️⃣ Risk Exposure Filter
 
-This project reflects skills relevant to:
+Identifies hidden second-order risk.
 
-* Global Strategy / Macro Research
-* Asset Management (Multi‑asset, Global)
-* Global Markets / Sales / Structuring support
-* Strategy & Research roles bridging data and narrative
+Example:
+Oil ↑ → inflation impulse → rate repricing risk
 
----
+⸻
 
-## 🧩 Philosophy
+8️⃣ Incentive Filter
 
-> **Numbers don’t move markets. Interpretation does.**
+Asks:
+Who benefits?
 
-This project is an experiment in:
+Markets move where incentives align.
 
-* Turning data into *decision‑ready insight*
-* Making strategy thinking explicit and structured
-* Building a personal, evolving strategist toolkit
+⸻
 
----
+9️⃣ Cause Filter
 
-📌 *This repository is actively evolving.*
-Future extensions may include:
+Attempts structural cause detection from signal clustering.
 
-* Cross‑asset correlation filters
-* Event‑risk scoring
-* Scenario‑based summaries
+⸻
 
----
+🔟 Direction Filter
 
-**Author:** Seyeon Kim
-**Focus:** Global strategy · macro · capital flows
+Magnitude-weighted movement classification.
 
+⸻
 
+1️⃣1️⃣ Timing Filter
 
+Classifies signals by horizon:
+	•	Short-term
+	•	Medium-term
+	•	Structural
+
+⸻
+
+1️⃣2️⃣ Structural Filter
+
+Connects signals to:
+	•	Dollar dominance
+	•	Energy regime
+	•	Growth cycle shifts
+
+Macro regime layer.
+
+⸻
+
+1️⃣3️⃣ Narrative Engine (v2)
+
+Final synthesis layer.
+
+Inputs:
+	•	Policy Bias (structure)
+	•	Credit condition
+	•	Liquidity
+	•	Fear & Greed sentiment
+
+Outputs:
+	•	Market Phase
+	•	Final Risk Posture (Increase / Hold / Defensive / Reduce)
+	•	Narrative 1-liner
+
+This layer attempts to bridge:
+
+Data → Structure → Psychology → Capital Allocation Bias
+
+⸻
+
+⚙️ Data Sources
+	•	FRED (REAL_RATE, FCI, HY OAS, Liquidity plumbing)
+	•	ETF pricing (HYG, LQD)
+	•	Macro pricing (US10Y, DXY, VIX, WTI, USDKRW)
+	•	Sentiment proxy (Fear & Greed placeholder)
+	•	External expectation layer (extendable)
+
+All external layers are modular.
+
+⸻
+
+🧩 Architecture
+
+Daily workflow:
+	1.	Fetch macro data
+	2.	Fetch liquidity data
+	3.	Fetch credit spread data
+	4.	Fetch FRED extras
+	5.	Generate structured report
+	6.	Commit snapshot
+
+Output:
+/reports/daily_report_YYYY-MM-DD.md
+
+The engine is deterministic and reproducible.
+
+⸻
+
+🚫 What This Is NOT
+	•	Not a trading bot
+	•	Not a stock picker
+	•	Not a prediction engine
+	•	Not financial advice
+
+It is a capital flow interpretation framework.
+
+⸻
+
+🔮 Future Expansion Roadmap
+
+Planned upgrades:
+	•	Expectation Shock Layer (true economic surprise scoring)
+	•	Narrative vs Data divergence detector
+	•	Capital Flow Allocation Model (sector rotation mapping)
+	•	Regime persistence probability scoring
+	•	Sentiment integration from alternative sources
+
+Long-term goal:
+
+Build a personal macro-structure intelligence system
+capable of answering:
+
+“If global capital is moving, where must it eventually land?”
+
+⸻
+
+📌 Philosophy Behind the System
+
+Markets are not about guessing.
+
+They are about:
+	•	Regime recognition
+	•	Incentive mapping
+	•	Structure alignment
+	•	Risk asymmetry
+
+This engine trains the mind to think like a global strategist.
+
+⸻
+
+🧭 Author’s Intent
+
+This project exists to develop:
+	•	Macro structural literacy
+	•	Capital flow awareness
+	•	Regime transition detection
+	•	Narrative skepticism
+
+It is a thinking tool.
+
+Not a profit tool.
+
+⸻
+
+✨ Final Note
+
+Capital always flows somewhere.
+Structure decides direction.
+Liquidity decides speed.
+Psychology decides volatility.
+
+This monitor attempts to observe all three.
