@@ -384,7 +384,8 @@ def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
     """
     Policy Filter upgraded with Macro-Δ structure engine.
     - Always works even when EXPECTATIONS is missing/unusable.
-    - Uses REAL_RATE/FCI + DXY + US10Y to infer policy bias.
+    - Uses REAL_RATE/FCI + DXY + US10Y to infer policy bias (structure).
+    - Combines structure (bias) + price impulse (US10Y/DXY/VIX) into final regime.
     """
 
     # ---- helpers ----
@@ -434,7 +435,8 @@ def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
     vix_dir = _sign_from(vix)
 
     # ---- 2) structure score (policy bias) ----
-    # weights: REAL/FCI/DXY strong, US10Y weaker
+    # Convention: + direction = tighter / - direction = easier
+    # Stronger weights: REAL_RATE, FCI, DXY. Weaker: US10Y (already overlaps with REAL_RATE somewhat)
     score = 0.0
     components = []
 
@@ -443,36 +445,72 @@ def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
         if d is None:
             components.append(f"{name}Δ N/A")
             return
-        direction = _dir_from_delta(d)  # + = tightening impulse, - = easing impulse
+        direction = _dir_from_delta(d)  # + => tightening impulse, - => easing impulse
         score += w * direction
         components.append(f"{name}Δ {_fmt_delta(d)}")
 
-    add_component("REAL_RATE", real_d, 1.0)
-    add_component("FCI", fci_d, 1.0)
-    add_component("DXY", dxy_d, 1.0)
-    add_component("US10Y", us10y_d, 0.5)
+    add_component("REAL_RATE", real_d, 1.0)   # real yield up = tighter
+    add_component("FCI", fci_d, 1.0)          # conditions tighter = tighter
+    add_component("DXY", dxy_d, 1.0)          # dollar stronger = tighter
+    add_component("US10Y", us10y_d, 0.5)      # nominal up = tighter (weaker weight)
 
+    # Bias buckets (structure)
     if score >= 2.0:
         bias = "TIGHTENING (긴축)"
+        bias_strength = "STRONG"
     elif score <= -2.0:
         bias = "EASING (완화)"
+        bias_strength = "STRONG"
+    elif score >= 1.0:
+        bias = "TIGHTENING-LEAN (약긴축)"
+        bias_strength = "WEAK"
+    elif score <= -1.0:
+        bias = "EASING-LEAN (약완화)"
+        bias_strength = "WEAK"
     else:
         bias = "MIXED (혼조)"
+        bias_strength = "WEAK"
 
-    bias_line = f"Policy Bias: {bias} (score={score:+.1f}) | " + " / ".join(components)
+    bias_line = (
+        f"Policy Bias: {bias} ({bias_strength}, score={score:+.1f}) | "
+        + " / ".join(components)
+    )
 
-    # ---- 3) baseline regime from price action ----
-    regime = "POLICY MIXED (정책 신호 혼조)"
-    rationale = "금리/달러/변동성 신호가 완전히 정렬되지 않음"
+    # ---- 3) baseline regime from price action (reaction) ----
+    price_regime = "POLICY MIXED (정책 신호 혼조)"
+    price_rationale = "금리/달러/변동성 신호가 완전히 정렬되지 않음"
 
     if us10y_dir == -1 and dxy_dir == -1 and vix_dir in (-1, 0):
-        regime = "POLICY EASING (완화)"
-        rationale = "금리↓ + 달러↓ (+VIX 안정) → 완화 쪽"
+        price_regime = "POLICY EASING (완화)"
+        price_rationale = "금리↓ + 달러↓ (+VIX 안정) → 완화 쪽"
     elif us10y_dir == 1 and dxy_dir == 1:
-        regime = "POLICY TIGHTENING (긴축)"
-        rationale = "금리↑ + 달러↑ → 긴축 압력"
+        price_regime = "POLICY TIGHTENING (긴축)"
+        price_rationale = "금리↑ + 달러↑ → 긴축 압력"
 
-    # ---- 4) expectations (optional) ----
+    # ---- 4) final regime = structure + price (strategist logic) ----
+    # Rule:
+    # - If structure is STRONG (|score|>=2): structure leads, price is confirmation/contra-note
+    # - Else: price leads, structure is supporting context
+    regime = price_regime
+    rationale = price_rationale
+
+    if bias_strength == "STRONG":
+        if "TIGHTENING" in bias:
+            regime = "POLICY TIGHTENING (structure-led) (구조 주도)"
+            rationale = f"구조(REAL/FCI/DXY/US10Y)가 긴축 방향으로 강함 → 가격신호({price_regime})는 확인/노이즈로 처리"
+        elif "EASING" in bias:
+            regime = "POLICY EASING (structure-led) (구조 주도)"
+            rationale = f"구조(REAL/FCI/DXY/US10Y)가 완화 방향으로 강함 → 가격신호({price_regime})는 확인/노이즈로 처리"
+    else:
+        # structure weak => keep price-led, add nuance
+        if bias.startswith("TIGHTENING-LEAN") and "EASING" in price_regime:
+            rationale = price_rationale + " | 단, 구조는 약긴축 → 랠리 지속성/상단에 제약 가능"
+        elif bias.startswith("EASING-LEAN") and "TIGHTENING" in price_regime:
+            rationale = price_rationale + " | 단, 구조는 약완화 → 긴축 반응이 과대일 수 있음"
+        else:
+            rationale = price_rationale + f" | 구조는 {bias} (보조 신호)"
+
+    # ---- 5) expectations (optional) ----
     expectations_raw = market_data.get("EXPECTATIONS")
     if expectations_raw is None:
         exp_line = "Expectations: N/A (no data attached)"
@@ -483,19 +521,24 @@ def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
     else:
         exp_line = f"Expectations: unsupported type={type(expectations_raw).__name__}"
 
-    # ---- 5) report ----
+    # ---- 6) report ----
     lines = []
     lines.append("### 🏛️ 3) Policy Filter (with Expectations)")
     lines.append("- **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?")
     lines.append("")
-    lines.append(f"- **가격(현재) 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})")
+    lines.append(
+        f"- **가격(현재) 신호:** US10Y({_dir_str(us10y_dir)}) / "
+        f"DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})"
+    )
     lines.append(f"- **{bias_line}**")
     lines.append(f"- **{exp_line}**")
     lines.append("")
     lines.append(f"- **판정:** **{regime}**")
     lines.append(f"- **근거:** {rationale}")
+    lines.append(f"- **한줄요약 ~~** 구조는 **{bias}**, 가격은 **{price_regime}** → 최종 **{regime}**")
 
     return "\n".join(lines)
+
 
 
 # =========================
