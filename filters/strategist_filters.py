@@ -380,186 +380,118 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
 # 3) Policy
 # =========================
 from typing import Dict, Any
-
 def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
     """
-    Policy Filter upgraded with selective Event Surprise Layer.
-
-    EXPECTATIONS can be:
-      A) dict  -> from FRED proxy fetch_expectation_data(): {"bias_line": ..., "proxy": {...}, "series": {...}}
-      B) list  -> economic-calendar events (legacy), with keys: event/actual/forecast/previous
+    Policy Filter upgraded with Macro-Δ structure engine.
+    - Always works even when EXPECTATIONS is missing/unusable.
+    - Uses REAL_RATE/FCI + DXY + US10Y to infer policy bias.
     """
 
-    expectations_raw = market_data.get("EXPECTATIONS")
+    # ---- helpers ----
+    def _safe_get_series(key: str) -> Dict[str, Any]:
+        s = _get_series(market_data, key) or {}
+        return {
+            "today": s.get("today"),
+            "prev": s.get("prev"),
+            "pct_change": s.get("pct_change"),
+        }
 
-    KEY_EVENTS = [
-        "CPI",
-        "Consumer Price Index",
-        "Nonfarm",
-        "Payroll",
-        "Fed Rate",
-        "Interest Rate",
-        "FOMC",
-    ]
-
-    def _to_float(x):
-        if x is None:
+    def _delta(s: Dict[str, Any]):
+        t, p = s.get("today"), s.get("prev")
+        if t is None or p is None:
             return None
         try:
-            return float(str(x).replace(",", "").replace("%", "").strip())
+            return float(t) - float(p)
         except Exception:
             return None
 
-    # -----------------------
-    # 1) Base price regime (US10Y / DXY / VIX)
-    # -----------------------
-    us10y = _get_series(market_data, "US10Y")
-    dxy = _get_series(market_data, "DXY")
-    vix = _get_series(market_data, "VIX")
+    def _dir_from_delta(d):
+        if d is None:
+            return 0
+        return 1 if d > 0 else (-1 if d < 0 else 0)
 
+    def _fmt_delta(d, digits=3):
+        if d is None:
+            return "N/A"
+        return f"{d:+.{digits}f}"
+
+    # ---- 1) pull series ----
+    us10y = _safe_get_series("US10Y")
+    dxy = _safe_get_series("DXY")
+    vix = _safe_get_series("VIX")
+    fci = _safe_get_series("FCI")
+    real = _safe_get_series("REAL_RATE")
+
+    us10y_d = _delta(us10y)
+    dxy_d = _delta(dxy)
+    vix_d = _delta(vix)
+    fci_d = _delta(fci)
+    real_d = _delta(real)
+
+    # Price impulse (what market did)
     us10y_dir = _sign_from(us10y)
     dxy_dir = _sign_from(dxy)
     vix_dir = _sign_from(vix)
 
+    # ---- 2) structure score (policy bias) ----
+    # weights: REAL/FCI/DXY strong, US10Y weaker
+    score = 0.0
+    components = []
+
+    def add_component(name: str, d, w: float):
+        nonlocal score
+        if d is None:
+            components.append(f"{name}Δ N/A")
+            return
+        direction = _dir_from_delta(d)  # + = tightening impulse, - = easing impulse
+        score += w * direction
+        components.append(f"{name}Δ {_fmt_delta(d)}")
+
+    add_component("REAL_RATE", real_d, 1.0)
+    add_component("FCI", fci_d, 1.0)
+    add_component("DXY", dxy_d, 1.0)
+    add_component("US10Y", us10y_d, 0.5)
+
+    if score >= 2.0:
+        bias = "TIGHTENING (긴축)"
+    elif score <= -2.0:
+        bias = "EASING (완화)"
+    else:
+        bias = "MIXED (혼조)"
+
+    bias_line = f"Policy Bias: {bias} (score={score:+.1f}) | " + " / ".join(components)
+
+    # ---- 3) baseline regime from price action ----
     regime = "POLICY MIXED (정책 신호 혼조)"
     rationale = "금리/달러/변동성 신호가 완전히 정렬되지 않음"
 
     if us10y_dir == -1 and dxy_dir == -1 and vix_dir in (-1, 0):
         regime = "POLICY EASING (완화)"
-        rationale = "금리↓ + 달러↓ (+VIX 안정) → 완화적 환경"
+        rationale = "금리↓ + 달러↓ (+VIX 안정) → 완화 쪽"
     elif us10y_dir == 1 and dxy_dir == 1:
         regime = "POLICY TIGHTENING (긴축)"
         rationale = "금리↑ + 달러↑ → 긴축 압력"
 
-    # -----------------------
-    # 2) Event Surprise Layer (A: FRED proxy / B: calendar events)
-    # -----------------------
-    event_surprise = None           # "DOVISH" | "HAWKISH" | "INLINE"
-    event_name_used = None          # short label
-    event_detail = None             # optional detail line
-
-    # ---- A) FRED proxy dict ----
-    if isinstance(expectations_raw, dict):
-        bias_line = expectations_raw.get("bias_line")
-        proxy = expectations_raw.get("proxy", {}) if isinstance(expectations_raw.get("proxy"), dict) else {}
-
-        cpi_d = _to_float(proxy.get("CPI_delta"))
-        pce_d = _to_float(proxy.get("PCE_delta"))
-        unrate_d = _to_float(proxy.get("UNRATE_delta"))
-        payems_d = _to_float(proxy.get("PAYEMS_delta"))
-        ffr_d = _to_float(proxy.get("FEDFUNDS_delta"))
-
-        # Simple proxy-based surprise:
-        # - DOVISH if inflation cooling OR labor cooling OR policy rate falling
-        # - HAWKISH if inflation heating AND labor firm AND policy rate rising/hold
-        # (proxy는 '기대 대비'가 아니라 '전월/전기 대비 변화'라서 "surprise"라기보단 "event impulse"에 가까움)
-        dovish_score = 0
-        hawkish_score = 0
-
-        # inflation impulse
-        base_inf = cpi_d if cpi_d is not None else pce_d
-        if base_inf is not None:
-            if base_inf < 0:
-                dovish_score += 1
-            elif base_inf > 0:
-                hawkish_score += 1
-
-        # labor impulse
-        labor_cooling = ((unrate_d is not None and unrate_d > 0) or (payems_d is not None and payems_d < 0))
-        labor_firm = ((unrate_d is not None and unrate_d <= 0) and (payems_d is not None and payems_d >= 0))
-        if labor_cooling:
-            dovish_score += 1
-        elif labor_firm:
-            hawkish_score += 1
-
-        # policy impulse
-        if ffr_d is not None:
-            if ffr_d < 0:
-                dovish_score += 1
-            elif ffr_d > 0:
-                hawkish_score += 1
-
-        if dovish_score > hawkish_score and dovish_score > 0:
-            event_surprise = "DOVISH"
-            event_name_used = "FRED Proxy (Infl/Labor/Policy)"
-            event_detail = bias_line or "Proxy indicates easing impulse"
-        elif hawkish_score > dovish_score and hawkish_score > 0:
-            event_surprise = "HAWKISH"
-            event_name_used = "FRED Proxy (Infl/Labor/Policy)"
-            event_detail = bias_line or "Proxy indicates tightening impulse"
-        else:
-            # tie or no signal
-            event_surprise = None
-            event_name_used = None
-            event_detail = bias_line  # still show if exists
-
-    # ---- B) Calendar events list ----
+    # ---- 4) expectations (optional) ----
+    expectations_raw = market_data.get("EXPECTATIONS")
+    if expectations_raw is None:
+        exp_line = "Expectations: N/A (no data attached)"
     elif isinstance(expectations_raw, list):
-        for item in expectations_raw:
-            if not isinstance(item, dict):
-                continue
+        exp_line = f"Expectations: list received (len={len(expectations_raw)}), event-surprise layer not applied."
+    elif isinstance(expectations_raw, dict):
+        exp_line = "Expectations: dict received."
+    else:
+        exp_line = f"Expectations: unsupported type={type(expectations_raw).__name__}"
 
-            event_name = str(item.get("event", "")).strip()
-            if not event_name:
-                continue
-
-            if any(k.lower() in event_name.lower() for k in KEY_EVENTS):
-                actual = _to_float(item.get("actual"))
-                forecast = _to_float(item.get("forecast"))
-
-                if actual is not None and forecast is not None:
-                    surprise = actual - forecast
-
-                    if surprise > 0:
-                        event_surprise = "HAWKISH"
-                    elif surprise < 0:
-                        event_surprise = "DOVISH"
-                    else:
-                        event_surprise = "INLINE"
-
-                    event_name_used = event_name
-                    event_detail = f"actual={actual} vs forecast={forecast} (Δ={surprise:+.2f})"
-                    break
-
-    # -----------------------
-    # 3) Regime override (only if event_surprise is strong)
-    # -----------------------
-    if event_surprise == "DOVISH":
-        regime = "POLICY EASING (Event Impulse)"
-        rationale = f"{event_name_used}: dovish impulse"
-    elif event_surprise == "HAWKISH":
-        regime = "POLICY TIGHTENING (Event Impulse)"
-        rationale = f"{event_name_used}: hawkish impulse"
-    elif event_surprise == "INLINE":
-        # keep base regime, but explain
-        rationale = f"{rationale} + {event_name_used}: inline"
-
-    # -----------------------
-    # 4) Report
-    # -----------------------
+    # ---- 5) report ----
     lines = []
     lines.append("### 🏛️ 3) Policy Filter (with Expectations)")
     lines.append("- **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?")
     lines.append("")
-    lines.append(
-        f"- **가격(현재) 신호:** US10Y({_dir_str(us10y_dir)}) / "
-        f"DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})"
-    )
-
-    # Event section
-    if event_name_used:
-        lines.append(f"- **Event Used:** {event_name_used}")
-        lines.append(f"- **Event Impulse Bias:** {event_surprise}")
-        if event_detail:
-            lines.append(f"  - {event_detail}")
-    else:
-        # If we still have a bias_line (from dict but tie), show it
-        if isinstance(expectations_raw, dict) and expectations_raw.get("bias_line"):
-            lines.append("- **Event Impulse Bias:** MIXED/WEAK (proxy tie)")
-            lines.append(f"  - {expectations_raw.get('bias_line')}")
-        else:
-            lines.append("- **Event Impulse Bias:** N/A (no usable CPI/NFP/Fed proxy/event data)")
-
+    lines.append(f"- **가격(현재) 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})")
+    lines.append(f"- **{bias_line}**")
+    lines.append(f"- **{exp_line}**")
+    lines.append("")
     lines.append(f"- **판정:** **{regime}**")
     lines.append(f"- **근거:** {rationale}")
 
