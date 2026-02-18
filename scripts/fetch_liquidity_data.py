@@ -1,10 +1,9 @@
-import time
-
-# scripts/fetch_liquidity_data.py
 from __future__ import annotations
 
-from pathlib import Path
+import time
 import pandas as pd
+import urllib.error
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
