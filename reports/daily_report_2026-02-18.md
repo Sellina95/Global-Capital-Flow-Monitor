@@ -4,10 +4,10 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.052  (+0.00% vs 4.052)
-- **달러 인덱스**: 97.243  (-0.01% vs 97.250)
-- **WTI 유가**: 63.560  (+1.89% vs 62.380)
-- **변동성 지수 (VIX)**: 19.910  (+2.73% vs 19.380)
-- **원/달러 환율**: 1444.580  (+0.01% vs 1444.420)
+- **달러 인덱스**: 97.189  (-0.06% vs 97.243)
+- **WTI 유가**: 63.890  (+0.52% vs 63.560)
+- **변동성 지수 (VIX)**: 20.300  (+1.96% vs 19.910)
+- **원/달러 환율**: 1443.480  (-0.08% vs 1444.580)
 
 ---
 
@@ -25,7 +25,7 @@
 - **정의:** 지금 어떤 장(場)인지 판단하는 *시장 국면 필터*
 - **추가 이유:** 같은 지표도 ‘국면’에 따라 의미가 완전히 달라지기 때문
 
-- **VIX 레벨:** 19.91 → **Mid (Neutral/Mixed)**
+- **VIX 레벨:** 20.30 → **High (Risk-off bias)**
 - **핵심 조합(전일 대비 방향):** US10Y(→) / DXY(↓) / VIX(↑)
 - **판정:** **TRANSITION / MIXED (전환·혼조)**
 - **근거:** 금리/달러/변동성 축이 한 방향으로 정렬되지 않음
@@ -45,7 +45,7 @@
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(→) / DXY(↓) / VIX(↑)
-- **Policy Bias: EASING (완화) (MODERATE, score=-2.0) | REAL_RATEΔ -0.030 / FCIΔ +0.000 / DXYΔ -0.007 / US10YΔ +0.000**
+- **Policy Bias: EASING (완화) (MODERATE, score=-2.0) | REAL_RATEΔ -0.030 / FCIΔ +0.000 / DXYΔ -0.054 / US10YΔ +0.000**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY MIXED (정책 신호 혼조)**
@@ -86,10 +86,10 @@
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
-- DXY **(Noise, -0.01%)** → 달러 약세/리스크 선호
-- WTI **(Strong, +1.89%)** → 인플레 재자극 가능성
-- VIX **(Strong, +2.73%)** → 심리 악화/리스크오프
-- 원/달러(USDKRW) **(Noise, +0.01%)** → 원화 약세/수급 부담
+- DXY **(Mild, -0.06%)** → 달러 약세/리스크 선호
+- WTI **(Mild, +0.52%)** → 인플레 재자극 가능성
+- VIX **(Clear, +1.96%)** → 심리 악화/리스크오프
+- 원/달러(USDKRW) **(Mild, -0.08%)** → 원화 강세/수급 개선
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -125,7 +125,7 @@
 
 ### 🔄 10) Direction Filter
 - **질문:** 오늘 움직임은 ‘노이즈’인가 ‘의미 있는 변화’인가?
-- **강도:** US10Y(Noise) / DXY(Noise) / WTI(Strong) / VIX(Strong)
+- **강도:** US10Y(Noise) / DXY(Mild) / WTI(Mild) / VIX(Clear)
 - **판정:** **SIGNIFICANT MOVE (의미 있는 변화)**
 
 ### ⏳ 11) Timing Filter
@@ -133,10 +133,19 @@
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.052), DXY(97.243), VIX(19.91)
+- **Today snapshot:** US10Y(4.052), DXY(97.189), VIX(20.30)
 
 ### 🏗️ 12) Structural Filter
 - **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
 - **핵심 신호:** US10Y(→) / DXY(↓) / VIX(↑) / WTI(↑)
 - **판정:** **NEUTRAL**
 - **근거:** 패권/구조 신호가 뚜렷하지 않음
+
+🧠 13) Narrative Engine (v1)
+- Structure Bias: Policy Bias: EASING (완화) (MODERATE, score=-2.0) | REAL_RATEΔ -0.030 / FCIΔ +0.000 / DXYΔ -0.054 / US10YΔ +0.000
+- Sentiment (Fear&Greed): 35 (NEUTRAL)
+- Credit Calm: True
+- Liquidity Supportive: True
+
+- 🎯 Final Risk Action: **INCREASE**
+- Narrative: 구조 완화 + 크레딧 안정 + 유동성 우호 → 리스크 확대 가능
