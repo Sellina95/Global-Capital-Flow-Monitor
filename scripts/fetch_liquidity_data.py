@@ -1,3 +1,5 @@
+import time
+
 # scripts/fetch_liquidity_data.py
 from __future__ import annotations
 
