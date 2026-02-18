@@ -90,6 +90,9 @@ def fetch_expectation_data():
                          len(row.find_all(class_="redFullBullishIcon"))
         except Exception:
             importance = 0
+        name = event_name.lower()
+        if any(k in name for k in ["speaks", "speech", "testifies", "remarks"]):
+            continue
 
         data.append(
             {
