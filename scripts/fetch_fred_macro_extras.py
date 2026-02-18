@@ -59,7 +59,21 @@ def main() -> None:
     }])
 
     old = safe_read_existing(OUT_CSV)
+    # ✅ 초기 1회: 파일이 비었으면 최근 60개 관측치 백필
+    if old.empty:
+        # 두 시계열을 date로 merge해서 공통 날짜만 사용
+        fci_df2 = fci_df.rename(columns={SERIES["FCI"]: "FCI"})
+        real_df2 = real_df.rename(columns={SERIES["REAL_RATE"]: "REAL_RATE"})
+        merged = pd.merge(fci_df2[["date", "FCI"]], real_df2[["date", "REAL_RATE"]], on="date", how="inner")
+        merged = merged.dropna(subset=["date", "FCI", "REAL_RATE"]).sort_values("date").reset_index(drop=True)
 
+        # 최근 60개만 저장 (원하면 90/120으로 늘려도 됨)
+        backfill = merged.tail(60).copy()
+        backfill["date"] = backfill["date"].dt.strftime("%Y-%m-%d")
+        backfill.to_csv(OUT_CSV, index=False)
+        print(f"[OK] fred_macro_extras backfilled: {OUT_CSV} (rows={len(backfill)})")
+        return
+        
     combined = pd.concat([old, new_row], ignore_index=True)
     combined["date"] = pd.to_datetime(combined["date"], errors="coerce")
     combined = combined.dropna(subset=["date"]).sort_values("date")
