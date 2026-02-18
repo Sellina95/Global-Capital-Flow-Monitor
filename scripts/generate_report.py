@@ -383,6 +383,8 @@ def generate_daily_report() -> None:
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
+    market_data["SENTIMENT"] = {"fear_greed": 35}
+
   
 
 
