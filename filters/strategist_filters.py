@@ -455,25 +455,25 @@ def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
     add_component("US10Y", us10y_d, 0.5)      # nominal up = tighter (weaker weight)
 
     # Bias buckets (structure)
-    if score >= 2.0:
-        bias = "TIGHTENING (긴축)"
-        bias_strength = "STRONG"
-    elif score <= -2.0:
-        bias = "EASING (완화)"
-        bias_strength = "STRONG"
+    if score >= 2.5:
+    bias = "TIGHTENING (긴축)"
+    strength = "STRONG"
+    elif score <= -2.5:
+    bias = "EASING (완화)"
+    strength = "STRONG"
     elif score >= 1.0:
-        bias = "TIGHTENING-LEAN (약긴축)"
-        bias_strength = "WEAK"
+    bias = "TIGHTENING (긴축)"
+    strength = "MODERATE"
     elif score <= -1.0:
-        bias = "EASING-LEAN (약완화)"
-        bias_strength = "WEAK"
+    bias = "EASING (완화)"
+    strength = "MODERATE"
     else:
-        bias = "MIXED (혼조)"
-        bias_strength = "WEAK"
+    bias = "MIXED (혼조)"
+    strength = "WEAK"
 
-    bias_line = (
-        f"Policy Bias: {bias} ({bias_strength}, score={score:+.1f}) | "
-        + " / ".join(components)
+
+    bias_line = f"Policy Bias: {bias} ({strength}, score={score:+.1f}) | " + " / ".join(components)
+
     )
 
     # ---- 3) baseline regime from price action (reaction) ----
