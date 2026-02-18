@@ -472,6 +472,7 @@ def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
         strength = "WEAK"
 
     bias_line = f"Policy Bias: {bias} ({strength}, score={score:+.1f}) | " + " / ".join(components)
+    market_data["POLICY_BIAS_LINE"] = bias_line
 
     # ---- 3) baseline regime from price action ----
     price_regime = "POLICY MIXED (정책 신호 혼조)"
