@@ -1,7 +1,7 @@
-# scripts/fetch_credit_spread_data.py
 from __future__ import annotations
 
 from pathlib import Path
+import time
 import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -10,18 +10,29 @@ OUT_CSV = DATA_DIR / "credit_spread_data.csv"
 
 FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
 
-# ✅ ICE BofA US High Yield Index Option-Adjusted Spread (Percent)
-# FRED series id: BAMLH0A0HYM2
 SERIES_ID = "BAMLH0A0HYM2"
 
 
-def fetch_fred(series_id: str) -> pd.DataFrame:
-    df = pd.read_csv(f"{FRED_CSV}{series_id}")
-    df.columns = ["date", series_id]
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
-    df = df.dropna(subset=["date", series_id]).sort_values("date").reset_index(drop=True)
-    return df
+def fetch_fred(series_id: str, retries: int = 3, delay: int = 5) -> pd.DataFrame:
+    url = f"{FRED_CSV}{series_id}"
+    last_err = None
+
+    for attempt in range(retries):
+        try:
+            df = pd.read_csv(url)
+            df.columns = ["date", series_id]
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+            df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
+            df = df.dropna(subset=["date", series_id]).sort_values("date").reset_index(drop=True)
+            return df
+        except Exception as e:
+            last_err = e
+            print(f"[WARN] fetch_fred({series_id}) attempt {attempt + 1}/{retries} failed: {type(e).__name__}: {e}")
+            if attempt < retries - 1:
+                time.sleep(delay)
+
+    print(f"[ERROR] fetch_fred({series_id}) failed after {retries} attempts. Last error: {type(last_err).__name__}: {last_err}")
+    return pd.DataFrame(columns=["date", series_id])
 
 
 def safe_read_existing(csv_path: Path) -> pd.DataFrame:
@@ -45,7 +56,11 @@ def main() -> None:
 
     hy = fetch_fred(SERIES_ID)
 
-    # last available in FRED
+    # ✅ fail-soft
+    if hy.empty:
+        print("[WARN] credit spread fetch failed (empty). Skipping update; keeping previous CSV.")
+        return
+
     as_of = hy.iloc[-1]["date"]
     hy_oas = float(hy.iloc[-1][SERIES_ID])
 
@@ -68,3 +83,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
