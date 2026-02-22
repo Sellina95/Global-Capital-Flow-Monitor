@@ -140,12 +140,15 @@
 - **근거:** 패권/구조 신호가 뚜렷하지 않음
 
 ### 🧠 13) Narrative Engine (v2 + Risk Budget)
+- **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
+- **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
+
 - **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.0) | REAL_RATEΔ -0.010 / FCIΔ +0.000 / DXYΔ +0.000 / US10YΔ +0.000
-- **Sentiment (Fear&Greed):** 35 (NEUTRAL)
-- **Credit Calm:** True
-- **Liquidity Supportive:** False
+- **Sentiment (Fear&Greed):** 35.0 (NEUTRAL)
+- **Credit Calm (HY OAS<4):** True
+- **Liquidity Supportive (NET_LIQ pct>0):** False
 - **Phase:** WAITING / RANGE (대기·박스권)
 
 - **🎯 Final Risk Action:** **HOLD**
-- **Risk Budget (0~100):** **75**
-- **Narrative:** 구조/심리/유동성/크레딧 정렬이 불완전 → 관망
+- **Risk Budget (0~100):** **60**
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=비우호 / 크레딧=안정 → Phase=WAITING / RANGE (대기·박스권)
