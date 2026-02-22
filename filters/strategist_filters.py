@@ -1280,9 +1280,9 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Status:** **{status}**")
     lines.append(f"- **해석:** {explanation}")
 
-    return "\n".join(lines)# Build
-
-
+    return "\n".join(lines)
+    
+    #Build
 
 def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     """
@@ -1421,7 +1421,9 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
     lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
 
-    return "\n".join(lines)def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
+    return "\n".join(lines)
+    
+    def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
     sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
     sections.append(market_regime_filter(market_data))
