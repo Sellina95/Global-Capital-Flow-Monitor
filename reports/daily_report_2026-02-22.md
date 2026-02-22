@@ -173,3 +173,11 @@
 - **Final Multiplier:** 1.00x
 
 - **📊 Recommended Exposure:** **60%**
+
+### 🎨 16) Style Tilt (v1)
+- **정의:** Macro 구조 기반 스타일 기울기 판단
+- **추가 이유:** 같은 Risk-On이라도 어떤 유형의 자산이 유리한지 구분
+
+- **Growth vs Value:** **GROWTH TILT**
+- **Duration Tilt:** **NEUTRAL**
+- **Cyclical vs Defensive:** **NEUTRAL**
