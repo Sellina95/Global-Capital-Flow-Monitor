@@ -162,13 +162,14 @@
 - **Status:** **TRANSITION ZONE**
 - **해석:** 시장 방향 탐색 구간
 
-### 🎯 15) Volatility-Controlled Exposure
-- **정의:** Risk Budget을 실제 권장 익스포저(%)로 변환
-- **추가 이유:** 전략가는 방향뿐 아니라 ‘얼마나’ 노출할지 결정해야 함
+### 🎯 15) Volatility-Controlled Exposure (v2)
+- **정의:** Risk Budget을 실제 익스포저로 변환 (Pro Version)
+- **추가 이유:** 변동성·스트레스·국면을 모두 반영한 실전형 리스크 제어
 
-- **Risk Budget:** **60**
-- **Phase Cap:** **60**
-- **VIX Level:** **19.09** (NORMAL)
-- **Vol Multiplier:** **1.00x**
+- **Risk Budget:** 60
+- **Phase Cap:** 60
+- **VIX Level:** 19.09 (NORMAL)
+- **VIX Change (%):** +0.00%
+- **Final Multiplier:** 1.00x
 
 - **📊 Recommended Exposure:** **60%**
