@@ -1507,7 +1507,100 @@ def style_tilt_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Duration Tilt:** **{duration}**")
     lines.append(f"- **Cyclical vs Defensive:** **{cyclical}**")
     return "\n".join(lines)
-    
+
+
+def factor_layer_filter(market_data: Dict[str, Any]) -> str:
+    """
+    🧩 17) Factor Layer (v1)
+
+    정의: 시장을 움직이는 핵심 위험 요인 판별
+    목적: 자금이 무엇에 민감하게 반응하는지 파악
+    """
+
+    def _to_float(x):
+        try:
+            return float(str(x).replace(",", "").replace("%", ""))
+        except:
+            return None
+
+    # ---------------------------
+    # Pull Data
+    # ---------------------------
+
+    us10y = market_data.get("US10Y", {})
+    dxy = market_data.get("DXY", {})
+    oil = market_data.get("WTI", {})
+    hy = market_data.get("HY_OAS", {})
+
+    us10y_today = _to_float(us10y.get("today"))
+    us10y_prev = _to_float(us10y.get("prev"))
+    us10y_delta = None
+    if us10y_today is not None and us10y_prev is not None:
+        us10y_delta = us10y_today - us10y_prev
+
+    dxy_pct = _to_float(dxy.get("pct_change"))
+    oil_pct = _to_float(oil.get("pct_change"))
+    hy_level = _to_float(hy.get("today"))
+
+    # ---------------------------
+    # 1️⃣ Duration Factor
+    # ---------------------------
+
+    duration = "NEUTRAL"
+    if us10y_delta is not None:
+        if us10y_delta < 0:
+            duration = "LONG DURATION FAVORED"
+        elif us10y_delta > 0:
+            duration = "SHORT DURATION FAVORED"
+
+    # ---------------------------
+    # 2️⃣ Inflation Factor
+    # ---------------------------
+
+    inflation = "NEUTRAL"
+    if oil_pct is not None and us10y_delta is not None:
+        if oil_pct > 1 and us10y_delta > 0:
+            inflation = "INFLATION PRESSURE"
+        elif oil_pct < -1 and us10y_delta < 0:
+            inflation = "DISINFLATION"
+
+    # ---------------------------
+    # 3️⃣ USD Factor
+    # ---------------------------
+
+    usd = "NEUTRAL"
+    if dxy_pct is not None:
+        if dxy_pct > 0.3:
+            usd = "USD TIGHTENING"
+        elif dxy_pct < -0.3:
+            usd = "USD EASING"
+
+    # ---------------------------
+    # 4️⃣ Credit Factor
+    # ---------------------------
+
+    credit = "NEUTRAL"
+    if hy_level is not None:
+        if hy_level < 4:
+            credit = "CREDIT SUPPORTIVE"
+        elif hy_level > 5:
+            credit = "CREDIT STRESS"
+
+    # ---------------------------
+    # Output
+    # ---------------------------
+
+    lines = []
+    lines.append("### 🧩 17) Factor Layer (v1)")
+    lines.append("- **정의:** 시장을 움직이는 핵심 위험 요인 판별")
+    lines.append("- **추가 이유:** 자금이 무엇에 민감하게 반응하는지 파악")
+    lines.append("")
+    lines.append(f"- **Duration Factor:** {duration}")
+    lines.append(f"- **Inflation Factor:** {inflation}")
+    lines.append(f"- **USD Factor:** {usd}")
+    lines.append(f"- **Credit Factor:** {credit}")
+
+    return "\n".join(lines)    
 
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
@@ -1547,6 +1640,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(volatility_controlled_exposure_filter(market_data))
     sections.append("")    
-    sections.append(style_tilt_filter(market_data))    
+    sections.append(style_tilt_filter(market_data))   
+    sections.append("")    
+    sections.append(factor_layer_filter(market_data))    
     
     return "\n".join(sections)
