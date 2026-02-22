@@ -1380,4 +1380,6 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(narrative_engine_filter(market_data))
     sections.append("")
     sections.append(divergence_monitor_filter(market_data))    
+    sections.append("")
+    sections.append(exposure_control_filter(market_data))
     return "\n".join(sections)
