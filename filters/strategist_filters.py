@@ -1029,134 +1029,175 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
     lines.append("### 🏗️ 12) Structural Filter")
     lines.append("- **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?")
     lines.append(
-        f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)}) / WTI({_dir_str(wti_dir)})"
+        f"- **핵심 신호:** US10Y({_dir_str((=(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)}) / WTI({_dir_str(wti_dir)})"
     )
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
     return "\n".join(lines)
 
-def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
-    """
-    Narrative Engine v2 + Risk Budget (v1)
-    Structure + Liquidity + Credit + Sentiment + Phase
-    → Final Risk Action + Risk Budget score (0~100)
-    """
-
-    # ---------------------------
-    # 1️⃣ Pull core signals
-    # ---------------------------
-    policy_bias_line = market_data.get("POLICY_BIAS_LINE", "")  # e.g. "Policy Bias: EASING..."
-    liquidity_state = market_data.get("NET_LIQ", {})            # expects {today, prev, pct_change}
-    hy_oas = market_data.get("HY_OAS", {})                      # expects {today, prev, pct_change}
-    sentiment = market_data.get("SENTIMENT", {})                # e.g. {"fear_greed": 35}
-    phase = market_data.get("MARKET_REGIME", "N/A")             # optional: "TRANSITION" etc.
-
-    fear = sentiment.get("fear_greed")
-
-    # Structure proxy
-    easing = isinstance(policy_bias_line, str) and ("EASING" in policy_bias_line)
-    tightening = isinstance(policy_bias_line, str) and ("TIGHTENING" in policy_bias_line)
-
-    # Credit condition (simple rule)
-    credit_calm = False
-    if isinstance(hy_oas, dict) and hy_oas.get("today") is not None:
-        try:
-            credit_calm = float(hy_oas["today"]) < 4.0
-        except Exception:
-            credit_calm = False
-
-    # Liquidity direction (simple rule)
-    liq_supportive = False
-    if isinstance(liquidity_state, dict) and liquidity_state.get("pct_change") is not None:
-        try:
-            liq_supportive = float(liquidity_state["pct_change"]) > 0
-        except Exception:
-            liq_supportive = False
-
-    # ---------------------------
-    # 2️⃣ Sentiment interpretation
-    # ---------------------------
-    sentiment_state = "N/A"
-    if fear is None:
-        sentiment_state = "N/A"
-    else:
-        try:
-            f = float(fear)
-            if f < 30:
-                sentiment_state = "FEAR"
-            elif f > 70:
-                sentiment_state = "GREED"
-            else:
-                sentiment_state = "NEUTRAL"
-        except Exception:
-            sentiment_state = "N/A"
-
-    # ---------------------------
-    # 3️⃣ Decision logic (v2)
-    # ---------------------------
-    action = "HOLD"
-    narrative = "구조/심리/유동성/크레딧 정렬이 불완전 → 관망"
-
-    if easing and credit_calm and liq_supportive and sentiment_state not in ("FEAR", "N/A"):
-        action = "INCREASE"
-        narrative = "구조 완화 + 크레딧 안정 + 유동성 우호 + 심리 공포 아님 → 리스크 확대 가능"
-
-    elif tightening and (sentiment_state == "FEAR"):
-        action = "REDUCE"
-        narrative = "긴축 구조 + 공포 심리 → 리스크 축소 우선"
 
     elif easing and (sentiment_state == "FEAR"):
         action = "HOLD"
         narrative = "구조는 완화이나 심리는 공포 → 분할/대기 접근"
 
     # ---------------------------
-    # 4️⃣ Risk Budget Layer (0~100)
-    # ---------------------------
-    risk_score = 50  # base neutral
 
-    # Structure sets the base
-    if easing:
-        risk_score = 70
-    elif tightening:
-        risk_score = 30
+def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Narrative Engine v2 (Phase-Respecting Risk Budget)
+
+    Structure + Sentiment + Credit + Liquidity + Phase
+    → Final Risk Action + Risk Budget (0~100)
+
+    핵심 업그레이드:
+    - Phase별 Risk Budget 상한(cap) 적용
+    - 국면을 존중하는 월가식 구조
+    """
+
+    # --------------------------------------------------
+    # Helpers
+    # --------------------------------------------------
+
+    def _to_float(x) -> Optional[float]:
+        if x is None:
+            return None
+        if isinstance(x, (int, float)):
+            return float(x)
+        try:
+            return float(str(x).replace(",", "").replace("%", ""))
+        except Exception:
+            return None
+
+    def _clamp(x: int, lo: int = 0, hi: int = 100) -> int:
+        return max(lo, min(hi, x))
+
+    def _sentiment_state(fear: Optional[float]) -> str:
+        if fear is None:
+            return "N/A"
+        if fear < 30:
+            return "FEAR"
+        if fear > 70:
+            return "GREED"
+        return "NEUTRAL"
+
+    # --------------------------------------------------
+    # 1️⃣ Pull Signals
+    # --------------------------------------------------
+
+    policy_bias_line = market_data.get("POLICY_BIAS_LINE", "")
+    sentiment = market_data.get("SENTIMENT", {})
+    fear = _to_float(sentiment.get("fear_greed"))
+    sent_state = _sentiment_state(fear)
+
+    hy_oas = market_data.get("HY_OAS", {})
+    hy_oas_today = _to_float(hy_oas.get("today"))
+    credit_calm = None
+    if hy_oas_today is not None:
+        credit_calm = hy_oas_today < 4.0
+
+    net_liq = market_data.get("NET_LIQ", {})
+    net_liq_pct = _to_float(net_liq.get("pct_change"))
+    liq_supportive = None
+    if net_liq_pct is not None:
+        liq_supportive = net_liq_pct > 0
+
+    phase = market_data.get("MARKET_REGIME", "N/A")
+    phase_upper = str(phase).upper()
+
+    easing = "EASING" in policy_bias_line
+    tightening = "TIGHTENING" in policy_bias_line
+
+    # --------------------------------------------------
+    # 2️⃣ Risk Budget Core
+    # --------------------------------------------------
+
+    # Base from sentiment
+    if sent_state == "FEAR":
+        budget = 35
+    elif sent_state == "GREED":
+        budget = 70
+    elif sent_state == "NEUTRAL":
+        budget = 55
     else:
-        risk_score = 50
+        budget = 50
 
-    # Liquidity adjustment
-    if liq_supportive:
-        risk_score += 10
+    # Structure tilt
+    if easing and not tightening:
+        budget += 10
+    elif tightening and not easing:
+        budget -= 10
+
+    # Credit tilt
+    if credit_calm is True:
+        budget += 10
+    elif credit_calm is False:
+        budget -= 10
+
+    # Liquidity tilt
+    if liq_supportive is True:
+        budget += 10
+    elif liq_supportive is False:
+        budget -= 10
+
+    # --------------------------------------------------
+    # 3️⃣ Phase Cap (핵심 업그레이드)
+    # --------------------------------------------------
+
+    cap = 100
+
+    if phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
+        cap = 60
+    elif phase_upper.startswith("TRANSITION") or "MIXED" in phase_upper:
+        cap = 70
+    elif phase_upper.startswith("RISK-ON"):
+        cap = 85
+    elif phase_upper.startswith("RISK-OFF"):
+        cap = 35
+
+    budget = min(int(round(budget)), cap)
+    budget = _clamp(budget)
+
+    # --------------------------------------------------
+    # 4️⃣ Final Action
+    # --------------------------------------------------
+
+    if budget >= 70:
+        action = "INCREASE"
+    elif budget <= 35:
+        action = "REDUCE"
     else:
-        risk_score -= 5
+        action = "HOLD"
 
-    # Credit adjustment
-    if credit_calm:
-        risk_score += 10
-    else:
-        risk_score -= 10
+    # --------------------------------------------------
+    # 5️⃣ Narrative Line
+    # --------------------------------------------------
 
-    # Sentiment adjustment
-    if sentiment_state == "FEAR":
-        risk_score -= 10
-    elif sentiment_state == "GREED":
-        risk_score -= 5
-    # NEUTRAL/N/A -> no change
+    struct_tag = "EASING" if easing else ("TIGHTENING" if tightening else "MIXED")
+    credit_tag = "안정" if credit_calm is True else ("불안" if credit_calm is False else "N/A")
+    liq_tag = "우호" if liq_supportive is True else ("비우호" if liq_supportive is False else "N/A")
 
-    # clamp
-    risk_score = max(0, min(100, risk_score))
+    narrative = (
+        f"구조={struct_tag} / 심리={sent_state} / 유동성={liq_tag} / "
+        f"크레딧={credit_tag} → Phase={phase}"
+    )
 
-    # ---------------------------
-    # 5️⃣ Output (기존 필터 글씨체 맞춤: 마크다운 스타일)
-    # ---------------------------
+    # --------------------------------------------------
+    # 6️⃣ Output (기존 필터 스타일 통일)
+    # --------------------------------------------------
+
     lines = []
     lines.append("### 🧠 13) Narrative Engine (v2 + Risk Budget)")
-    lines.append(f"- **Structure Bias:** {policy_bias_line if policy_bias_line else 'N/A'}")
-    lines.append(f"- **Sentiment (Fear&Greed):** {fear if fear is not None else 'N/A'} ({sentiment_state})")
-    lines.append(f"- **Credit Calm:** {credit_calm}")
-    lines.append(f"- **Liquidity Supportive:** {liq_supportive}")
+    lines.append("- **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정")
+    lines.append("- **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문")
+    lines.append("")
+    lines.append(f"- **Structure Bias:** {policy_bias_line}")
+    lines.append(f"- **Sentiment (Fear&Greed):** {fear if fear is not None else 'N/A'} ({sent_state})")
+    lines.append(f"- **Credit Calm (HY OAS<4):** {credit_calm}")
+    lines.append(f"- **Liquidity Supportive (NET_LIQ pct>0):** {liq_supportive}")
     lines.append(f"- **Phase:** {phase}")
     lines.append("")
     lines.append(f"- **🎯 Final Risk Action:** **{action}**")
-    lines.append(f"- **Risk Budget (0~100):** **{risk_score}**")
+    lines.append(f"- **Risk Budget (0~100):** **{budget}**")
     lines.append(f"- **Narrative:** {narrative}")
 
     return "\n".join(lines)
