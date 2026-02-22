@@ -1423,7 +1423,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
     
-    def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
+def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
     sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
     sections.append(market_regime_filter(market_data))
