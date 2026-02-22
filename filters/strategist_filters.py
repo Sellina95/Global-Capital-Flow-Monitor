@@ -1448,5 +1448,5 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(divergence_monitor_filter(market_data))    
     sections.append("")
-    sections.append(volatility_controlled_exposure_filte(market_data))
+    sections.append(volatility_controlled_exposure_filter(market_data))
     return "\n".join(sections)
