@@ -190,3 +190,10 @@
 - **Inflation Factor:** NEUTRAL
 - **USD Factor:** NEUTRAL
 - **Credit Factor:** CREDIT SUPPORTIVE
+
+### 🏭 18) Sector Allocation Engine (v1)
+- **정의:** Macro + Style + Factor 종합 섹터 기울기 판단
+- **추가 이유:** 방향뿐 아니라 어느 산업에 기울어야 하는지 판단
+
+- **Overweight:** None
+- **Underweight:** None
