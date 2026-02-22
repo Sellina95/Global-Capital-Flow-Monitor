@@ -1242,6 +1242,10 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
         status = "TRANSITION ZONE"
         explanation = "구조 또는 가격이 명확하지 않음 → 방향 탐색 구간"
 
+    elif structure == "EASING" and price == "MIXED":
+    status = "DELAYED RESPONSE"
+    explanation = "구조는 완화이나 가격은 아직 명확히 반응하지 않음"
+
     lines = []
     lines.append("### ⚠ 14) Divergence Monitor")
     lines.append("- **정의:** 구조(정책)와 가격(시장 국면)이 엇갈리는지 감지")
