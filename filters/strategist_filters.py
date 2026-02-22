@@ -1284,8 +1284,6 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
 
 
 
-from typing import Dict, Any, Optional
-
 def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     """
     🎯 15) Volatility-Controlled Exposure (v2 - Pro)
