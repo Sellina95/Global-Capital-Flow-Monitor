@@ -181,3 +181,12 @@
 - **Growth vs Value:** **GROWTH TILT**
 - **Duration Tilt:** **NEUTRAL**
 - **Cyclical vs Defensive:** **DEFENSIVE / QUALITY BIAS**
+
+### 🧩 17) Factor Layer (v1)
+- **정의:** 시장을 움직이는 핵심 위험 요인 판별
+- **추가 이유:** 자금이 무엇에 민감하게 반응하는지 파악
+
+- **Duration Factor:** NEUTRAL
+- **Inflation Factor:** NEUTRAL
+- **USD Factor:** NEUTRAL
+- **Credit Factor:** CREDIT SUPPORTIVE
