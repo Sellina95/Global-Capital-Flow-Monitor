@@ -1422,7 +1422,95 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
 
     return "\n".join(lines)
-    
+
+def style_tilt_filter(market_data: Dict[str, Any]) -> str:
+    """
+    🎨 16) Style Tilt (v1)
+
+    Macro 구조 기반:
+    - Growth vs Value
+    - Long vs Short Duration
+    - Cyclical vs Defensive
+    """
+
+    # ---------------------------
+    # Helpers
+    # ---------------------------
+
+    def _to_float(x):
+        try:
+            return float(str(x).replace(",", "").replace("%", ""))
+        except:
+            return None
+
+    # ---------------------------
+    # Pull Signals
+    # ---------------------------
+
+    policy_bias = str(market_data.get("POLICY_BIAS_LINE", "")).upper()
+    phase = str(market_data.get("MARKET_REGIME", "")).upper()
+
+    us10y = market_data.get("US10Y", {})
+    oil = market_data.get("WTI", {})
+
+    us10y_change = _to_float(us10y.get("pct_change"))
+    oil_change = _to_float(oil.get("pct_change"))
+
+    easing = "EASING" in policy_bias
+    tightening = "TIGHTENING" in policy_bias
+
+    # ---------------------------
+    # 1️⃣ Growth vs Value
+    # ---------------------------
+
+    style = "NEUTRAL"
+
+    if easing and us10y_change is not None and us10y_change <= 0:
+        style = "GROWTH TILT"
+    elif tightening or (us10y_change is not None and us10y_change > 0):
+        style = "VALUE TILT"
+
+    # ---------------------------
+    # 2️⃣ Duration Tilt
+    # ---------------------------
+
+    duration = "NEUTRAL"
+
+    if us10y_change is not None:
+        if us10y_change < 0:
+            duration = "LONG DURATION FAVORED"
+        elif us10y_change > 0:
+            duration = "SHORT DURATION FAVORED"
+
+    # ---------------------------
+    # 3️⃣ Cyclical vs Defensive
+    # ---------------------------
+
+    cyclical = "NEUTRAL"
+
+    if phase.startswith("RISK-ON"):
+        cyclical = "CYCLICAL FAVORED"
+    elif phase.startswith("RISK-OFF"):
+        cyclical = "DEFENSIVE FAVORED"
+    elif oil_change is not None and oil_change > 1:
+        cyclical = "CYCLICAL (ENERGY) BIAS"
+
+    # ---------------------------
+    # Output
+    # ---------------------------
+
+    lines = []
+    lines.append("### 🎨 16) Style Tilt (v1)")
+    lines.append("- **정의:** Macro 구조 기반 스타일 기울기 판단")
+    lines.append("- **추가 이유:** 같은 Risk-On이라도 어떤 유형의 자산이 유리한지 구분")
+    lines.append("")
+    lines.append(f"- **Growth vs Value:** **{style}**")
+    lines.append(f"- **Duration Tilt:** **{duration}**")
+    lines.append(f"- **Cyclical vs Defensive:** **{cyclical}**")
+
+    return "\n".join(lines)
+
+
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
     sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
@@ -1460,4 +1548,7 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(divergence_monitor_filter(market_data))    
     sections.append("")
     sections.append(volatility_controlled_exposure_filter(market_data))
+    sections.append("")    
+    sections.append(style_tilt_filter(market_data))    
+    
     return "\n".join(sections)
