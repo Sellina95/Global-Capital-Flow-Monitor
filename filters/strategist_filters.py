@@ -1029,18 +1029,13 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
     lines.append("### 🏗️ 12) Structural Filter")
     lines.append("- **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?")
     lines.append(
-        f"- **핵심 신호:** US10Y({_dir_str((=(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)}) / WTI({_dir_str(wti_dir)})"
+        f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)}) / WTI({_dir_str(wti_dir)})"
     )
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
     return "\n".join(lines)
 
 
-    elif easing and (sentiment_state == "FEAR"):
-        action = "HOLD"
-        narrative = "구조는 완화이나 심리는 공포 → 분할/대기 접근"
-
-    # ---------------------------
 
 def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     """
