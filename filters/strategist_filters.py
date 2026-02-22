@@ -1151,7 +1151,8 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
     budget = min(int(round(budget)), cap)
     budget = _clamp(budget)
-
+    market_data["RISK_BUDGET"] = budget
+    
     # --------------------------------------------------
     # 4️⃣ Final Action
     # --------------------------------------------------
@@ -1280,7 +1281,70 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **해석:** {explanation}")
 
     return "\n".join(lines)# Build
-# =========================
+
+def exposure_control_filter(market_data: Dict[str, Any]) -> str:
+    """
+    15) Volatility-Controlled Exposure Filter
+    Risk Budget → 실제 권장 익스포저 변환
+    """
+
+    risk_budget = market_data.get("RISK_BUDGET", 50)
+    phase = str(market_data.get("MARKET_REGIME", "N/A"))
+    vix_series = market_data.get("VIX", {})
+
+    vix = vix_series.get("today")
+
+    phase_upper = phase.upper()
+
+    # -----------------------
+    # Phase Cap
+    # -----------------------
+    phase_cap = 100
+
+    if phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
+        phase_cap = 60
+    elif phase_upper.startswith("TRANSITION"):
+        phase_cap = 70
+    elif phase_upper.startswith("RISK-ON"):
+        phase_cap = 85
+    elif phase_upper.startswith("RISK-OFF"):
+        phase_cap = 35
+
+    exposure = min(risk_budget, phase_cap)
+
+    # -----------------------
+    # Volatility Adjustment
+    # -----------------------
+    vol_state = "N/A"
+
+    if vix is not None:
+        if vix < 15:
+            exposure *= 1.1
+            vol_state = "LOW"
+        elif vix < 25:
+            vol_state = "NORMAL"
+        else:
+            exposure *= 0.6
+            vol_state = "HIGH"
+
+    exposure = max(0, min(int(round(exposure)), 100))
+
+    # -----------------------
+    # Output
+    # -----------------------
+    lines = []
+    lines.append("### 🎯 15) Volatility-Controlled Exposure")
+    lines.append("- **정의:** Risk Budget을 실제 권장 익스포저(%)로 변환")
+    lines.append("- **추가 이유:** 전략가는 방향뿐 아니라 ‘얼마나’ 노출할지 결정해야 함")
+    lines.append("")
+    lines.append(f"- **Risk Budget:** {risk_budget}")
+    lines.append(f"- **Phase Cap:** {phase_cap}")
+    lines.append(f"- **VIX Level:** {vix} ({vol_state})")
+    lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
+
+    return "\n".join(lines)# =========================
+
+
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
     sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
