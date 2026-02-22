@@ -1,296 +1,177 @@
 🌍 Global Capital Flow Monitor
+### Strategy & Capital Flow Research Initiative
 
-A 13-Layer Macro Structure & Narrative Engine
+---
 
-“Markets are not random.
-They are structure + liquidity + incentives + psychology interacting in motion.”
+🧠 Overview
 
-This project is a personal macro-structure engine designed to monitor:
-	•	Global capital flow direction
-	•	Policy bias & liquidity regime
-	•	Credit stress conditions
-	•	Market psychology & narrative alignment
+Global Capital Flow Monitor is a rule-based macro strategy engine.
 
-It does NOT generate buy/sell signals.
-It builds structural interpretation discipline.
+It is designed to interpret cross-asset capital flow dynamics and transform them into a structured daily strategist framework.
 
-⸻
+The system integrates:
 
-🎯 Why This Project Exists
+- Interest Rate Structure
+- USD Liquidity Conditions
+- Volatility Regimes
+- Credit Market Stress
+- Policy Bias & Expectations
+- Factor Sensitivity
+- Style Rotation
+- Sector Allocation Logic
 
-Most dashboards show data.
+The objective is not prediction.
 
-This engine interprets:
-	1.	What moved?
-	2.	Why did it move?
-	3.	Was it expected?
-	4.	Who benefits?
-	5.	What regime are we in?
-	6.	How does it propagate cross-asset?
-	7.	What hidden risks exist?
-	8.	What narrative is the market believing?
-	9.	Is this short-term noise or structural shift?
-	10.	Where might global capital flow next?
+The objective is disciplined interpretation of market structure and risk allocation.
 
-This is a structure-reading framework, not a prediction machine.
+---
 
-⸻
+🏗 Core Framework Philosophy
 
-🧠 The 13 Strategic Filters
+Markets move in layers:
 
-1️⃣ Market Regime Filter
+1. Structure (Policy & Liquidity)
+2. Price Confirmation (Rates / USD / Volatility)
+3. Credit Conditions
+4. Risk Budget Construction
+5. Volatility Adjustment
+6. Style & Factor Tilt
+7. Sector Allocation
 
-Defines current market phase:
-	•	Risk-On
-	•	Risk-Off
-	•	Transition / Mixed
+This system replicates that hierarchy using rule-based macro logic.
 
-Core inputs:
-US10Y / DXY / VIX alignment
+It separates:
 
-⸻
+- Structural bias
+- Price reaction
+- Liquidity plumbing
+- Risk appetite
+- Capital positioning
 
-2️⃣ Liquidity Filter (Enhanced)
+---
 
-Combines:
-	•	Price expectation signals
-	•	Financial Conditions (FCI)
-	•	Real Rates
+## System Architecture
 
-Determines:
-Liquidity Supportive / Fragile / Tight
+Macro Data  
+→ Regime Detection  
+→ Liquidity & Policy Analysis  
+→ Credit Monitoring  
+→ Narrative Engine  
+→ Risk Budget Calculation  
+→ Volatility-Controlled Exposure  
+→ Style Tilt  
+→ Factor Layer  
+→ Sector Allocation Engine  
 
-⸻
+Each filter operates independently but feeds into a structured daily strategist report.
 
-3️⃣ Policy Filter (Macro-Δ Structure Engine)
+---
 
-Uses structural deltas:
-	•	REAL_RATE
-	•	FCI
-	•	DXY
-	•	US10Y
+## Project Structure
+.github/ # CI automation workflows
+data/ # Raw & processed macro datasets
+filters/ # Core strategist filter engine
+insights/ # Regime change logs & risk alerts
+reports/ # Daily generated macro reports
+scripts/ # Data pipeline & report generation
+fetch_macro_data.py # Macro data fetch module
+requirements.txt # Dependencies
+README.md
 
-Creates:
-	•	Policy Bias Score
-	•	Structural Tightening / Easing Classification
-	•	Price vs Structure comparison
+Daily macro strategist outputs are automatically generated and stored in:
+/reports
 
-This is a structure-first interpretation model.
 
-⸻
+This directory contains structured capital flow interpretations — not raw data dumps.
 
-4️⃣ Fed Plumbing Filter
+---
 
-Tracks:
-	•	TGA
-	•	RRP
-	•	WALCL
-	•	NET_LIQ
+## Implemented Strategy Layers (18 Filters)
 
-Detects:
-Dollar system internal liquidity shifts.
+1. Market Regime Detection  
+2. Liquidity Structure (Enhanced)  
+3. Policy Bias Analysis  
+4. Fed Plumbing (TGA / RRP / Net Liquidity)  
+5. High Yield Spread (HY OAS)  
+6. Credit Stress (HYG vs LQD)  
+7. Directional Signal Layer  
+8. Cross-Asset Interaction  
+9. Incentive Mapping  
+10. Cause Filter  
+11. Noise vs Signal Filter  
+12. Timing Framework  
+13. Structural Interpretation  
+14. Narrative Engine (Risk Budget Model)  
+15. Divergence Monitor  
+16. Volatility-Controled Exposure  
+17. Style Tilt (Growth / Value / Duration / Defensive)  
+18. Sector Allocation Engine  
 
-⸻
+---
 
-4.2️⃣ High Yield Spread Filter (HY OAS)
+📊 Sample Daily Output Snapshot
+Phase: WAITING / RANGE
+Policy Bias: EASING (Moderate)
+Liquidity: Draining
+Credit: Calm
+Final Risk Action: HOLD
+Risk Budget: 60
+Recommended Exposure: 60%
+Style Tilt: Growth Bias + Defensive Overlay
 
-Measures:
-	•	Credit stress temperature
+The output is not a trading signal.
 
-Low spread = calm
-Widening spread = risk temperature rising
+It is a structured macro interpretation and risk allocation framework.
 
-⸻
+---
 
-4.5️⃣ Credit Stress Filter (HYG vs LQD)
+🎯 Differentiation
 
-Detects:
-Risk appetite inside credit markets.
+- Separation of structure vs price confirmation
+- Liquidity plumbing integration (TGA / RRP)
+- Risk Budget quantification
+- Volatility-adjusted exposure model
+- Macro → Factor → Sector translation
+- Regime-based capital allocation logic
 
-Credit often leads equities.
+This is not an indicator stack.
 
-⸻
+It is a capital flow hierarchy model.
 
-5️⃣ Directional Signals
+---
 
-Separates:
-Noise vs Meaningful Move
+## Intended Use Cases
 
-Prevents overinterpretation of small changes.
+- Macro research portfolio
+- Cross-asset regime monitoring
+- Risk management experimentation
+- Asset allocation framework development
+- Interview demonstration for strategy / research roles
 
-⸻
+---
 
-6️⃣ Cross-Asset Filter
-
-Tracks propagation:
-
-Example:
-VIX ↑ → USD ↑ → EM pressure → commodities impact
-
-Capital flow rarely moves in isolation.
-
-⸻
-
-7️⃣ Risk Exposure Filter
-
-Identifies hidden second-order risk.
-
-Example:
-Oil ↑ → inflation impulse → rate repricing risk
-
-⸻
-
-8️⃣ Incentive Filter
-
-Asks:
-Who benefits?
-
-Markets move where incentives align.
-
-⸻
-
-9️⃣ Cause Filter
-
-Attempts structural cause detection from signal clustering.
-
-⸻
-
-🔟 Direction Filter
-
-Magnitude-weighted movement classification.
-
-⸻
-
-1️⃣1️⃣ Timing Filter
-
-Classifies signals by horizon:
-	•	Short-term
-	•	Medium-term
-	•	Structural
-
-⸻
-
-1️⃣2️⃣ Structural Filter
-
-Connects signals to:
-	•	Dollar dominance
-	•	Energy regime
-	•	Growth cycle shifts
-
-Macro regime layer.
-
-⸻
-
-1️⃣3️⃣ Narrative Engine (v2)
-
-Final synthesis layer.
-
-Inputs:
-	•	Policy Bias (structure)
-	•	Credit condition
-	•	Liquidity
-	•	Fear & Greed sentiment
-
-Outputs:
-	•	Market Phase
-	•	Final Risk Posture (Increase / Hold / Defensive / Reduce)
-	•	Narrative 1-liner
-
-This layer attempts to bridge:
-
-Data → Structure → Psychology → Capital Allocation Bias
-
-⸻
-
-⚙️ Data Sources
-	•	FRED (REAL_RATE, FCI, HY OAS, Liquidity plumbing)
-	•	ETF pricing (HYG, LQD)
-	•	Macro pricing (US10Y, DXY, VIX, WTI, USDKRW)
-	•	Sentiment proxy (Fear & Greed placeholder)
-	•	External expectation layer (extendable)
-
-All external layers are modular.
-
-⸻
-
-🧩 Architecture
-
-Daily workflow:
-	1.	Fetch macro data
-	2.	Fetch liquidity data
-	3.	Fetch credit spread data
-	4.	Fetch FRED extras
-	5.	Generate structured report
-	6.	Commit snapshot
-
-Output:
-/reports/daily_report_YYYY-MM-DD.md
-
-The engine is deterministic and reproducible.
-
-⸻
-
-🚫 What This Is NOT
-	•	Not a trading bot
-	•	Not a stock picker
-	•	Not a prediction engine
-	•	Not financial advice
-
-It is a capital flow interpretation framework.
-
-⸻
-
-🔮 Future Expansion Roadmap
+## Ongoing Development
 
 Planned upgrades:
-	•	Expectation Shock Layer (true economic surprise scoring)
-	•	Narrative vs Data divergence detector
-	•	Capital Flow Allocation Model (sector rotation mapping)
-	•	Regime persistence probability scoring
-	•	Sentiment integration from alternative sources
 
-Long-term goal:
+- Event-driven Cause Filter (Economic Calendar Integration)
+- Structural Trend Overlay (PMI / 200DMA)
+- Factor Momentum Scoring
+- Sector Relative Strength Model
+- Allocation backtesting module
 
-Build a personal macro-structure intelligence system
-capable of answering:
+---
 
-“If global capital is moving, where must it eventually land?”
+## Strategic Philosophy
 
-⸻
+Capital flows reflect incentives.  
+Incentives reflect structure.  
+Structure reflects the architecture of the global system.
 
-📌 Philosophy Behind the System
+Understanding capital flow is not just about markets.  
+It is about understanding how the world allocates risk, trust, and belief.
 
-Markets are not about guessing.
+---
 
-They are about:
-	•	Regime recognition
-	•	Incentive mapping
-	•	Structure alignment
-	•	Risk asymmetry
-
-This engine trains the mind to think like a global strategist.
-
-⸻
-
-🧭 Author’s Intent
-
-This project exists to develop:
-	•	Macro structural literacy
-	•	Capital flow awareness
-	•	Regime transition detection
-	•	Narrative skepticism
-
-It is a thinking tool.
-
-Not a profit tool.
-
-⸻
-
-✨ Final Note
-
-Capital always flows somewhere.
-Structure decides direction.
-Liquidity decides speed.
-Psychology decides volatility.
-
-This monitor attempts to observe all three.
+## Strategy & Capital Flow Research Initiative
+Independent macro research framework focused on structural regime detection, liquidity cycles, and cross-asset capital positioning.
