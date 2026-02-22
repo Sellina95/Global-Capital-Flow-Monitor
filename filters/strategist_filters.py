@@ -1299,11 +1299,14 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # ---------------------------
     # Helpers
     # ---------------------------
-
     def _to_float(x) -> Optional[float]:
+        if x is None:
+            return None
+        if isinstance(x, (int, float)):
+            return float(x)
         try:
-            return float(str(x).replace(",", "").replace("%", ""))
-        except:
+            return float(str(x).replace(",", "").replace("%", "").strip())
+        except Exception:
             return None
 
     def _clamp(x, lo=0, hi=100):
@@ -1312,22 +1315,24 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # ---------------------------
     # Inputs
     # ---------------------------
+    risk_budget = _to_float(market_data.get("RISK_BUDGET", 50))
+    if risk_budget is None:
+        risk_budget = 50.0
 
-    risk_budget = _to_float(market_data.get("RISK_BUDGET", 50)) or 50
     phase = str(market_data.get("MARKET_REGIME", "N/A")).upper()
 
-    vix_series = market_data.get("VIX", {})
+    vix_series = market_data.get("VIX", {}) or {}
     vix_today = _to_float(vix_series.get("today"))
     vix_pct = _to_float(vix_series.get("pct_change"))
 
-    prev_exposure = _to_float(market_data.get("PREV_EXPOSURE", risk_budget))
+    prev_exposure = _to_float(market_data.get("PREV_EXPOSURE"))
+    if prev_exposure is None:
+        prev_exposure = risk_budget
 
     # ---------------------------
     # 1️⃣ Phase Cap
     # ---------------------------
-
     cap = 100
-
     if phase.startswith("WAITING") or "RANGE" in phase:
         cap = 60
     elif phase.startswith("TRANSITION") or "MIXED" in phase:
@@ -1342,7 +1347,6 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # ---------------------------
     # 2️⃣ VIX Level Adjustment
     # ---------------------------
-
     vol_state = "N/A"
     multiplier = 1.0
 
@@ -1362,7 +1366,6 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # ---------------------------
     # 3️⃣ VIX Momentum Adjustment
     # ---------------------------
-
     if vix_pct is not None:
         if vix_pct > 5:
             multiplier *= 0.85  # 급등 시 추가 감산
@@ -1374,8 +1377,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # ---------------------------
     # 4️⃣ Guardrail (Stress Brake)
     # ---------------------------
-
-    hy_oas = market_data.get("HY_OAS", {})
+    hy_oas = market_data.get("HY_OAS", {}) or {}
     hy_level = _to_float(hy_oas.get("today"))
 
     if hy_level is not None and hy_level > 5:
@@ -1384,7 +1386,6 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # ---------------------------
     # 5️⃣ Smoothing (급변 방지)
     # ---------------------------
-
     if prev_exposure is not None:
         exposure = 0.7 * prev_exposure + 0.3 * exposure
 
@@ -1395,24 +1396,32 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     market_data["PREV_EXPOSURE"] = exposure
 
     # ---------------------------
-    # Output
+    # Output (기존 필터 스타일)
     # ---------------------------
+    if vix_today is not None:
+        vix_display = f"{vix_today:.2f}"
+    else:
+        vix_display = "N/A"
+
+    if vix_pct is not None:
+        vix_pct_display = f"{vix_pct:+.2f}%"
+    else:
+        vix_pct_display = "N/A"
 
     lines = []
     lines.append("### 🎯 15) Volatility-Controlled Exposure (v2)")
     lines.append("- **정의:** Risk Budget을 실제 익스포저로 변환 (Pro Version)")
     lines.append("- **추가 이유:** 변동성·스트레스·국면을 모두 반영한 실전형 리스크 제어")
     lines.append("")
-    lines.append(f"- **Risk Budget:** {risk_budget}")
+    lines.append(f"- **Risk Budget:** {risk_budget:.0f}")
     lines.append(f"- **Phase Cap:** {cap}")
-    lines.append(f"- **VIX Level:** {vix_today:.2f if vix_today else 'N/A'} ({vol_state})")
-    lines.append(f"- **VIX Change (%):** {vix_pct if vix_pct else 'N/A'}")
-    lines.append(f"- **Final Multiplier:** {round(multiplier,2)}x")
+    lines.append(f"- **VIX Level:** {vix_display} ({vol_state})")
+    lines.append(f"- **VIX Change (%):** {vix_pct_display}")
+    lines.append(f"- **Final Multiplier:** {multiplier:.2f}x")
     lines.append("")
     lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
 
-    return "\n".join(lines)
-def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
+    return "\n".join(lines)def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
     sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
     sections.append(market_regime_filter(market_data))
