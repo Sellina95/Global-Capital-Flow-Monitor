@@ -161,3 +161,12 @@
 - **Price Regime:** WAITING
 - **Status:** **TRANSITION ZONE**
 - **해석:** 시장 방향 탐색 구간
+
+### 🎯 15) Volatility-Controlled Exposure
+- **정의:** Risk Budget을 실제 권장 익스포저(%)로 변환
+- **추가 이유:** 전략가는 방향뿐 아니라 ‘얼마나’ 노출할지 결정해야 함
+
+- **Risk Budget:** 60
+- **Phase Cap:** 60
+- **VIX Level:** 19.09000015258789 (NORMAL)
+- **📊 Recommended Exposure:** **60%**
