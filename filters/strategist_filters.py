@@ -1284,115 +1284,136 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
 
 
 
+from typing import Dict, Any, Optional
+
 def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     """
-    🎯 15) Volatility-Controlled Exposure
-    - Risk Budget(0~100)을 실제 권장 익스포저(%)로 변환
-    - VIX 레벨에 따라 익스포저를 자동 감산/가산
-    - Phase Cap(국면 상한)을 최종적으로 다시 적용(월가식 '국면 존중')
+    🎯 15) Volatility-Controlled Exposure (v2 - Pro)
+
+    Risk Budget → 실제 익스포저 변환
+    업그레이드:
+    - VIX 레벨 + 변화율 반영
+    - Phase cap 재적용
+    - Exposure smoothing
+    - Guardrail (리스크 자동 브레이크)
     """
 
     # ---------------------------
     # Helpers
     # ---------------------------
+
     def _to_float(x) -> Optional[float]:
-        if x is None:
-            return None
-        if isinstance(x, (int, float)):
-            return float(x)
-        s = str(x).strip().replace(",", "").replace("%", "")
-        if not s:
-            return None
         try:
-            return float(s)
-        except Exception:
+            return float(str(x).replace(",", "").replace("%", ""))
+        except:
             return None
 
-    def _clamp_int(x: float, lo: int = 0, hi: int = 100) -> int:
-        try:
-            xi = int(round(float(x)))
-        except Exception:
-            xi = 0
-        return max(lo, min(hi, xi))
-
-    def _phase_cap(phase: str) -> int:
-        p = str(phase).upper()
-        if p.startswith("WAITING") or "RANGE" in p:
-            return 60
-        if p.startswith("TRANSITION") or "MIXED" in p:
-            return 70
-        if p.startswith("RISK-ON"):
-            return 85
-        if p.startswith("RISK-OFF"):
-            return 35
-        # unknown phase: conservative default
-        return 70
-
-    def _vix_level_and_multiplier(vix: Optional[float]) -> (str, float):
-        if vix is None:
-            return ("N/A", 1.0)
-
-        # Simple, interpretable buckets
-        if vix < 14:
-            return ("LOW", 1.05)        # calm → slightly more aggressive
-        if vix < 20:
-            return ("NORMAL", 1.00)     # normal → no change
-        if vix < 30:
-            return ("HIGH", 0.80)       # elevated → de-risk
-        return ("EXTREME", 0.60)        # stress → strongly de-risk
+    def _clamp(x, lo=0, hi=100):
+        return max(lo, min(int(round(x)), hi))
 
     # ---------------------------
-    # 1) Inputs
+    # Inputs
     # ---------------------------
-    # Risk Budget: Narrative Engine에서 저장해두는 걸 권장
-    # 예: market_data["RISK_BUDGET"] = budget
-    budget_raw = market_data.get("RISK_BUDGET")
-    budget = _clamp_int(_to_float(budget_raw) if budget_raw is not None else 50)
 
-    phase = market_data.get("MARKET_REGIME", "N/A")
-    cap = _phase_cap(phase)
+    risk_budget = _to_float(market_data.get("RISK_BUDGET", 50)) or 50
+    phase = str(market_data.get("MARKET_REGIME", "N/A")).upper()
 
-    vix_series = market_data.get("VIX", {}) if isinstance(market_data.get("VIX"), dict) else {}
+    vix_series = market_data.get("VIX", {})
     vix_today = _to_float(vix_series.get("today"))
+    vix_pct = _to_float(vix_series.get("pct_change"))
 
-    vix_level, mult = _vix_level_and_multiplier(vix_today)
-
-    # ---------------------------
-    # 2) Convert budget → exposure
-    # ---------------------------
-    # Start with budget (0~100) as baseline exposure %
-    exposure = float(budget)
-
-    # Volatility adjustment
-    exposure = exposure * mult
-
-    # Phase cap re-apply (very important)
-    exposure = min(exposure, float(cap))
-
-    # Final clamp
-    exposure_i = _clamp_int(exposure)
+    prev_exposure = _to_float(market_data.get("PREV_EXPOSURE", risk_budget))
 
     # ---------------------------
-    # 3) Output (기존 필터 스타일)
+    # 1️⃣ Phase Cap
     # ---------------------------
+
+    cap = 100
+
+    if phase.startswith("WAITING") or "RANGE" in phase:
+        cap = 60
+    elif phase.startswith("TRANSITION") or "MIXED" in phase:
+        cap = 70
+    elif phase.startswith("RISK-ON"):
+        cap = 85
+    elif phase.startswith("RISK-OFF"):
+        cap = 35
+
+    exposure = min(risk_budget, cap)
+
+    # ---------------------------
+    # 2️⃣ VIX Level Adjustment
+    # ---------------------------
+
+    vol_state = "N/A"
+    multiplier = 1.0
+
+    if vix_today is not None:
+        if vix_today < 14:
+            vol_state = "LOW"
+            multiplier *= 1.05
+        elif vix_today < 20:
+            vol_state = "NORMAL"
+        elif vix_today < 30:
+            vol_state = "HIGH"
+            multiplier *= 0.80
+        else:
+            vol_state = "EXTREME"
+            multiplier *= 0.60
+
+    # ---------------------------
+    # 3️⃣ VIX Momentum Adjustment
+    # ---------------------------
+
+    if vix_pct is not None:
+        if vix_pct > 5:
+            multiplier *= 0.85  # 급등 시 추가 감산
+        elif vix_pct < -5:
+            multiplier *= 1.05  # 급락 시 소폭 가산
+
+    exposure *= multiplier
+
+    # ---------------------------
+    # 4️⃣ Guardrail (Stress Brake)
+    # ---------------------------
+
+    hy_oas = market_data.get("HY_OAS", {})
+    hy_level = _to_float(hy_oas.get("today"))
+
+    if hy_level is not None and hy_level > 5:
+        exposure *= 0.75  # 크레딧 스트레스 발생 시 감산
+
+    # ---------------------------
+    # 5️⃣ Smoothing (급변 방지)
+    # ---------------------------
+
+    if prev_exposure is not None:
+        exposure = 0.7 * prev_exposure + 0.3 * exposure
+
+    exposure = min(exposure, cap)
+    exposure = _clamp(exposure)
+
+    # 저장 (다음날 smoothing용)
+    market_data["PREV_EXPOSURE"] = exposure
+
+    # ---------------------------
+    # Output
+    # ---------------------------
+
     lines = []
-    lines.append("### 🎯 15) Volatility-Controlled Exposure")
-    lines.append("- **정의:** Risk Budget을 실제 권장 익스포저(%)로 변환")
-    lines.append("- **추가 이유:** 전략가는 방향뿐 아니라 ‘얼마나’ 노출할지 결정해야 함")
+    lines.append("### 🎯 15) Volatility-Controlled Exposure (v2)")
+    lines.append("- **정의:** Risk Budget을 실제 익스포저로 변환 (Pro Version)")
+    lines.append("- **추가 이유:** 변동성·스트레스·국면을 모두 반영한 실전형 리스크 제어")
     lines.append("")
-    lines.append(f"- **Risk Budget:** **{budget}**")
-    lines.append(f"- **Phase Cap:** **{cap}**")
-    if vix_today is None:
-        lines.append(f"- **VIX Level:** N/A ({vix_level})")
-    else:
-        # 소수점 깔끔하게
-        lines.append(f"- **VIX Level:** **{vix_today:.2f}** ({vix_level})")
-    lines.append(f"- **Vol Multiplier:** **{mult:.2f}x**")
+    lines.append(f"- **Risk Budget:** {risk_budget}")
+    lines.append(f"- **Phase Cap:** {cap}")
+    lines.append(f"- **VIX Level:** {vix_today:.2f if vix_today else 'N/A'} ({vol_state})")
+    lines.append(f"- **VIX Change (%):** {vix_pct if vix_pct else 'N/A'}")
+    lines.append(f"- **Final Multiplier:** {round(multiplier,2)}x")
     lines.append("")
-    lines.append(f"- **📊 Recommended Exposure:** **{exposure_i}%**")
+    lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
 
     return "\n".join(lines)
-
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
     sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
@@ -1429,5 +1450,5 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(divergence_monitor_filter(market_data))    
     sections.append("")
-    sections.append(volatility_controlled_exposure_filter(market_data))
+    sections.append(volatility_controlled_exposure_filte(market_data))
     return "\n".join(sections)
