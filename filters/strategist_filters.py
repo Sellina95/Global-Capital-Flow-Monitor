@@ -1176,6 +1176,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         f"크레딧={credit_tag} → Phase={phase}"
     )
 
+
     # --------------------------------------------------
     # 6️⃣ Output (기존 필터 스타일 통일)
     # --------------------------------------------------
@@ -1196,7 +1197,62 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Narrative:** {narrative}")
 
     return "\n".join(lines)
-# =========================
+
+def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Divergence Monitor
+    Structure (Policy Bias) vs Price Regime (Market Regime)
+    """
+
+    policy_bias = market_data.get("POLICY_BIAS_LINE", "")
+    phase = market_data.get("MARKET_REGIME", "N/A")
+
+    phase_upper = str(phase).upper()
+    policy_upper = str(policy_bias).upper()
+
+    structure = "MIXED"
+    if "EASING" in policy_upper:
+        structure = "EASING"
+    elif "TIGHTENING" in policy_upper:
+        structure = "TIGHTENING"
+
+    price = "MIXED"
+    if phase_upper.startswith("RISK-ON"):
+        price = "RISK-ON"
+    elif phase_upper.startswith("RISK-OFF"):
+        price = "RISK-OFF"
+    elif phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
+        price = "WAITING"
+    elif phase_upper.startswith("TRANSITION"):
+        price = "TRANSITION"
+
+    # 판단 로직
+    status = "ALIGNED"
+    explanation = "구조와 가격 신호가 대체로 정렬"
+
+    if structure == "EASING" and price == "RISK-OFF":
+        status = "DIVERGENCE"
+        explanation = "구조는 완화인데 가격은 리스크오프 → 전환 가능성 탐지"
+
+    elif structure == "TIGHTENING" and price == "RISK-ON":
+        status = "DIVERGENCE"
+        explanation = "구조는 긴축인데 가격은 리스크온 → 과열/되돌림 가능성"
+
+    elif price in ("WAITING", "TRANSITION") or structure == "MIXED":
+        status = "TRANSITION ZONE"
+        explanation = "구조 또는 가격이 명확하지 않음 → 방향 탐색 구간"
+
+    lines = []
+    lines.append("### ⚠ 14) Divergence Monitor")
+    lines.append("- **정의:** 구조(정책)와 가격(시장 국면)이 엇갈리는지 감지")
+    lines.append("- **추가 이유:** 구조-가격 충돌은 국면 전환의 초기 신호가 될 수 있음")
+    lines.append("")
+    lines.append(f"- **Structure:** {structure}")
+    lines.append(f"- **Price Regime:** {price}")
+    lines.append(f"- **Status:** **{status}**")
+    lines.append(f"- **해석:** {explanation}")
+
+    return "\n".join(lines)# =========================
 # Build
 # =========================
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
@@ -1232,5 +1288,6 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(structural_filter(market_data))
     sections.append("")
     sections.append(narrative_engine_filter(market_data))
-
+    sections.append("")
+    sections.append(divergence_monitor_filter(market_data))    
     return "\n".join(sections)
