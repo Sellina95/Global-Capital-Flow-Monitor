@@ -1425,17 +1425,12 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
 def style_tilt_filter(market_data: Dict[str, Any]) -> str:
     """
-    🎨 16) Style Tilt (v1)
+    🎨 16) Style Tilt (v1.1)
 
-    Macro 구조 기반:
-    - Growth vs Value
-    - Long vs Short Duration
-    - Cyclical vs Defensive
+    Improvements:
+    - Duration: use US10Y delta (today-prev) if available
+    - Cyclical/Defensive: use Exposure + Phase first, WTI as secondary
     """
-
-    # ---------------------------
-    # Helpers
-    # ---------------------------
 
     def _to_float(x):
         try:
@@ -1443,73 +1438,76 @@ def style_tilt_filter(market_data: Dict[str, Any]) -> str:
         except:
             return None
 
-    # ---------------------------
-    # Pull Signals
-    # ---------------------------
-
     policy_bias = str(market_data.get("POLICY_BIAS_LINE", "")).upper()
     phase = str(market_data.get("MARKET_REGIME", "")).upper()
 
+    # US10Y: prefer delta
     us10y = market_data.get("US10Y", {})
-    oil = market_data.get("WTI", {})
+    us10y_today = _to_float(us10y.get("today"))
+    us10y_prev = _to_float(us10y.get("prev"))
+    us10y_delta = None
+    if us10y_today is not None and us10y_prev is not None:
+        us10y_delta = us10y_today - us10y_prev
 
-    us10y_change = _to_float(us10y.get("pct_change"))
-    oil_change = _to_float(oil.get("pct_change"))
+    # WTI: optional secondary
+    oil = market_data.get("WTI", {})
+    oil_pct = _to_float(oil.get("pct_change"))
+
+    # Exposure (from filter 15)
+    exposure = _to_float(market_data.get("RECOMMENDED_EXPOSURE"))
+    if exposure is None:
+        exposure = _to_float(market_data.get("PREV_EXPOSURE"))
 
     easing = "EASING" in policy_bias
     tightening = "TIGHTENING" in policy_bias
 
-    # ---------------------------
-    # 1️⃣ Growth vs Value
-    # ---------------------------
-
+    # 1) Growth vs Value
     style = "NEUTRAL"
-
-    if easing and us10y_change is not None and us10y_change <= 0:
+    if easing and (us10y_delta is None or us10y_delta <= 0):
         style = "GROWTH TILT"
-    elif tightening or (us10y_change is not None and us10y_change > 0):
+    elif tightening or (us10y_delta is not None and us10y_delta > 0):
         style = "VALUE TILT"
 
-    # ---------------------------
-    # 2️⃣ Duration Tilt
-    # ---------------------------
-
+    # 2) Duration
     duration = "NEUTRAL"
-
-    if us10y_change is not None:
-        if us10y_change < 0:
+    if us10y_delta is not None:
+        if us10y_delta < 0:
             duration = "LONG DURATION FAVORED"
-        elif us10y_change > 0:
+        elif us10y_delta > 0:
             duration = "SHORT DURATION FAVORED"
 
-    # ---------------------------
-    # 3️⃣ Cyclical vs Defensive
-    # ---------------------------
-
+    # 3) Cyclical vs Defensive
     cyclical = "NEUTRAL"
 
+    # primary: phase + exposure
     if phase.startswith("RISK-ON"):
         cyclical = "CYCLICAL FAVORED"
     elif phase.startswith("RISK-OFF"):
         cyclical = "DEFENSIVE FAVORED"
-    elif oil_change is not None and oil_change > 1:
+    elif phase.startswith("WAITING") or "RANGE" in phase or phase.startswith("EVENT"):
+        cyclical = "DEFENSIVE / QUALITY BIAS"
+
+    # secondary: exposure high => cyclicals, low => defensive
+    if exposure is not None:
+        if exposure >= 70:
+            cyclical = "CYCLICAL FAVORED"
+        elif exposure <= 35:
+            cyclical = "DEFENSIVE FAVORED"
+
+    # tertiary: oil impulse
+    if oil_pct is not None and oil_pct > 1.0:
         cyclical = "CYCLICAL (ENERGY) BIAS"
 
-    # ---------------------------
-    # Output
-    # ---------------------------
-
     lines = []
-    lines.append("### 🎨 16) Style Tilt (v1)")
+    lines.append("### 🎨 16) Style Tilt (v1.1)")
     lines.append("- **정의:** Macro 구조 기반 스타일 기울기 판단")
     lines.append("- **추가 이유:** 같은 Risk-On이라도 어떤 유형의 자산이 유리한지 구분")
     lines.append("")
     lines.append(f"- **Growth vs Value:** **{style}**")
     lines.append(f"- **Duration Tilt:** **{duration}**")
     lines.append(f"- **Cyclical vs Defensive:** **{cyclical}**")
-
     return "\n".join(lines)
-
+    
 
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
