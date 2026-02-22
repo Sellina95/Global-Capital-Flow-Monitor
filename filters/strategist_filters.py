@@ -1602,6 +1602,72 @@ def factor_layer_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)    
 
+def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
+    """
+    🏭 18) Sector Allocation Engine (v1)
+
+    정의: Macro + Style + Factor 종합 섹터 기울기 판단
+    목적: 상대적 Overweight / Underweight 방향 제시
+    """
+
+    policy = str(market_data.get("POLICY_BIAS_LINE", "")).upper()
+    phase = str(market_data.get("MARKET_REGIME", "")).upper()
+    style_info = str(market_data.get("STYLE_TILT_OUTPUT", "")).upper()
+    factor_info = str(market_data.get("FACTOR_LAYER_OUTPUT", "")).upper()
+
+    overweight = []
+    underweight = []
+
+    easing = "EASING" in policy
+    tightening = "TIGHTENING" in policy
+
+    # ---------------------------
+    # Growth vs Value
+    # ---------------------------
+    if "GROWTH TILT" in style_info:
+        overweight += ["Technology", "Communication Services"]
+    elif "VALUE TILT" in style_info:
+        overweight += ["Financials", "Energy"]
+
+    # ---------------------------
+    # Cyclical vs Defensive
+    # ---------------------------
+    if "CYCLICAL" in style_info:
+        overweight += ["Industrials", "Materials"]
+    elif "DEFENSIVE" in style_info:
+        overweight += ["Healthcare", "Consumer Staples", "Utilities"]
+
+    # ---------------------------
+    # Inflation Factor
+    # ---------------------------
+    if "INFLATION PRESSURE" in factor_info:
+        overweight += ["Energy", "Materials"]
+    elif "DISINFLATION" in factor_info:
+        overweight += ["Technology"]
+
+    # ---------------------------
+    # Credit Stress
+    # ---------------------------
+    if "CREDIT STRESS" in factor_info:
+        underweight += ["Financials", "Industrials"]
+    elif "CREDIT SUPPORTIVE" in factor_info:
+        overweight += ["Financials"]
+
+    # 중복 제거
+    overweight = list(set(overweight))
+    underweight = list(set(underweight))
+
+    lines = []
+    lines.append("### 🏭 18) Sector Allocation Engine (v1)")
+    lines.append("- **정의:** Macro + Style + Factor 종합 섹터 기울기 판단")
+    lines.append("- **추가 이유:** 방향뿐 아니라 어느 산업에 기울어야 하는지 판단")
+    lines.append("")
+    lines.append(f"- **Overweight:** {', '.join(overweight) if overweight else 'None'}")
+    lines.append(f"- **Underweight:** {', '.join(underweight) if underweight else 'None'}")
+
+    return "\n".join(lines)
+
+
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
     sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
@@ -1642,6 +1708,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")    
     sections.append(style_tilt_filter(market_data))   
     sections.append("")    
-    sections.append(factor_layer_filter(market_data))    
+    sections.append(factor_layer_filter(market_data))   
+    sections.append("")      
+    sections.append(sector_allocation_filter(market_data))  
     
     return "\n".join(sections)
