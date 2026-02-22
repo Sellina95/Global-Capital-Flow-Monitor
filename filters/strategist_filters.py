@@ -178,7 +178,6 @@ def get_regime_label(market_data: Dict[str, Any]) -> str:
 
     return regime
 
-
 def market_regime_filter(market_data: Dict[str, Any]) -> str:
     vix = _get_series(market_data, "VIX")
     us10y = _get_series(market_data, "US10Y")
@@ -199,6 +198,9 @@ def market_regime_filter(market_data: Dict[str, Any]) -> str:
     vix_dir = _sign_from(vix)
 
     regime = get_regime_label(market_data)
+
+    # ✅ Phase/Regime를 다른 필터(Narrative Engine 등)에서 쓰도록 저장
+    market_data["MARKET_REGIME"] = regime
 
     reason = "금리/달러/변동성 축이 한 방향으로 정렬되지 않음"
     if regime.startswith("WAITING"):
