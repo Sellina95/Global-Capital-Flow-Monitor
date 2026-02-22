@@ -1204,19 +1204,27 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
     Structure (Policy Bias) vs Price Regime (Market Regime)
     """
 
-    policy_bias = market_data.get("POLICY_BIAS_LINE", "")
-    phase = market_data.get("MARKET_REGIME", "N/A")
+    policy_bias = str(market_data.get("POLICY_BIAS_LINE", ""))
+    phase = str(market_data.get("MARKET_REGIME", "N/A"))
 
-    phase_upper = str(phase).upper()
-    policy_upper = str(policy_bias).upper()
+    policy_upper = policy_bias.upper()
+    phase_upper = phase.upper()
 
-    structure = "MIXED"
+    # ---------------------------
+    # 1️⃣ Structure 판별
+    # ---------------------------
+
     if "EASING" in policy_upper:
         structure = "EASING"
     elif "TIGHTENING" in policy_upper:
         structure = "TIGHTENING"
+    else:
+        structure = "MIXED"
 
-    price = "MIXED"
+    # ---------------------------
+    # 2️⃣ Price Regime 판별
+    # ---------------------------
+
     if phase_upper.startswith("RISK-ON"):
         price = "RISK-ON"
     elif phase_upper.startswith("RISK-OFF"):
@@ -1225,8 +1233,15 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
         price = "WAITING"
     elif phase_upper.startswith("TRANSITION"):
         price = "TRANSITION"
+    elif phase_upper.startswith("EVENT"):
+        price = "MIXED"
+    else:
+        price = "MIXED"
 
-    # 판단 로직
+    # ---------------------------
+    # 3️⃣ Divergence 판단
+    # ---------------------------
+
     status = "ALIGNED"
     explanation = "구조와 가격 신호가 대체로 정렬"
 
@@ -1238,17 +1253,25 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
         status = "DIVERGENCE"
         explanation = "구조는 긴축인데 가격은 리스크온 → 과열/되돌림 가능성"
 
-    elif price in ("WAITING", "TRANSITION") or structure == "MIXED":
-        status = "TRANSITION ZONE"
-        explanation = "구조 또는 가격이 명확하지 않음 → 방향 탐색 구간"
-
     elif structure == "EASING" and price == "MIXED":
-    status = "DELAYED RESPONSE"
-    explanation = "구조는 완화이나 가격은 아직 명확히 반응하지 않음"
+        status = "DELAYED RESPONSE"
+        explanation = "구조는 완화이나 가격은 아직 명확히 반응하지 않음"
+
+    elif structure == "TIGHTENING" and price == "MIXED":
+        status = "DELAYED RESPONSE"
+        explanation = "구조는 긴축이나 가격은 아직 명확히 반응하지 않음"
+
+    elif price in ("WAITING", "TRANSITION"):
+        status = "TRANSITION ZONE"
+        explanation = "시장 방향 탐색 구간"
+
+    # ---------------------------
+    # 4️⃣ Output
+    # ---------------------------
 
     lines = []
     lines.append("### ⚠ 14) Divergence Monitor")
-    lines.append("- **정의:** 구조(정책)와 가격(시장 국면)이 엇갈리는지 감지")
+    lines.append("- **정의:** 구조(정책)와 가격(시장 국면)의 충돌 여부 감지")
     lines.append("- **추가 이유:** 구조-가격 충돌은 국면 전환의 초기 신호가 될 수 있음")
     lines.append("")
     lines.append(f"- **Structure:** {structure}")
@@ -1256,8 +1279,7 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Status:** **{status}**")
     lines.append(f"- **해석:** {explanation}")
 
-    return "\n".join(lines)# =========================
-# Build
+    return "\n".join(lines)# Build
 # =========================
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
