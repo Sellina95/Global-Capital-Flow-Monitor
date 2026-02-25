@@ -215,6 +215,12 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Attach TGA/RRP/NET_LIQ into market_data using FRED 'last available' values.
     Adds meta: _LIQ_ASOF = 'YYYY-MM-DD'
+
+    Upgrade:
+    - Adds NET_LIQ level bucket (HIGH/MID/LOW) based on recent history (quantiles).
+    - Stores into:
+        market_data["NET_LIQ"]["level_bucket"]
+        market_data["NET_LIQ_LEVEL_BUCKET"]
     """
     if market_data is None:
         market_data = {}
@@ -222,8 +228,49 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     liq_df = load_liquidity_df()
     if liq_df.empty:
         market_data["_LIQ_ASOF"] = None
+        market_data["NET_LIQ_LEVEL_BUCKET"] = "N/A"
         return market_data
 
+    # ---------------------------
+    # Helpers
+    # ---------------------------
+    def _net_liq_level_bucket(
+        df: pd.DataFrame,
+        net_liq_today: float,
+        lookback: int = 52
+    ) -> str:
+        """
+        Level bucket for NET_LIQ using last N observations.
+        - LOW: bottom 33%
+        - MID: middle
+        - HIGH: top 33%
+        """
+        try:
+            s = df.get("NET_LIQ")
+            if s is None:
+                return "N/A"
+            s = pd.to_numeric(s, errors="coerce").dropna()
+            if len(s) < 10:
+                return "N/A"
+
+            if len(s) > lookback:
+                s = s.tail(lookback)
+
+            q33 = float(s.quantile(0.33))
+            q66 = float(s.quantile(0.66))
+
+            if net_liq_today < q33:
+                return "LOW"
+            elif net_liq_today < q66:
+                return "MID"
+            else:
+                return "HIGH"
+        except Exception:
+            return "N/A"
+
+    # ---------------------------
+    # Core attach
+    # ---------------------------
     liq_today = liq_df.iloc[-1]
     liq_asof = pd.to_datetime(liq_today["date"]).strftime("%Y-%m-%d")
     market_data["_LIQ_ASOF"] = liq_asof
@@ -233,20 +280,46 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     def add_liq_key(key: str, today_val, prev_val):
         if today_val is None:
             return
-        today_val = float(today_val)
-        if prev_val is None:
-            market_data[key] = {"today": today_val, "prev": None, "pct_change": None}
+
+        try:
+            today_f = float(today_val)
+        except Exception:
             return
-        prev_val = float(prev_val)
-        pct = 0.0 if prev_val == 0 else ((today_val - prev_val) / prev_val) * 100.0
-        market_data[key] = {"today": today_val, "prev": prev_val, "pct_change": pct}
+
+        if prev_val is None:
+            market_data[key] = {"today": today_f, "prev": None, "pct_change": None}
+            return
+
+        try:
+            prev_f = float(prev_val)
+        except Exception:
+            market_data[key] = {"today": today_f, "prev": None, "pct_change": None}
+            return
+
+        pct = 0.0 if prev_f == 0 else ((today_f - prev_f) / prev_f) * 100.0
+        market_data[key] = {"today": today_f, "prev": prev_f, "pct_change": pct}
 
     add_liq_key("TGA", liq_today.get("TGA"), None if liq_prev is None else liq_prev.get("TGA"))
     add_liq_key("RRP", liq_today.get("RRP"), None if liq_prev is None else liq_prev.get("RRP"))
     add_liq_key("NET_LIQ", liq_today.get("NET_LIQ"), None if liq_prev is None else liq_prev.get("NET_LIQ"))
 
-    return market_data
+    # ---------------------------
+    # Upgrade: NET_LIQ level bucket
+    # ---------------------------
+    net_liq_today_val = market_data.get("NET_LIQ", {}).get("today")
+    if net_liq_today_val is not None:
+        bucket = _net_liq_level_bucket(liq_df, float(net_liq_today_val), lookback=52)
+    else:
+        bucket = "N/A"
 
+    # Store bucket in two places for convenience
+    if "NET_LIQ" not in market_data:
+        market_data["NET_LIQ"] = {"today": None, "prev": None, "pct_change": None}
+
+    market_data["NET_LIQ"]["level_bucket"] = bucket
+    market_data["NET_LIQ_LEVEL_BUCKET"] = bucket
+
+    return market_data
 
 def attach_credit_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
