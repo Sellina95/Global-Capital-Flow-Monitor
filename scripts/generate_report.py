@@ -447,22 +447,41 @@ def attach_expectation_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     market_data["_EXP_ASOF"] = None
     return market_data
 
-
+# -------------------------
+# Sentiment Proxy Layer (NO CNN)
+# -------------------------
 def attach_sentiment_proxy_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Attach SENTIMENT from our own sentiment_proxy.csv (Wall-Street style proxy).
+    - No CNN Fear&Greed.
+    - Never overwrites existing SENTIMENT unless proxy data is available.
+    """
+    if market_data is None:
+        market_data = {}
+
     csv_path = DATA_DIR / "sentiment_proxy.csv"
-    if not csv_path.exists() or csv_path.stat().st_size == 0:
+    if (not csv_path.exists()) or csv_path.stat().st_size == 0:
+        # No proxy file -> keep existing market_data as-is
         return market_data
 
-    df = pd.read_csv(csv_path)
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return market_data
+
     if df.empty or "date" not in df.columns or "sentiment_proxy" not in df.columns:
         return market_data
 
     last = df.iloc[-1]
-    val = float(last["sentiment_proxy"])
+    try:
+        val = float(last["sentiment_proxy"])
+    except Exception:
+        return market_data
+
     market_data["SENTIMENT"] = {
-        "fear_greed": val,
+        "fear_greed": val,                 # keep key name for compatibility with Narrative Engine
         "source": str(last.get("used", "proxy")),
-        "as_of": str(last["date"]),
+        "as_of": str(last.get("date", "")),
     }
     return market_data
 
@@ -474,6 +493,9 @@ def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     df = load_macro_df()
+    if df is None or df.empty or "date" not in df.columns or len(df) < 2:
+        raise RuntimeError("macro_data.csv is empty or missing date (need at least 2 rows)")
+
     today_row = df.iloc[-1]
     prev_row = df.iloc[-2]
 
@@ -485,19 +507,12 @@ def generate_daily_report() -> None:
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
-    market_data = attach_sentiment_proxy_layer(market_data) or market_data 
-    
-    # 🔥 External Sentiment Integration
-    fear_greed = fetch_cnn_fear_greed()
 
-    if fear_greed is None:
-        fear_greed = 50  # fallback neutral
+    # ✅ Wall-Street Sentiment Proxy only (NO CNN, NO overwrite after this)
+    market_data = attach_sentiment_proxy_layer(market_data) or market_data
 
-    market_data["SENTIMENT"] = {
-        "fear_greed": fear_greed
-    }    
-  
-  
+    # (중요) 여기 아래에 market_data["SENTIMENT"]를 다시 세팅하는 코드가 있으면 안 됨.
+    # ... 이하 리포트 생성 로직 계속 ...  
 
 
     # ✅ regime change monitor
