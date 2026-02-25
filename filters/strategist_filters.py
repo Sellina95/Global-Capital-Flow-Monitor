@@ -1036,17 +1036,17 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-
 def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     """
-    Narrative Engine v2 (Phase-Respecting Risk Budget)
+    Narrative Engine v2 (Phase-Respecting Risk Budget) — Liquidity upgraded
 
     Structure + Sentiment + Credit + Liquidity + Phase
     → Final Risk Action + Risk Budget (0~100)
 
     핵심 업그레이드:
     - Phase별 Risk Budget 상한(cap) 적용
-    - 국면을 존중하는 월가식 구조
+    - Liquidity를 pct(방향) + level bucket(HIGH/MID/LOW) 2축으로 반영
+      * attach_liquidity_layer에서 market_data["NET_LIQ"]["level_bucket"] 세팅된 것을 사용
     """
 
     # --------------------------------------------------
@@ -1064,7 +1064,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
             return None
 
     def _clamp(x: int, lo: int = 0, hi: int = 100) -> int:
-        return max(lo, min(hi, x))
+        return max(lo, min(hi, int(x)))
 
     def _sentiment_state(fear: Optional[float]) -> str:
         if fear is None:
@@ -1075,32 +1075,46 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
             return "GREED"
         return "NEUTRAL"
 
+    def _liq_dir_tag(pct: Optional[float]) -> str:
+        if pct is None:
+            return "N/A"
+        if pct > 0:
+            return "UP"
+        if pct < 0:
+            return "DOWN"
+        return "FLAT"
+
     # --------------------------------------------------
     # 1️⃣ Pull Signals
     # --------------------------------------------------
 
-    policy_bias_line = market_data.get("POLICY_BIAS_LINE", "")
-    sentiment = market_data.get("SENTIMENT", {})
+    policy_bias_line = str(market_data.get("POLICY_BIAS_LINE", "") or "")
+
+    sentiment = market_data.get("SENTIMENT", {}) or {}
     fear = _to_float(sentiment.get("fear_greed"))
     sent_state = _sentiment_state(fear)
 
-    hy_oas = market_data.get("HY_OAS", {})
+    hy_oas = market_data.get("HY_OAS", {}) or {}
     hy_oas_today = _to_float(hy_oas.get("today"))
-    credit_calm = None
+    credit_calm: Optional[bool] = None
     if hy_oas_today is not None:
         credit_calm = hy_oas_today < 4.0
 
-    net_liq = market_data.get("NET_LIQ", {})
+    net_liq = market_data.get("NET_LIQ", {}) or {}
     net_liq_pct = _to_float(net_liq.get("pct_change"))
-    liq_supportive = None
-    if net_liq_pct is not None:
-        liq_supportive = net_liq_pct > 0
+    liq_dir_tag = _liq_dir_tag(net_liq_pct)
+
+    # NEW: level bucket (HIGH/MID/LOW) from attach_liquidity_layer
+    liq_level_bucket = str(net_liq.get("level_bucket") or market_data.get("NET_LIQ_LEVEL_BUCKET") or "N/A").upper()
+    if liq_level_bucket not in ("HIGH", "MID", "LOW"):
+        liq_level_bucket = "N/A"
 
     phase = market_data.get("MARKET_REGIME", "N/A")
     phase_upper = str(phase).upper()
 
-    easing = "EASING" in policy_bias_line
-    tightening = "TIGHTENING" in policy_bias_line
+    policy_upper = policy_bias_line.upper()
+    easing = "EASING" in policy_upper
+    tightening = "TIGHTENING" in policy_upper
 
     # --------------------------------------------------
     # 2️⃣ Risk Budget Core
@@ -1128,18 +1142,24 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     elif credit_calm is False:
         budget -= 10
 
-    # Liquidity tilt
-    if liq_supportive is True:
+    # Liquidity tilt (Direction + Level)
+    # Direction: UP +10 / DOWN -10 / FLAT 0 / N/A 0
+    if liq_dir_tag == "UP":
         budget += 10
-    elif liq_supportive is False:
+    elif liq_dir_tag == "DOWN":
         budget -= 10
+
+    # Level bucket: HIGH +5 / LOW -5 / MID 0 / N/A 0
+    if liq_level_bucket == "HIGH":
+        budget += 5
+    elif liq_level_bucket == "LOW":
+        budget -= 5
 
     # --------------------------------------------------
     # 3️⃣ Phase Cap (핵심 업그레이드)
     # --------------------------------------------------
 
     cap = 100
-
     if phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
         cap = 60
     elif phase_upper.startswith("TRANSITION") or "MIXED" in phase_upper:
@@ -1150,9 +1170,11 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         cap = 35
 
     budget = min(int(round(budget)), cap)
-    budget = _clamp(budget)
+    budget = _clamp(budget, 0, 100)
+
+    # store for downstream filters (e.g., Volatility-Controlled Exposure)
     market_data["RISK_BUDGET"] = budget
-    
+
     # --------------------------------------------------
     # 4️⃣ Final Action
     # --------------------------------------------------
@@ -1170,13 +1192,16 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
     struct_tag = "EASING" if easing else ("TIGHTENING" if tightening else "MIXED")
     credit_tag = "안정" if credit_calm is True else ("불안" if credit_calm is False else "N/A")
-    liq_tag = "우호" if liq_supportive is True else ("비우호" if liq_supportive is False else "N/A")
+
+    # More Wall-Street-ish liquidity tag (two-axis)
+    liq_dir_kr = {"UP": "증가", "DOWN": "감소", "FLAT": "보합", "N/A": "N/A"}[liq_dir_tag]
+    liq_lvl_kr = {"HIGH": "높음", "MID": "중간", "LOW": "낮음", "N/A": "N/A"}.get(liq_level_bucket, "N/A")
+    liq_tag = f"{liq_dir_kr}/{liq_lvl_kr}"
 
     narrative = (
         f"구조={struct_tag} / 심리={sent_state} / 유동성={liq_tag} / "
         f"크레딧={credit_tag} → Phase={phase}"
     )
-
 
     # --------------------------------------------------
     # 6️⃣ Output (기존 필터 스타일 통일)
@@ -1190,7 +1215,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Structure Bias:** {policy_bias_line}")
     lines.append(f"- **Sentiment (Fear&Greed):** {fear if fear is not None else 'N/A'} ({sent_state})")
     lines.append(f"- **Credit Calm (HY OAS<4):** {credit_calm}")
-    lines.append(f"- **Liquidity Supportive (NET_LIQ pct>0):** {liq_supportive}")
+    lines.append(f"- **Liquidity (NET_LIQ):** dir={liq_dir_tag} / level={liq_level_bucket}")
     lines.append(f"- **Phase:** {phase}")
     lines.append("")
     lines.append(f"- **🎯 Final Risk Action:** **{action}**")
@@ -1198,7 +1223,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Narrative:** {narrative}")
 
     return "\n".join(lines)
-
+    
 def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
     """
     Divergence Monitor
