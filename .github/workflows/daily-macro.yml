@@ -56,6 +56,12 @@ jobs:
           python scripts/fetch_fred_macro_extras.py
 
 
+      - name: Fetch Sentiment proxy (VIX + Credit)
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/fetch_sentiment_proxy.py
+
+
       # ✅ 3) 리포트 생성
       - name: Run report generator
         run: |
