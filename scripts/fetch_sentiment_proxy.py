@@ -21,10 +21,12 @@ def _to_float(x):
         return None
 
 
-def _zscore(series: pd.Series, window: int = 120) -> pd.Series:
-    mu = series.rolling(window).mean()
-    sd = series.rolling(window).std(ddof=0)
-    return (series - mu) / sd
+def _zscore(series: pd.Series, window: int = 120, min_periods: int = 20) -> pd.Series:
+    s = pd.to_numeric(series, errors="coerce")
+    mu = s.rolling(window=window, min_periods=min_periods).mean()
+    sd = s.rolling(window=window, min_periods=min_periods).std(ddof=0)
+    z = (s - mu) / sd
+    return z
 
 
 def _load_macro_df() -> pd.DataFrame:
@@ -104,10 +106,9 @@ def main() -> None:
         daily["HY_OAS"] = pd.NA
 
     # --- components ---
-    daily["VIX_z"] = _zscore(daily["VIX"], window=120) if "VIX" in daily.columns else pd.NA
-    daily["HY_OAS_z"] = _zscore(daily["HY_OAS"], window=60)
-    daily["HYG_LQD"] = (daily["HYG"] / daily["LQD"]) if ("HYG" in daily.columns and "LQD" in daily.columns) else pd.NA
-    daily["HYG_LQD_z"] = _zscore(daily["HYG_LQD"], window=120)
+    daily["VIX_z"] = _zscore(daily["VIX"], window=120, min_periods=20)
+    daily["HY_OAS_z"] = _zscore(daily["HY_OAS"], window=60, min_periods=15)
+    daily["HYG_LQD_z"] = _zscore(daily["HYG_LQD"], window=120, min_periods=20)
 
     # --- combine into 0~100 ---
     def _combine(row):
