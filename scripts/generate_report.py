@@ -563,6 +563,7 @@ def generate_daily_report() -> None:
     report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Report written: {report_path}")
+    print(f"[DEBUG] fear_greed value used: {fear_greed}")
 
 
 if __name__ == "__main__":
