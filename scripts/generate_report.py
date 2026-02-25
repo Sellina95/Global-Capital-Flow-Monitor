@@ -385,14 +385,16 @@ def generate_daily_report() -> None:
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
+    # 🔥 External Sentiment Integration
     fear_greed = fetch_cnn_fear_greed()
 
     if fear_greed is None:
-    fear_greed = 50  # fallback neutral
+        fear_greed = 50  # fallback neutral
 
     market_data["SENTIMENT"] = {
         "fear_greed": fear_greed
-    }
+    }    
+  
   
 
 
