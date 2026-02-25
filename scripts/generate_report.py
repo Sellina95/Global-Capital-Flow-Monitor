@@ -211,115 +211,123 @@ def build_market_data(today_row: pd.Series, prev_row: pd.Series) -> Dict[str, An
     return market_data
 
 
+from typing import Dict, Any, Optional
+import pandas as pd
+
 def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Attach TGA/RRP/NET_LIQ into market_data using FRED 'last available' values.
     Adds meta: _LIQ_ASOF = 'YYYY-MM-DD'
-
-    Upgrade:
-    - Adds NET_LIQ level bucket (HIGH/MID/LOW) based on recent history (quantiles).
-    - Stores into:
-        market_data["NET_LIQ"]["level_bucket"]
-        market_data["NET_LIQ_LEVEL_BUCKET"]
+    Also computes:
+      - NET_LIQ dir: UP/DOWN/FLAT
+      - NET_LIQ level_bucket: LOW/MID/HIGH (never N/A if today exists)
     """
     if market_data is None:
         market_data = {}
 
     liq_df = load_liquidity_df()
-    if liq_df.empty:
+    if liq_df is None or liq_df.empty:
         market_data["_LIQ_ASOF"] = None
-        market_data["NET_LIQ_LEVEL_BUCKET"] = "N/A"
+        # ensure keys exist to avoid downstream N/A confusion
+        market_data.setdefault("NET_LIQ", {"today": None, "prev": None, "pct_change": None, "dir": "N/A", "level_bucket": "N/A"})
         return market_data
 
-    # ---------------------------
-    # Helpers
-    # ---------------------------
-    def _net_liq_level_bucket(
-        df: pd.DataFrame,
-        net_liq_today: float,
-        lookback: int = 52
-    ) -> str:
-        """
-        Level bucket for NET_LIQ using last N observations.
-        - LOW: bottom 33%
-        - MID: middle
-        - HIGH: top 33%
-        """
-        try:
-            s = df.get("NET_LIQ")
-            if s is None:
-                return "N/A"
-            s = pd.to_numeric(s, errors="coerce").dropna()
-            if len(s) < 10:
-                return "N/A"
+    # --- normalize columns safety ---
+    # expected: date, TGA, RRP, WALCL, NET_LIQ
+    if "date" not in liq_df.columns:
+        market_data["_LIQ_ASOF"] = None
+        market_data.setdefault("NET_LIQ", {"today": None, "prev": None, "pct_change": None, "dir": "N/A", "level_bucket": "N/A"})
+        return market_data
 
-            if len(s) > lookback:
-                s = s.tail(lookback)
+    liq_df = liq_df.copy()
+    liq_df["date"] = pd.to_datetime(liq_df["date"], errors="coerce")
+    liq_df = liq_df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
-            q33 = float(s.quantile(0.33))
-            q66 = float(s.quantile(0.66))
-
-            if net_liq_today < q33:
-                return "LOW"
-            elif net_liq_today < q66:
-                return "MID"
-            else:
-                return "HIGH"
-        except Exception:
-            return "N/A"
-
-    # ---------------------------
-    # Core attach
-    # ---------------------------
     liq_today = liq_df.iloc[-1]
     liq_asof = pd.to_datetime(liq_today["date"]).strftime("%Y-%m-%d")
     market_data["_LIQ_ASOF"] = liq_asof
 
     liq_prev = liq_df.iloc[-2] if len(liq_df) >= 2 else None
 
+    def _to_float(x) -> Optional[float]:
+        if x is None:
+            return None
+        try:
+            return float(x)
+        except Exception:
+            try:
+                return float(str(x).replace(",", "").replace("%", "").strip())
+            except Exception:
+                return None
+
     def add_liq_key(key: str, today_val, prev_val):
-        if today_val is None:
+        t = _to_float(today_val)
+        p = _to_float(prev_val)
+        if t is None:
             return
-
-        try:
-            today_f = float(today_val)
-        except Exception:
+        if p is None:
+            market_data[key] = {"today": t, "prev": None, "pct_change": None}
             return
-
-        if prev_val is None:
-            market_data[key] = {"today": today_f, "prev": None, "pct_change": None}
-            return
-
-        try:
-            prev_f = float(prev_val)
-        except Exception:
-            market_data[key] = {"today": today_f, "prev": None, "pct_change": None}
-            return
-
-        pct = 0.0 if prev_f == 0 else ((today_f - prev_f) / prev_f) * 100.0
-        market_data[key] = {"today": today_f, "prev": prev_f, "pct_change": pct}
+        pct = 0.0 if p == 0 else ((t - p) / p) * 100.0
+        market_data[key] = {"today": t, "prev": p, "pct_change": pct}
 
     add_liq_key("TGA", liq_today.get("TGA"), None if liq_prev is None else liq_prev.get("TGA"))
     add_liq_key("RRP", liq_today.get("RRP"), None if liq_prev is None else liq_prev.get("RRP"))
     add_liq_key("NET_LIQ", liq_today.get("NET_LIQ"), None if liq_prev is None else liq_prev.get("NET_LIQ"))
 
-    # ---------------------------
-    # Upgrade: NET_LIQ level bucket
-    # ---------------------------
-    net_liq_today_val = market_data.get("NET_LIQ", {}).get("today")
-    if net_liq_today_val is not None:
-        bucket = _net_liq_level_bucket(liq_df, float(net_liq_today_val), lookback=52)
+    # -------------------------
+    # ✅ NET_LIQ dir + level bucket
+    # -------------------------
+    net = market_data.get("NET_LIQ") or {"today": None, "prev": None, "pct_change": None}
+    net_today = _to_float(net.get("today"))
+    net_prev = _to_float(net.get("prev"))
+
+    # dir
+    if net_today is None or net_prev is None:
+        net_dir = "N/A"
     else:
-        bucket = "N/A"
+        if net_today > net_prev:
+            net_dir = "UP"
+        elif net_today < net_prev:
+            net_dir = "DOWN"
+        else:
+            net_dir = "FLAT"
 
-    # Store bucket in two places for convenience
-    if "NET_LIQ" not in market_data:
-        market_data["NET_LIQ"] = {"today": None, "prev": None, "pct_change": None}
+    # level bucket (HIGH/MID/LOW) — never N/A if net_today exists
+    level_bucket = "N/A"
+    if net_today is not None and "NET_LIQ" in liq_df.columns:
+        series = pd.to_numeric(liq_df["NET_LIQ"], errors="coerce").dropna()
 
-    market_data["NET_LIQ"]["level_bucket"] = bucket
-    market_data["NET_LIQ_LEVEL_BUCKET"] = bucket
+        # if we have enough samples -> percentile bucket
+        if len(series) >= 20:
+            # percentile rank of latest value within history
+            pct_rank = (series <= net_today).mean()  # 0~1
+        else:
+            # small sample fallback -> min/max position bucket
+            vmin, vmax = float(series.min()), float(series.max())
+            if vmax == vmin:
+                pct_rank = 0.5
+            else:
+                pct_rank = (net_today - vmin) / (vmax - vmin)
+
+        if pct_rank < 0.33:
+            level_bucket = "LOW"
+        elif pct_rank < 0.66:
+            level_bucket = "MID"
+        else:
+            level_bucket = "HIGH"
+
+    # store back into NET_LIQ dict (Narrative에서 바로 쓰기 좋게)
+    net["dir"] = net_dir
+    net["level_bucket"] = level_bucket
+    market_data["NET_LIQ"] = net
+
+    # optional: also store top-level convenience keys
+    market_data["NET_LIQ_DIR"] = net_dir
+    market_data["NET_LIQ_LEVEL_BUCKET"] = level_bucket
 
     return market_data
+    
 
 def attach_credit_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
