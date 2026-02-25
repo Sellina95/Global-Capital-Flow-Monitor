@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 from pathlib import Path
 from typing import Dict, Any
 import pandas as pd
@@ -7,6 +8,7 @@ import pandas as pd
 from filters.strategist_filters import build_strategist_commentary
 from scripts.risk_alerts import check_regime_change_and_alert
 from scripts.fetch_expectation_data import fetch_expectation_data  # external expectations
+from scripts.fetch_sentiment import fetch_cnn_fear_greed
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -383,8 +385,14 @@ def generate_daily_report() -> None:
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
-    market_data["SENTIMENT"] = {"fear_greed": 35}
+    fear_greed = fetch_cnn_fear_greed()
 
+    if fear_greed is None:
+    fear_greed = 50  # fallback neutral
+
+    market_data["SENTIMENT"] = {
+    "fear_greed": fear_greed
+    }
   
 
 
