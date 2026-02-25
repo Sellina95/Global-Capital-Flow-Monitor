@@ -20,11 +20,14 @@ def fetch_cnn_fear_greed() -> Optional[float]:
         response = requests.get(CNN_URL, headers=headers, timeout=10)
         html = response.text
 
-        # CNN 페이지 내부 JSON 패턴에서 score 추출
         match = re.search(r'"fear_and_greed":{"score":(\d+)', html)
 
         if match:
-            return float(match.group(1))
+            value = float(match.group(1))
+            print(f"[OK] Fear & Greed fetched: {value}")
+            return value
+
+        print("[WARN] Fear & Greed pattern not found")
 
     except Exception as e:
         print(f"[Sentiment Error] {e}")
