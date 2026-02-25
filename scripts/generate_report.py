@@ -447,6 +447,41 @@ def attach_expectation_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     market_data["_EXP_ASOF"] = None
     return market_data
 
+def attach_sentiment_proxy_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Load data/sentiment_proxy.csv (last row) and attach:
+    market_data["SENTIMENT"] = {"fear_greed": <proxy>}
+    + meta lines for debug
+    """
+    if market_data is None:
+        market_data = {}
+
+    path = DATA_DIR / "sentiment_proxy.csv"
+    if not path.exists():
+        market_data["SENTIMENT"] = {"fear_greed": 50}
+        market_data["_SENT_ASOF"] = None
+        market_data["_SENT_SOURCE"] = "proxy_missing_fallback"
+        return market_data
+
+    df = pd.read_csv(path)
+    if df.empty:
+        market_data["SENTIMENT"] = {"fear_greed": 50}
+        market_data["_SENT_ASOF"] = None
+        market_data["_SENT_SOURCE"] = "proxy_empty_fallback"
+        return market_data
+
+    last = df.iloc[-1]
+    market_data["_SENT_ASOF"] = str(last.get("date"))
+    market_data["_SENT_SOURCE"] = f"proxy({last.get('used','')})"
+
+    try:
+        val = float(last.get("sentiment_proxy"))
+    except Exception:
+        val = 50.0
+
+    market_data["SENTIMENT"] = {"fear_greed": val}
+    return market_data
+
 
 # -------------------------
 # Report
@@ -466,6 +501,8 @@ def generate_daily_report() -> None:
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
+    market_data = attach_sentiment_proxy_layer(market_data) or market_data 
+    
     # 🔥 External Sentiment Integration
     fear_greed = fetch_cnn_fear_greed()
 
