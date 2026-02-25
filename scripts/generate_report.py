@@ -391,7 +391,7 @@ def generate_daily_report() -> None:
     fear_greed = 50  # fallback neutral
 
     market_data["SENTIMENT"] = {
-    "fear_greed": fear_greed
+        "fear_greed": fear_greed
     }
   
 
