@@ -8,6 +8,7 @@ def executive_summary_filter(market_data: Dict[str, Any]) -> str:
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
+    print("[DEBUG][EXEC] structure_tag=", state.get("structure_tag"), "| policy_bias_line=", state.get("policy_bias_line"))
 
     phase = str(state.get("phase", "N/A"))
     structure = str(state.get("structure_tag", "MIXED"))
