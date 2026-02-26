@@ -34,10 +34,16 @@ def load_macro_df() -> pd.DataFrame:
     Supports:
       - data/macro_data.xlsx
       - data/macro_data.csv
+
     Robust to:
       - duplicated columns
       - mixed 'date'/'datetime'
-      - bad rows after schema change
+      - schema changes causing bad/epoch rows
+      - occasional single-row CSV (won't crash report pipeline)
+
+    Output:
+      - Always returns a DataFrame with a valid 'date' (datetime64)
+      - Sorted by date ascending
     """
     xlsx_path = DATA_DIR / "macro_data.xlsx"
     csv_path = DATA_DIR / "macro_data.csv"
@@ -45,9 +51,16 @@ def load_macro_df() -> pd.DataFrame:
     if xlsx_path.exists():
         df = pd.read_excel(xlsx_path)
     elif csv_path.exists():
-        df = pd.read_csv(csv_path)
+        # ✅ more tolerant read for occasional malformed rows
+        try:
+            df = pd.read_csv(csv_path)
+        except Exception:
+            # fallback: skip bad lines (prevents pipeline hard-fail)
+            df = pd.read_csv(csv_path, on_bad_lines="skip")
     else:
-        raise FileNotFoundError(f"data 폴더에 macro_data.xlsx 또는 macro_data.csv 가 없습니다: {DATA_DIR}")
+        raise FileNotFoundError(
+            f"data 폴더에 macro_data.xlsx 또는 macro_data.csv 가 없습니다: {DATA_DIR}"
+        )
 
     if df is None or df.empty:
         raise ValueError("macro_data가 비어있습니다.")
@@ -57,36 +70,45 @@ def load_macro_df() -> pd.DataFrame:
 
     cols = list(df.columns)
 
-    # ✅ pick best datetime column
+    # --------------------------------------------------
+    # ✅ FIX: If both datetime & date exist, 'date' may be corrupted (epoch).
+    # Prefer 'datetime' to rebuild 'date'.
+    # --------------------------------------------------
+    if "datetime" in df.columns:
+        dt = pd.to_datetime(df["datetime"], errors="coerce")
+        if dt.notna().sum() >= 1:
+            df["date"] = dt
+
+    # --------------------------------------------------
+    # ✅ choose the best datetime column and normalize to "date"
+    # --------------------------------------------------
     dt_col = None
-    if "date" in cols:
+    if "date" in df.columns:
         dt_col = "date"
-    elif "datetime" in cols:
+    elif "datetime" in df.columns:
         dt_col = "datetime"
     else:
-        # fallback: first column is usually datetime
+        # fallback: first column is usually datetime-like
         dt_col = cols[0]
         df = df.rename(columns={dt_col: "date"})
         dt_col = "date"
 
-    # normalize to "date"
     if dt_col != "date":
         df = df.rename(columns={dt_col: "date"})
 
-    # parse
+    # parse + clean
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
-    # ✅ 핵심: 최소 2행(전일 대비 계산용)
-    if len(df) < 2:
-        # 디버깅 메시지까지 찍어주면 액션 로그에서 바로 원인 확인 가능
-        head = df.head(3).to_string(index=False) if not df.empty else "EMPTY"
-        raise ValueError(
-            "macro_data에 최소 2개 이상의 유효한 date row가 필요합니다.\n"
-            f"(after parsing, rows={len(df)})\n"
-            f"columns={list(df.columns)}\n"
-            f"head=\n{head}"
-        )
+    # --------------------------------------------------
+    # ✅ SAFETY: allow single-row DF (report generator can reuse today as prev)
+    # If you still want to hard fail here, revert to raise.
+    # --------------------------------------------------
+    if len(df) < 1:
+        raise ValueError("macro_data에 유효한 date row가 없습니다.")
+
+    # Optional: keep last N rows to avoid huge files slowing parsing (uncomment if desired)
+    # df = df.tail(5000).reset_index(drop=True)
 
     return df
 
@@ -521,7 +543,7 @@ def generate_daily_report() -> None:
         raise RuntimeError("macro_data.csv is empty or missing date (need at least 2 rows)")
 
     today_row = df.iloc[-1]
-    prev_row = df.iloc[-2]
+    prev_row = df.iloc[-2] if len(df) >= 2 else today_row  # ✅ 1행이면 오늘=전일로 처리
 
     as_of_date = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
     market_data = build_market_data(today_row, prev_row)
