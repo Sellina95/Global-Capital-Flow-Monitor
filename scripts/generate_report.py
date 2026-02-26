@@ -7,6 +7,7 @@ import pandas as pd
 
 from filters.strategist_filters import build_strategist_commentary
 from filters.executive_layer import executive_summary_filter
+from filters.scenario_layer import scenario_generator_filter
 from scripts.risk_alerts import check_regime_change_and_alert
 from scripts.fetch_expectation_data import fetch_expectation_data  # external expectations
 from scripts.fetch_sentiment import fetch_cnn_fear_greed
@@ -603,11 +604,15 @@ def generate_daily_report() -> None:
     # 2) Executive Summary 생성 (FINAL_STATE 사용)
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
+    scenario_block = scenario_generator_filter(market_data)
+
     
     # 3) Executive를 먼저 append
     lines.append(exec_block)
     lines.append("")
     lines.append(decision_block)
+    lines.append("")
+    lines.append(scenario_block)    
     lines.append("")
     lines.append("---")
     lines.append("")
