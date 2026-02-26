@@ -4,14 +4,21 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.048  (+0.00% vs 4.048)
-- **달러 인덱스**: 97.607  (-0.01% vs 97.620)
-- **WTI 유가**: 65.560  (-0.06% vs 65.600)
+- **달러 인덱스**: 97.605  (-0.00% vs 97.607)
+- **WTI 유가**: 65.550  (-0.02% vs 65.560)
 - **변동성 지수 (VIX)**: 17.930  (+0.00% vs 17.930)
-- **원/달러 환율**: 1429.680  (+0.00% vs 1429.680)
+- **원/달러 환율**: 1427.260  (-0.17% vs 1429.680)
 ## 🧾 Executive Summary (3 Lines)
 - 현재 시장은 방향성이 제한된 혼합 국면이며, 구조 신호는 혼조.
 - 유동성은 약화(흡수) 국면으로 상방 동력을 제한할 수 있다.
 - 전략적으로는 공격적 확대보다 50% 내외의 선별적 노출 유지가 적절하다.
+
+## 🧭 So What? (Decision Layer)
+- **Risk Stance:** **HOLD** *(target exposure: 50%)*
+- **Context:** phase=EVENT-WATCHING (이벤트 관망) / liquidity=DOWN-LOW / credit_calm=True
+- **Do:** 노출은 유지하되, 베타 확대보다 ‘선별적 포지셔닝(퀄리티)’ 유지
+- **Don't:** 공격적 베타 확대; 장기듀레이션 성장주/레버리지 익스포저 확대
+- **Triggers:** NET_LIQ 추가 하락/LOW 고착 시 노출 축소 준비
 
 ---
 
@@ -41,7 +48,7 @@
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(→) / DXY(↓) / VIX(→)
-- **Policy Bias: MIXED (혼조) (WEAK, score=+0.0) | REAL_RATEΔ +0.010 / FCIΔ +0.000 / DXYΔ -0.013 / US10YΔ +0.000**
+- **Policy Bias: MIXED (혼조) (WEAK, score=+0.0) | REAL_RATEΔ +0.010 / FCIΔ +0.000 / DXYΔ -0.002 / US10YΔ +0.000**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY MIXED (정책 신호 혼조)**
@@ -82,10 +89,10 @@
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
-- DXY **(Noise, -0.01%)** → 달러 약세/리스크 선호
-- WTI **(Noise, -0.06%)** → 물가 부담 완화
+- DXY **(Noise, -0.00%)** → 달러 약세/리스크 선호
+- WTI **(Noise, -0.02%)** → 물가 부담 완화
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
-- 원/달러(USDKRW) **(Noise, +0.00%)** → 환율 보합(수급 압력 제한)
+- 원/달러(USDKRW) **(Mild, -0.17%)** → 원화 강세/수급 개선
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -129,7 +136,7 @@
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.048), DXY(97.607), VIX(17.93)
+- **Today snapshot:** US10Y(4.048), DXY(97.605), VIX(17.93)
 
 ### 🏗️ 12) Structural Filter
 - **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
@@ -141,7 +148,7 @@
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: MIXED (혼조) (WEAK, score=+0.0) | REAL_RATEΔ +0.010 / FCIΔ +0.000 / DXYΔ -0.013 / US10YΔ +0.000
+- **Structure Bias:** Policy Bias: MIXED (혼조) (WEAK, score=+0.0) | REAL_RATEΔ +0.010 / FCIΔ +0.000 / DXYΔ -0.002 / US10YΔ +0.000
 - **Sentiment (Fear&Greed):** 40.0618585377091 (NEUTRAL)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=DOWN / level=LOW
