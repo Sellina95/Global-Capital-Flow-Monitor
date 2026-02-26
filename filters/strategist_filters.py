@@ -1854,6 +1854,68 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def execution_layer_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Execution / Style Translation Layer (v1)
+
+    Purpose:
+    Translate sector + macro regime into stock-type implementation guidance.
+    Does NOT repeat risk stance or exposure decisions.
+    """
+
+    state = market_data.get("FINAL_STATE", {}) or {}
+
+    structure = str(state.get("structure_tag", "MIXED"))
+    liq_dir = str(state.get("liquidity_dir", "N/A"))
+    liq_lvl = str(state.get("liquidity_level_bucket", "N/A"))
+    credit_calm = state.get("credit_calm", None)
+
+    lines = []
+    lines.append("### 🧬 19) Execution / Style Translation Layer")
+    lines.append("")
+    lines.append("Implementation Focus (Environment-Aware Stock Types)")
+    lines.append("")
+
+    # Preferred traits (general defensive / quality bias logic)
+    preferred = []
+    avoid = []
+
+    # Liquidity logic
+    if liq_dir == "DOWN" or liq_lvl == "LOW":
+        preferred += [
+            "High Free Cash Flow generators",
+            "Net cash or low leverage balance sheets",
+            "Stable margins / pricing power",
+            "Low to mid beta exposure",
+        ]
+        avoid += [
+            "Long-duration, high-multiple growth",
+            "Negative FCF / cash-burn models",
+            "High leverage / refinancing-dependent names",
+        ]
+
+    # Tightening logic
+    if structure == "TIGHTENING":
+        avoid.append("Rate-sensitive long-duration equities")
+        preferred.append("Cash flow visibility and earnings stability")
+
+    # Credit stress logic (future-proofing)
+    if credit_calm is False:
+        preferred.append("Strong liquidity buffers and defensive balance sheets")
+        avoid.append("Highly levered capital structures")
+
+    lines.append("Preferred Company Traits:")
+    for p in set(preferred):
+        lines.append(f"- {p}")
+
+    lines.append("")
+    lines.append("Risk Control / Avoid:")
+    for a in set(avoid):
+        lines.append(f"- {a}")
+
+    return "\n".join(lines)
+    
+
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
     sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
@@ -1897,5 +1959,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(factor_layer_filter(market_data))   
     sections.append("")      
     sections.append(sector_allocation_filter(market_data))  
+    sections.append("")
+    sections.append(execution_layer_filter(market_data))
+    sections.append("")
     
     return "\n".join(sections)
