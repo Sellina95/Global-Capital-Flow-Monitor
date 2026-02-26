@@ -22,9 +22,14 @@ INDICATORS = {
     "WTI": "CL=F",        # 유가
     "VIX": "^VIX",        # 변동성
     "USDKRW": "KRW=X",    # 원/달러
-    # 이미 추가했다면 여기도 포함
     "HYG": "HYG",
     "LQD": "LQD",
+
+    # ✅ Sector ETFs (Correlation Break / Sector Layer용)
+    "XLK": "XLK",         # Technology
+    "XLF": "XLF",         # Financials
+    "XLE": "XLE",         # Energy
+    "XLRE": "XLRE",       # Real Estate
 }
 
 def _safe_last_close(df: pd.DataFrame) -> Optional[float]:
