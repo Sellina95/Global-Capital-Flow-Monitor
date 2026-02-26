@@ -505,7 +505,9 @@ def generate_daily_report() -> None:
     as_of_date = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
     market_data = build_market_data(today_row, prev_row)
 
-    # Attach layers (never allow None overwrite)
+    # -------------------------
+    # Attach layers
+    # -------------------------
     market_data = attach_liquidity_layer(market_data) or market_data
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
@@ -514,14 +516,23 @@ def generate_daily_report() -> None:
     # ✅ Wall-Street Sentiment Proxy only (NO CNN, NO overwrite after this)
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
 
-    # (중요) 여기 아래에 market_data["SENTIMENT"]를 다시 세팅하는 코드가 있으면 안 됨.
-    # ... 이하 리포트 생성 로직 계속 ...  
-
-
-    # ✅ regime change monitor
+    # ✅ regime change monitor (always computed)
     regime_result = check_regime_change_and_alert(market_data, as_of_date)
 
-    # ---- Report ----
+    # -------------------------
+    # 1) Run Strategist Commentary FIRST to build FINAL_STATE (Narrative Engine sets it)
+    # -------------------------
+    commentary_block = build_strategist_commentary(market_data)
+
+    # 2) Top layers (need FINAL_STATE)
+    exec_block = executive_summary_filter(market_data)
+    decision_block = decision_layer_filter(market_data)
+    scenario_block = scenario_generator_filter(market_data)
+    transmission_block = transmission_layer_filter(market_data)
+
+    # -------------------------
+    # Report assembly
+    # -------------------------
     lines = []
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
     lines.append(f"**Date:** {as_of_date}")
@@ -529,7 +540,7 @@ def generate_daily_report() -> None:
     lines.append("## 📊 Daily Macro Signals")
     lines.append("")
 
-    # daily core signals (only if exists)
+    # daily core signals
     if "US10Y" in market_data and market_data["US10Y"].get("today") is not None:
         lines.append(
             f"- **미국 10년물 금리**: {market_data['US10Y']['today']:.3f}  "
@@ -556,7 +567,7 @@ def generate_daily_report() -> None:
             f"({market_data['USDKRW']['pct_change']:+.2f}% vs {market_data['USDKRW']['prev']:.3f})"
         )
 
-    # Optional: Liquidity Snapshot block (usually off)
+    # Optional: Liquidity Snapshot block (independent)
     if SHOW_LIQUIDITY_SNAPSHOT:
         liq_asof = market_data.get("_LIQ_ASOF")
         tga = market_data.get("TGA", {}).get("today")
@@ -574,59 +585,50 @@ def generate_daily_report() -> None:
             if net is not None:
                 lines.append(f"- **NET_LIQ**: {float(net):.1f}")
 
-        lines.append("")
-        lines.append("---")
-        lines.append("")
-        lines.append("## 🚨 Regime Change Monitor (always-on)")
+    # ✅ Regime Change Monitor (ALWAYS ON) — moved OUT of SHOW_LIQUIDITY_SNAPSHOT
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("## 🚨 Regime Change Monitor (always-on)")
 
-        if regime_result["status"] == "DETECTED":
-            lines.append(f"- **Status:** ✅ DETECTED")
-            lines.append(f"- **Prev → Current:** {regime_result['prev_regime']} → {regime_result['current_regime']}")
-            lines.append(f"- **File:** `insights/risk_alerts.txt` ✅ created")
-            lines.append(f"- **Email:** {'✅ sent' if regime_result['email_sent'] else '❌ not sent'} ({regime_result['email_note']})")
-        elif regime_result["status"] == "NOT_DETECTED":
-            lines.append(f"- **Status:** ❎ NOT DETECTED")
-            lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
-            lines.append(f"- **File:** not created")
-            lines.append(f"- **Email:** not sent")
-        else:
-            lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
-            lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
-            lines.append(f"- **File/Email:** not created (no previous regime to compare)")
+    if regime_result["status"] == "DETECTED":
+        lines.append(f"- **Status:** ✅ DETECTED")
+        lines.append(f"- **Prev → Current:** {regime_result['prev_regime']} → {regime_result['current_regime']}")
+        lines.append(f"- **File:** `insights/risk_alerts.txt` ✅ created")
+        lines.append(f"- **Email:** {'✅ sent' if regime_result['email_sent'] else '❌ not sent'} ({regime_result['email_note']})")
+    elif regime_result["status"] == "NOT_DETECTED":
+        lines.append(f"- **Status:** ❎ NOT DETECTED")
+        lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
+        lines.append(f"- **File:** not created")
+        lines.append(f"- **Email:** not sent")
+    else:
+        lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
+        lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
+        lines.append(f"- **File/Email:** not created (no previous regime to compare)")
 
-        # ✅✅✅ 여기부터는 "항상" 실행되게 조건문 밖으로 빼야 함
-        lines.append("")
-        lines.append("---")
-        lines.append("")
-
-    # 1) Strategist Commentary 먼저 실행 (FINAL_STATE 생성 목적)
-    commentary_block = build_strategist_commentary(market_data)
-
-    # 2) Executive Summary 생성 (FINAL_STATE 사용)
-    exec_block = executive_summary_filter(market_data)
-    decision_block = decision_layer_filter(market_data)
-    scenario_block = scenario_generator_filter(market_data)
-    transmission_block = transmission_layer_filter(market_data)
-    
-    # 3) Executive를 먼저 append
+    # -------------------------
+    # Top layers first
+    # -------------------------
+    lines.append("")
+    lines.append("---")
+    lines.append("")
     lines.append(exec_block)
     lines.append("")
     lines.append(decision_block)
     lines.append("")
-    lines.append(scenario_block)    
+    lines.append(scenario_block)
     lines.append("")
     lines.append(transmission_block)
     lines.append("")
     lines.append("---")
     lines.append("")
 
-    # 4) 그 다음 상세 Commentary
+    # Detailed commentary last
     lines.append(commentary_block)
 
     report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Report written: {report_path}")
-
    
      
 
