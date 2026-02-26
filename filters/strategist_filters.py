@@ -806,6 +806,54 @@ def cross_asset_filter(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def correlation_break_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Detects correlation breaks between key macro signals and risk assets.
+    """
+
+    us10y = market_data.get("US10Y", {}).get("pct_change")
+    vix = market_data.get("VIX", {}).get("pct_change")
+    net_liq_dir = market_data.get("NET_LIQ", {}).get("dir")
+
+    tech = market_data.get("TECH_PROXY", {}).get("pct_change")  # e.g., QQQ
+
+    breaks = []
+    interpretation = []
+
+    # Rule A: Rate ↑ but Tech ↑
+    if us10y is not None and tech is not None:
+        if us10y > 0 and tech > 0:
+            breaks.append("US10Y ↑ but Technology ↑")
+            interpretation.append("Duration 압박에도 성장주가 버팀 → 강한 매수세 가능성")
+
+    # Rule B: Liquidity ↓ but Tech ↑
+    if net_liq_dir == "DOWN" and tech is not None and tech > 0:
+        breaks.append("Liquidity ↓ but Technology ↑")
+        interpretation.append("유동성 역풍에도 베타 유지 → 포지셔닝 왜곡 가능성")
+
+    # Rule C: VIX ↑ but Tech ↑
+    if vix is not None and tech is not None:
+        if vix > 0 and tech > 0:
+            breaks.append("VIX ↑ but Risk Asset ↑")
+            interpretation.append("리스크 경고 신호에도 상승 → 숏커버 가능성")
+
+    lines = []
+    lines.append("### ⚠ 6.5) Correlation Break Monitor")
+
+    if breaks:
+        lines.append("Correlation Break Detected:")
+        for b in breaks:
+            lines.append(f"- {b}")
+        lines.append("")
+        lines.append("Interpretation:")
+        for i in interpretation:
+            lines.append(f"- {i}")
+    else:
+        lines.append("No significant correlation break detected.")
+
+    return "\n".join(lines)
+
+
 # =========================
 # 7) Risk Exposure Filter
 # =========================
@@ -1967,6 +2015,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(legacy_directional_filters(market_data))
     sections.append("")
     sections.append(cross_asset_filter(market_data))
+    sections.append("")
+    sections.append(correlation_break_filter(market_data))
     sections.append("")
     sections.append(risk_exposure_filter(market_data))
     sections.append("")
