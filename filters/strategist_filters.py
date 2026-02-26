@@ -1202,7 +1202,32 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         f"구조={struct_tag} / 심리={sent_state} / 유동성={liq_tag} / "
         f"크레딧={credit_tag} → Phase={phase}"
     )
+        # --------------------------------------------------
+    # 6.5️⃣ Final State Object (for Executive/Decision/Scenario layers)
+    # --------------------------------------------------
+    final_state = {
+        "phase": phase,
+        "phase_cap": cap,
+        "risk_action": action,
+        "risk_budget": budget,
 
+        "structure_tag": struct_tag,           # EASING/TIGHTENING/MIXED
+        "policy_bias_line": policy_bias_line,  # 원문 보존
+
+        "sentiment_fear_greed": fear,
+        "sentiment_state": sent_state,         # FEAR/NEUTRAL/GREED
+
+        "credit_calm": credit_calm,            # True/False/None
+        "hy_oas_today": hy_oas_today,
+
+        "liquidity_dir": liq_dir_tag,          # UP/DOWN/FLAT/N/A
+        "liquidity_level_bucket": liq_level_bucket,  # HIGH/MID/LOW/N/A
+        "net_liq_pct_change": net_liq_pct,
+
+        "narrative_line": narrative,
+    }
+
+    market_data["FINAL_STATE"] = final_state
     # --------------------------------------------------
     # 6️⃣ Output (기존 필터 스타일 통일)
     # --------------------------------------------------
@@ -1221,6 +1246,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **🎯 Final Risk Action:** **{action}**")
     lines.append(f"- **Risk Budget (0~100):** **{budget}**")
     lines.append(f"- **Narrative:** {narrative}")
+
 
     return "\n".join(lines)
     
