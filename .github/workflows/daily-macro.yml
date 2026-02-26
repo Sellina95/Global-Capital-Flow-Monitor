@@ -62,11 +62,26 @@ jobs:
           python scripts/fetch_sentiment_proxy.py
 
 
-      # ✅ 3) 리포트 생성
+           # ✅ 3) 리포트 생성
       - name: Run report generator
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/generate_report.py
+
+      # ✅ (추가) 실제 생성된 리포트 상단 확인 (Executive 문장 검증용)
+      - name: Debug report head (latest)
+        run: |
+          echo "== reports dir listing =="
+          ls -al reports || true
+          echo "== latest report file =="
+          latest=$(ls -t reports/*.md 2>/dev/null | head -n 1)
+          echo "LATEST=$latest"
+          if [ -n "$latest" ]; then
+            echo "== report head (first 40 lines) =="
+            head -n 40 "$latest" || true
+          else
+            echo "No report file found in reports/"
+          fi
 
       # ✅ 디버그(지금은 꼭 넣자: 날짜가 제대로 찍히는지 확인)
       - name: Debug latest data rows
@@ -87,11 +102,15 @@ jobs:
           git add data/liquidity_data.csv || true
           git add data/credit_spread_data.csv || true
           git add data/fred_macro_extras.csv || true
+
           echo "== fred_macro_extras tail =="
           tail -n 3 data/fred_macro_extras.csv || true
 
-
-
+          # ✅ (추가) 커밋 직전 상태 확인
+          echo "== git status (porcelain) =="
+          git status --porcelain || true
+          echo "== staged diff (reports) head =="
+          git diff --cached -- reports/*.md | head -n 80 || true
 
           if git diff --cached --quiet; then
             echo "No changes to commit"
