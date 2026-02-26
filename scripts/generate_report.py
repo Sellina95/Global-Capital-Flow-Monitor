@@ -9,7 +9,6 @@ from filters.strategist_filters import build_strategist_commentary
 from scripts.risk_alerts import check_regime_change_and_alert
 from scripts.fetch_expectation_data import fetch_expectation_data  # external expectations
 from scripts.fetch_sentiment import fetch_cnn_fear_greed
-from filters.executive_layer import executive_summary_filter
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
