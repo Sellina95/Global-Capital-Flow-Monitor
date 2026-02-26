@@ -72,6 +72,13 @@ jobs:
           python scripts/fetch_sentiment_proxy.py
 
 
+
+      - name: Repair macro_data.csv schema (before report)
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/repair_macro_csv.py
+
+
            # ✅ 3) 리포트 생성
       - name: Run report generator
         run: |
@@ -100,6 +107,11 @@ jobs:
           tail -n 3 data/macro_data.csv || true
           echo "== liquidity_data tail =="
           tail -n 3 data/liquidity_data.csv || true
+
+      - name: Debug macro_data date column
+        run: |
+          echo "== macro_data first 5 rows =="
+          head -n 6 data/macro_data.csv || true
 
       # ✅ 4) 커밋 & 푸시 (macro_data도 반드시 add)
       - name: Commit and push report
