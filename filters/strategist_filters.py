@@ -1036,6 +1036,8 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+from typing import Dict, Any, Optional
+
 def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     """
     Narrative Engine v2 (Phase-Respecting Risk Budget) — Liquidity upgraded
@@ -1105,7 +1107,9 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     liq_dir_tag = _liq_dir_tag(net_liq_pct)
 
     # NEW: level bucket (HIGH/MID/LOW) from attach_liquidity_layer
-    liq_level_bucket = str(net_liq.get("level_bucket") or market_data.get("NET_LIQ_LEVEL_BUCKET") or "N/A").upper()
+    liq_level_bucket = str(
+        net_liq.get("level_bucket") or market_data.get("NET_LIQ_LEVEL_BUCKET") or "N/A"
+    ).upper()
     if liq_level_bucket not in ("HIGH", "MID", "LOW"):
         liq_level_bucket = "N/A"
 
@@ -1113,6 +1117,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     phase_upper = str(phase).upper()
 
     policy_upper = policy_bias_line.upper()
+    mixed = "MIXED" in policy_upper
     easing = "EASING" in policy_upper
     tightening = "TIGHTENING" in policy_upper
 
@@ -1131,10 +1136,12 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         budget = 50
 
     # Structure tilt
-    if easing and not tightening:
-        budget += 10
-    elif tightening and not easing:
-        budget -= 10
+    # ✅ If explicitly mixed, don't apply easing/tightening tilt
+    if not mixed:
+        if easing and not tightening:
+            budget += 10
+        elif tightening and not easing:
+            budget -= 10
 
     # Credit tilt
     if credit_calm is True:
@@ -1190,16 +1197,14 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     # 5️⃣ Narrative Line
     # --------------------------------------------------
 
-    # --------------------------------------------------
-    # 5️⃣ Narrative Line
-    # --------------------------------------------------
-
-    # ✅ FIX: If both easing & tightening keywords appear (mixed), prefer MIXED
+    # ✅ FIX v1.1: If policy line explicitly says MIXED, force MIXED
     struct_tag = "MIXED"
-    if easing and not tightening:
-        struct_tag = "EASING"
-    elif tightening and not easing:
-        struct_tag = "TIGHTENING"
+    if not mixed:
+        if easing and not tightening:
+            struct_tag = "EASING"
+        elif tightening and not easing:
+            struct_tag = "TIGHTENING"
+
     credit_tag = "안정" if credit_calm is True else ("불안" if credit_calm is False else "N/A")
 
     # More Wall-Street-ish liquidity tag (two-axis)
@@ -1211,7 +1216,8 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         f"구조={struct_tag} / 심리={sent_state} / 유동성={liq_tag} / "
         f"크레딧={credit_tag} → Phase={phase}"
     )
-        # --------------------------------------------------
+
+    # --------------------------------------------------
     # 6.5️⃣ Final State Object (for Executive/Decision/Scenario layers)
     # --------------------------------------------------
     final_state = {
@@ -1235,8 +1241,8 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
         "narrative_line": narrative,
     }
-
     market_data["FINAL_STATE"] = final_state
+
     # --------------------------------------------------
     # 6️⃣ Output (기존 필터 스타일 통일)
     # --------------------------------------------------
@@ -1255,7 +1261,6 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **🎯 Final Risk Action:** **{action}**")
     lines.append(f"- **Risk Budget (0~100):** **{budget}**")
     lines.append(f"- **Narrative:** {narrative}")
-
 
     return "\n".join(lines)
     
@@ -1278,6 +1283,7 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
     if "EASING" in policy_upper:
         structure = "EASING"
     elif "TIGHTENING" in policy_upper:
+        mixed = "MIXED" in policy_upper
         structure = "TIGHTENING"
     else:
         structure = "MIXED"
