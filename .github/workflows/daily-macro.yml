@@ -55,7 +55,11 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_fred_macro_extras.py
 
-
+      - name: Repair macro_data.csv schema (prevent ragged CSV)
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/repair_macro_csv.py
+          
       - name: Fetch Sentiment proxy (VIX + Credit)
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
