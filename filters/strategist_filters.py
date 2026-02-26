@@ -1854,33 +1854,48 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+# filters/execution_layer.py
+from typing import Dict, Any, List
+
+def _uniq_keep_order(items: List[str]) -> List[str]:
+    seen = set()
+    out = []
+    for x in items:
+        if not x:
+            continue
+        if x in seen:
+            continue
+        seen.add(x)
+        out.append(x)
+    return out
+
 def execution_layer_filter(market_data: Dict[str, Any]) -> str:
     """
-    Execution / Style Translation Layer (v1)
+    Execution / Style Translation Layer (v1.1)
 
-    Purpose:
-    Translate sector + macro regime into stock-type implementation guidance.
-    Does NOT repeat risk stance or exposure decisions.
+    목적:
+    - 섹터(18) + FINAL_STATE(13) 기반으로 "구현용 기업 타입 체크리스트"를 출력
+    - Risk stance / exposure 퍼센트 / HOLD 반복 금지 (Decision Layer 영역)
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
 
-    structure = str(state.get("structure_tag", "MIXED"))
-    liq_dir = str(state.get("liquidity_dir", "N/A"))
-    liq_lvl = str(state.get("liquidity_level_bucket", "N/A"))
+    structure = str(state.get("structure_tag", "MIXED")).upper()
+    liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
+    liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
     credit_calm = state.get("credit_calm", None)
 
-    lines = []
-    lines.append("### 🧬 19) Execution / Style Translation Layer")
-    lines.append("")
-    lines.append("Implementation Focus (Environment-Aware Stock Types)")
-    lines.append("")
+    # (선택) 18번 결과가 market_data에 저장돼 있다면 가져오기
+    # v2 섹터엔진에서 아래 키로 저장하도록 맞추면 좋음:
+    # market_data["SECTOR_OW"] = [...]
+    # market_data["SECTOR_UW"] = [...]
+    sector_ow = market_data.get("SECTOR_OW", []) or []
+    sector_uw = market_data.get("SECTOR_UW", []) or []
 
-    # Preferred traits (general defensive / quality bias logic)
-    preferred = []
-    avoid = []
+    preferred: List[str] = []
+    avoid: List[str] = []
 
-    # Liquidity logic
+    # ---- Priority 1: Liquidity ----
     if liq_dir == "DOWN" or liq_lvl == "LOW":
         preferred += [
             "High Free Cash Flow generators",
@@ -1889,28 +1904,44 @@ def execution_layer_filter(market_data: Dict[str, Any]) -> str:
             "Low to mid beta exposure",
         ]
         avoid += [
-            "Long-duration, high-multiple growth",
             "Negative FCF / cash-burn models",
             "High leverage / refinancing-dependent names",
+            "Long-duration, high-multiple growth",
         ]
 
-    # Tightening logic
+    # ---- Priority 2: Structure ----
     if structure == "TIGHTENING":
-        avoid.append("Rate-sensitive long-duration equities")
         preferred.append("Cash flow visibility and earnings stability")
+        avoid.append("Rate-sensitive long-duration equities")
 
-    # Credit stress logic (future-proofing)
+    # ---- Priority 3: Credit ----
     if credit_calm is False:
         preferred.append("Strong liquidity buffers and defensive balance sheets")
         avoid.append("Highly levered capital structures")
 
-    lines.append("Preferred Company Traits:")
-    for p in set(preferred):
+    preferred = _uniq_keep_order(preferred)
+    avoid = _uniq_keep_order(avoid)
+
+    lines = []
+    lines.append("### 🧬 19) Execution / Style Translation Layer")
+    lines.append("- **Implementation Focus:** Environment-Aware Stock Types")
+    lines.append("")
+
+    # 섹터 연결(있으면)
+    if sector_ow or sector_uw:
+        if sector_ow:
+            lines.append(f"- **Apply to Overweight Sectors:** {', '.join(sector_ow)}")
+        if sector_uw:
+            lines.append(f"- **Apply to Underweight Sectors:** {', '.join(sector_uw)}")
+        lines.append("")
+
+    lines.append("**Preferred Company Traits:**")
+    for p in preferred:
         lines.append(f"- {p}")
 
     lines.append("")
-    lines.append("Risk Control / Avoid:")
-    for a in set(avoid):
+    lines.append("**Risk Control / Avoid:**")
+    for a in avoid:
         lines.append(f"- {a}")
 
     return "\n".join(lines)
