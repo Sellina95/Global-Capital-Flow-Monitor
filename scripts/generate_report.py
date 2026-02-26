@@ -6,6 +6,7 @@ from typing import Dict, Any
 import pandas as pd
 
 from filters.strategist_filters import build_strategist_commentary
+from filters.executive_layer import executive_summary_filter
 from scripts.risk_alerts import check_regime_change_and_alert
 from scripts.fetch_expectation_data import fetch_expectation_data  # external expectations
 from scripts.fetch_sentiment import fetch_cnn_fear_greed
@@ -591,14 +592,28 @@ def generate_daily_report() -> None:
         lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
         lines.append(f"- **File/Email:** not created (no previous regime to compare)")
 
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append(build_strategist_commentary(market_data))
+        lines.append("")
+        lines.append("---")
+        lines.append("")
 
-    report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
-    report_path.write_text("\n".join(lines), encoding="utf-8")
-    print(f"[OK] Report written: {report_path}")
+        # 1. Strategist Commentary 먼저 실행 (FINAL_STATE 생성 목적)
+        commentary_block = build_strategist_commentary(market_data)
+
+        # 2. Executive Summary 생성 (FINAL_STATE 사용)
+        exec_block = executive_summary_filter(market_data)
+
+        # 3. Executive를 먼저 append
+        lines.append(exec_block)
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+
+        # 4. 그 다음 상세 Commentary
+        lines.append(commentary_block)
+
+        report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
+        report_path.write_text("\n".join(lines), encoding="utf-8")
+        print(f"[OK] Report written: {report_path}")
 
 
 
