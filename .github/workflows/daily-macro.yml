@@ -59,6 +59,12 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/repair_macro_csv.py
+
+
+
+      - name: Debug macro_data header
+        run: |
+          head -n 1 data/macro_data.csv || true
           
       - name: Fetch Sentiment proxy (VIX + Credit)
         run: |
