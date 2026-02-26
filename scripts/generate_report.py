@@ -1,5 +1,6 @@
 from __future__ import annotations
 from filters.decision_layer import decision_layer_filter
+from filters.transmission_layer import transmission_layer_filter
 
 from pathlib import Path
 from typing import Dict, Any
@@ -605,7 +606,7 @@ def generate_daily_report() -> None:
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
     scenario_block = scenario_generator_filter(market_data)
-
+    transmission_block = transmission_layer_filter(market_data)
     
     # 3) Executive를 먼저 append
     lines.append(exec_block)
@@ -613,6 +614,8 @@ def generate_daily_report() -> None:
     lines.append(decision_block)
     lines.append("")
     lines.append(scenario_block)    
+    lines.append("")
+    lines.append(transmission_block)
     lines.append("")
     lines.append("---")
     lines.append("")
