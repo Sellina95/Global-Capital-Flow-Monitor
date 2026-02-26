@@ -72,25 +72,23 @@ def _load_macro_df() -> pd.DataFrame:
 
     return df
 
-# ✅ FIX: handle duplicated datetime/date columns safely
-# 1) drop duplicated column names (keep first)
-macro = macro.loc[:, ~macro.columns.duplicated()].copy()
-
-# 2) choose datetime column robustly (prefer "date" since your CSV uses "date")
-dt_col = "date" if "date" in macro.columns else ("datetime" if "datetime" in macro.columns else None)
-if dt_col is None:
-    raise RuntimeError("macro_data.csv must contain a 'date' column (or 'datetime').")
-
-macro[dt_col] = pd.to_datetime(macro[dt_col], errors="coerce")
-macro = macro.dropna(subset=[dt_col]).copy()
-
-macro["d"] = macro[dt_col].dt.strftime("%Y-%m-%d")
 
 
 def main() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     macro = _load_macro_df()
+    # ✅ FIX: handle duplicated datetime/date columns safely
+    macro = macro.loc[:, ~macro.columns.duplicated()].copy()
+
+    dt_col = "date" if "date" in macro.columns else ("datetime" if "datetime" in macro.columns else None)
+    if dt_col is None:
+        raise RuntimeError("macro_data.csv must contain a 'date' column (or 'datetime').")
+
+    macro[dt_col] = pd.to_datetime(macro[dt_col], errors="coerce")
+    macro = macro.dropna(subset=[dt_col]).copy()
+
+    macro["d"] = macro[dt_col].dt.strftime("%Y-%m-%d")
     if macro.empty:
         raise RuntimeError("macro_data.csv is empty after parsing")
 
