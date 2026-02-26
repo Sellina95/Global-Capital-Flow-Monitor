@@ -26,6 +26,16 @@ The objective is disciplined interpretation of market structure and risk allocat
 
 ---
 
+💡 Strategic Genesis
+
+This project is not just a coding exercise; it is a synthesis of my professional journey and intellectual rigor. 
+
+* **The "Plumbing" Perspective:** My time at **Bank of America (Global Market Operations)** allowed me to see beyond price charts. I witnessed the "hidden pipes" of the financial system—how liquidity actually moves through TGA, RRP, and collateral chains. This project translates that "plumbing" into code.
+* **Cross-Border Intelligence:** Experience at **ICBC (Industrial and Commercial Bank of China)** provided a rare vantage point into the interplay between Eastern and Western capital flows. My fluency in **English and Chinese**, combined with a **Computer Science** background, enables me to parse multi-polar narratives that single-lens models often miss.
+* **Algorithmic Discipline:** As a CS graduate, I view the global market as a complex, non-linear system. I developed this engine to eliminate human bias and emotional noise, focusing instead on the mathematical reality of capital allocation.
+
+---
+
 🏗 Core Framework Philosophy
 
 Markets move in layers:
@@ -164,14 +174,10 @@ Planned upgrades:
 
 ## Strategic Philosophy
 
-Capital flows reflect incentives.  
-Incentives reflect structure.  
-Structure reflects the architecture of the global system.
+> "Capital flows reflect incentives. Incentives reflect structure. Structure reflects the architecture of the global system."
 
-Understanding capital flow is not just about markets.  
-It is about understanding how the world allocates risk, trust, and belief.
+In a world filled with information overload, the greatest asset is not data, but **Interpretation.** I believe that understanding capital flow is the ultimate way to understand human civilization—how we allocate **risk, trust, and belief.** This monitor is my lifelong commitment to decoding that language. It is built to protect sovereignty over one's own decisions in an era of engineered narratives.
 
 ---
+**Strategy & Capital Flow Research Initiative** *Developed by a Strategist who believes in the power of logic, the depth of macro-history, and the resilience of the human spirit.*
 
-## Strategy & Capital Flow Research Initiative
-Independent macro research framework focused on structural regime detection, liquidity cycles, and cross-asset capital positioning.
