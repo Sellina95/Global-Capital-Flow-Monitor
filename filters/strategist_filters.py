@@ -1926,6 +1926,8 @@ def execution_layer_filter(market_data: Dict[str, Any]) -> str:
     lines.append("### 🧬 19) Execution / Style Translation Layer")
     lines.append("- **Implementation Focus:** Environment-Aware Stock Types")
     lines.append("")
+    market_data["SECTOR_OW"] = overweight_list
+    market_data["SECTOR_UW"] = underweight_list
 
     # 섹터 연결(있으면)
     if sector_ow or sector_uw:
@@ -1943,6 +1945,7 @@ def execution_layer_filter(market_data: Dict[str, Any]) -> str:
     lines.append("**Risk Control / Avoid:**")
     for a in avoid:
         lines.append(f"- {a}")
+        
 
     return "\n".join(lines)
     
