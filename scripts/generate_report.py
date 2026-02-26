@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from filters.decision_layer import decision_layer_filter
 
 from pathlib import Path
 from typing import Dict, Any
@@ -602,9 +602,12 @@ def generate_daily_report() -> None:
 
     # 2) Executive Summary 생성 (FINAL_STATE 사용)
     exec_block = executive_summary_filter(market_data)
-
+    decision_block = decision_layer_filter(market_data)
+    
     # 3) Executive를 먼저 append
     lines.append(exec_block)
+    lines.append("")
+    lines.append(decision_block)
     lines.append("")
     lines.append("---")
     lines.append("")
