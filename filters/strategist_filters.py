@@ -1190,7 +1190,16 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     # 5️⃣ Narrative Line
     # --------------------------------------------------
 
-    struct_tag = "EASING" if easing else ("TIGHTENING" if tightening else "MIXED")
+    # --------------------------------------------------
+    # 5️⃣ Narrative Line
+    # --------------------------------------------------
+
+    # ✅ FIX: If both easing & tightening keywords appear (mixed), prefer MIXED
+    struct_tag = "MIXED"
+    if easing and not tightening:
+        struct_tag = "EASING"
+    elif tightening and not easing:
+        struct_tag = "TIGHTENING"
     credit_tag = "안정" if credit_calm is True else ("불안" if credit_calm is False else "N/A")
 
     # More Wall-Street-ish liquidity tag (two-axis)
