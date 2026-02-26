@@ -19,6 +19,7 @@ The system integrates:
 - Factor Sensitivity
 - Style Rotation
 - Sector Allocation Logic
+- Execution Translation Layer
 
 The objective is not prediction.
 
@@ -47,6 +48,7 @@ Markets move in layers:
 5. Volatility Adjustment
 6. Style & Factor Tilt
 7. Sector Allocation
+8. Execution Translation (Company Traits)
 
 This system replicates that hierarchy using rule-based macro logic.
 
@@ -57,6 +59,7 @@ It separates:
 - Liquidity plumbing
 - Risk appetite
 - Capital positioning
+- Execution interpretation
 
 ---
 
@@ -72,6 +75,11 @@ Macro Data
 → Style Tilt  
 → Factor Layer  
 → Sector Allocation Engine  
+→ Execution / Style Translation Layer
+→ Correlation Break Monitoring
+→ Scenario Framework
+→ Decision Layer
+→ Transmission Mapping
 
 Each filter operates independently but feeds into a structured daily strategist report.
 
@@ -96,38 +104,64 @@ This directory contains structured capital flow interpretations — not raw data
 
 ---
 
-## Implemented Strategy Layers (18 Filters)
+## Implemented Strategy Layers (19 Filters)
 
-1. Market Regime Detection  
-2. Liquidity Structure (Enhanced)  
-3. Policy Bias Analysis  
-4. Fed Plumbing (TGA / RRP / Net Liquidity)  
-5. High Yield Spread (HY OAS)  
-6. Credit Stress (HYG vs LQD)  
-7. Directional Signal Layer  
-8. Cross-Asset Interaction  
-9. Incentive Mapping  
-10. Cause Filter  
-11. Noise vs Signal Filter  
-12. Timing Framework  
-13. Structural Interpretation  
-14. Narrative Engine (Risk Budget Model)  
-15. Divergence Monitor  
-16. Volatility-Controled Exposure  
-17. Style Tilt (Growth / Value / Duration / Defensive)  
-18. Sector Allocation Engine  
+Core Macro Structure
+ 1. Market Regime Detection
+ 2. Liquidity Structure (Enhanced)
+ 3. Policy Bias Analysis
+ 4. Fed Plumbing (TGA / RRP / Net Liquidity)
+ 4.2 High Yield Spread (HY OAS)
+ 4.5 Credit Stress (HYG vs LQD)
+
+Cross-Asset & Risk Mapping
+ 6. Cross-Asset Interaction
+ 6.5 Correlation Break Monitor (Macro-Level)
+ 6.6 Sector Correlation Break Monitor
+ 7. Risk Exposure Filter
+ 8. Incentive Mapping
+ 9. Cause Filter
+ 10. Noise vs Signal Filter
+ 11. Timing Framework
+ 12. Structural Interpretation
+
+Narrative & Allocation Engine
+ 13. Narrative Engine (FINAL_STATE)
+ 14. Risk Budget Model
+ 15. Divergence Monitor
+ 16. Volatility-Controlled Exposure
+ 17. Style Tilt (Growth / Value / Duration / Defensive)
+ 18. Sector Allocation Engine (v2 Rule-Based Scoring)
+
+🆕 Strategic Translation Layer
+ . Execution / Style Translation Layer
+ - Preferred Company Traits
+ - Avoided Company Traits
+ - Environment-aware stock type guidance
+
+🆕 Decision & Strategic Framing
+. Executive Summary (3-Line Compression Layer)
+- Decision Layer (So What?)
+- Scenario Framework (Base / Bull / Bear)
+- Transmission Map (Macro → Industry → Company)
 
 ---
 
 📊 Sample Daily Output Snapshot
-Phase: WAITING / RANGE
-Policy Bias: EASING (Moderate)
-Liquidity: Draining
-Credit: Calm
-Final Risk Action: HOLD
-Risk Budget: 60
-Recommended Exposure: 60%
-Style Tilt: Growth Bias + Defensive Overlay
+Executive Summary (3 Lines)
+Risk Stance: HOLD (40%)
+
+Sector Tilt:
+Overweight: Staples, Health Care, Financials
+Underweight: Technology, Real Estate
+
+Execution Focus:
+High FCF / Low leverage / Defensive bias
+
+Scenario:
+Base: Liquidity mixed
+Bull: Liquidity recovery
+Bear: Credit stress breakout
 
 The output is not a trading signal.
 
@@ -141,7 +175,10 @@ It is a structured macro interpretation and risk allocation framework.
 - Liquidity plumbing integration (TGA / RRP)
 - Risk Budget quantification
 - Volatility-adjusted exposure model
-- Macro → Factor → Sector translation
+- Macro → Style → Sector → Company translation
+- Correlation break detection
+- Execution-layer interpretation
+- Scenario-driven strategist framing
 - Regime-based capital allocation logic
 
 This is not an indicator stack.
@@ -167,7 +204,7 @@ Planned upgrades:
 - Event-driven Cause Filter (Economic Calendar Integration)
 - Structural Trend Overlay (PMI / 200DMA)
 - Factor Momentum Scoring
-- Sector Relative Strength Model
+- Cross-Asset Divergence Intensity Index
 - Allocation backtesting module
 
 ---
