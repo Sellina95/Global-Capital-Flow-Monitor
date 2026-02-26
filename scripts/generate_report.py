@@ -34,9 +34,10 @@ def load_macro_df() -> pd.DataFrame:
     Supports:
       - data/macro_data.xlsx
       - data/macro_data.csv
-    Columns:
-      - date or datetime (first column이면 자동으로 date로 rename)
-      - indicator columns (US10Y, DXY, WTI, VIX, USDKRW, HYG, LQD ...)
+    Robust to:
+      - duplicated columns
+      - mixed 'date'/'datetime'
+      - bad rows after schema change
     """
     xlsx_path = DATA_DIR / "macro_data.xlsx"
     csv_path = DATA_DIR / "macro_data.csv"
@@ -48,26 +49,46 @@ def load_macro_df() -> pd.DataFrame:
     else:
         raise FileNotFoundError(f"data 폴더에 macro_data.xlsx 또는 macro_data.csv 가 없습니다: {DATA_DIR}")
 
-    if df.empty or len(df) < 2:
-        raise ValueError("macro_data에 최소 2개 이상의 row가 필요합니다.")
+    if df is None or df.empty:
+        raise ValueError("macro_data가 비어있습니다.")
 
-    # 첫 컬럼이 날짜일 가능성이 높으므로 통일
+    # ✅ drop duplicated column names (keep first)
+    df = df.loc[:, ~df.columns.duplicated()].copy()
+
     cols = list(df.columns)
-    if "date" not in cols and "datetime" not in cols:
-        df = df.rename(columns={cols[0]: "date"})
 
-    # datetime -> date로 통일
-    if "date" not in df.columns and "datetime" in df.columns:
-        df = df.rename(columns={"datetime": "date"})
+    # ✅ pick best datetime column
+    dt_col = None
+    if "date" in cols:
+        dt_col = "date"
+    elif "datetime" in cols:
+        dt_col = "datetime"
+    else:
+        # fallback: first column is usually datetime
+        dt_col = cols[0]
+        df = df.rename(columns={dt_col: "date"})
+        dt_col = "date"
 
+    # normalize to "date"
+    if dt_col != "date":
+        df = df.rename(columns={dt_col: "date"})
+
+    # parse
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
+    # ✅ 핵심: 최소 2행(전일 대비 계산용)
     if len(df) < 2:
-        raise ValueError("macro_data에 최소 2개 이상의 유효한 date row가 필요합니다.")
+        # 디버깅 메시지까지 찍어주면 액션 로그에서 바로 원인 확인 가능
+        head = df.head(3).to_string(index=False) if not df.empty else "EMPTY"
+        raise ValueError(
+            "macro_data에 최소 2개 이상의 유효한 date row가 필요합니다.\n"
+            f"(after parsing, rows={len(df)})\n"
+            f"columns={list(df.columns)}\n"
+            f"head=\n{head}"
+        )
 
     return df
-
 
 def load_fred_extras_df() -> pd.DataFrame:
     csv_path = DATA_DIR / "fred_macro_extras.csv"
