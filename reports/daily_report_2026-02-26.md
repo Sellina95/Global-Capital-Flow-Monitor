@@ -4,10 +4,10 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.048  (+0.00% vs 4.048)
-- **달러 인덱스**: 97.569  (+0.01% vs 97.558)
-- **WTI 유가**: 65.520  (-0.05% vs 65.550)
+- **달러 인덱스**: 97.591  (+0.02% vs 97.569)
+- **WTI 유가**: 65.500  (-0.03% vs 65.520)
 - **변동성 지수 (VIX)**: 17.930  (+0.00% vs 17.930)
-- **원/달러 환율**: 1422.980  (+0.02% vs 1422.760)
+- **원/달러 환율**: 1423.940  (+0.07% vs 1422.980)
 ## 🧾 Executive Summary (3 Lines)
 - 현재 시장은 방향성이 제한된 혼합 국면이며, 구조는 긴축 기조.
 - 유동성은 약화(흡수) 국면으로 상방 동력을 제한할 수 있다.
@@ -41,7 +41,7 @@
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(→) / DXY(↑) / VIX(→)
-- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+2.0) | REAL_RATEΔ +0.010 / FCIΔ +0.000 / DXYΔ +0.011 / US10YΔ +0.000**
+- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+2.0) | REAL_RATEΔ +0.010 / FCIΔ +0.000 / DXYΔ +0.022 / US10YΔ +0.000**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY MIXED (정책 신호 혼조)**
@@ -82,10 +82,10 @@
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
-- DXY **(Noise, +0.01%)** → 달러 강세/신흥국 부담
-- WTI **(Noise, -0.05%)** → 물가 부담 완화
+- DXY **(Noise, +0.02%)** → 달러 강세/신흥국 부담
+- WTI **(Noise, -0.03%)** → 물가 부담 완화
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
-- 원/달러(USDKRW) **(Noise, +0.02%)** → 원화 약세/수급 부담
+- 원/달러(USDKRW) **(Mild, +0.07%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -129,7 +129,7 @@
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.048), DXY(97.569), VIX(17.93)
+- **Today snapshot:** US10Y(4.048), DXY(97.591), VIX(17.93)
 
 ### 🏗️ 12) Structural Filter
 - **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
@@ -141,7 +141,7 @@
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+2.0) | REAL_RATEΔ +0.010 / FCIΔ +0.000 / DXYΔ +0.011 / US10YΔ +0.000
+- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+2.0) | REAL_RATEΔ +0.010 / FCIΔ +0.000 / DXYΔ +0.022 / US10YΔ +0.000
 - **Sentiment (Fear&Greed):** 40.0618585377091 (NEUTRAL)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=DOWN / level=LOW
