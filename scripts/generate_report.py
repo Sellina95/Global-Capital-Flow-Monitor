@@ -572,48 +572,52 @@ def generate_daily_report() -> None:
             if net is not None:
                 lines.append(f"- **NET_LIQ**: {float(net):.1f}")
 
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+        lines.append("## 🚨 Regime Change Monitor (always-on)")
+
+        if regime_result["status"] == "DETECTED":
+            lines.append(f"- **Status:** ✅ DETECTED")
+            lines.append(f"- **Prev → Current:** {regime_result['prev_regime']} → {regime_result['current_regime']}")
+            lines.append(f"- **File:** `insights/risk_alerts.txt` ✅ created")
+            lines.append(f"- **Email:** {'✅ sent' if regime_result['email_sent'] else '❌ not sent'} ({regime_result['email_note']})")
+        elif regime_result["status"] == "NOT_DETECTED":
+            lines.append(f"- **Status:** ❎ NOT DETECTED")
+            lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
+            lines.append(f"- **File:** not created")
+            lines.append(f"- **Email:** not sent")
+        else:
+            lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
+            lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
+            lines.append(f"- **File/Email:** not created (no previous regime to compare)")
+
+        # ✅✅✅ 여기부터는 "항상" 실행되게 조건문 밖으로 빼야 함
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+
+    # 1) Strategist Commentary 먼저 실행 (FINAL_STATE 생성 목적)
+    commentary_block = build_strategist_commentary(market_data)
+
+    # 2) Executive Summary 생성 (FINAL_STATE 사용)
+    exec_block = executive_summary_filter(market_data)
+
+    # 3) Executive를 먼저 append
+    lines.append(exec_block)
     lines.append("")
     lines.append("---")
     lines.append("")
-    lines.append("## 🚨 Regime Change Monitor (always-on)")
 
-    if regime_result["status"] == "DETECTED":
-        lines.append(f"- **Status:** ✅ DETECTED")
-        lines.append(f"- **Prev → Current:** {regime_result['prev_regime']} → {regime_result['current_regime']}")
-        lines.append(f"- **File:** `insights/risk_alerts.txt` ✅ created")
-        lines.append(f"- **Email:** {'✅ sent' if regime_result['email_sent'] else '❌ not sent'} ({regime_result['email_note']})")
-    elif regime_result["status"] == "NOT_DETECTED":
-        lines.append(f"- **Status:** ❎ NOT DETECTED")
-        lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
-        lines.append(f"- **File:** not created")
-        lines.append(f"- **Email:** not sent")
-    else:
-        lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
-        lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
-        lines.append(f"- **File/Email:** not created (no previous regime to compare)")
+    # 4) 그 다음 상세 Commentary
+    lines.append(commentary_block)
 
-        lines.append("")
-        lines.append("---")
-        lines.append("")
+    report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
+    report_path.write_text("\n".join(lines), encoding="utf-8")
+    print(f"[OK] Report written: {report_path}")
 
-        # 1. Strategist Commentary 먼저 실행 (FINAL_STATE 생성 목적)
-        commentary_block = build_strategist_commentary(market_data)
-
-        # 2. Executive Summary 생성 (FINAL_STATE 사용)
-        exec_block = executive_summary_filter(market_data)
-
-        # 3. Executive를 먼저 append
-        lines.append(exec_block)
-        lines.append("")
-        lines.append("---")
-        lines.append("")
-
-        # 4. 그 다음 상세 Commentary
-        lines.append(commentary_block)
-
-        report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
-        report_path.write_text("\n".join(lines), encoding="utf-8")
-        print(f"[OK] Report written: {report_path}")
+   
+     
 
 
 
