@@ -86,10 +86,6 @@ jobs:
           python scripts/generate_report.py
           echo "== macro_data tail =="
           tail -n 2 data/macro_data.csv || true
-          echo "== macro header =="
-          head -n 1 data/macro_data.csv || true
-          echo "== last row =="
-          tail -n 1 data/macro_data.csv || true
 
       # ✅ (추가) 실제 생성된 리포트 상단 확인 (Executive 문장 검증용)
       - name: Debug report head (latest)
