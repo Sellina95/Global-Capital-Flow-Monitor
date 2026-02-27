@@ -536,14 +536,21 @@ def attach_sentiment_proxy_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
+    # -------------------------
+    # 0) Load macro df (robust)
+    # -------------------------
     df = load_macro_df()
+    if df is None or df.empty or "date" not in df.columns or len(df) < 2:
+        raise RuntimeError("macro_data.csv is empty or missing date (need at least 2 rows)")
+
     today_idx = len(df) - 1
     as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
 
+    # ✅ Build market_data using latest valid prev row (schema-change safe)
     market_data = build_market_data(df, today_idx)
-   
+
     # -------------------------
-    # Attach layers
+    # 1) Attach layers (never allow None overwrite)
     # -------------------------
     market_data = attach_liquidity_layer(market_data) or market_data
     market_data = attach_credit_spread_layer(market_data) or market_data
@@ -557,18 +564,21 @@ def generate_daily_report() -> None:
     regime_result = check_regime_change_and_alert(market_data, as_of_date)
 
     # -------------------------
-    # 1) Run Strategist Commentary FIRST to build FINAL_STATE (Narrative Engine sets it)
+    # 2) Run Strategist Commentary FIRST
+    #    (Narrative Engine sets FINAL_STATE inside market_data)
     # -------------------------
     commentary_block = build_strategist_commentary(market_data)
 
-    # 2) Top layers (need FINAL_STATE)
+    # -------------------------
+    # 3) Top layers (need FINAL_STATE)
+    # -------------------------
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
     scenario_block = scenario_generator_filter(market_data)
     transmission_block = transmission_layer_filter(market_data)
 
     # -------------------------
-    # Report assembly
+    # 4) Report assembly
     # -------------------------
     lines = []
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
@@ -622,29 +632,29 @@ def generate_daily_report() -> None:
             if net is not None:
                 lines.append(f"- **NET_LIQ**: {float(net):.1f}")
 
-    # ✅ Regime Change Monitor (ALWAYS ON) — moved OUT of SHOW_LIQUIDITY_SNAPSHOT
+    # ✅ Regime Change Monitor (ALWAYS ON)
     lines.append("")
     lines.append("---")
     lines.append("")
     lines.append("## 🚨 Regime Change Monitor (always-on)")
 
     if regime_result["status"] == "DETECTED":
-        lines.append(f"- **Status:** ✅ DETECTED")
+        lines.append("- **Status:** ✅ DETECTED")
         lines.append(f"- **Prev → Current:** {regime_result['prev_regime']} → {regime_result['current_regime']}")
-        lines.append(f"- **File:** `insights/risk_alerts.txt` ✅ created")
+        lines.append("- **File:** `insights/risk_alerts.txt` ✅ created")
         lines.append(f"- **Email:** {'✅ sent' if regime_result['email_sent'] else '❌ not sent'} ({regime_result['email_note']})")
     elif regime_result["status"] == "NOT_DETECTED":
-        lines.append(f"- **Status:** ❎ NOT DETECTED")
+        lines.append("- **Status:** ❎ NOT DETECTED")
         lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
-        lines.append(f"- **File:** not created")
-        lines.append(f"- **Email:** not sent")
+        lines.append("- **File:** not created")
+        lines.append("- **Email:** not sent")
     else:
-        lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
+        lines.append("- **Status:** ⚪ BASELINE SET (first run)")
         lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
-        lines.append(f"- **File/Email:** not created (no previous regime to compare)")
+        lines.append("- **File/Email:** not created (no previous regime to compare)")
 
     # -------------------------
-    # Top layers first
+    # 5) Top layers first
     # -------------------------
     lines.append("")
     lines.append("---")
@@ -660,13 +670,17 @@ def generate_daily_report() -> None:
     lines.append("---")
     lines.append("")
 
-    # Detailed commentary last
+    # -------------------------
+    # 6) Detailed commentary last
+    # -------------------------
     lines.append(commentary_block)
 
+    # -------------------------
+    # 7) Write report
+    # -------------------------
     report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Report written: {report_path}")
-   
      
 
 
