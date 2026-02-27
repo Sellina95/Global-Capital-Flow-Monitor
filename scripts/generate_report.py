@@ -214,51 +214,49 @@ def load_credit_spread_df() -> pd.DataFrame:
 # -------------------------
 # Builders
 # -------------------------
-def build_market_data(today_row: pd.Series, prev_row: pd.Series) -> Dict[str, Any]:
+def build_market_data(df: pd.DataFrame, today_idx: int) -> Dict[str, Any]:
     """
-    Builds market_data dict like:
-      market_data["US10Y"] = {"today":..., "prev":..., "pct_change":...}
-    Also supports extra columns (HYG, LQD 등) automatically if present in dataframe.
+    Builds market_data dict using:
+      - today value = df.iloc[today_idx][col]
+      - prev value  = last available non-null value BEFORE today_idx
+    This fixes "newly added columns" (XLK/XLF/XLE/XLRE) missing-prev issue.
     """
     market_data: Dict[str, Any] = {}
 
-    # 1) 필수 KEYS
-    for k in KEYS:
-        if k not in today_row.index or k not in prev_row.index:
+    def _to_num(x):
+        v = pd.to_numeric(x, errors="coerce")
+        return None if pd.isna(v) else float(v)
+
+    def _find_prev_value(col: str) -> float | None:
+        # scan backwards for last non-null
+        for j in range(today_idx - 1, -1, -1):
+            v = _to_num(df.iloc[j].get(col))
+            if v is not None:
+                return v
+        return None
+
+    today_row = df.iloc[today_idx]
+
+    for col in df.columns:
+        if col == "date" or col == "datetime":
             continue
 
-        today = pd.to_numeric(today_row.get(k), errors="coerce")
-        prev = pd.to_numeric(prev_row.get(k), errors="coerce")
-        if pd.isna(today) or pd.isna(prev):
+        today_v = _to_num(today_row.get(col))
+        if today_v is None:
             continue
 
-        today_f = float(today)
-        prev_f = float(prev)
-        pct = 0.0 if prev_f == 0 else ((today_f - prev_f) / prev_f) * 100.0
-        market_data[k] = {"today": today_f, "prev": prev_f, "pct_change": pct}
-
-    # 2) 추가 지표들 (macro_data.csv에 있으면 자동으로 포함)
-    for col in today_row.index:
-        if col == "date":
-            continue
-        if col in market_data:
+        prev_v = _find_prev_value(col)
+        if prev_v is None:
+            # still store today (but pct_change is None)
+            market_data[col] = {"today": today_v, "prev": None, "pct_change": None}
             continue
 
-        t = pd.to_numeric(today_row.get(col), errors="coerce")
-        p = pd.to_numeric(prev_row.get(col), errors="coerce")
-        if pd.isna(t) or pd.isna(p):
-            continue
-
-        t_f = float(t)
-        p_f = float(p)
-        pct = 0.0 if p_f == 0 else ((t_f - p_f) / p_f) * 100.0
-        market_data[col] = {"today": t_f, "prev": p_f, "pct_change": pct}
+        pct = 0.0 if prev_v == 0 else ((today_v - prev_v) / prev_v) * 100.0
+        market_data[col] = {"today": today_v, "prev": prev_v, "pct_change": pct}
 
     return market_data
 
 
-from typing import Dict, Any, Optional
-import pandas as pd
 
 def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -539,15 +537,11 @@ def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     df = load_macro_df()
-    if df is None or df.empty or "date" not in df.columns or len(df) < 2:
-        raise RuntimeError("macro_data.csv is empty or missing date (need at least 2 rows)")
+    today_idx = len(df) - 1
+    as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
 
-    today_row = df.iloc[-1]
-    prev_row = df.iloc[-2] if len(df) >= 2 else today_row  # ✅ 1행이면 오늘=전일로 처리
-
-    as_of_date = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
-    market_data = build_market_data(today_row, prev_row)
-
+    market_data = build_market_data(df, today_idx)
+   
     # -------------------------
     # Attach layers
     # -------------------------
