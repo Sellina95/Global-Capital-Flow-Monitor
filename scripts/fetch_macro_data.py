@@ -103,38 +103,16 @@ def fetch_macro_data() -> Dict[str, float]:
 
 def append_to_csv(values: Dict[str, float]) -> None:
     now = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
-
-    # 1) 새 row 만들기 (가능하면 datetime을 표준으로)
-    row = {"datetime": now}
+    row = {"date": now}
     row.update(values)
 
-    # 2) 기존 파일이 있으면: 헤더 읽고 그 순서대로 맞춰서 append
-    file_exists = CSV_PATH.exists() and CSV_PATH.stat().st_size > 0
-
-    if file_exists:
-        # 기존 CSV 헤더(컬럼 순서) 그대로 유지
-        existing_header = list(pd.read_csv(CSV_PATH, nrows=0).columns)
-
-        # 헤더에 'date'가 있으면 같이 채워주기 (레거시 호환)
-        if "date" in existing_header and "date" not in row:
-            row["date"] = now
-
-        df_row = pd.DataFrame([row])
-
-        # ✅ 핵심: 기존 헤더 순서대로 reindex (없는 컬럼은 NaN, 새 컬럼은 버림 방지)
-        # 새 컬럼이 생겼다면 헤더 뒤에 붙여서 확장도 가능하게:
-        extra_cols = [c for c in df_row.columns if c not in existing_header]
-        final_cols = existing_header + extra_cols
-
-        df_row = df_row.reindex(columns=final_cols)
-
-        df_row.to_csv(CSV_PATH, mode="a", index=False, header=False)
-
-    else:
-        # 3) 파일이 없으면: 표준 헤더로 새로 생성
-        # (여기서 'date'는 만들지 말고 datetime만 쓰는 걸 권장)
-        df_row = pd.DataFrame([row])
-        df_row.to_csv(CSV_PATH, mode="w", index=False, header=True)
+    df_row = pd.DataFrame([row])
+    file_exists = CSV_PATH.exists()
+    df_row.to_csv(CSV_PATH, mode="a", index=False, header=not file_exists)
 
     print(f"\n✅ Saved row to {CSV_PATH}")
-    print(pd.DataFrame([row]))
+    print(df_row)
+
+if __name__ == "__main__":
+    vals = fetch_macro_data()
+    append_to_csv(vals)
