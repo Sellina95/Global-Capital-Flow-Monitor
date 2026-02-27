@@ -906,28 +906,13 @@ def correlation_break_filter(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 def sector_correlation_break_filter(market_data: Dict[str, Any]) -> str:
-    """
-    Sector Correlation Break Monitor (v2)
-    Robust to:
-    - newly added sector columns
-    - missing prev values
-    """
-
     def pct(key: str) -> Optional[float]:
-        v = market_data.get(key)
-        if not v:
-            return None
+        v = market_data.get(key, {}) or {}
         x = v.get("pct_change")
         try:
             return None if x is None else float(x)
         except Exception:
             return None
-
-    def has_today(key: str) -> bool:
-        v = market_data.get(key)
-        if not v:
-            return False
-        return v.get("today") is not None
 
     us10y = pct("US10Y")
     wti = pct("WTI")
@@ -939,69 +924,51 @@ def sector_correlation_break_filter(market_data: Dict[str, Any]) -> str:
     xle = pct("XLE")
     xlre = pct("XLRE")
 
-    breaks = []
-    so_what = []
-
-    # -------------------------
-    # Missing logic FIXED
-    # -------------------------
-    required = ("XLK", "XLF", "XLE", "XLRE")
-    missing = [k for k in required if not has_today(k)]
-
     lines = []
     lines.append("### ⚠ 6.6) Sector Correlation Break Monitor")
 
-    if missing:
-        lines.append(f"- **Note:** sector ETFs missing today values: {', '.join(missing)}")
-        return "\n".join(lines)
+    # ✅ FIX: "키"가 아니라 "오늘 pct 값(None)" 기준으로 missing 표시
+    missing_today = [k for k, v in [("XLK", xlk), ("XLF", xlf), ("XLE", xle), ("XLRE", xlre)] if v is None]
+    if missing_today:
+        lines.append(f"- **Note:** sector ETFs missing today values: {', '.join(missing_today)}")
+        lines.append("")  # ✅ 그래도 계속 진행 (XLRE 없으면 XLRE 관련 룰만 스킵)
 
-    # -------------------------
-    # Rule 1: Rates vs sectors
-    # -------------------------
+    breaks = []
+    so_what = []
+
+    # --- Rule 1: Rates ↑ ---
     if us10y is not None:
-
         if us10y > 0:
             if xlf is not None and xlf < 0:
                 breaks.append("US10Y ↑ but XLF ↓ (Financials)")
-                so_what.append("금리 상승에도 금융 약세 → 경기/신용 우려가 더 큼")
-
+                so_what.append("금리 상승에도 금융 약세 → 경기/신용 우려가 더 큼 (과신 금지)")
             if xlre is not None and xlre > 0:
                 breaks.append("US10Y ↑ but XLRE ↑ (Real Estate)")
-                so_what.append("금리 역풍에도 리츠 강세 → 수급/배당 요인 우위")
-
+                so_what.append("금리 역풍에도 리츠 강세 → 배당/수급 요인 상쇄 가능 (숏 신중)")
             if xlk is not None and xlk > 0:
                 breaks.append("US10Y ↑ but XLK ↑ (Tech)")
-                so_what.append("할인율 역풍에도 기술 강세 → 성장 내러티브 강함")
-
+                so_what.append("할인율 역풍에도 기술 강세 → 성장 내러티브/매수세 우위 (숏 신중)")
         elif us10y < 0:
             if xlk is not None and xlk < 0:
                 breaks.append("US10Y ↓ but XLK ↓ (Tech)")
-                so_what.append("금리 완화에도 기술 약세 → 실적/성장 우려 우위")
+                so_what.append("금리 하락에도 기술 약세 → 실적/성장 우려 우위 (퀄리티만)")
 
-    # -------------------------
-    # Rule 2: Oil vs Energy
-    # -------------------------
+    # --- Rule 2: Oil ↑ supports Energy ---
     if wti is not None and wti > 0:
         if xle is not None and xle < 0:
             breaks.append("WTI ↑ but XLE ↓ (Energy)")
-            so_what.append("유가 상승에도 에너지 약세 → 수요 둔화/정책 리스크")
+            so_what.append("유가 상승에도 에너지 약세 → 수요/정책 리스크 우위 (과신 금지)")
 
-    # -------------------------
-    # Rule 3: Risk-off inconsistencies
-    # -------------------------
+    # --- Rule 3: Risk-off proxies ---
     if vix is not None and vix > 0:
         if xlf is not None and xlf > 0:
             breaks.append("VIX ↑ but XLF ↑ (Financials)")
-            so_what.append("공포 국면에도 금융 강세 → 포지셔닝 왜곡 가능")
-
+            so_what.append("공포 신호에도 금융 강세 → 포지션/수급 왜곡 가능 (추격 자제)")
     if dxy is not None and dxy > 0:
         if xlk is not None and xlk > 0:
             breaks.append("DXY ↑ but XLK ↑ (Tech)")
-            so_what.append("달러 강세에도 기술 강세 → 강한 매수세")
+            so_what.append("달러 강세에도 기술 강세 → 테마/매수세 강함 (숏 신중)")
 
-    # -------------------------
-    # Output
-    # -------------------------
     if breaks:
         lines.append("Correlation Break Detected:")
         for b in breaks:
@@ -1010,7 +977,7 @@ def sector_correlation_break_filter(market_data: Dict[str, Any]) -> str:
         lines.append("So What?")
         for s in so_what[:6]:
             lines.append(f"- {s}")
-        lines.append("- 결론: 공식 붕괴 구간 → 방향 베팅보다 사이징 축소 + 리더 중심")
+        lines.append("- 결론: **섹터 공식이 깨진 구간** → 방향 베팅보다 **사이징 축소 + 리더 중심**")
     else:
         lines.append("No significant sector-level correlation break detected.")
 
