@@ -113,54 +113,68 @@ def fetch_macro_data() -> Dict[str, float]:
     Fetch all INDICATORS from yfinance.
     - REQUIRED_KEYS missing => raise
     - Optional indicators missing => store as NaN
-    - USDCNH uses fallback ticker logic
+    - FX tickers (USDCNH) use robust fallback (download -> history)
     """
     results: Dict[str, float] = {}
 
-    for name, ticker in INDICATORS.items():
+    def _fetch_last_close_robust(ticker: str) -> Optional[float]:
+        # 1) try download (fast path)
+        try:
+            df = yf.download(
+                ticker,
+                period="30d",
+                interval="1d",
+                progress=False,
+                group_by="column",
+                threads=False,
+                auto_adjust=False,
+            )
+            v = _safe_last_close(df)
+            if v is not None:
+                return float(v)
+        except Exception:
+            pass
 
-        # 🔥 fallback 처리
+        # 2) fallback: Ticker().history (often more reliable for FX)
+        try:
+            hist = yf.Ticker(ticker).history(period="90d", interval="1d", auto_adjust=False)
+            if hist is None or hist.empty:
+                return None
+            if "Close" not in hist.columns:
+                return None
+            close = hist["Close"].dropna()
+            if close.empty:
+                return None
+            return float(close.iloc[-1])
+        except Exception:
+            return None
+
+    for name, ticker in INDICATORS.items():
+        # fallback tickers for USDCNH
         tickers_to_try = FALLBACK_TICKERS.get(name, [ticker])
 
         value = None
-        last_err = None
+        used_src = None
 
         for t in tickers_to_try:
             print(f"Fetching {name} ({t}) ...")
+            value = _fetch_last_close_robust(t)
+            if value is not None:
+                used_src = t
+                break
 
-            try:
-                df = yf.download(
-                    t,
-                    period="7d",
-                    interval="1d",
-                    progress=False,
-                    group_by="column",
-                    threads=False,
-                    auto_adjust=False,
-                )
-
-                value = _safe_last_close(df)
-
-                if value is not None:
-                    print(f"  → {name}: {value} (source={t})")
-                    break
-
-            except Exception as e:
-                last_err = e
-                value = None
-
-        # ---------- 결과 처리 ----------
         if value is None:
             if name in REQUIRED_KEYS:
-                raise RuntimeError(
-                    f"[{name}] No valid Close data from yfinance. last_err={last_err}"
-                )
-
+                raise RuntimeError(f"[{name}] No valid Close data from yfinance (tickers tried={tickers_to_try}).")
             results[name] = float("nan")
             print(f"  → {name}: NaN (optional, skipped)")
             continue
 
         results[name] = float(value)
+        if used_src:
+            print(f"  → {name}: {value} (source={used_src})")
+        else:
+            print(f"  → {name}: {value}")
 
     return results
 
