@@ -143,6 +143,7 @@
 No significant correlation break detected.
 
 ### ⚠ 6.6) Sector Correlation Break Monitor
+- DEBUG: pct XLK=0.0, XLF=0.0, XLE=0.0, XLRE=0.0
 No significant sector-level correlation break detected.
 
 ### 🧩 7) Risk Exposure Filter (숨은 리스크 분석)
