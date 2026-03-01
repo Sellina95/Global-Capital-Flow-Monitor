@@ -39,7 +39,7 @@ INDICATORS: Dict[str, str] = {
 
     # Geopolitical EW proxies (can be flaky on some days)
     "GOLD": "GC=F",
-    "USDCNH": "CNH=X",
+    "USDCNH": "CNY=X",
     "USDJPY": "JPY=X",
     "USDMXN": "MXN=X",
 
