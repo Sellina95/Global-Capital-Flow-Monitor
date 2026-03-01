@@ -138,9 +138,7 @@
 - **유가 보합(WTI→)** → 물가 변수 제한
 
 ### ⚠ 6.5) Correlation Break Monitor
-- DEBUG: US10Y=0.0, TECH(qqq/xlk)=0.0, SPY=None
-
-- **Note:** SPY not available → skipping Rate↔Broad checks.
+- DEBUG: US10Y=0.0, TECH(qqq/xlk)=0.0, SPY=0.0
 
 No significant correlation break detected.
 
