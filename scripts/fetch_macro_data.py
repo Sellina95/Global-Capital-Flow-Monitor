@@ -53,6 +53,10 @@ INDICATORS: Dict[str, str] = {
     "EEM": "EEM",         # EM equity stress
     "EMB": "EMB",         # EM USD bond stress
 }
+# --- Fallback ticker mapping (for flaky FX like CNH) ---
+FALLBACK_TICKERS = {
+    "USDCNH": ["CNH=X", "CNY=X"],  # try offshore first, then onshore
+}
 
 # 핵심 파이프라인이 죽으면 안 되는 지표들(없으면 raise)
 REQUIRED_KEYS = {"US10Y", "DXY", "WTI", "VIX", "USDKRW", "HYG", "LQD"}
@@ -107,35 +111,56 @@ def _safe_last_close(df: pd.DataFrame) -> Optional[float]:
 def fetch_macro_data() -> Dict[str, float]:
     """
     Fetch all INDICATORS from yfinance.
-    - REQUIRED_KEYS missing => raise (to avoid meaningless report)
-    - Optional indicators missing => store as NaN and continue (to avoid Action failure)
+    - REQUIRED_KEYS missing => raise
+    - Optional indicators missing => store as NaN
+    - USDCNH uses fallback ticker logic
     """
     results: Dict[str, float] = {}
 
     for name, ticker in INDICATORS.items():
-        print(f"Fetching {name} ({ticker}) ...")
 
-        df = yf.download(
-            ticker,
-            period="7d",
-            interval="1d",
-            progress=False,
-            group_by="column",
-            threads=False,
-            auto_adjust=False,
-        )
+        # 🔥 fallback 처리
+        tickers_to_try = FALLBACK_TICKERS.get(name, [ticker])
 
-        value = _safe_last_close(df)
+        value = None
+        last_err = None
+
+        for t in tickers_to_try:
+            print(f"Fetching {name} ({t}) ...")
+
+            try:
+                df = yf.download(
+                    t,
+                    period="7d",
+                    interval="1d",
+                    progress=False,
+                    group_by="column",
+                    threads=False,
+                    auto_adjust=False,
+                )
+
+                value = _safe_last_close(df)
+
+                if value is not None:
+                    print(f"  → {name}: {value} (source={t})")
+                    break
+
+            except Exception as e:
+                last_err = e
+                value = None
+
+        # ---------- 결과 처리 ----------
         if value is None:
             if name in REQUIRED_KEYS:
-                raise RuntimeError(f"[{name}] No valid Close data from yfinance (ticker={ticker}).")
-            # optional => NaN
+                raise RuntimeError(
+                    f"[{name}] No valid Close data from yfinance. last_err={last_err}"
+                )
+
             results[name] = float("nan")
             print(f"  → {name}: NaN (optional, skipped)")
             continue
 
-        results[name] = value
-        print(f"  → {name}: {value}")
+        results[name] = float(value)
 
     return results
 
