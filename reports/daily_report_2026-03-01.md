@@ -158,13 +158,12 @@ No significant sector-level correlation break detected.
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
 ⚠ Market Closed / Stale Data → Price-based geo signals muted.
 
-- **Geo Stress Score (z-composite):** **-0.07**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.01**  *(Level: NORMAL)*
 - **Top Drivers:**
+  - USDCNH: z_used=+0.49 (w=0.15) → contrib=+0.07
   - GOLD: z_used=-0.18 (w=0.15) → contrib=-0.03
   - VIX: z_used=-0.08 (w=0.20) → contrib=-0.02
   - USDMXN: z_used=+0.28 (w=0.05) → contrib=+0.01
-  - WTI: z_used=-0.13 (w=0.10) → contrib=-0.01
-- **Missing/Skipped:** USDCNH
 
 **So What?**
 - 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
