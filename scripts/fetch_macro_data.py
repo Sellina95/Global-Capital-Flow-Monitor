@@ -23,12 +23,17 @@ INDICATORS = {
     "USDKRW": "KRW=X",    # 원/달러
     "HYG": "HYG",
     "LQD": "LQD",
+    
 
     # ✅ Sector ETFs (Correlation Break / Sector Layer용)
     "XLK": "XLK",         # Technology
     "XLF": "XLF",         # Financials
     "XLE": "XLE",         # Energy
     "XLRE": "XLRE",       # Real Estate
+
+    # 🔥 Growth vs Market Core
+    "QQQ": "QQQ",
+    "SPY": "SPY",
 }
 
 def _safe_last_close(df: pd.DataFrame) -> Optional[float]:
