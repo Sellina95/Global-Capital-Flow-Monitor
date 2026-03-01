@@ -1105,6 +1105,199 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
+from __future__ import annotations
+from typing import Dict, Any, Optional, List, Tuple
+import pandas as pd
+import math
+
+# -------------------------
+# Geo EW config
+# -------------------------
+GEO_WINDOW = 60  # rolling window (trading days-ish). data가 적으면 자동 축소됨
+
+GEO_FACTORS = [
+    # key in df/market_data, weight, transform
+    ("VIX",     0.20, "direct"),        # optional (있으면 같이 쓰면 좋음)
+    ("DXY",     0.10, "direct"),
+    ("WTI",     0.15, "direct"),
+    ("GOLD",    0.15, "direct"),
+    ("USDCNH",  0.20, "direct"),
+    ("USDJPY",  0.10, "inverse"),       # USDJPY DOWN = JPY strength = risk-off => inverse로 변환
+    ("USDMXN",  0.10, "direct"),
+]
+
+GEO_THRESHOLDS = [
+    ("NORMAL",   -math.inf, 0.8),
+    ("ELEVATED", 0.8,       1.5),
+    ("HIGH",     1.5,       2.2),
+    ("EXTREME",  2.2,       math.inf),
+]
+
+
+def _to_num(x) -> Optional[float]:
+    v = pd.to_numeric(x, errors="coerce")
+    return None if pd.isna(v) else float(v)
+
+
+def _pct_series_from_df(df: pd.DataFrame, col: str) -> pd.Series:
+    """
+    df[col]에서 % 변화(전일 대비)를 시계열로 만듦.
+    결측/스키마변경에도 견고하게.
+    """
+    s = pd.to_numeric(df[col], errors="coerce")
+    s = s.dropna()
+    # pct_change는 (t - t-1)/t-1 * 100
+    return s.pct_change() * 100.0
+
+
+def _zscore_last(pct_series: pd.Series, window: int) -> Optional[float]:
+    """
+    pct_series: %변화 시계열
+    마지막 값의 rolling z-score를 계산
+    """
+    if pct_series is None or pct_series.dropna().empty:
+        return None
+    s = pct_series.dropna()
+    if len(s) < 5:
+        return None
+
+    w = min(window, len(s))
+    tail = s.iloc[-w:]
+    mu = float(tail.mean())
+    sd = float(tail.std(ddof=0))
+
+    last = float(s.iloc[-1])
+    if sd == 0.0:
+        return 0.0  # 변동이 거의 없으면 이상치로 볼 근거가 약하니 0으로
+    return (last - mu) / sd
+
+
+def attach_geopolitical_ew_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int,
+    window: int = GEO_WINDOW,
+) -> Dict[str, Any]:
+    """
+    GEO Early Warning composite score를 market_data["GEO_EW"]에 저장.
+    - df 기반 rolling z-score
+    - 없는 팩터는 스킵 (가중치 재정규화)
+    - USDJPY는 inverse 처리 (USDJPY 하락 = risk-off)
+    """
+    if market_data is None:
+        market_data = {}
+
+    # df가 date 정렬되어 있다고 가정(load_macro_df에서 보장)
+    # 오늘까지 slice
+    df2 = df.iloc[: today_idx + 1].copy()
+
+    components = []
+    missing = []
+
+    raw_score = 0.0
+    used_weight = 0.0
+
+    for key, w, transform in GEO_FACTORS:
+        if key not in df2.columns:
+            missing.append(key)
+            continue
+
+        pct = _pct_series_from_df(df2, key)
+        z = _zscore_last(pct, window)
+        if z is None:
+            missing.append(key)
+            continue
+
+        # transform
+        z_used = -z if transform == "inverse" else z
+
+        contrib = w * z_used
+        raw_score += contrib
+        used_weight += w
+
+        components.append({
+            "key": key,
+            "weight": w,
+            "z": float(z),
+            "z_used": float(z_used),
+            "contrib": float(contrib),
+            "transform": transform,
+        })
+
+    if used_weight > 0:
+        score = raw_score / used_weight  # weights 재정규화
+    else:
+        score = None
+
+    # level
+    level = "N/A"
+    if score is not None:
+        for name, lo, hi in GEO_THRESHOLDS:
+            if score >= lo and score < hi:
+                level = name
+                break
+
+    market_data["GEO_EW"] = {
+        "score": score,
+        "level": level,
+        "window": window,
+        "used_weight": used_weight,
+        "missing": missing,
+        "components": components,
+    }
+
+    return market_data
+
+
+def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
+    """
+    리포트 출력용 문자열
+    """
+    geo = (market_data.get("GEO_EW") or {})
+    score = geo.get("score")
+    level = geo.get("level", "N/A")
+    missing = geo.get("missing", [])
+    comps = geo.get("components", [])
+
+    lines = []
+    lines.append("### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)")
+
+    if score is None:
+        lines.append("- **Status:** N/A (insufficient data)")
+        if missing:
+            lines.append(f"- **Missing/Insufficient:** {', '.join(missing)}")
+        lines.append("- **So What?:** 데이터가 쌓이거나 지표가 추가되면 조기경보 점수를 계산합니다.")
+        return "\n".join(lines)
+
+    lines.append(f"- **Geo Stress Score (z-composite):** **{score:+.2f}**  *(Level: {level})*")
+
+    # top contributors
+    comps_sorted = sorted(comps, key=lambda x: abs(float(x.get("contrib", 0.0))), reverse=True)
+    top = comps_sorted[:4]
+
+    lines.append("- **Top Drivers:**")
+    for c in top:
+        lines.append(
+            f"  - {c['key']}: z_used={c['z_used']:+.2f} (w={c['weight']:.2f}) → contrib={c['contrib']:+.2f}"
+        )
+
+    if missing:
+        lines.append(f"- **Missing/Skipped:** {', '.join(missing)}")
+
+    # So What template (level-based)
+    lines.append("")
+    lines.append("**So What?**")
+    if level in ("NORMAL",):
+        lines.append("- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.")
+    elif level in ("ELEVATED",):
+        lines.append("- 조기경보 ‘상승’ 구간: **사이징 보수적**, 이벤트 리스크(중동/중국/EM) 헤지 후보 점검.")
+    elif level in ("HIGH",):
+        lines.append("- 스트레스 ‘높음’: **리스크 익스포저 축소 준비**, EM/고베타/레버리지 노출 점검.")
+    else:  # EXTREME
+        lines.append("- 스트레스 ‘극단’: **디레버리징 + 방어자산/헤지 우선**, 갭리스크 대비(현금/단기)")
+
+    return "\n".join(lines)
+
 
 # =========================
 # 8) Incentive Filter
@@ -2223,6 +2416,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(sector_correlation_break_filter(market_data)) # ✅ 6.6 추가
     sections.append("")
     sections.append(risk_exposure_filter(market_data))
+    sections.append("")
+    sections.append(geopolitical_early_warning_filter(market_data))
     sections.append("")
     sections.append(incentive_filter(market_data))
     sections.append("")
