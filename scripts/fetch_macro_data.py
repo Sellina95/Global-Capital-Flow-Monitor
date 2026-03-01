@@ -108,35 +108,56 @@ def fetch_macro_data() -> Dict[str, float]:
 def append_to_csv(values: Dict[str, float]) -> None:
     now = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
 
-    # ✅ row는 둘 다 채워두자 (호환성)
-    row = {"datetime": now, "date": now}
+    # 1) 새 row 만들기
+    row = {"date": now}
     row.update(values)
-
     df_row = pd.DataFrame([row])
 
-    file_exists = CSV_PATH.exists()
+    # 2) 파일 없으면 그냥 새로 생성
+    if not CSV_PATH.exists():
+        df_row.to_csv(CSV_PATH, index=False)
+        print(f"\n✅ Created new CSV: {CSV_PATH}")
+        print(df_row)
+        return
 
-    if file_exists:
-        # ✅ 기존 헤더를 읽어서 그 순서대로 컬럼 맞춰서 저장 (핵심!)
-        with open(CSV_PATH, "r", encoding="utf-8") as f:
-            header_cols = f.readline().strip().split(",")
+    # 3) ✅ 파일이 이미 있으면: 헤더에 새 컬럼이 있는지 확인
+    existing = pd.read_csv(CSV_PATH, nrows=0)
+    existing_cols = list(existing.columns)
 
-        # 없는 컬럼은 생성 (NaN)
-        for c in header_cols:
-            if c not in df_row.columns:
-                df_row[c] = pd.NA
+    # 우리가 넣고 싶은 전체 컬럼 = (기존 + 새 row 컬럼)
+    desired_cols = list(dict.fromkeys(existing_cols + list(df_row.columns)))
 
-        # 헤더 순서대로 재정렬
-        df_row = df_row[header_cols]
+    # ✅ 기존 헤더에 없는 컬럼이 생겼다면: 스키마 마이그레이션(백업 + rewrite)
+    missing_in_file = [c for c in df_row.columns if c not in existing_cols]
+    if missing_in_file:
+        backup_path = CSV_PATH.with_suffix(".csv.bak")
+        CSV_PATH.replace(backup_path)  # 원본 백업(이동)
 
-        # ✅ append
-        df_row.to_csv(CSV_PATH, mode="a", index=False, header=False)
-    else:
-        # ✅ 새 파일이면 원하는 표준 헤더로 생성
-        # (여기서는 datetime, US10Y..., date, XLK... 형태로 만들고 싶다면 순서 강제 가능)
-        df_row.to_csv(CSV_PATH, mode="w", index=False, header=True)
+        # 백업 파일 로드 → 컬럼 확장 → 다시 저장
+        old_df = pd.read_csv(backup_path)
+        for c in desired_cols:
+            if c not in old_df.columns:
+                old_df[c] = pd.NA
 
-    print(f"\n✅ Saved row to {CSV_PATH}")
+        # 컬럼 순서 정렬 (기존 컬럼 유지 + 뒤에 새 컬럼)
+        old_df = old_df[desired_cols]
+        old_df.to_csv(CSV_PATH, index=False)
+        print(f"[OK] macro_data.csv schema upgraded. backup -> {backup_path}")
+        print(f"[OK] added columns: {missing_in_file}")
+
+        # 기존 헤더 새로 읽기
+        existing_cols = desired_cols
+
+    # 4) ✅ append (항상 CSV 헤더 컬럼 순서에 맞춰서 저장)
+    # 파일 컬럼에 없는 키는 무시되지 않도록, 없으면 NaN으로 채움
+    for c in existing_cols:
+        if c not in df_row.columns:
+            df_row[c] = pd.NA
+    df_row = df_row[existing_cols]
+
+    df_row.to_csv(CSV_PATH, mode="a", index=False, header=False)
+
+    print(f"\n✅ Appended row to {CSV_PATH}")
     print(df_row)
     
 if __name__ == "__main__":
