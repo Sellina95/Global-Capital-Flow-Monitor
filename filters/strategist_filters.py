@@ -874,7 +874,10 @@ def correlation_break_filter(market_data: Dict[str, Any]) -> str:
 
     # --- DEBUG line (원하면 유지, 싫으면 삭제) ---
     lines = []
-    lines.append("### ⚠ 6.5) Correlation Break Monitor")
+    lines.append("### ⚠ 6.5) Correlation Break Monitor
+    if market_data.get("_STALE"):
+    lines.append("⚠ Market Closed / Stale Data → Correlation signals muted.")
+    lines.append("")
     lines.append(f"- DEBUG: US10Y={us10y}, TECH(qqq/xlk)={tech}, SPY={spy}")
 
     # If missing key proxies, note (but still run other checks)
@@ -996,7 +999,10 @@ def sector_correlation_break_filter(market_data: Dict[str, Any]) -> str:
     lines: List[str] = []
     lines.append("### ⚠ 6.6) Sector Correlation Break Monitor")
     lines.append(f"- DEBUG: pct XLK={xlk}, XLF={xlf}, XLE={xle}, XLRE={xlre}")
-
+    
+    if market_data.get("_STALE"):
+    lines.append("⚠ Market Closed / Stale Data → Sector signals muted.")
+    lines.append("")
     # ✅ FIX: "키"가 아니라 "오늘 pct 값(None)" 기준으로 missing 표시
     missing_today = [k for k, v in [("XLK", xlk), ("XLF", xlf), ("XLE", xle), ("XLRE", xlre)] if v is None]
     if missing_today:
@@ -1271,7 +1277,10 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 
     lines = []
     lines.append("### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)")
-
+    if market_data.get("_STALE"):
+    lines.append("⚠ Market Closed / Stale Data → Price-based geo signals muted.")
+    lines.append("")
+    
     if score is None:
         lines.append("- **Status:** N/A (insufficient data)")
         if missing:
