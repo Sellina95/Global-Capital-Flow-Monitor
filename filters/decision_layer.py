@@ -89,8 +89,10 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Context:** phase={phase} / liquidity={liq_dir}-{liq_lvl} / credit_calm={credit_calm} / geo={geo_level}")
     if style_hint:
         lines.append(f"- **Style Hints:** " + " / ".join(style_hint))
-    lines.append(f"- **Do:** " + "; ".join(do))
-    lines.append(f"- **Don't:** " + "; ".join(dont))
-    lines.append(f"- **Triggers:** " + "; ".join(triggers))
-
+        lines.append(f"- **Do:** " + "; ".join(do))
+        lines.append(f"- **Don't:** " + "; ".join(dont))
+        lines.append(f"- **Triggers:** " + "; ".join(triggers))
+    geo_overlay = market_data.get("GEO_OVERLAY", {}) or {}
+    if geo_overlay and geo_overlay.get("budget_delta", 0) != 0:
+        lines.append(f"- **Geo Overlay:** {geo_overlay.get('note')} → budget {geo_overlay.get('base_budget')}% → {geo_overlay.get('final_budget')}%")
     return "\n".join(lines)
