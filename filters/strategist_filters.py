@@ -2413,6 +2413,81 @@ def execution_layer_filter(market_data: Dict[str, Any]) -> str:
         
 
     return "\n".join(lines)
+
+def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Geo EW를 FINAL_STATE 위에 'overlay'로 반영.
+    - 기존 Narrative Engine 로직은 유지
+    - risk_budget/risk_action을 보수적으로 조정
+    - 조정 내역을 FINAL_STATE["geo_overlay"]에 기록
+    """
+    if market_data is None:
+        return market_data
+
+    state = market_data.get("FINAL_STATE", {}) or {}
+    geo = market_data.get("GEO_EW", {}) or {}
+
+    level = str(geo.get("level", "N/A")).upper()
+    score = geo.get("score", None)
+
+    # stale이면 신호 약화 (주말/휴장)
+    is_stale = bool(market_data.get("_STALE", False))
+
+    # risk_budget이 없으면 건드리지 말고 기록만
+    base_budget = state.get("risk_budget", None)
+    base_action = str(state.get("risk_action", "HOLD"))
+
+    overlay = {
+        "level": level,
+        "score": score,
+        "stale": is_stale,
+        "base_budget": base_budget,
+        "base_action": base_action,
+        "budget_delta": 0,
+        "final_budget": base_budget,
+        "final_action": base_action,
+        "note": "",
+    }
+
+    # ---- 페널티 룰 (v1) ----
+    # NORMAL: no change
+    # ELEVATED: -10% (stale이면 -5%로 약화)
+    # HIGH / CONFLICT: -20% (stale이면 -10%)
+    penalty_map = {
+        "NORMAL": 0,
+        "ELEVATED": -10,
+        "HIGH": -20,
+        "CONFLICT": -25,
+    }
+
+    penalty = penalty_map.get(level, 0)
+    if is_stale and penalty != 0:
+        penalty = int(penalty / 2)  # 주말에는 반감
+
+    # budget 적용
+    if isinstance(base_budget, int):
+        new_budget = max(0, min(100, base_budget + penalty))
+        overlay["budget_delta"] = penalty
+        overlay["final_budget"] = new_budget
+        state["risk_budget"] = new_budget
+
+        # action 보수화 룰
+        # geo가 ELEVATED 이상이면 INCREASE는 HOLD로, HOLD는 REDUCE로 한 단계 내림(선택)
+        if level in ("ELEVATED", "HIGH", "CONFLICT"):
+            if base_action == "INCREASE":
+                state["risk_action"] = "HOLD"
+                overlay["final_action"] = "HOLD"
+            elif base_action == "HOLD" and level in ("HIGH", "CONFLICT"):
+                state["risk_action"] = "REDUCE"
+                overlay["final_action"] = "REDUCE"
+
+        overlay["note"] = f"GeoEW={level} overlay applied ({penalty}% budget adj)"
+    else:
+        overlay["note"] = f"GeoEW={level} detected but base_budget not int → no budget change"
+
+    market_data["FINAL_STATE"] = state
+    market_data["GEO_OVERLAY"] = overlay
+    return market_data
     
 
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
