@@ -1,10 +1,9 @@
 # scripts/fetch_macro_data.py
 from __future__ import annotations
 
-import os
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import pandas as pd
 import yfinance as yf
@@ -53,7 +52,6 @@ def _safe_last_close(df: pd.DataFrame) -> Optional[float]:
 
     # 일반 컬럼
     if "Close" not in df.columns:
-        # 혹시 close 소문자 등 방어
         cands = [c for c in df.columns if str(c).lower() == "close"]
         if not cands:
             return None
@@ -67,7 +65,7 @@ def _safe_last_close(df: pd.DataFrame) -> Optional[float]:
 
     last = close.iloc[-1]
 
-    # ✅ 여기서 last가 Series로 떨어지는 케이스 방어
+    # ✅ last가 Series로 떨어지는 케이스 방어
     if isinstance(last, pd.Series):
         last = last.dropna()
         if last.empty:
@@ -87,7 +85,7 @@ def fetch_macro_data() -> Dict[str, float]:
             period="7d",
             interval="1d",
             progress=False,
-            group_by="column",   # MultiIndex 가능성 있음 → 위에서 방어
+            group_by="column",
             threads=False,
             auto_adjust=False,
         )
@@ -101,12 +99,39 @@ def fetch_macro_data() -> Dict[str, float]:
 
     return results
 
+def _read_existing_header_cols() -> Optional[List[str]]:
+    """기존 CSV가 있으면 헤더 컬럼 순서를 읽어온다."""
+    if not CSV_PATH.exists():
+        return None
+    try:
+        with CSV_PATH.open("r", encoding="utf-8") as f:
+            header = f.readline().strip()
+        if not header:
+            return None
+        return [c.strip() for c in header.split(",")]
+    except Exception:
+        return None
+
 def append_to_csv(values: Dict[str, float]) -> None:
-    now = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
-    row = {"date": now}
+    now_str = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+
+    # ✅ 핵심: 헤더에 'datetime'이 있으니 반드시 채워줘야 함
+    row = {
+        "datetime": now_str,  # 기존 헤더 호환
+        "date": now_str,      # 기존 코드/파서 호환
+    }
     row.update(values)
 
     df_row = pd.DataFrame([row])
+
+    # ✅ 기존 헤더가 있으면, 그 순서대로 맞춰서 저장 (컬럼 밀림 방지)
+    existing_cols = _read_existing_header_cols()
+    if existing_cols:
+        for c in existing_cols:
+            if c not in df_row.columns:
+                df_row[c] = pd.NA
+        df_row = df_row.reindex(columns=existing_cols)
+
     file_exists = CSV_PATH.exists()
     df_row.to_csv(CSV_PATH, mode="a", index=False, header=not file_exists)
 
