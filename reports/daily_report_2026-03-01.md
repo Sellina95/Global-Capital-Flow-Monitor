@@ -138,6 +138,8 @@
 - **유가 보합(WTI→)** → 물가 변수 제한
 
 ### ⚠ 6.5) Correlation Break Monitor
+- DEBUG: US10Y=0.0, TECH=None, SPY=None
+
 - **Note:** TECH_PROXY not available, SPY not available → using available proxies (credit/USD/FX).
 
 No significant correlation break detected.
