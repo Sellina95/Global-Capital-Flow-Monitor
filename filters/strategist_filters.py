@@ -1149,25 +1149,38 @@ def _pct_series_from_df(df: pd.DataFrame, col: str) -> pd.Series:
 
 def _zscore_last(pct_series: pd.Series, window: int) -> Optional[float]:
     """
-    pct_series: %변화 시계열
-    마지막 값의 rolling z-score를 계산
+    Robust z-score with fallback.
+    - 충분한 히스토리 → rolling z-score
+    - 히스토리 부족 → scaled pct_change fallback
     """
-    if pct_series is None or pct_series.dropna().empty:
-        return None
-    s = pct_series.dropna()
-    if len(s) < 5:
+
+    if pct_series is None:
         return None
 
+    s = pct_series.dropna()
+
+    if len(s) == 0:
+        return None
+
+    last = float(s.iloc[-1])
+
+    # 🔥 fallback 구간 (히스토리 부족)
+    if len(s) < 10:
+        # pct_change 자체를 약하게 스케일링해서 사용
+        # 과도한 점수 방지 위해 0.5배 적용
+        return last * 0.5
+
+    # 🔹 정상 z-score 계산
     w = min(window, len(s))
     tail = s.iloc[-w:]
+
     mu = float(tail.mean())
     sd = float(tail.std(ddof=0))
 
-    last = float(s.iloc[-1])
     if sd == 0.0:
-        return 0.0  # 변동이 거의 없으면 이상치로 볼 근거가 약하니 0으로
-    return (last - mu) / sd
+        return 0.0
 
+    return (last - mu) / sd
 
 def attach_geopolitical_ew_layer(
     market_data: Dict[str, Any],
