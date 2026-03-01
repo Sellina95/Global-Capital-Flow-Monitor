@@ -7,6 +7,8 @@ from typing import Dict, Any
 import pandas as pd
 
 from filters.strategist_filters import build_strategist_commentary
+from filters.strategist_filters import attach_geopolitical_ew_layer
+from filters.strategist_filters import geopolitical_early_warning_filter
 from filters.executive_layer import executive_summary_filter
 from filters.scenario_layer import scenario_generator_filter
 from scripts.risk_alerts import check_regime_change_and_alert
