@@ -30,6 +30,9 @@ INDICATORS = {
     "XLE": "XLE",         # Energy
     "XLRE": "XLRE",       # Real Estate
 
+    "QQQ": "QQQ",
+    "SPY": "SPY",
+
     # ✅ Geopolitical Early Warning proxies (FX/Commodities)
     "GOLD": "GC=F",       # Gold futures (safe haven proxy)
     "USDCNH": "CNH=X",    # Offshore yuan (geopolitical/sanction/supply-chain stress)
