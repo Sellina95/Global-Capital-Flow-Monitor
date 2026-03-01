@@ -7,7 +7,7 @@
 - **달러 인덱스**: 97.646  (+0.00% vs 97.646)
 - **WTI 유가**: 67.020  (+0.00% vs 67.020)
 - **변동성 지수 (VIX)**: 19.860  (+0.00% vs 19.860)
-- **원/달러 환율**: 1439.230  (+0.00% vs 1439.230)
+- **원/달러 환율**: 1439.230  (+0.48% vs 1432.320)
 
 ---
 
@@ -126,7 +126,7 @@
 - DXY **(Noise, +0.00%)** → 달러 보합(방향성 약함)
 - WTI **(Noise, +0.00%)** → 유가 보합(물가 변수 제한)
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
-- 원/달러(USDKRW) **(Noise, +0.00%)** → 환율 보합(수급 압력 제한)
+- 원/달러(USDKRW) **(Clear, +0.48%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -161,13 +161,13 @@ No significant sector-level correlation break detected.
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
 ⚠ Market Closed / Stale Data → Price-based geo signals muted.
 
-- **Geo Stress Score (z-composite):** **-0.03**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **-0.07**  *(Level: NORMAL)*
 - **Top Drivers:**
-  - DXY: z_used=-0.24 (w=0.10) → contrib=-0.02
-  - VIX: z_used=+0.00 (w=0.20) → contrib=+0.00
-  - GOLD: z_used=+0.00 (w=0.15) → contrib=+0.00
-  - WTI: z_used=+0.00 (w=0.10) → contrib=+0.00
-- **Missing/Skipped:** SEA, BDRY, ITA, XAR, EEM, EMB
+  - GOLD: z_used=-0.18 (w=0.15) → contrib=-0.03
+  - VIX: z_used=-0.08 (w=0.20) → contrib=-0.02
+  - USDMXN: z_used=+0.28 (w=0.05) → contrib=+0.01
+  - WTI: z_used=-0.13 (w=0.10) → contrib=-0.01
+- **Missing/Skipped:** USDCNH
 
 **So What?**
 - 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
@@ -208,7 +208,7 @@ No significant sector-level correlation break detected.
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.0) | REAL_RATEΔ -0.030 / FCIΔ +0.000 / DXYΔ +0.000 / US10YΔ +0.000
-- **Sentiment (Fear&Greed):** 50.0 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 34.302929234448214 (NEUTRAL)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=UP / level=MID
 - **Phase:** WAITING / RANGE (대기·박스권)
