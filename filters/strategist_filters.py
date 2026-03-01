@@ -1,7 +1,7 @@
 from __future__ import annotations
-
-from typing import Any, Dict, Optional
-
+from typing import Dict, Any, Optional, List, Tuple
+import pandas as pd
+import math
 
 # =========================
 # Helpers
@@ -1105,10 +1105,7 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
-from __future__ import annotations
-from typing import Dict, Any, Optional, List, Tuple
-import pandas as pd
-import math
+
 
 # -------------------------
 # Geo EW config
