@@ -931,8 +931,9 @@ def correlation_break_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     lines: List[str] = []
     lines.append("### ⚠ 6.5) Correlation Break Monitor")
-
-    # Notes: if missing proxies, tell user but continue
+    lines.append(f"- DEBUG: US10Y={us10y}, TECH={tech}, SPY={spy}")
+    lines.append("")    # Notes: if missing proxies, tell user but continue
+    
     notes: List[str] = []
     if not tech_available:
         notes.append("TECH_PROXY not available")
