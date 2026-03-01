@@ -874,7 +874,7 @@ def correlation_break_filter(market_data: Dict[str, Any]) -> str:
 
     # --- DEBUG line (원하면 유지, 싫으면 삭제) ---
     lines = []
-    lines.append("### ⚠ 6.5) Correlation Break Monitor
+    lines.append("### ⚠ 6.5) Correlation Break Monitor")
     if market_data.get("_STALE"):
     lines.append("⚠ Market Closed / Stale Data → Correlation signals muted.")
     lines.append("")
