@@ -556,7 +556,35 @@ def generate_daily_report() -> None:
     as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
 
     market_data = build_market_data(df, today_idx)
-   
+        # -----------------------------
+    # Detect stale / market closed
+    # -----------------------------
+    stale = False
+
+    try:
+        # 주요 시장 지표 4개 기준
+        keys = ["SPY", "QQQ", "US10Y", "VIX"]
+
+        zero_moves = 0
+        checked = 0
+
+        for k in keys:
+            v = market_data.get(k, {})
+            if isinstance(v, dict):
+                pct = v.get("pct_change")
+                if pct is not None:
+                    checked += 1
+                    if abs(float(pct)) < 1e-6:
+                        zero_moves += 1
+
+        # 4개 중 3개 이상이 0이면 stale로 간주
+        if checked >= 3 and zero_moves >= 3:
+            stale = True
+
+    except Exception:
+        stale = False
+
+    market_data["_STALE"] = stale
     # -------------------------
     # Attach layers
     # -------------------------
