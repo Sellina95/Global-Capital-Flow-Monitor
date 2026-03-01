@@ -1120,13 +1120,27 @@ GEO_WINDOW = 60  # rolling window (trading days-ish). data가 적으면 자동 �
 
 GEO_FACTORS = [
     # key in df/market_data, weight, transform
-    ("VIX",     0.20, "direct"),        # optional (있으면 같이 쓰면 좋음)
-    ("DXY",     0.10, "direct"),
-    ("WTI",     0.15, "direct"),
-    ("GOLD",    0.15, "direct"),
-    ("USDCNH",  0.20, "direct"),
-    ("USDJPY",  0.10, "inverse"),       # USDJPY DOWN = JPY strength = risk-off => inverse로 변환
-    ("USDMXN",  0.10, "direct"),
+    ("VIX",     0.20, "normal"),
+    ("GOLD",    0.15, "normal"),
+    ("DXY",     0.10, "normal"),
+    ("WTI",     0.10, "normal"),
+
+    # FX stress
+    ("USDCNH",  0.15, "normal"),   # CNH 약세(USDCNH↑) = stress
+    ("USDJPY",  0.05, "inverse"),  # USDJPY 하락(엔 강세) = risk-off → inverse
+    ("USDMXN",  0.05, "normal"),   # USDMXN↑(MXN 약세) = EM stress
+
+    # Supply chain / shipping (대체지표)
+    ("SEA",     0.05, "normal"),   # 운임/해운 테마 강세는 공급망 스트레스/리스크 프리미엄 가능
+    ("BDRY",    0.05, "normal"),   # 드라이벌크 운임 민감
+
+    # Defense
+    ("ITA",     0.05, "normal"),
+    ("XAR",     0.05, "normal"),
+
+    # EM stress (가격 하락 = stress)
+    ("EEM",     0.05, "inverse"),
+    ("EMB",     0.05, "inverse"),
 ]
 
 GEO_THRESHOLDS = [
@@ -1153,39 +1167,30 @@ def _pct_series_from_df(df: pd.DataFrame, col: str) -> pd.Series:
     return s.pct_change() * 100.0
 
 
-def _zscore_last(pct_series: pd.Series, window: int) -> Optional[float]:
+def _zscore_last(s: pd.Series, window: int) -> Optional[float]:
     """
-    Robust z-score with fallback.
-    - 충분한 히스토리 → rolling z-score
-    - 히스토리 부족 → scaled pct_change fallback
+    Rolling z-score의 마지막 값을 반환.
+    ✅ 핵심: 새로 추가된 컬럼(히스토리 짧음)도 계산되도록 최소 샘플 수를 허용.
     """
-
-    if pct_series is None:
+    if s is None:
         return None
 
-    s = pct_series.dropna()
-
-    if len(s) == 0:
+    s = pd.to_numeric(s, errors="coerce").dropna()
+    if s.empty:
         return None
 
-    last = float(s.iloc[-1])
+    # 최근 window만
+    x = s.tail(window).dropna()
+    if len(x) < 5:
+        # ✅ 히스토리 너무 짧으면 아직은 스킵
+        return None
 
-    # 🔥 fallback 구간 (히스토리 부족)
-    if len(s) < 10:
-        # pct_change 자체를 약하게 스케일링해서 사용
-        # 과도한 점수 방지 위해 0.5배 적용
-        return last * 0.5
+    mu = float(x.mean())
+    sd = float(x.std(ddof=0))
 
-    # 🔹 정상 z-score 계산
-    w = min(window, len(s))
-    tail = s.iloc[-w:]
-
-    mu = float(tail.mean())
-    sd = float(tail.std(ddof=0))
-
-    if sd == 0.0:
+    last = float(x.iloc[-1])
+    if sd == 0:
         return 0.0
-
     return (last - mu) / sd
 
 def attach_geopolitical_ew_layer(
