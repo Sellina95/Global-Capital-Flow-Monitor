@@ -23,7 +23,6 @@ INDICATORS = {
     "USDKRW": "KRW=X",    # 원/달러
     "HYG": "HYG",
     "LQD": "LQD",
-    
 
     # ✅ Sector ETFs (Correlation Break / Sector Layer용)
     "XLK": "XLK",         # Technology
@@ -31,9 +30,11 @@ INDICATORS = {
     "XLE": "XLE",         # Energy
     "XLRE": "XLRE",       # Real Estate
 
-    # 🔥 Growth vs Market Core
-    "QQQ": "QQQ",
-    "SPY": "SPY",
+    # ✅ Geopolitical Early Warning proxies (FX/Commodities)
+    "GOLD": "GC=F",       # Gold futures (safe haven proxy)
+    "USDCNH": "CNH=X",    # Offshore yuan (geopolitical/sanction/supply-chain stress)
+    "USDJPY": "JPY=X",    # JPY (risk-off / carry unwind proxy)
+    "USDMXN": "MXN=X",    # MXN (EM FX stress proxy)
 }
 
 def _safe_last_close(df: pd.DataFrame) -> Optional[float]:
