@@ -562,6 +562,7 @@ def generate_daily_report() -> None:
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
+    market_data = attach_geopolitical_ew_layer(market_data, df, today_idx) or market_data
 
     # ✅ Wall-Street Sentiment Proxy only (NO CNN, NO overwrite after this)
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
