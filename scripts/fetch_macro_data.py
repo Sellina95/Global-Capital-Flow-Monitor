@@ -42,6 +42,16 @@ INDICATORS: Dict[str, str] = {
     "USDCNH": "CNH=X",
     "USDJPY": "JPY=X",
     "USDMXN": "MXN=X",
+
+    # --------------------------------------------------------
+    # ✅ NEW: Geo EW v1 확장 (data-friendly)
+    # --------------------------------------------------------
+    "SEA": "SEA",         # Shipping / supply chain proxy (ETF)
+    "BDRY": "BDRY",       # Dry bulk shipping ETF (optional but useful)
+    "ITA": "ITA",         # Defense / aerospace
+    "XAR": "XAR",         # Defense / aerospace (alt)
+    "EEM": "EEM",         # EM equity stress
+    "EMB": "EMB",         # EM USD bond stress
 }
 
 # 핵심 파이프라인이 죽으면 안 되는 지표들(없으면 raise)
