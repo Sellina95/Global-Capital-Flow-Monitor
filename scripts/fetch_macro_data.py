@@ -99,45 +99,41 @@ def fetch_macro_data() -> Dict[str, float]:
 
     return results
 
-def _read_existing_header_cols() -> Optional[List[str]]:
-    """기존 CSV가 있으면 헤더 컬럼 순서를 읽어온다."""
-    if not CSV_PATH.exists():
-        return None
-    try:
-        with CSV_PATH.open("r", encoding="utf-8") as f:
-            header = f.readline().strip()
-        if not header:
-            return None
-        return [c.strip() for c in header.split(",")]
-    except Exception:
-        return None
 
 def append_to_csv(values: Dict[str, float]) -> None:
-    now_str = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
 
-    # ✅ 핵심: 헤더에 'datetime'이 있으니 반드시 채워줘야 함
-    row = {
-        "datetime": now_str,  # 기존 헤더 호환
-        "date": now_str,      # 기존 코드/파서 호환
-    }
+    # ✅ row는 둘 다 채워두자 (호환성)
+    row = {"datetime": now, "date": now}
     row.update(values)
 
     df_row = pd.DataFrame([row])
 
-    # ✅ 기존 헤더가 있으면, 그 순서대로 맞춰서 저장 (컬럼 밀림 방지)
-    existing_cols = _read_existing_header_cols()
-    if existing_cols:
-        for c in existing_cols:
+    file_exists = CSV_PATH.exists()
+
+    if file_exists:
+        # ✅ 기존 헤더를 읽어서 그 순서대로 컬럼 맞춰서 저장 (핵심!)
+        with open(CSV_PATH, "r", encoding="utf-8") as f:
+            header_cols = f.readline().strip().split(",")
+
+        # 없는 컬럼은 생성 (NaN)
+        for c in header_cols:
             if c not in df_row.columns:
                 df_row[c] = pd.NA
-        df_row = df_row.reindex(columns=existing_cols)
 
-    file_exists = CSV_PATH.exists()
-    df_row.to_csv(CSV_PATH, mode="a", index=False, header=not file_exists)
+        # 헤더 순서대로 재정렬
+        df_row = df_row[header_cols]
+
+        # ✅ append
+        df_row.to_csv(CSV_PATH, mode="a", index=False, header=False)
+    else:
+        # ✅ 새 파일이면 원하는 표준 헤더로 생성
+        # (여기서는 datetime, US10Y..., date, XLK... 형태로 만들고 싶다면 순서 강제 가능)
+        df_row.to_csv(CSV_PATH, mode="w", index=False, header=True)
 
     print(f"\n✅ Saved row to {CSV_PATH}")
     print(df_row)
-
+    
 if __name__ == "__main__":
     vals = fetch_macro_data()
     append_to_csv(vals)
