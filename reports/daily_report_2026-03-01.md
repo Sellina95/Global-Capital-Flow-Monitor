@@ -143,8 +143,6 @@
 No significant correlation break detected.
 
 ### ⚠ 6.6) Sector Correlation Break Monitor
-- **Note:** sector ETFs missing today values: XLRE
-
 No significant sector-level correlation break detected.
 
 ### 🧩 7) Risk Exposure Filter (숨은 리스크 분석)
