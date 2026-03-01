@@ -39,6 +39,7 @@ def load_macro_df() -> pd.DataFrame:
       - duplicated columns
       - mixed 'date'/'datetime'
       - schema changes causing bad/epoch rows
+      - occasional malformed rows (skip bad lines)
       - occasional single-row CSV (won't crash report pipeline)
 
     Output:
@@ -51,11 +52,10 @@ def load_macro_df() -> pd.DataFrame:
     if xlsx_path.exists():
         df = pd.read_excel(xlsx_path)
     elif csv_path.exists():
-        # ✅ more tolerant read for occasional malformed rows
+        # ✅ tolerant read for occasional malformed rows
         try:
             df = pd.read_csv(csv_path)
         except Exception:
-            # fallback: skip bad lines (prevents pipeline hard-fail)
             df = pd.read_csv(csv_path, on_bad_lines="skip")
     else:
         raise FileNotFoundError(
@@ -68,21 +68,38 @@ def load_macro_df() -> pd.DataFrame:
     # ✅ drop duplicated column names (keep first)
     df = df.loc[:, ~df.columns.duplicated()].copy()
 
+    # ✅ remove pandas auto columns if exist
+    # (가끔 저장/복구 과정에서 "Unnamed: 0" 같은 게 생김)
+    df = df.loc[:, [c for c in df.columns if not str(c).startswith("Unnamed:")]]
+
     cols = list(df.columns)
 
     # --------------------------------------------------
-    # ✅ FIX: If both datetime & date exist, 'date' may be corrupted (epoch).
-    # Prefer 'datetime' to rebuild 'date'.
+    # ✅ 핵심 FIX:
+    # - 절대 df["date"]를 datetime으로 통째로 덮어쓰지 말 것
+    # - date가 비었거나(=NaT) epoch(1970~)처럼 깨진 경우만 datetime으로 보정
     # --------------------------------------------------
     if "datetime" in df.columns:
         dt = pd.to_datetime(df["datetime"], errors="coerce")
-        if dt.notna().sum() >= 1:
+
+        if "date" not in df.columns:
+            # date가 없으면 새로 생성
             df["date"] = dt
+        else:
+            d = pd.to_datetime(df["date"], errors="coerce")
+
+            # 1) date가 NaT인 곳만 datetime으로 채움
+            d = d.where(d.notna(), dt)
+
+            # 2) epoch(1970~)처럼 깨진 date는 datetime으로 교체 (datetime이 유효한 경우만)
+            bad_epoch = d.notna() & (d.dt.year <= 1971) & dt.notna()
+            d = d.where(~bad_epoch, dt)
+
+            df["date"] = d
 
     # --------------------------------------------------
     # ✅ choose the best datetime column and normalize to "date"
     # --------------------------------------------------
-    dt_col = None
     if "date" in df.columns:
         dt_col = "date"
     elif "datetime" in df.columns:
@@ -101,17 +118,13 @@ def load_macro_df() -> pd.DataFrame:
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
     # --------------------------------------------------
-    # ✅ SAFETY: allow single-row DF (report generator can reuse today as prev)
-    # If you still want to hard fail here, revert to raise.
+    # ✅ SAFETY: allow >=1 row
     # --------------------------------------------------
     if len(df) < 1:
         raise ValueError("macro_data에 유효한 date row가 없습니다.")
 
-    # Optional: keep last N rows to avoid huge files slowing parsing (uncomment if desired)
-    # df = df.tail(5000).reset_index(drop=True)
-
     return df
-
+    
 def load_fred_extras_df() -> pd.DataFrame:
     csv_path = DATA_DIR / "fred_macro_extras.csv"
     if not csv_path.exists():
