@@ -84,6 +84,12 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/repair_macro_csv.py
+
+      - name: Backfill Geo history (one-shot)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/backfill_geo_history.py --days 180
           
 
            # ✅ 3) 리포트 생성
