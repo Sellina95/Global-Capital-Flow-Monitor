@@ -31,6 +31,13 @@ jobs:
           mkdir -p reports
           mkdir -p data
 
+      # 🔥 (ONE-TIME) Rebuild full macro history (Geo EW bootstrap)
+      - name: Rebuild full macro history (90d bootstrap)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/rebuild_macro_history.py
+
       # ✅ 1) Macro 데이터 먼저 업데이트 (매일)
       - name: Fetch macro data (US10Y/DXY/WTI/VIX/USDKRW)
         run: |
@@ -78,10 +85,6 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/repair_macro_csv.py
           
-      - name: Backfill Geo history (one-time)
-        run: |
-          export PYTHONPATH="$GITHUB_WORKSPACE"
-          python scripts/backfill_geo_history.py
 
            # ✅ 3) 리포트 생성
       - name: Run report generator
