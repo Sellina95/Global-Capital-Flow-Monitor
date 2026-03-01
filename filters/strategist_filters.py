@@ -821,10 +821,11 @@ from typing import Dict, Any, Optional
 
 def correlation_break_filter(market_data: Dict[str, Any]) -> str:
     """
-    Correlation Break Monitor (v1.2)
-    Detects: "things that should move together but diverge"
-    Tech proxy: QQQ (preferred), fallback XLK
-    Broad proxy: SPY
+    Correlation Break Monitor (v2)
+    Detects: "things that should move together but diverge" with thresholds
+    - Uses QQQ (TECH_PROXY) and SPY if available
+    - Falls back to XLK / credit / FX proxies
+    - Avoids false positives on flat days (0.0 moves)
     """
 
     def pct(key: str) -> Optional[float]:
@@ -835,6 +836,10 @@ def correlation_break_filter(market_data: Dict[str, Any]) -> str:
         except Exception:
             return None
 
+    def signif(x: Optional[float], thr: float) -> bool:
+        return (x is not None) and (abs(x) >= thr)
+
+    # --- pull core pct changes ---
     us10y = pct("US10Y")
     dxy = pct("DXY")
     vix = pct("VIX")
@@ -842,86 +847,107 @@ def correlation_break_filter(market_data: Dict[str, Any]) -> str:
     hyg = pct("HYG")
     lqd = pct("LQD")
 
-    # ✅ proxies
-    spy = pct("SPY")
+    # --- tech / broad equity proxies ---
+    # Preferred: QQQ & SPY (from macro_data.csv)
     qqq = pct("QQQ")
-    xlk = pct("XLK")  # fallback
+    spy = pct("SPY")
 
-    tech = qqq if qqq is not None else xlk
+    # Fallback for tech if QQQ missing
+    xlk = pct("XLK")
+    tech = qqq if qqq is not None else xlk  # tech proxy
 
-    # liquidity dir
+    # liquidity dir (from liquidity layer)
     net_liq = market_data.get("NET_LIQ", {}) or {}
     net_liq_dir = str(net_liq.get("dir", "N/A")).upper()
+
+    # --- thresholds (tune later, safe defaults now) ---
+    # US10Y is in % change terms already (your build_market_data uses pct_change)
+    THR_US10Y = 0.10     # 0.10% move 이상일 때만 "금리 의미있게 움직임"
+    THR_DXY   = 0.15
+    THR_VIX   = 1.00     # VIX는 잘 튀니 1% 이상만 의미
+    THR_EQ    = 0.25     # QQQ/SPY/XLK 같은 ETF는 0.25% 이상만
+    THR_FX    = 0.15
+    THR_CREDIT= 0.20
 
     breaks = []
     interp = []
 
+    # --- DEBUG line (원하면 유지, 싫으면 삭제) ---
     lines = []
     lines.append("### ⚠ 6.5) Correlation Break Monitor")
     lines.append(f"- DEBUG: US10Y={us10y}, TECH(qqq/xlk)={tech}, SPY={spy}")
-    lines.append("")
 
-    # notes
-    if tech is None and spy is None:
-        lines.append("- **Note:** TECH proxy(QQQ/XLK) not available, SPY not available → using credit/USD/FX proxies only.")
-        lines.append("")
-    elif tech is None:
-        lines.append("- **Note:** TECH proxy(QQQ/XLK) not available → skipping Rate↔Tech checks.")
-        lines.append("")
-    elif spy is None:
-        lines.append("- **Note:** SPY not available → skipping Rate↔Broad checks.")
+    # If missing key proxies, note (but still run other checks)
+    notes = []
+    if tech is None:
+        notes.append("TECH_PROXY(QQQ/XLK) not available")
+    if spy is None:
+        notes.append("SPY not available")
+    if notes:
+        lines.append(f"- **Note:** {', '.join(notes)} → using available proxies (credit/USD/FX).")
         lines.append("")
 
-    # -------------------------
-    # A) Rate vs Tech/Broad (core)
-    # -------------------------
-    # 금리↑인데 QQQ↑ (원래는 duration 역풍) → “공식 붕괴”
-    if us10y is not None and tech is not None:
-        if us10y > 0 and tech > 0:
-            breaks.append("US10Y ↑ but Tech Proxy ↑ (QQQ/XLK)")
-            interp.append("할인율(금리) 역풍에도 테크가 버팀 → 성장 내러티브/매수세 우위 가능 (고밸류 숏 신중)")
-
-        # 금리↓인데 Tech↓ → 금리보다 실적/성장 우려가 큼
-        if us10y < 0 and tech < 0:
-            breaks.append("US10Y ↓ but Tech Proxy ↓ (QQQ/XLK)")
-            interp.append("금리 완화에도 테크가 약함 → 실적/성장 우려 우위 (퀄리티만 선별)")
-
-    # 금리↑인데 SPY↑ → 시장이 금리보다 성장/유동성 내러티브를 더 먹는 경우
-    if us10y is not None and spy is not None:
-        if us10y > 0 and spy > 0:
+    # ------------------------------------------------------------
+    # A) Rates vs Tech / Broad (대표 공식: 금리↑ => 기술/주식 부담)
+    # ------------------------------------------------------------
+    if signif(us10y, THR_US10Y):
+        # 금리↑인데 기술↑ => "금리보다 성장 내러티브/매수세가 더 강함"
+        if us10y > 0 and signif(tech, THR_EQ) and tech > 0:
+            breaks.append("US10Y ↑ but Technology ↑ (QQQ/XLK)")
+            interp.append("할인율 역풍에도 기술이 강함 → 성장 내러티브/강한 매수세가 금리 부담을 상쇄")
+        # 금리↑인데 SPY↑ => 시장 전체가 금리 역풍을 무시
+        if us10y > 0 and signif(spy, THR_EQ) and spy > 0:
             breaks.append("US10Y ↑ but SPY ↑")
-            interp.append("금리 역풍에도 지수 강세 → 테마/성장 기대가 금리 부담을 상쇄 (추격은 사이징으로)")
+            interp.append("금리 역풍에도 시장이 상승 → ‘성장/실적/유동성 기대’가 금리보다 우위일 수 있음")
+        # 금리↓인데 기술↓ => 금리보다 ‘실적/리스크’가 더 중요
+        if us10y < 0 and signif(tech, THR_EQ) and tech < 0:
+            breaks.append("US10Y ↓ but Technology ↓ (QQQ/XLK)")
+            interp.append("금리 완화에도 기술 약세 → 금리보다 실적/규제/리스크 요인이 우위 (퀄리티 중심)")
 
-    # -------------------------
-    # B) Liquidity vs Credit proxies
-    # -------------------------
-    if net_liq_dir == "DOWN":
-        if hyg is not None and lqd is not None and hyg > 0 and lqd < 0:
-            breaks.append("Liquidity ↓ but Credit Risk Appetite ↑ (HYG↑ / LQD↓)")
-            interp.append("유동성 흡수에도 하이일드가 버팀 → 포지셔닝/리스크선호가 생각보다 강함")
+    # ------------------------------------------------------------
+    # B) VIX vs Equity (대표 공식: VIX↑ => 주식↓)
+    # ------------------------------------------------------------
+    if signif(vix, THR_VIX):
+        if vix > 0 and signif(spy, THR_EQ) and spy > 0:
+            breaks.append("VIX ↑ but SPY ↑")
+            interp.append("공포 신호에도 시장이 상승 → 옵션/헤지 포지션 꼬임, 숏이 위험해질 수 있음")
+        if vix > 0 and signif(tech, THR_EQ) and tech > 0:
+            breaks.append("VIX ↑ but Technology ↑ (QQQ/XLK)")
+            interp.append("변동성 상승에도 기술이 강함 → 테마 주도/숏커버/수급 왜곡 가능")
 
-    # -------------------------
-    # C) VIX vs Risk proxies
-    # -------------------------
-    if vix is not None and vix > 0:
-        if hyg is not None and hyg > 0:
-            breaks.append("VIX ↑ but HYG ↑")
-            interp.append("공포 신호에도 크레딧이 버팀 → 헤지/숏 포지션 꼬임 가능 (급숏 주의)")
-
-    # -------------------------
-    # D) USD / FX vs Risk proxies
-    # -------------------------
-    if dxy is not None and dxy > 0:
-        if hyg is not None and hyg > 0:
+    # ------------------------------------------------------------
+    # C) Dollar vs Risk (대표 공식: 달러↑ => 위험자산 압박)
+    # ------------------------------------------------------------
+    if signif(dxy, THR_DXY):
+        if dxy > 0 and signif(spy, THR_EQ) and spy > 0:
+            breaks.append("DXY ↑ but SPY ↑")
+            interp.append("달러 강세(리스크 압박)에도 시장 강함 → 강한 매수/테마 드라이브 가능 (숏 신중)")
+        if dxy > 0 and signif(hyg, THR_CREDIT) and hyg > 0:
             breaks.append("DXY ↑ but HYG ↑")
-            interp.append("달러 강세에도 위험 크레딧 강세 → 강한 매수/숏커버 가능 (숏 신중)")
+            interp.append("달러 강세에도 하이일드 강세 → 리스크 선호가 버티는 국면 (포지션 꼬임 주의)")
 
-    if usdkrw is not None and usdkrw > 0:
+    # ------------------------------------------------------------
+    # D) KRW weakness vs VIX (국지적 FX 스트레스 vs 변동성)
+    # ------------------------------------------------------------
+    if signif(usdkrw, THR_FX) and usdkrw > 0:
         if vix is not None and vix < 0:
             breaks.append("USDKRW ↑ (KRW↓) but VIX ↓")
-            interp.append("원화 약세에도 변동성은 눌림 → 국지적 FX 수급/스트레스 가능 (사이징 보수적으로)")
+            interp.append("원화 약세에도 변동성은 눌림 → 수급 요인/국지적 FX 스트레스 가능 (공격적 숏 보류)")
 
+    # ------------------------------------------------------------
+    # E) Liquidity vs Credit proxy (NET_LIQ↓인데 위험크레딧 강함 등)
+    # ------------------------------------------------------------
+    if net_liq_dir == "DOWN":
+        # HYG↑ & LQD↓ 조합은 애매하지만, ‘리스크 크레딧 선호’ 신호로 사용
+        if signif(hyg, THR_CREDIT) and signif(lqd, THR_CREDIT) and hyg > 0 and lqd < 0:
+            breaks.append("Liquidity ↓ but Credit Risk Appetite ↑ (HYG↑ / LQD↓)")
+            interp.append("유동성 흡수에도 하이일드가 버팀 → 포지셔닝/리스크 선호가 생각보다 강할 수 있음")
+
+    # -------------------------
+    # Output
+    # -------------------------
     if breaks:
+        lines.append("")
         lines.append("Correlation Break Detected:")
         for b in breaks:
             lines.append(f"- {b}")
@@ -929,12 +955,12 @@ def correlation_break_filter(market_data: Dict[str, Any]) -> str:
         lines.append("So What?")
         for i in interp[:6]:
             lines.append(f"- {i}")
-        lines.append("- 결론: **공식이 깨진 구간** → 방향 베팅보다 **숏 과신 금지 + 사이징 보수 + 리더/퀄리티 중심**")
+        lines.append("- 결론: **공식이 깨진 구간** → 방향 베팅보다 **사이징 보수적 + 퀄리티/리더 중심**")
     else:
+        lines.append("")
         lines.append("No significant correlation break detected.")
 
     return "\n".join(lines)
-
 
 # -------------------------------------------------------------------
 # 6.6) Sector Correlation Break Monitor (v1.1)
@@ -969,6 +995,7 @@ def sector_correlation_break_filter(market_data: Dict[str, Any]) -> str:
 
     lines: List[str] = []
     lines.append("### ⚠ 6.6) Sector Correlation Break Monitor")
+    lines.append(f"- DEBUG: pct XLK={xlk}, XLF={xlf}, XLE={xle}, XLRE={xlre}")
 
     # ✅ FIX: "키"가 아니라 "오늘 pct 값(None)" 기준으로 missing 표시
     missing_today = [k for k, v in [("XLK", xlk), ("XLF", xlf), ("XLE", xle), ("XLRE", xlre)] if v is None]
