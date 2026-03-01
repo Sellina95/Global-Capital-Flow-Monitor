@@ -27,9 +27,6 @@
 ## 🧭 So What? (Decision Layer)
 - **Risk Stance:** **HOLD** *(target exposure: 60%)*
 - **Context:** phase=WAITING / RANGE (대기·박스권) / liquidity=UP-MID / credit_calm=True / geo=NORMAL
-- **Do:** 노출은 유지하되, 베타 확대보다 ‘선별적 포지셔닝(퀄리티)’ 유지
-- **Don't:** 무분별한 테마 추격; 리스크 관리 없는 집중 포지션
-- **Triggers:** NET_LIQ 추가 하락/LOW 고착 시 노출 축소 준비
 
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
