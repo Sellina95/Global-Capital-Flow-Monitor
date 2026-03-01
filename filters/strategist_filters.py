@@ -805,7 +805,7 @@ def cross_asset_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
-lines.append(f"- DEBUG: US10Y={us10y}, TECH={tech}, SPY={spy}")
+
 from typing import Dict, Any, Optional, List, Tuple
 
 # -------------------------------------------------------------------
