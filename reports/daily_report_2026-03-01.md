@@ -4,8 +4,8 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 3.962  (+0.00% vs 3.962)
-- **달러 인덱스**: 97.610  (-0.04% vs 97.646)
-- **WTI 유가**: 67.020  (-0.40% vs 67.290)
+- **달러 인덱스**: 97.610  (+0.00% vs 97.610)
+- **WTI 유가**: 67.020  (+0.00% vs 67.020)
 - **변동성 지수 (VIX)**: 19.860  (+0.00% vs 19.860)
 - **원/달러 환율**: 1439.230  (+0.00% vs 1439.230)
 
@@ -13,7 +13,7 @@
 
 ## 🚨 Regime Change Monitor (always-on)
 - **Status:** ✅ DETECTED
-- **Prev → Current:** RISK-OFF (긴축/불안·리스크 회피) → EVENT-WATCHING (이벤트 관망)
+- **Prev → Current:** RISK-OFF (긴축/불안·리스크 회피) → WAITING / RANGE (대기·박스권)
 - **File:** `insights/risk_alerts.txt` ✅ created
 - **Email:** ❌ not sent (RESEND env missing (RESEND_API_KEY/RESEND_FROM/RESEND_TO))
 
@@ -22,20 +22,20 @@
 ## 🧾 Executive Summary (3 Lines)
 - 현재 시장은 방향성이 제한된 혼합 국면이며, 구조는 완화 기조.
 - 유동성 여건이 개선되며 리스크 자산에 우호적이다.
-- 전략적으로는 노출 확대가 가능하나, 규율 기반으로 85% 내에서 단계적으로 접근한다.
+- 전략적으로는 공격적 확대보다 60% 내외의 선별적 노출 유지가 적절하다.
 
 ## 🧭 So What? (Decision Layer)
-- **Risk Stance:** **INCREASE** *(target exposure: 85%)*
-- **Context:** phase=EVENT-WATCHING (이벤트 관망) / liquidity=UP-MID / credit_calm=True
-- **Do:** 노출을 단계적으로 확대하되, 퀄리티(현금흐름/재무안정) 중심으로 확대
+- **Risk Stance:** **HOLD** *(target exposure: 60%)*
+- **Context:** phase=WAITING / RANGE (대기·박스권) / liquidity=UP-MID / credit_calm=True
+- **Do:** 노출은 유지하되, 베타 확대보다 ‘선별적 포지셔닝(퀄리티)’ 유지
 - **Don't:** 무분별한 테마 추격; 리스크 관리 없는 집중 포지션
-- **Triggers:** VIX 급등 또는 HY OAS 확대 시 즉시 방어
+- **Triggers:** NET_LIQ 추가 하락/LOW 고착 시 노출 축소 준비
 
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
 ### 🔹 Base Case
 - 조건: 유동성 혼조 + 크레딧 안정 유지 / 변동성 급등 없이 박스권 장세 지속
-- 전략: 노출 85% 유지, 퀄리티 중심 선별적 접근
+- 전략: 노출 60% 유지, 퀄리티 중심 선별적 접근
 
 ### 🔼 Bull Case
 - 조건: NET_LIQ 회복 (dir=UP & level=MID 이상) / 크레딧 스프레드 추가 축소
@@ -63,15 +63,15 @@
 - **추가 이유:** 같은 지표도 ‘국면’에 따라 의미가 완전히 달라지기 때문
 
 - **VIX 레벨:** 19.86 → **Mid (Neutral/Mixed)**
-- **핵심 조합(전일 대비 방향):** US10Y(→) / DXY(↓) / VIX(→)
-- **판정:** **EVENT-WATCHING (이벤트 관망)**
-- **근거:** 변동성은 눌려있지만 금리/달러가 움직임 → 데이터/이벤트 대기
+- **핵심 조합(전일 대비 방향):** US10Y(→) / DXY(→) / VIX(→)
+- **판정:** **WAITING / RANGE (대기·박스권)**
+- **근거:** 핵심 축(금리/달러/변동성) 모두 보합 → 방향성 부재
 
 ### 💧 2) Liquidity Filter (Enhanced)
 - **질문:** 시장에 새 돈이 들어오는가, 말라가는가?
 - **추가 이유:** US10Y/DXY/VIX는 ‘시장의 기대’를 보여주고, FCI는 ‘현실의 압박’을, Real Rates는 ‘위험을 감수할 유인’을 보여준다.
 
-- **기대(가격) 신호:** US10Y(→) / DXY(↓) / VIX(→)
+- **기대(가격) 신호:** US10Y(→) / DXY(→) / VIX(→)
 - **현실(FCI):** level=EASY (완화) / dir(→) | as of: 2026-02-26 (FRED last available)
 - **유인(Real Rates):** level=NEUTRAL (중립) / dir(↑) | as of: 2026-02-26 (FRED last available)
 - **판정:** **LIQUIDITY MIXED / FRAGILE (혼조·취약)**
@@ -81,8 +81,8 @@
 ### 🏛️ 3) Policy Filter (with Expectations)
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
-- **가격(현재) 신호:** US10Y(→) / DXY(↓) / VIX(→)
-- **Policy Bias: EASING (완화) (MODERATE, score=-2.0) | REAL_RATEΔ -0.030 / FCIΔ +0.000 / DXYΔ -0.036 / US10YΔ +0.000**
+- **가격(현재) 신호:** US10Y(→) / DXY(→) / VIX(→)
+- **Policy Bias: EASING (완화) (MODERATE, score=-1.0) | REAL_RATEΔ -0.030 / FCIΔ +0.000 / DXYΔ +0.000 / US10YΔ +0.000**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY MIXED (정책 신호 혼조)**
@@ -123,8 +123,8 @@
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
-- DXY **(Noise, -0.04%)** → 달러 약세/리스크 선호
-- WTI **(Mild, -0.40%)** → 물가 부담 완화
+- DXY **(Noise, +0.00%)** → 달러 보합(방향성 약함)
+- WTI **(Noise, +0.00%)** → 유가 보합(물가 변수 제한)
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
 - 원/달러(USDKRW) **(Noise, +0.00%)** → 환율 보합(수급 압력 제한)
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
@@ -135,7 +135,7 @@
 
 - **금리 보합(US10Y→)** → 할인율 변수 제한
 - **변동성 보합(VIX→)** → 심리 변화 제한
-- **유가 하락(WTI↓)** → 물가 부담 완화 / 긴축 압력 완화 가능
+- **유가 보합(WTI→)** → 물가 변수 제한
 
 ### ⚠ 6.5) Correlation Break Monitor
 - **Note:** TECH_PROXY not available → using credit/USD proxies only.
@@ -152,27 +152,25 @@ No significant sector-level correlation break detected.
 
 - **VIX 보합(VIX→)** → 심리 변화 제한
 - **금리 보합(US10Y→)** → 금리 변수 제한
-- **달러 약세(DXY↓)** → 위험자산 선호/신흥국 부담 완화 가능
-- **유가 하락(WTI↓)** → 물가 부담 완화 가능
+- **달러 보합(DXY→)** → 달러 변수 제한
+- **유가 보합(WTI→)** → 물가 변수 제한
 
 ### 💸 8) Incentive Filter
 - **질문:** 누가 이득을 보고 있는가?
-- **핵심 신호:** US10Y(→) / DXY(↓) / WTI(↓)
+- **핵심 신호:** US10Y(→) / DXY(→) / WTI(→)
 - **이득을 보는 주체:**
-  - EM assets / risk trades
-  - Energy consumers
+  - None
 - **손해를 보는 주체:**
-  - USD strength trades
-  - Energy producers
+  - None
 
 ### 🔍 9) Cause Filter
 - **질문:** 무엇이 이 움직임을 만들었는가?
-- **핵심 신호:** US10Y(→) / DXY(↓) / WTI(↓) / VIX(→)
-- **판정:** **달러 약세(DXY↓) + 유가 하락(WTI↓)**
+- **핵심 신호:** US10Y(→) / DXY(→) / WTI(→) / VIX(→)
+- **판정:** **원인 신호 뚜렷하지 않음**
 
 ### 🔄 10) Direction Filter
 - **질문:** 오늘 움직임은 ‘노이즈’인가 ‘의미 있는 변화’인가?
-- **강도:** US10Y(Noise) / DXY(Noise) / WTI(Mild) / VIX(Noise)
+- **강도:** US10Y(Noise) / DXY(Noise) / WTI(Noise) / VIX(Noise)
 - **판정:** **MOSTLY NOISE (대부분 노이즈)**
 
 ### ⏳ 11) Timing Filter
@@ -184,7 +182,7 @@ No significant sector-level correlation break detected.
 
 ### 🏗️ 12) Structural Filter
 - **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
-- **핵심 신호:** US10Y(→) / DXY(↓) / VIX(→) / WTI(↓)
+- **핵심 신호:** US10Y(→) / DXY(→) / VIX(→) / WTI(→)
 - **판정:** **NEUTRAL**
 - **근거:** 패권/구조 신호가 뚜렷하지 않음
 
@@ -192,36 +190,36 @@ No significant sector-level correlation break detected.
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-2.0) | REAL_RATEΔ -0.030 / FCIΔ +0.000 / DXYΔ -0.036 / US10YΔ +0.000
+- **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.0) | REAL_RATEΔ -0.030 / FCIΔ +0.000 / DXYΔ +0.000 / US10YΔ +0.000
 - **Sentiment (Fear&Greed):** 50.0 (NEUTRAL)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=UP / level=MID
-- **Phase:** EVENT-WATCHING (이벤트 관망)
+- **Phase:** WAITING / RANGE (대기·박스권)
 
-- **🎯 Final Risk Action:** **INCREASE**
-- **Risk Budget (0~100):** **85**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 → Phase=EVENT-WATCHING (이벤트 관망)
+- **🎯 Final Risk Action:** **HOLD**
+- **Risk Budget (0~100):** **60**
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 → Phase=WAITING / RANGE (대기·박스권)
 
 ### ⚠ 14) Divergence Monitor
 - **정의:** 구조(정책)와 가격(시장 국면)의 충돌 여부 감지
 - **추가 이유:** 구조-가격 충돌은 국면 전환의 초기 신호가 될 수 있음
 
 - **Structure:** EASING
-- **Price Regime:** MIXED
-- **Status:** **DELAYED RESPONSE**
-- **해석:** 구조는 완화이나 가격은 아직 명확히 반응하지 않음
+- **Price Regime:** WAITING
+- **Status:** **TRANSITION ZONE**
+- **해석:** 시장 방향 탐색 구간
 
 ### 🎯 15) Volatility-Controlled Exposure (v2)
 - **정의:** Risk Budget을 실제 익스포저로 변환 (Pro Version)
 - **추가 이유:** 변동성·스트레스·국면을 모두 반영한 실전형 리스크 제어
 
-- **Risk Budget:** 85
-- **Phase Cap:** 100
+- **Risk Budget:** 60
+- **Phase Cap:** 60
 - **VIX Level:** 19.86 (NORMAL)
 - **VIX Change (%):** +0.00%
 - **Final Multiplier:** 1.00x
 
-- **📊 Recommended Exposure:** **85%**
+- **📊 Recommended Exposure:** **60%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
@@ -229,7 +227,7 @@ No significant sector-level correlation break detected.
 
 - **Growth vs Value:** **GROWTH TILT**
 - **Duration Tilt:** **NEUTRAL**
-- **Cyclical vs Defensive:** **CYCLICAL FAVORED**
+- **Cyclical vs Defensive:** **DEFENSIVE / QUALITY BIAS**
 
 ### 🧩 17) Factor Layer (v1)
 - **정의:** 시장을 움직이는 핵심 위험 요인 판별
@@ -244,15 +242,14 @@ No significant sector-level correlation break detected.
 - **정의:** Macro + Style/Factor/FINAL_STATE 종합 섹터 기울기 판단 (rule-based scoring)
 - **추가 이유:** 리포트의 최종 output(포지셔닝)이 비어있지 않도록, 최소 OW/UW를 항상 생성
 
-- **Context:** phase=EVENT-WATCHING (이벤트 관망) / liquidity=UP-MID / structure=EASING / credit_calm=True
+- **Context:** phase=WAITING / RANGE (대기·박스권) / liquidity=UP-MID / structure=EASING / credit_calm=True
 - **Overweight:** **Technology, Industrials, Financials**
-- **Underweight:** **Utilities, Consumer Staples**
+- **Underweight:** **Consumer Staples**
 
 - **Rationale (top drivers):**
   - OW Technology: +2: 유동성 공급 → 베타 확장 환경
   - OW Industrials: +2: 유동성 공급 → 경기순환(투자/생산) 우호
   - OW Financials: +1: 유동성 공급 → 리스크 선호 회복 구간 우호
-  - UW Utilities: -1: 유동성 공급 → 방어 섹터 상대매력 감소
   - UW Consumer Staples: -1: 유동성 공급 → 방어 섹터 상대매력 감소
 
 ### 🧬 19) Execution / Style Translation Layer
