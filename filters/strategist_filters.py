@@ -1709,7 +1709,9 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         "narrative_line": narrative,
     }
     market_data["FINAL_STATE"] = final_state
+    # ... Narrative Engine이 FINAL_STATE를 market_data에 넣은 뒤
 
+    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
     # --------------------------------------------------
     # 6️⃣ Output (기존 필터 스타일 통일)
     # --------------------------------------------------
