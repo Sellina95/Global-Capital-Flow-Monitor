@@ -20,6 +20,7 @@ GEO_FACTORS = [
     ("WTI",    0.10, "normal"),
     ("GOLD",   0.12, "normal"),
     ("USDCNH", 0.18, "normal"),
+
     ("USDMXN", 0.05, "normal"),
     ("USDJPY", 0.05, "inverse"),
 ]
@@ -66,7 +67,7 @@ def compute_geo_score(df: pd.DataFrame, as_of: str) -> Dict[str, Any]:
     as_of_dt = pd.to_datetime(as_of)
     d = d[d["date"] <= as_of_dt].copy()
     if d.empty:
-        return {"as_of": as_of, "score": None, "level": "N/A", "missing": ["ALL"], "components": []}
+        return {"as_of": as_of, "score": None, "level": "N/A", "missing": ["ALL"], "top": [], "components": []}
 
     raw_score = 0.0
     used_weight = 0.0
@@ -89,16 +90,14 @@ def compute_geo_score(df: pd.DataFrame, as_of: str) -> Dict[str, Any]:
         raw_score += contrib
         used_weight += float(w)
 
-        comps.append(
-            {
-                "key": key,
-                "weight": float(w),
-                "z": float(z),
-                "z_used": float(z_used),
-                "contrib": float(contrib),
-                "transform": transform,
-            }
-        )
+        comps.append({
+            "key": key,
+            "weight": float(w),
+            "z": float(z),
+            "z_used": float(z_used),
+            "contrib": float(contrib),
+            "transform": transform,
+        })
 
     score = (raw_score / used_weight) if used_weight > 0 else None
     level = _level_from_score(score)
@@ -131,30 +130,46 @@ def main() -> None:
         ("2024-01-12", "Red Sea attacks escalation"),
     ]
 
+    # ✅ 이벤트 리드/래그 잡기: 이벤트 전후 윈도우에서 "충격 최대치"를 pick
+    LOOKBACK = 3   # 이벤트 이전 3일
+    LOOKAHEAD = 5  # 이벤트 이후 5일
+
     out_lines: List[str] = []
     out_lines.append("=== GEO EW backtest (experiment) ===")
     out_lines.append(f"window={GEO_WINDOW}")
+    out_lines.append(f"event_window=[-{LOOKBACK}, +{LOOKAHEAD}] days (pick max |score|)")
     out_lines.append("")
 
     for dt, label in events:
-        r = compute_geo_score(df, dt)
+        base_dt = pd.to_datetime(dt)
+        best: Optional[Dict[str, Any]] = None
 
-        # ✅ FIX: nested f-string + quote issue
-        score_str = "None" if r["score"] is None else f"{r['score']:+.2f}"
+        for i in range(-LOOKBACK, LOOKAHEAD + 1):
+            dti = (base_dt + pd.Timedelta(days=i)).strftime("%Y-%m-%d")
+            r = compute_geo_score(df, dti)
+            if r.get("score") is None:
+                continue
+
+            if (best is None) or (abs(float(r["score"])) > abs(float(best["score"]))):
+                best = r
 
         out_lines.append(f"[{dt}] {label}")
-        out_lines.append(f"  score={score_str}  level={r['level']}")
-        out_lines.append(f"  missing={', '.join(r['missing']) if r['missing'] else 'None'}")
+        if best is None:
+            out_lines.append("  score=N/A  level=N/A (no data in window)")
+            out_lines.append("")
+            continue
+
+        score_str = f"{float(best['score']):+.2f}"
+        out_lines.append(f"  best_in_window={best['as_of']}  score={score_str}  level={best['level']}")
+        out_lines.append(f"  missing={', '.join(best['missing']) if best['missing'] else 'None'}")
         out_lines.append("  top drivers:")
-        for c in r["top"]:
+        for c in best["top"]:
             out_lines.append(
-                f"    - {c['key']}: z_used={c['z_used']:+.2f} w={c['weight']:.2f} contrib={c['contrib']:+.2f}"
+                f"    - {c['key']}: z_used={float(c['z_used']):+.2f} w={float(c['weight']):.2f} contrib={float(c['contrib']):+.2f}"
             )
         out_lines.append("")
 
     print("\n".join(out_lines))
-    OUT = EXP_DATA_DIR / "geo_event_backtest.txt"
-    OUT.write_text("\n".join(out_lines))
 
 
 if __name__ == "__main__":
