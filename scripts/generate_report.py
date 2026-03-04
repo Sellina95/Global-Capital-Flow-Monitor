@@ -11,6 +11,7 @@ from filters.strategist_filters import attach_geopolitical_ew_layer
 from filters.strategist_filters import geopolitical_early_warning_filter
 from filters.executive_layer import executive_summary_filter
 from filters.scenario_layer import scenario_generator_filter
+from filters.strategist_filters import apply_geo_overlay_to_final_state
 from scripts.risk_alerts import check_regime_change_and_alert
 from scripts.fetch_expectation_data import fetch_expectation_data  # external expectations
 from scripts.fetch_sentiment import fetch_cnn_fear_greed
