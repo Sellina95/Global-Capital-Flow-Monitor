@@ -62,6 +62,11 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_fred_macro_extras.py
 
+      - name: Fetch Sovereign Yields (CDS proxy)
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/fetch_sovereign_yields.py
+
       - name: Repair macro_data.csv schema (prevent ragged CSV)
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
