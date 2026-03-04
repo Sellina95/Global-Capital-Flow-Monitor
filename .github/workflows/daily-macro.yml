@@ -149,7 +149,8 @@ jobs:
           git add data/liquidity_data.csv || true
           git add data/credit_spread_data.csv || true
           git add data/fred_macro_extras.csv || true
-
+          git add data/sovereign_yields.csv data/sovereign_spreads.csv
+          
           echo "== fred_macro_extras tail =="
           tail -n 3 data/fred_macro_extras.csv || true
 
@@ -164,5 +165,5 @@ jobs:
             exit 0
           fi
 
-          git commit -m "chore: auto-update macro/liquidity + generate report"
+          git commit -m "chore: auto-update macro/ + generate report"
           git push
