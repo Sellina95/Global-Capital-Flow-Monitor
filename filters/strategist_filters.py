@@ -1115,7 +1115,9 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 
 # filters/strategist_filters.py (어딘가 상단 상수 구간)
 
-GEO_WINDOW = 60  # 60~90 중 선택(너는 백필 122라인 있으니 60 추천)
+# filters/strategist_filters.py (상단 상수 구간)
+
+GEO_WINDOW = 60  # 60~90 중 선택(백필 히스토리 있으니 60 추천)
 
 # (key, weight, transform)
 # transform: "normal" | "inverse"
@@ -1124,40 +1126,50 @@ GEO_FACTORS = [
     # -----------------------
     # Market Reaction (confirmation)
     # -----------------------
-    ("VIX",    0.18, "normal"),
-    ("WTI",    0.10, "normal"),
-    ("GOLD",   0.12, "normal"),
-    ("USDCNH", 0.18, "normal"),
+    ("VIX",        0.18, "normal"),
+    ("WTI",        0.10, "normal"),
+    ("GOLD",       0.12, "normal"),
+    ("USDCNH",     0.18, "normal"),
 
     # -----------------------
     # EM Stress (capital flight)
     # -----------------------
-    ("EEM",    0.10, "inverse"),  # EEM 하락 = risk-off
-    ("EMB",    0.12, "inverse"),  # EMB 하락 = risk-off
-    ("USDMXN", 0.05, "normal"),   # USD/MXN 상승(페소 약세) = stress
-    ("USDJPY", 0.05, "inverse"),  # USDJPY 하락(엔 강세)=risk-off
+    ("EEM",        0.10, "inverse"),  # EEM 하락 = risk-off
+    ("EMB",        0.12, "inverse"),  # EMB 하락 = risk-off
+    ("USDMXN",     0.05, "normal"),   # USD/MXN 상승(페소 약세) = stress
+    ("USDJPY",     0.05, "inverse"),  # USDJPY 하락(엔 강세)=risk-off
 
     # -----------------------
     # Supply Chain / Shipping proxy (early)
     # -----------------------
-    ("SEA",    0.05, "inverse"),  # SEA 하락을 stress로 볼지(공급망 붕괴) 케이스가 있어 inverse로 시작
-    ("BDRY",   0.05, "normal"),   # BDRY는 방향성이 케이스별이라 v2에서는 일단 normal로 두고 관찰
+    ("SEA",        0.05, "inverse"),  # SEA 하락을 stress로 볼지(공급망 붕괴) 케이스가 있어 inverse로 시작
+    ("BDRY",       0.05, "normal"),   # BDRY는 케이스별. v2에서는 일단 normal로 두고 관찰
 
     # -----------------------
     # Defense attention proxy (early)
     # -----------------------
-    ("ITA",    0.03, "normal"),
-    ("XAR",    0.02, "normal"),
+    ("ITA",        0.03, "normal"),
+    ("XAR",        0.02, "normal"),
+
+    # -----------------------
+    # Sovereign stress (CDS proxy via 10Y spread vs US)
+    # - sovereign_spreads.csv에 컬럼이 존재해야 함
+    # - key 이름은 "XX10Y_SPREAD" 규칙 (yield - US yield)
+    # -----------------------
+    ("KR10Y_SPREAD", 0.10, "normal"),
+    ("JP10Y_SPREAD", 0.06, "normal"),
+    ("CN10Y_SPREAD", 0.06, "normal"),
+    ("IL10Y_SPREAD", 0.08, "normal"),
+    ("TR10Y_SPREAD", 0.05, "normal"),
 ]
 
-# score -> level 구간 (너가 이미 쓰는 형태 유지)
+# score -> level 구간
 GEO_THRESHOLDS = [
     ("NORMAL",   -0.75, 0.75),
     ("ELEVATED",  0.75, 1.50),
     ("HIGH",      1.50, 2.50),
     ("CONFLICT",  2.50, 99.0),
 ]
-
 
 def _to_num(x) -> Optional[float]:
     v = pd.to_numeric(x, errors="coerce")
