@@ -153,6 +153,8 @@ def main() -> None:
         out_lines.append("")
 
     print("\n".join(out_lines))
+    OUT = EXP_DATA_DIR / "geo_event_backtest.txt"
+    OUT.write_text("\n".join(out_lines))
 
 
 if __name__ == "__main__":
