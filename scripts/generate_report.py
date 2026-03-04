@@ -562,25 +562,25 @@ def generate_daily_report() -> None:
     # -----------------------------
     stale = False
 
+    # -----------------------------
+    # Detect stale / data feed delay (timestamp-based, robust)
+    # -----------------------------
+    stale = False
     try:
-        # 주요 시장 지표 4개 기준
-        keys = ["SPY", "QQQ", "US10Y", "VIX"]
+        # df의 마지막 row 날짜 (macro_data 기준)
+        last_date = pd.to_datetime(df.iloc[today_idx]["date"]).date()
 
-        zero_moves = 0
-        checked = 0
+        # 현재 UTC 날짜 (GitHub Actions는 보통 UTC)
+        today_utc = pd.Timestamp.utcnow().date()
 
-        for k in keys:
-            v = market_data.get(k, {})
-            if isinstance(v, dict):
-                pct = v.get("pct_change")
-                if pct is not None:
-                    checked += 1
-                    if abs(float(pct)) < 1e-6:
-                        zero_moves += 1
-
-        # 4개 중 3개 이상이 0이면 stale로 간주
-        if checked >= 3 and zero_moves >= 3:
+        # 데이터가 2일 이상 오래되면 "stale" (fetch 실패/파이프라인 멈춤 케이스)
+        if (today_utc - last_date).days >= 2:
             stale = True
+
+    except Exception:
+        stale = False
+
+    market_data["_STALE"] = stale
 
     except Exception:
         stale = False
