@@ -1,53 +1,50 @@
 {
-  "fred": {
-    "US10Y": {
-      "series_id": "DGS10",
+  "days": 1200,
+  "sources": {
+    "VIX": {
+      "source": "yfinance",
+      "ticker": "^VIX",
       "status": "OK",
-      "rows": 16740,
-      "error": null
-    },
-    "DXY": {
-      "series_id": "DTWEXBGS",
-      "status": "OK",
-      "rows": 5260,
-      "error": null
+      "rows": 1200,
+      "error": null,
+      "from": "2021-05-24",
+      "to": "2026-03-04"
     },
     "WTI": {
-      "series_id": "DCOILWTICO",
+      "source": "yfinance",
+      "ticker": "CL=F",
       "status": "OK",
-      "rows": 10473,
-      "error": null
-    },
-    "VIX": {
-      "series_id": "VIXCLS",
-      "status": "OK",
-      "rows": 9436,
-      "error": null
-    },
-    "GOLD": {
-      "series_id": "GOLDAMGBD228NLBM",
-      "status": "FAIL",
-      "rows": 0,
-      "error": "HTTPError: HTTP Error 404: Not Found"
+      "rows": 991,
+      "error": null,
+      "from": "2022-03-24",
+      "to": "2026-03-04"
     },
     "USDCNH": {
-      "series_id": "DEXCHUS",
+      "source": "yfinance",
+      "ticker": "CNH=X",
       "status": "OK",
-      "rows": 11781,
-      "error": null
+      "rows": 1,
+      "error": null,
+      "from": "2026-03-04",
+      "to": "2026-03-04"
     },
     "USDJPY": {
-      "series_id": "DEXJPUS",
+      "source": "yfinance",
+      "ticker": "JPY=X",
       "status": "OK",
-      "rows": 14390,
-      "error": null
+      "rows": 1195,
+      "error": null,
+      "from": "2021-07-29",
+      "to": "2026-03-04"
     },
     "USDMXN": {
-      "series_id": "DEXMXUS",
+      "source": "yfinance",
+      "ticker": "MXN=X",
       "status": "OK",
-      "rows": 8430,
-      "error": null
+      "rows": 1195,
+      "error": null,
+      "from": "2021-07-29",
+      "to": "2026-03-04"
     }
-  },
-  "note": "geo history fetch (experiment only)"
+  }
 }
