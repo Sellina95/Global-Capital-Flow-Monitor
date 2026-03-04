@@ -2427,60 +2427,24 @@ def execution_layer_filter(market_data: Dict[str, Any]) -> str:
 def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Geo EW를 FINAL_STATE 위에 'overlay'로 반영.
-    - 기존 Narrative Engine 로직은 유지
-    - risk_budget/risk_action을 보수적으로 조정
-    - 조정 내역을 FINAL_STATE["geo_overlay"]에 기록
+
+    - Narrative Engine이 만든 FINAL_STATE를 보수적으로 조정
+    - risk_budget / risk_action 조정
+    - 조정 내역을 market_data["GEO_OVERLAY"]에 기록
     """
+
     if market_data is None:
         return market_data
 
     state = market_data.get("FINAL_STATE", {}) or {}
     geo = market_data.get("GEO_EW", {}) or {}
 
-        # -------------------------
-    # ✅ Layer attribution (v2)
-    # -------------------------
-    layer_map = {
-        "Market": {"VIX", "WTI", "GOLD", "USDCNH"},
-        "EM": {"EEM", "EMB", "USDMXN", "USDJPY"},
-        "Shipping": {"SEA", "BDRY"},
-        "Defense": {"ITA", "XAR"},
-    }
-
-    comps = geo.get("components", []) or []
-    layer_sum = {k: 0.0 for k in layer_map.keys()}
-    used_keys = set()
-
-    for c in comps:
-        k = str(c.get("key"))
-        used_keys.add(k)
-        contrib = c.get("contrib")
-        try:
-            contrib = float(contrib)
-        except Exception:
-            continue
-
-        for layer, keys in layer_map.items():
-            if k in keys:
-                layer_sum[layer] += contrib
-                break
-
-    # show layer sums only if we have components
-    if comps:
-        lines.append("Layer Signals (sum of contributions):")
-        lines.append(f"- Market Reaction: {layer_sum['Market']:+.2f}")
-        lines.append(f"- EM Stress: {layer_sum['EM']:+.2f}")
-        lines.append(f"- Supply Chain/Shipping: {layer_sum['Shipping']:+.2f}")
-        lines.append(f"- Defense Attention: {layer_sum['Defense']:+.2f}")
-        lines.append("")
-    
     level = str(geo.get("level", "N/A")).upper()
     score = geo.get("score", None)
 
-    # stale이면 신호 약화 (주말/휴장)
+    # 주말 / 휴장 감지
     is_stale = bool(market_data.get("_STALE", False))
 
-    # risk_budget이 없으면 건드리지 말고 기록만
     base_budget = state.get("risk_budget", None)
     base_action = str(state.get("risk_action", "HOLD"))
 
@@ -2496,10 +2460,9 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
         "note": "",
     }
 
-    # ---- 페널티 룰 (v1) ----
-    # NORMAL: no change
-    # ELEVATED: -10% (stale이면 -5%로 약화)
-    # HIGH / CONFLICT: -20% (stale이면 -10%)
+    # -------------------------
+    # Geo Penalty Rules
+    # -------------------------
     penalty_map = {
         "NORMAL": 0,
         "ELEVATED": -10,
@@ -2508,32 +2471,47 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
     }
 
     penalty = penalty_map.get(level, 0)
-    if is_stale and penalty != 0:
-        penalty = int(penalty / 2)  # 주말에는 반감
 
-    # budget 적용
+    # 주말이면 신호 반감
+    if is_stale and penalty != 0:
+        penalty = int(penalty / 2)
+
+    # -------------------------
+    # Budget Adjustment
+    # -------------------------
     if isinstance(base_budget, int):
+
         new_budget = max(0, min(100, base_budget + penalty))
+
         overlay["budget_delta"] = penalty
         overlay["final_budget"] = new_budget
+
         state["risk_budget"] = new_budget
 
-        # action 보수화 룰
-        # geo가 ELEVATED 이상이면 INCREASE는 HOLD로, HOLD는 REDUCE로 한 단계 내림(선택)
+        # -------------------------
+        # Action Conservative Shift
+        # -------------------------
         if level in ("ELEVATED", "HIGH", "CONFLICT"):
+
             if base_action == "INCREASE":
                 state["risk_action"] = "HOLD"
                 overlay["final_action"] = "HOLD"
+
             elif base_action == "HOLD" and level in ("HIGH", "CONFLICT"):
                 state["risk_action"] = "REDUCE"
                 overlay["final_action"] = "REDUCE"
 
         overlay["note"] = f"GeoEW={level} overlay applied ({penalty}% budget adj)"
+
     else:
-        overlay["note"] = f"GeoEW={level} detected but base_budget not int → no budget change"
+
+        overlay["note"] = (
+            f"GeoEW={level} detected but base_budget not int → no budget change"
+        )
 
     market_data["FINAL_STATE"] = state
     market_data["GEO_OVERLAY"] = overlay
+
     return market_data
     
 
