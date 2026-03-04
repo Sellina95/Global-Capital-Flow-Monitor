@@ -556,31 +556,22 @@ def generate_daily_report() -> None:
     today_idx = len(df) - 1
     as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
 
-    market_data = build_market_data(df, today_idx)
-        # -----------------------------
-    # Detect stale / market closed
-    # -----------------------------
-    stale = False
+        market_data = build_market_data(df, today_idx)
 
     # -----------------------------
-    # Detect stale / data feed delay (timestamp-based, robust)
+    # Detect stale / data feed delay
     # -----------------------------
     stale = False
     try:
-        # df의 마지막 row 날짜 (macro_data 기준)
+        # 마지막 데이터 날짜
         last_date = pd.to_datetime(df.iloc[today_idx]["date"]).date()
 
-        # 현재 UTC 날짜 (GitHub Actions는 보통 UTC)
+        # 현재 UTC 날짜 (GitHub Actions 기준)
         today_utc = pd.Timestamp.utcnow().date()
 
-        # 데이터가 2일 이상 오래되면 "stale" (fetch 실패/파이프라인 멈춤 케이스)
+        # 데이터가 2일 이상 오래되면 stale
         if (today_utc - last_date).days >= 2:
             stale = True
-
-    except Exception:
-        stale = False
-
-    market_data["_STALE"] = stale
 
     except Exception:
         stale = False
