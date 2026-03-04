@@ -1,3 +1,7 @@
+
+
+
+
 from __future__ import annotations
 from typing import Dict, Any, Optional, List, Tuple
 import pandas as pd
@@ -1119,9 +1123,10 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 
 GEO_WINDOW = 60  # 60~90 중 선택(백필 히스토리 있으니 60 추천)
 
-# (key, weight, transform)
-# transform: "normal" | "inverse"
-# - inverse 예: USDJPY는 USDJPY 하락(=JPY강세)=risk-off니까 inverse가 합리적
+# Sovereign stress (CDS proxy via 10Y spread vs US)
+# sovereign_spreads.csv 헤더 기준:
+# KR10Y_SPREAD, JP10Y_SPREAD, CN10Y_SPREAD, IL10Y_SPREAD, TR10Y_SPREAD
+
 GEO_FACTORS = [
     # -----------------------
     # Market Reaction (confirmation)
@@ -1134,16 +1139,16 @@ GEO_FACTORS = [
     # -----------------------
     # EM Stress (capital flight)
     # -----------------------
-    ("EEM",        0.10, "inverse"),  # EEM 하락 = risk-off
-    ("EMB",        0.12, "inverse"),  # EMB 하락 = risk-off
-    ("USDMXN",     0.05, "normal"),   # USD/MXN 상승(페소 약세) = stress
-    ("USDJPY",     0.05, "inverse"),  # USDJPY 하락(엔 강세)=risk-off
+    ("EEM",        0.10, "inverse"),
+    ("EMB",        0.12, "inverse"),
+    ("USDMXN",     0.05, "normal"),
+    ("USDJPY",     0.05, "inverse"),
 
     # -----------------------
     # Supply Chain / Shipping proxy (early)
     # -----------------------
-    ("SEA",        0.05, "inverse"),  # SEA 하락을 stress로 볼지(공급망 붕괴) 케이스가 있어 inverse로 시작
-    ("BDRY",       0.05, "normal"),   # BDRY는 케이스별. v2에서는 일단 normal로 두고 관찰
+    ("SEA",        0.05, "inverse"),
+    ("BDRY",       0.05, "normal"),
 
     # -----------------------
     # Defense attention proxy (early)
@@ -1152,14 +1157,12 @@ GEO_FACTORS = [
     ("XAR",        0.02, "normal"),
 
     # -----------------------
-    # Sovereign stress (CDS proxy via 10Y spread vs US)
-    # - sovereign_spreads.csv에 컬럼이 존재해야 함
-    # - key 이름은 "XX10Y_SPREAD" 규칙 (yield - US yield)
+    # Sovereign stress (CDS proxy) — spreads only
     # -----------------------
-    ("KR10Y_SPREAD", 0.10, "normal"),
-    ("JP10Y_SPREAD", 0.06, "normal"),
-    ("CN10Y_SPREAD", 0.06, "normal"),
-    ("IL10Y_SPREAD", 0.08, "normal"),
+    ("KR10Y_SPREAD", 0.08, "normal"),
+    ("JP10Y_SPREAD", 0.05, "normal"),
+    ("CN10Y_SPREAD", 0.05, "normal"),
+    ("IL10Y_SPREAD", 0.07, "normal"),
     ("TR10Y_SPREAD", 0.05, "normal"),
 ]
 
@@ -1222,141 +1225,168 @@ def attach_geopolitical_ew_layer(
     today_idx: int,
     window: int = GEO_WINDOW,
 ) -> Dict[str, Any]:
-    """
-    GEO Early Warning composite score를 market_data["GEO_EW"]에 저장.
-    - df 기반 rolling z-score
-    - 없는 팩터는 스킵 (가중치 재정규화)
-    - USDJPY는 inverse 처리 (USDJPY 하락 = risk-off)
-
-    ✅ v2 업그레이드:
-    - sovereign_spreads.csv를 df2에 merge해서 CDS proxy(국채 스프레드)를 GEO_FACTORS에 포함 가능
-    - *_SPREAD 키는 pct_change가 아니라 "level z-score"로 처리 (스프레드는 레벨이 더 의미있음)
-    """
 
     if market_data is None:
         market_data = {}
 
-    # -----------------------------------------
-    # 0) Build df2 (until today)
-    # -----------------------------------------
     df2 = df.iloc[: today_idx + 1].copy()
 
-    # -----------------------------------------
-    # ✅ 0.5) Merge sovereign spreads into df2
-    # -----------------------------------------
+    # -----------------------
+    # merge sovereign spreads
+    # -----------------------
     try:
-        sov = load_sovereign_spreads_df()  # <- 너가 이미 만들었다고 한 함수
+        sov = load_sovereign_spreads_df()
+
         if sov is not None and not sov.empty and "date" in sov.columns:
+
             sov2 = sov.copy()
             sov2["date"] = pd.to_datetime(sov2["date"], errors="coerce")
             sov2 = sov2.dropna(subset=["date"]).sort_values("date").drop_duplicates("date", keep="last")
 
-            # df2 date normalize
             if "date" in df2.columns:
                 df2["date"] = pd.to_datetime(df2["date"], errors="coerce")
 
-            # 필요한 컬럼만 합치기 (존재하는 것만)
             wanted_cols = ["date"]
-            for c in ["KR10Y_SPREAD", "JP10Y_SPREAD", "CN10Y_SPREAD", "IL10Y_SPREAD", "TR10Y_SPREAD", "DE10Y_SPREAD", "GB10Y_SPREAD"]:
+
+            for c in [
+                "KR10Y_SPREAD",
+                "JP10Y_SPREAD",
+                "CN10Y_SPREAD",
+                "IL10Y_SPREAD",
+                "TR10Y_SPREAD",
+            ]:
                 if c in sov2.columns:
                     wanted_cols.append(c)
 
             if len(wanted_cols) > 1:
+
                 df2 = pd.merge(df2, sov2[wanted_cols], on="date", how="left")
-                # sovereign spread는 매일 안 나올 수 있으니 ffill로 정렬
+
                 for c in wanted_cols:
                     if c != "date":
                         df2[c] = pd.to_numeric(df2[c], errors="coerce").ffill()
+
+                        # fallback → market_data
+                        if df2[c].iloc[-1] != df2[c].iloc[-1]:
+                            if c in market_data:
+                                df2.loc[df2.index[-1], c] = market_data.get(c)
+
     except Exception:
-        # merge 실패해도 GEO는 계속 돌아가야 함
         pass
 
-    # -----------------------------------------
-    # Helpers (local)
-    # -----------------------------------------
-    def _zscore_last_level(series: pd.Series, win: int) -> Optional[float]:
+    # -----------------------
+    # helpers
+    # -----------------------
+
+    def _zscore_last_level(series: pd.Series, win: int):
+
         s = pd.to_numeric(series, errors="coerce").dropna()
+
         if len(s) < max(10, min(win, 20)):
             return None
+
         tail = s.tail(win)
+
         mu = float(tail.mean())
         sd = float(tail.std(ddof=0))
+
         if sd == 0:
             return None
+
         return float((tail.iloc[-1] - mu) / sd)
 
-    def _series_level_from_df(df_: pd.DataFrame, key: str) -> pd.Series:
+    def _series_level_from_df(df_, key):
+
         return pd.to_numeric(df_.get(key), errors="coerce")
 
-    # -----------------------------------------
-    # 1) Compute score
-    # -----------------------------------------
-    components: List[Dict[str, Any]] = []
-    missing: List[str] = []
+    # -----------------------
+    # compute score
+    # -----------------------
+
+    components = []
+    missing = []
 
     raw_score = 0.0
     used_weight = 0.0
 
-    # ✅ GEO_FACTORS 호환:
-    # - 기존: (key, w, transform)
-    # - 확장: (key, w, transform, mode) where mode in {"pct","level"}
-    #   * mode 생략 시:
-    #       - key가 *_SPREAD 이면 level
-    #       - 그 외는 pct
     for item in GEO_FACTORS:
-        if not isinstance(item, (list, tuple)) or len(item) < 3:
-            continue
 
         key = item[0]
         w = item[1]
         transform = item[2]
+
         mode = None
         if len(item) >= 4:
             mode = item[3]
 
         if mode is None:
-            mode = "level" if str(key).endswith("_SPREAD") else "pct"
+            mode = "level" if key.endswith("_SPREAD") else "pct"
+
+        # -----------------------
+        # fallback check
+        # -----------------------
 
         if key not in df2.columns:
-            missing.append(key)
-            continue
 
-        # mode별 zscore 계산
+            if key in market_data:
+                val = market_data.get(key)
+
+                if val is not None:
+                    df2.loc[df2.index[-1], key] = val
+                else:
+                    missing.append(key)
+                    continue
+            else:
+                missing.append(key)
+                continue
+
+        # -----------------------
+        # compute zscore
+        # -----------------------
+
         z = None
+
         if mode == "level":
+
             level_series = _series_level_from_df(df2, key)
             z = _zscore_last_level(level_series, window)
+
         else:
-            pct = _pct_series_from_df(df2, key)  # 기존 너 프로젝트 함수 그대로 사용
+
+            pct = _pct_series_from_df(df2, key)
             z = _zscore_last(pct, window)
 
         if z is None:
             missing.append(key)
             continue
 
-        # transform
         z_used = -z if transform == "inverse" else z
 
         contrib = float(w) * float(z_used)
+
         raw_score += contrib
         used_weight += float(w)
 
-        components.append({
-            "key": key,
-            "weight": float(w),
-            "z": float(z),
-            "z_used": float(z_used),
-            "contrib": float(contrib),
-            "transform": transform,
-            "mode": mode,  # ✅ NEW: pct vs level
-        })
+        components.append(
+            {
+                "key": key,
+                "weight": float(w),
+                "z": float(z),
+                "z_used": float(z_used),
+                "contrib": float(contrib),
+                "transform": transform,
+                "mode": mode,
+            }
+        )
 
     score = (raw_score / used_weight) if used_weight > 0 else None
 
-    # level
     level = "N/A"
+
     if score is not None:
+
         for name, lo, hi in GEO_THRESHOLDS:
+
             if score >= lo and score < hi:
                 level = name
                 break
