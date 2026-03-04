@@ -29,8 +29,8 @@ jobs:
           mkdir -p exp_data/geo
           mkdir -p experiments/geo
 
-      # 1) 과거 Geo 히스토리 다운로드 (FRED 기반)
-      - name: Fetch Geo history (FRED -> exp_data/geo/geo_history.csv)
+      # 1) 과거 Geo 히스토리 다운로드 (experiment)
+      - name: Fetch Geo history (-> exp_data/geo/geo_history.csv)
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python experiments/geo/fetch_geo_history.py
