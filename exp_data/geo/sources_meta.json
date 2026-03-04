@@ -1,50 +1,243 @@
 {
+  "generated_at_utc": "2026-03-04T17:41:52Z",
   "days": 1200,
+  "start": "2018-01-01",
   "sources": {
     "VIX": {
       "source": "yfinance",
-      "ticker": "^VIX",
       "status": "OK",
-      "rows": 1200,
+      "ticker_used": "^VIX",
+      "rows": 2053,
+      "from": "2018-01-02",
+      "to": "2026-03-04",
       "error": null,
-      "from": "2021-05-24",
-      "to": "2026-03-04"
+      "attempts": [
+        {
+          "ticker": "^VIX",
+          "rows": 2053,
+          "status": "OK",
+          "from": "2018-01-02",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
     },
     "WTI": {
       "source": "yfinance",
-      "ticker": "CL=F",
       "status": "OK",
-      "rows": 991,
+      "ticker_used": "CL=F",
+      "rows": 2055,
+      "from": "2018-01-02",
+      "to": "2026-03-04",
       "error": null,
-      "from": "2022-03-24",
-      "to": "2026-03-04"
+      "attempts": [
+        {
+          "ticker": "CL=F",
+          "rows": 2055,
+          "status": "OK",
+          "from": "2018-01-02",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
+    },
+    "GOLD": {
+      "source": "yfinance",
+      "status": "OK",
+      "ticker_used": "GC=F",
+      "rows": 2054,
+      "from": "2018-01-02",
+      "to": "2026-03-04",
+      "error": null,
+      "attempts": [
+        {
+          "ticker": "GC=F",
+          "rows": 2054,
+          "status": "OK",
+          "from": "2018-01-02",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
     },
     "USDCNH": {
       "source": "yfinance",
-      "ticker": "CNH=X",
       "status": "OK",
+      "ticker_used": "CNH=X",
       "rows": 1,
-      "error": null,
       "from": "2026-03-04",
-      "to": "2026-03-04"
+      "to": "2026-03-04",
+      "error": null,
+      "attempts": [
+        {
+          "ticker": "CNH=X",
+          "rows": 1,
+          "status": "OK",
+          "from": "2026-03-04",
+          "to": "2026-03-04",
+          "error": null
+        },
+        {
+          "ticker": "USDCNH=X",
+          "rows": 1,
+          "status": "OK",
+          "from": "2026-03-04",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
     },
     "USDJPY": {
       "source": "yfinance",
-      "ticker": "JPY=X",
       "status": "OK",
-      "rows": 1195,
+      "ticker_used": "JPY=X",
+      "rows": 2127,
+      "from": "2018-01-01",
+      "to": "2026-03-04",
       "error": null,
-      "from": "2021-07-29",
-      "to": "2026-03-04"
+      "attempts": [
+        {
+          "ticker": "JPY=X",
+          "rows": 2127,
+          "status": "OK",
+          "from": "2018-01-01",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
     },
     "USDMXN": {
       "source": "yfinance",
-      "ticker": "MXN=X",
       "status": "OK",
-      "rows": 1195,
+      "ticker_used": "MXN=X",
+      "rows": 2127,
+      "from": "2018-01-01",
+      "to": "2026-03-04",
       "error": null,
-      "from": "2021-07-29",
-      "to": "2026-03-04"
+      "attempts": [
+        {
+          "ticker": "MXN=X",
+          "rows": 2127,
+          "status": "OK",
+          "from": "2018-01-01",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
+    },
+    "EEM": {
+      "source": "yfinance",
+      "status": "OK",
+      "ticker_used": "EEM",
+      "rows": 2053,
+      "from": "2018-01-02",
+      "to": "2026-03-04",
+      "error": null,
+      "attempts": [
+        {
+          "ticker": "EEM",
+          "rows": 2053,
+          "status": "OK",
+          "from": "2018-01-02",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
+    },
+    "EMB": {
+      "source": "yfinance",
+      "status": "OK",
+      "ticker_used": "EMB",
+      "rows": 2053,
+      "from": "2018-01-02",
+      "to": "2026-03-04",
+      "error": null,
+      "attempts": [
+        {
+          "ticker": "EMB",
+          "rows": 2053,
+          "status": "OK",
+          "from": "2018-01-02",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
+    },
+    "SEA": {
+      "source": "yfinance",
+      "status": "OK",
+      "ticker_used": "SEA",
+      "rows": 1033,
+      "from": "2022-01-20",
+      "to": "2026-03-04",
+      "error": null,
+      "attempts": [
+        {
+          "ticker": "SEA",
+          "rows": 1033,
+          "status": "OK",
+          "from": "2022-01-20",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
+    },
+    "BDRY": {
+      "source": "yfinance",
+      "status": "OK",
+      "ticker_used": "BDRY",
+      "rows": 1998,
+      "from": "2018-03-22",
+      "to": "2026-03-04",
+      "error": null,
+      "attempts": [
+        {
+          "ticker": "BDRY",
+          "rows": 1998,
+          "status": "OK",
+          "from": "2018-03-22",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
+    },
+    "ITA": {
+      "source": "yfinance",
+      "status": "OK",
+      "ticker_used": "ITA",
+      "rows": 2053,
+      "from": "2018-01-02",
+      "to": "2026-03-04",
+      "error": null,
+      "attempts": [
+        {
+          "ticker": "ITA",
+          "rows": 2053,
+          "status": "OK",
+          "from": "2018-01-02",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
+    },
+    "XAR": {
+      "source": "yfinance",
+      "status": "OK",
+      "ticker_used": "XAR",
+      "rows": 2053,
+      "from": "2018-01-02",
+      "to": "2026-03-04",
+      "error": null,
+      "attempts": [
+        {
+          "ticker": "XAR",
+          "rows": 2053,
+          "status": "OK",
+          "from": "2018-01-02",
+          "to": "2026-03-04",
+          "error": null
+        }
+      ]
     }
   }
 }
