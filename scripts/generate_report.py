@@ -556,27 +556,27 @@ def generate_daily_report() -> None:
     today_idx = len(df) - 1
     as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
 
-        market_data = build_market_data(df, today_idx)
+    market_data = build_market_data(df, today_idx)
 
     # -----------------------------
     # Detect stale / data feed delay
+    # - 기존 "pct_change==0" 기반은 장중/휴장/데이터지연에서 오탐이 잦음
+    # - "데이터 날짜가 오늘(UTC) 기준으로 너무 오래됐는지"로 판단
     # -----------------------------
     stale = False
     try:
-        # 마지막 데이터 날짜
         last_date = pd.to_datetime(df.iloc[today_idx]["date"]).date()
-
-        # 현재 UTC 날짜 (GitHub Actions 기준)
         today_utc = pd.Timestamp.utcnow().date()
 
-        # 데이터가 2일 이상 오래되면 stale
+        # 금/토/일+월초 등에서 데이터가 하루 밀릴 수 있으니
+        # 기본은 2일 이상 차이나면 stale로 간주
         if (today_utc - last_date).days >= 2:
             stale = True
-
     except Exception:
         stale = False
 
     market_data["_STALE"] = stale
+
     # -------------------------
     # Attach layers
     # -------------------------
@@ -593,11 +593,13 @@ def generate_daily_report() -> None:
     regime_result = check_regime_change_and_alert(market_data, as_of_date)
 
     # -------------------------
-    # 1) Run Strategist Commentary FIRST to build FINAL_STATE (Narrative Engine sets it)
+    # 1) Strategist Commentary FIRST (Narrative Engine sets FINAL_STATE inside)
     # -------------------------
     commentary_block = build_strategist_commentary(market_data)
+
+    # ✅ Geo overlay는 FINAL_STATE가 생긴 다음에만!
     market_data = apply_geo_overlay_to_final_state(market_data) or market_data
-    
+
     # 2) Top layers (need FINAL_STATE)
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
@@ -616,29 +618,48 @@ def generate_daily_report() -> None:
 
     # daily core signals
     if "US10Y" in market_data and market_data["US10Y"].get("today") is not None:
+        prev = market_data["US10Y"].get("prev")
+        pct = market_data["US10Y"].get("pct_change")
         lines.append(
             f"- **미국 10년물 금리**: {market_data['US10Y']['today']:.3f}  "
-            f"({market_data['US10Y']['pct_change']:+.2f}% vs {market_data['US10Y']['prev']:.3f})"
+            f"({pct:+.2f}% vs {prev:.3f})" if (prev is not None and pct is not None) else
+            f"- **미국 10년물 금리**: {market_data['US10Y']['today']:.3f}"
         )
+
     if "DXY" in market_data and market_data["DXY"].get("today") is not None:
+        prev = market_data["DXY"].get("prev")
+        pct = market_data["DXY"].get("pct_change")
         lines.append(
             f"- **달러 인덱스**: {market_data['DXY']['today']:.3f}  "
-            f"({market_data['DXY']['pct_change']:+.2f}% vs {market_data['DXY']['prev']:.3f})"
+            f"({pct:+.2f}% vs {prev:.3f})" if (prev is not None and pct is not None) else
+            f"- **달러 인덱스**: {market_data['DXY']['today']:.3f}"
         )
+
     if "WTI" in market_data and market_data["WTI"].get("today") is not None:
+        prev = market_data["WTI"].get("prev")
+        pct = market_data["WTI"].get("pct_change")
         lines.append(
             f"- **WTI 유가**: {market_data['WTI']['today']:.3f}  "
-            f"({market_data['WTI']['pct_change']:+.2f}% vs {market_data['WTI']['prev']:.3f})"
+            f"({pct:+.2f}% vs {prev:.3f})" if (prev is not None and pct is not None) else
+            f"- **WTI 유가**: {market_data['WTI']['today']:.3f}"
         )
+
     if "VIX" in market_data and market_data["VIX"].get("today") is not None:
+        prev = market_data["VIX"].get("prev")
+        pct = market_data["VIX"].get("pct_change")
         lines.append(
             f"- **변동성 지수 (VIX)**: {market_data['VIX']['today']:.3f}  "
-            f"({market_data['VIX']['pct_change']:+.2f}% vs {market_data['VIX']['prev']:.3f})"
+            f"({pct:+.2f}% vs {prev:.3f})" if (prev is not None and pct is not None) else
+            f"- **변동성 지수 (VIX)**: {market_data['VIX']['today']:.3f}"
         )
+
     if "USDKRW" in market_data and market_data["USDKRW"].get("today") is not None:
+        prev = market_data["USDKRW"].get("prev")
+        pct = market_data["USDKRW"].get("pct_change")
         lines.append(
             f"- **원/달러 환율**: {market_data['USDKRW']['today']:.3f}  "
-            f"({market_data['USDKRW']['pct_change']:+.2f}% vs {market_data['USDKRW']['prev']:.3f})"
+            f"({pct:+.2f}% vs {prev:.3f})" if (prev is not None and pct is not None) else
+            f"- **원/달러 환율**: {market_data['USDKRW']['today']:.3f}"
         )
 
     # Optional: Liquidity Snapshot block (independent)
@@ -659,25 +680,25 @@ def generate_daily_report() -> None:
             if net is not None:
                 lines.append(f"- **NET_LIQ**: {float(net):.1f}")
 
-    # ✅ Regime Change Monitor (ALWAYS ON) — moved OUT of SHOW_LIQUIDITY_SNAPSHOT
+    # ✅ Regime Change Monitor (ALWAYS ON)
     lines.append("")
     lines.append("---")
     lines.append("")
     lines.append("## 🚨 Regime Change Monitor (always-on)")
 
-    if regime_result["status"] == "DETECTED":
+    if regime_result.get("status") == "DETECTED":
         lines.append(f"- **Status:** ✅ DETECTED")
-        lines.append(f"- **Prev → Current:** {regime_result['prev_regime']} → {regime_result['current_regime']}")
+        lines.append(f"- **Prev → Current:** {regime_result.get('prev_regime')} → {regime_result.get('current_regime')}")
         lines.append(f"- **File:** `insights/risk_alerts.txt` ✅ created")
-        lines.append(f"- **Email:** {'✅ sent' if regime_result['email_sent'] else '❌ not sent'} ({regime_result['email_note']})")
-    elif regime_result["status"] == "NOT_DETECTED":
+        lines.append(f"- **Email:** {'✅ sent' if regime_result.get('email_sent') else '❌ not sent'} ({regime_result.get('email_note')})")
+    elif regime_result.get("status") == "NOT_DETECTED":
         lines.append(f"- **Status:** ❎ NOT DETECTED")
-        lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
+        lines.append(f"- **Current Regime:** {regime_result.get('current_regime')}")
         lines.append(f"- **File:** not created")
         lines.append(f"- **Email:** not sent")
     else:
         lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
-        lines.append(f"- **Current Regime:** {regime_result['current_regime']}")
+        lines.append(f"- **Current Regime:** {regime_result.get('current_regime')}")
         lines.append(f"- **File/Email:** not created (no previous regime to compare)")
 
     # -------------------------
