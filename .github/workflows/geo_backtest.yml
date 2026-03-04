@@ -1,0 +1,78 @@
+name: Geo EW Backtest (Experiment)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  geo_backtest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Ensure experiment data dirs exist
+        run: |
+          mkdir -p exp_data/geo
+          mkdir -p experiments/geo
+
+      # 1) 과거 Geo 히스토리 다운로드 (FRED 기반)
+      - name: Fetch Geo history (FRED -> exp_data/geo/geo_history.csv)
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python experiments/geo/fetch_geo_history.py
+
+      # 2) 이벤트 날짜들 score 계산해서 로그로 출력
+      - name: Run Geo EW event backtest
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python experiments/geo/test_geo_events.py
+
+      # 3) 디버그: 파일 존재/헤더/테일 확인
+      - name: Debug experiment outputs
+        run: |
+          echo "== exp_data/geo listing =="
+          ls -al exp_data/geo || true
+          echo ""
+          echo "== geo_history.csv head =="
+          head -n 3 exp_data/geo/geo_history.csv || true
+          echo ""
+          echo "== geo_history.csv tail =="
+          tail -n 3 exp_data/geo/geo_history.csv || true
+          echo ""
+          echo "== sources_meta.json head =="
+          head -n 40 exp_data/geo/sources_meta.json || true
+
+      # 4) exp_data/geo 결과만 커밋/푸시
+      - name: Commit and push experiment outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # ✅ experiment 산출물만 add (data/ reports/ 절대 add 안 함)
+          git add exp_data/geo/geo_history.csv || true
+          git add exp_data/geo/sources_meta.json || true
+
+          echo "== git status (porcelain) =="
+          git status --porcelain || true
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "exp: geo EW backtest data refresh"
+          git push
