@@ -141,6 +141,57 @@ def load_fred_extras_df() -> pd.DataFrame:
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
     return df
 
+def load_sovereign_spreads_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "sovereign_spreads.csv"
+    if not csv_path.exists() or csv_path.stat().st_size == 0:
+        return pd.DataFrame(columns=["date"])
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return pd.DataFrame(columns=["date"])
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame(columns=["date"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+    # drop duplicates
+    df = df.loc[:, ~df.columns.duplicated()].copy()
+    return df
+
+
+def merge_sovereign_spreads_into_macro_df(df_macro: pd.DataFrame) -> pd.DataFrame:
+    """
+    A안 핵심:
+    macro_data(df)에 sovereign_spreads(df)를 date 기준으로 merge해서
+    df.columns에 KR10Y_SPREAD/IL10Y_SPREAD/...이 생기도록 만든다.
+    """
+    if df_macro is None or df_macro.empty:
+        return df_macro
+
+    s = load_sovereign_spreads_df()
+    if s.empty:
+        return df_macro
+
+    # ensure datetime
+    dfm = df_macro.copy()
+    dfm["date"] = pd.to_datetime(dfm["date"], errors="coerce")
+
+    # pick spread columns only (and optional *_Y if you want)
+    keep_cols = [c for c in s.columns if c == "date" or c.endswith("_SPREAD")]
+    s2 = s[keep_cols].copy()
+
+    out = pd.merge(dfm, s2, on="date", how="left")
+
+    # optional: ffill spreads (last available) – 권장
+    spread_cols = [c for c in out.columns if c.endswith("_SPREAD")]
+    for c in spread_cols:
+        out[c] = pd.to_numeric(out[c], errors="coerce").ffill()
+
+    # remove duplicates if any
+    out = out.loc[:, ~out.columns.duplicated()].copy()
+    return out
 
 def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -700,6 +751,7 @@ def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     df = load_macro_df()
+    df = merge_sovereign_spreads_into_macro_df(df)
     today_idx = len(df) - 1
     as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
 
