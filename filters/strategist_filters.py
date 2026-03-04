@@ -1415,21 +1415,35 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 
     lines = []
     lines.append("### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)")
+
     if market_data.get("_STALE"):
         lines.append("⚠ Market Closed / Stale Data → Price-based geo signals muted.")
         lines.append("")
-    
+
+    # -----------------------
+    # insufficient data
+    # -----------------------
     if score is None:
         lines.append("- **Status:** N/A (insufficient data)")
-        if missing:
-            lines.append(f"- **Missing/Insufficient:** {', '.join(missing)}")
+        lines.append(f"- **Missing/Skipped:** {', '.join(missing) if missing else 'None'}")
+        lines.append("- **Sovereign Spread factors included:** None")
         lines.append("- **So What?:** 데이터가 쌓이거나 지표가 추가되면 조기경보 점수를 계산합니다.")
         return "\n".join(lines)
 
+    # -----------------------
+    # main score
+    # -----------------------
     lines.append(f"- **Geo Stress Score (z-composite):** **{score:+.2f}**  *(Level: {level})*")
 
+    # -----------------------
     # top contributors
-    comps_sorted = sorted(comps, key=lambda x: abs(float(x.get("contrib", 0.0))), reverse=True)
+    # -----------------------
+    comps_sorted = sorted(
+        comps,
+        key=lambda x: abs(float(x.get("contrib", 0.0))),
+        reverse=True
+    )
+
     top = comps_sorted[:4]
 
     lines.append("- **Top Drivers:**")
@@ -1438,23 +1452,44 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
             f"  - {c['key']}: z_used={c['z_used']:+.2f} (w={c['weight']:.2f}) → contrib={c['contrib']:+.2f}"
         )
 
-    if missing:
-        lines.append(f"- **Missing/Skipped:** {', '.join(missing)}")
+    # -----------------------
+    # always show missing line
+    # -----------------------
+    lines.append(f"- **Missing/Skipped:** {', '.join(missing) if missing else 'None'}")
 
-    # So What template (level-based)
+    # -----------------------
+    # sovereign spread check
+    # -----------------------
+    spread_comps = [
+        c for c in comps
+        if str(c.get("key", "")).endswith("_SPREAD")
+    ]
+
+    if spread_comps:
+        spread_names = ", ".join([c["key"] for c in spread_comps])
+        lines.append(f"- **Sovereign Spread factors included:** {spread_names}")
+    else:
+        lines.append("- **Sovereign Spread factors included:** None")
+
+    # -----------------------
+    # So What
+    # -----------------------
     lines.append("")
     lines.append("**So What?**")
+
     if level in ("NORMAL",):
         lines.append("- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.")
+
     elif level in ("ELEVATED",):
         lines.append("- 조기경보 ‘상승’ 구간: **사이징 보수적**, 이벤트 리스크(중동/중국/EM) 헤지 후보 점검.")
+
     elif level in ("HIGH",):
         lines.append("- 스트레스 ‘높음’: **리스크 익스포저 축소 준비**, EM/고베타/레버리지 노출 점검.")
-    else:  # EXTREME
+
+    else:  # EXTREME / CONFLICT
         lines.append("- 스트레스 ‘극단’: **디레버리징 + 방어자산/헤지 우선**, 갭리스크 대비(현금/단기)")
 
     return "\n".join(lines)
-
 
 # =========================
 # 8) Incentive Filter
