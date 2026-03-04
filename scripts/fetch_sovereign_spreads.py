@@ -1,155 +1,97 @@
 # scripts/fetch_sovereign_spreads.py
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
-from typing import Dict, List, Optional
-
+import argparse
 import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 OUT_CSV = DATA_DIR / "sovereign_spreads.csv"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+TMP_CSV = DATA_DIR / "sovereign_spreads.tmp.csv"
 
-DEFAULT_DAYS = 400
-
-# ✅ Stooq direct CSV endpoint
-STOOQ_CSV = "https://stooq.com/q/d/l/?s={ticker}&i=d"
-
-# yields (in percent)
-STOOQ_TICKERS: Dict[str, str] = {
-    "US10Y_Y": "10yusy.b",
-    "KR10Y_Y": "10ykry.b",
-    "JP10Y_Y": "10yjpy.b",
-    "CN10Y_Y": "10ycny.b",
-    "IL10Y_Y": "10yily.b",
-    "TR10Y_Y": "10ytry.b",
-}
-
-SPREAD_BASE = "US10Y_Y"
-SPREAD_TARGETS: List[str] = ["KR10Y_Y", "JP10Y_Y", "CN10Y_Y", "IL10Y_Y", "TR10Y_Y"]
-
+# 네가 이미 저장하고 있는 컬럼명 기준
+YIELD_COLS = ["US10Y_Y", "KR10Y_Y", "JP10Y_Y", "CN10Y_Y", "IL10Y_Y", "TR10Y_Y"]
 
 def _safe_read_existing() -> pd.DataFrame:
-    if OUT_CSV.exists() and OUT_CSV.stat().st_size > 0:
-        try:
-            return pd.read_csv(OUT_CSV)
-        except Exception:
-            return pd.DataFrame()
-    return pd.DataFrame()
-
-
-def _fetch_stooq_series(ticker: str, days: int) -> pd.DataFrame:
-    """
-    Fetch daily series from Stooq CSV endpoint.
-    Returns DataFrame columns: date, value
-    """
-    t = (ticker or "").strip().lower()
-    if not t:
-        return pd.DataFrame(columns=["date", "value"])
-
-    url = STOOQ_CSV.format(ticker=t)
+    if not OUT_CSV.exists() or OUT_CSV.stat().st_size == 0:
+        return pd.DataFrame()
     try:
-        df = pd.read_csv(url)
+        return pd.read_csv(OUT_CSV)
     except Exception:
-        return pd.DataFrame(columns=["date", "value"])
+        return pd.DataFrame()
 
+def _ensure_date(df: pd.DataFrame) -> pd.DataFrame:
     if df is None or df.empty:
-        return pd.DataFrame(columns=["date", "value"])
-
-    # stooq format usually: Date, Open, High, Low, Close, Volume
-    # Sometimes: Date, Close
-    cols = [c.lower() for c in df.columns]
-    df.columns = cols
-
+        return df
     if "date" not in df.columns:
-        return pd.DataFrame(columns=["date", "value"])
+        return df
+    df = df.copy()
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").drop_duplicates("date", keep="last")
+    return df
 
-    # pick close-like column
-    close_col = None
-    for cand in ["close", "zamkniecie", "c"]:  # extra fallback
-        if cand in df.columns:
-            close_col = cand
-            break
-    if close_col is None:
-        # if 2 columns only, assume second is value
-        if len(df.columns) >= 2:
-            close_col = df.columns[1]
-        else:
-            return pd.DataFrame(columns=["date", "value"])
+def _compute_spreads(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    XX10Y_SPREAD = XX10Y_Y - US10Y_Y
+    """
+    df = df.copy()
+    if "US10Y_Y" not in df.columns:
+        return df
 
-    out = df[["date", close_col]].copy()
-    out["date"] = pd.to_datetime(out["date"], errors="coerce").dt.normalize()
-    out["value"] = pd.to_numeric(out[close_col], errors="coerce")
-    out = out.dropna(subset=["date", "value"]).sort_values("date")
-    out = out.drop_duplicates(subset=["date"], keep="last")
+    us = pd.to_numeric(df["US10Y_Y"], errors="coerce")
 
-    if out.empty:
-        return pd.DataFrame(columns=["date", "value"])
+    def add_spread(cc: str):
+        y_col = f"{cc}10Y_Y"
+        s_col = f"{cc}10Y_SPREAD"
+        if y_col not in df.columns:
+            return
+        yy = pd.to_numeric(df[y_col], errors="coerce")
+        df[s_col] = yy - us
 
-    # keep last N days
-    out = out.tail(days).reset_index(drop=True)
-    return out[["date", "value"]]
+    for cc in ["KR", "JP", "CN", "IL", "TR", "DE", "GB", "MX"]:
+        add_spread(cc)
 
+    return df
 
 def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--days", type=int, default=DEFAULT_DAYS)
-    args = ap.parse_args()
-    days = int(args.days)
+    """
+    이 파일은 "다운로드" 자체를 여기서 안 한다고 가정.
+    (너가 이미 stooq/yfinance/fred에서 yield들을 OUT_CSV에 써놓고 있는 상태라 했으니까)
 
-    existing = _safe_read_existing()
+    만약 네 파이프라인이 여기서 다운로드까지 한다면,
+    다운로드 결과 df를 만든 뒤 아래 로직만 적용해도 됨.
+    """
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    frames = []
-    meta = []
-
-    for col, ticker in STOOQ_TICKERS.items():
-        hist = _fetch_stooq_series(ticker, days=days)
-        if hist.empty:
-            meta.append(f"{col}:EMPTY({ticker})")
-            continue
-        meta.append(f"{col}:OK({ticker}) rows={len(hist)}")
-        frames.append(hist.rename(columns={"value": col}))
-
-    # ✅ 핵심: 전부 EMPTY면 기존 파일을 절대 덮어쓰지 않음
-    if not frames:
-        if not existing.empty:
-            print(f"[WARN] All stooq series EMPTY. Keeping existing file unchanged: {OUT_CSV}")
-        else:
-            print(f"[WARN] All stooq series EMPTY and no existing file. Writing empty header file: {OUT_CSV}")
-            pd.DataFrame({"date": []}).to_csv(OUT_CSV, index=False)
-        print("[META]", " | ".join(meta))
+    existing = _ensure_date(_safe_read_existing())
+    if existing.empty:
+        # 빈 파일이면 그냥 최소 헤더라도 만들어두되,
+        # 여기서는 "기존 파일 보존" 이슈가 있으니 실패로 처리하지 않음
+        cols = ["date"] + YIELD_COLS + ["KR10Y_SPREAD"]
+        pd.DataFrame(columns=cols).to_csv(OUT_CSV, index=False)
+        print(f"[WARN] sovereign_spreads was empty → wrote header only: {OUT_CSV}")
         return
 
-    merged = frames[0]
-    for f in frames[1:]:
-        merged = pd.merge(merged, f, on="date", how="outer")
+    # spreads 계산
+    updated = _compute_spreads(existing)
 
-    merged = merged.sort_values("date").drop_duplicates(subset=["date"], keep="last")
+    # 저장 전 체크: date + US10Y_Y는 있어야 의미 있음
+    if "date" not in updated.columns or "US10Y_Y" not in updated.columns:
+        print("[WARN] Missing required columns (date/US10Y_Y). Keep existing file.")
+        return
 
-    # forward fill yields
-    ycols = [c for c in merged.columns if c.endswith("_Y")]
-    for c in ycols:
-        merged[c] = pd.to_numeric(merged[c], errors="coerce").ffill()
+    # tmp 저장 후 원본 교체 (원본 날아가는 사고 방지)
+    updated["date"] = pd.to_datetime(updated["date"], errors="coerce")
+    updated = updated.dropna(subset=["date"]).sort_values("date")
+    updated["date"] = updated["date"].dt.strftime("%Y-%m-%d")
 
-    # compute spreads vs US10Y_Y
-    if SPREAD_BASE in merged.columns:
-        base = pd.to_numeric(merged[SPREAD_BASE], errors="coerce")
-        for y_col in SPREAD_TARGETS:
-            if y_col not in merged.columns:
-                continue
-            spread_col = y_col.replace("_Y", "_SPREAD")
-            merged[spread_col] = pd.to_numeric(merged[y_col], errors="coerce") - base
+    updated.to_csv(TMP_CSV, index=False)
+    TMP_CSV.replace(OUT_CSV)
 
-    merged = merged.dropna(subset=["date"]).tail(250).reset_index(drop=True)
-    merged["date"] = pd.to_datetime(merged["date"]).dt.strftime("%Y-%m-%d")
-
-    # ✅ write
-    merged.to_csv(OUT_CSV, index=False)
-    print(f"[OK] sovereign_spreads updated: {OUT_CSV} (rows={len(merged)})")
-    print("[META]", " | ".join(meta))
-
+    print(f"[OK] sovereign_spreads updated (with SPREAD cols): {OUT_CSV} (rows={len(updated)})")
+    # 디버그: 헤더 확인
+    print("[DEBUG] columns:", list(updated.columns))
 
 if __name__ == "__main__":
     main()
