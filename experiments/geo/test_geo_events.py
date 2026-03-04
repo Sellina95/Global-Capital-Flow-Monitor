@@ -20,7 +20,6 @@ GEO_FACTORS = [
     ("WTI",    0.10, "normal"),
     ("GOLD",   0.12, "normal"),
     ("USDCNH", 0.18, "normal"),
-
     ("USDMXN", 0.05, "normal"),
     ("USDJPY", 0.05, "inverse"),
 ]
@@ -90,14 +89,16 @@ def compute_geo_score(df: pd.DataFrame, as_of: str) -> Dict[str, Any]:
         raw_score += contrib
         used_weight += float(w)
 
-        comps.append({
-            "key": key,
-            "weight": float(w),
-            "z": float(z),
-            "z_used": float(z_used),
-            "contrib": float(contrib),
-            "transform": transform,
-        })
+        comps.append(
+            {
+                "key": key,
+                "weight": float(w),
+                "z": float(z),
+                "z_used": float(z_used),
+                "contrib": float(contrib),
+                "transform": transform,
+            }
+        )
 
     score = (raw_score / used_weight) if used_weight > 0 else None
     level = _level_from_score(score)
@@ -137,8 +138,12 @@ def main() -> None:
 
     for dt, label in events:
         r = compute_geo_score(df, dt)
+
+        # ✅ FIX: nested f-string + quote issue
+        score_str = "None" if r["score"] is None else f"{r['score']:+.2f}"
+
         out_lines.append(f"[{dt}] {label}")
-        out_lines.append(f"  score={None if r['score'] is None else f'{r['score']:+.2f}'}  level={r['level']}")
+        out_lines.append(f"  score={score_str}  level={r['level']}")
         out_lines.append(f"  missing={', '.join(r['missing']) if r['missing'] else 'None'}")
         out_lines.append("  top drivers:")
         for c in r["top"]:
