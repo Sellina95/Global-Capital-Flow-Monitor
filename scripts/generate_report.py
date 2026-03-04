@@ -604,7 +604,8 @@ def generate_daily_report() -> None:
     # 1) Run Strategist Commentary FIRST to build FINAL_STATE (Narrative Engine sets it)
     # -------------------------
     commentary_block = build_strategist_commentary(market_data)
-
+    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
+    
     # 2) Top layers (need FINAL_STATE)
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
