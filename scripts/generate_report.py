@@ -577,8 +577,8 @@ def generate_daily_report() -> None:
         if (today_utc - last_date).days >= 2:
             stale = True
 
-    except Exception:
-        stale = False
+        except Exception:
+            stale = False
 
     market_data["_STALE"] = stale
 
