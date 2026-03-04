@@ -3,7 +3,7 @@ name: Daily Macro Report
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 22 * * *"   # UTC 22:00 = KST 07:00
+    - cron: "0 22 * * *" # UTC 22:00 = KST 07:00
 
 permissions:
   contents: write
@@ -33,7 +33,7 @@ jobs:
 
       # 🔥 (ONE-TIME) Rebuild full macro history (Geo EW bootstrap)
       - name: Rebuild full macro history (90d bootstrap)
-        if: github.event_name == 'workflow_dispatch'
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/rebuild_macro_history.py
@@ -55,54 +55,55 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_credit_spread_data.py
-          
-      # (추가) FRED 금융여건/실질금리 데이터 업데이트
+
+      # ✅ FRED 금융여건/실질금리 데이터 업데이트
       - name: Fetch FRED macro extras (FCI / Real Rates)
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_fred_macro_extras.py
 
+      # ✅ Sovereign yields (FRED 기반)
       - name: Fetch Sovereign Yields (CDS proxy)
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_sovereign_yields.py
 
+      # ✅ Sovereign spreads (Stooq 기반)
       - name: Fetch Sovereign Spreads (Stooq)
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_sovereign_spreads.py --days 400
 
+      # ✅ macro_data.csv schema 정리 (ragged 방지)
       - name: Repair macro_data.csv schema (prevent ragged CSV)
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/repair_macro_csv.py
 
-
-
       - name: Debug macro_data header
         run: |
           head -n 1 data/macro_data.csv || true
-          
+
+      # ✅ Sentiment proxy
       - name: Fetch Sentiment proxy (VIX + Credit)
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_sentiment_proxy.py
 
-
-
+      # ✅ (중복 방지용) report 직전 한 번 더 schema repair
       - name: Repair macro_data.csv schema (before report)
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/repair_macro_csv.py
 
+      # ✅ Backfill (수동 실행에서만)
       - name: Backfill Geo history (one-shot)
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/backfill_geo_history.py --days 180
-          
 
-           # ✅ 3) 리포트 생성
+      # ✅ 3) 리포트 생성
       - name: Run report generator
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
@@ -110,7 +111,7 @@ jobs:
           echo "== macro_data tail =="
           tail -n 2 data/macro_data.csv || true
 
-      # ✅ (추가) 실제 생성된 리포트 상단 확인 (Executive 문장 검증용)
+      # ✅ (디버그) 최신 리포트 상단 확인
       - name: Debug report head (latest)
         run: |
           echo "== reports dir listing =="
@@ -125,45 +126,42 @@ jobs:
             echo "No report file found in reports/"
           fi
 
-      # ✅ 디버그(지금은 꼭 넣자: 날짜가 제대로 찍히는지 확인)
+      # ✅ (디버그) 데이터 tail 확인
       - name: Debug latest data rows
         run: |
           echo "== macro_data tail =="
           tail -n 3 data/macro_data.csv || true
           echo "== liquidity_data tail =="
           tail -n 3 data/liquidity_data.csv || true
+          echo "== sovereign_yields tail =="
+          tail -n 3 data/sovereign_yields.csv || true
+          echo "== sovereign_spreads tail =="
+          tail -n 3 data/sovereign_spreads.csv || true
 
       - name: Debug macro_data date column
         run: |
           echo "== macro_data first 5 rows =="
           head -n 6 data/macro_data.csv || true
 
-      # ✅ 4) 커밋 & 푸시 (macro_data도 반드시 add)
+      # ✅ 4) 커밋 & 푸시
       - name: Commit and push report
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add reports/*.md || true
-          git add data/macro_data.csv || true
-          git add data/liquidity_data.csv || true
-          git add data/credit_spread_data.csv || true
-          git add data/fred_macro_extras.csv || true
-          git add data/sovereign_yields.csv data/sovereign_spreads.csv
-          
-          echo "== fred_macro_extras tail =="
-          tail -n 3 data/fred_macro_extras.csv || true
+          git add data/*.csv || true
 
-          # ✅ (추가) 커밋 직전 상태 확인
+          echo "== data files =="
+          ls -al data || true
+
           echo "== git status (porcelain) =="
           git status --porcelain || true
-          echo "== staged diff (reports) head =="
-          git diff --cached -- reports/*.md | head -n 80 || true
 
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
 
-          git commit -m "chore: auto-update macro/ + generate report"
+          git commit -m "chore: auto-update data + generate report"
           git push
