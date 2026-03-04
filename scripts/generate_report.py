@@ -545,6 +545,76 @@ def attach_sentiment_proxy_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     }
     return market_data
 
+def load_sovereign_yields_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "sovereign_yields.csv"
+    if not csv_path.exists() or csv_path.stat().st_size == 0:
+        return pd.DataFrame(columns=["date"])
+
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return pd.DataFrame(columns=["date"])
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame(columns=["date"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
+
+def attach_sovereign_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    CDS proxy:
+      SPREAD_X = (COUNTRY_10Y - US10Y)
+    Adds:
+      - SOV_SPREADS dict
+      - convenience keys: KR_US_SPREAD, JP_US_SPREAD, DE_US_SPREAD ...
+    Never raises.
+    """
+    if market_data is None:
+        market_data = {}
+
+    df = load_sovereign_yields_df()
+    if df.empty or "US10Y" not in df.columns:
+        market_data["SOV_SPREADS"] = {}
+        market_data["_SOV_ASOF"] = None
+        return market_data
+
+    last = df.iloc[-1]
+    asof = pd.to_datetime(last["date"]).strftime("%Y-%m-%d")
+    market_data["_SOV_ASOF"] = asof
+
+    def _num(x):
+        v = pd.to_numeric(x, errors="coerce")
+        return None if pd.isna(v) else float(v)
+
+    us = _num(last.get("US10Y"))
+    if us is None:
+        market_data["SOV_SPREADS"] = {}
+        return market_data
+
+    spreads = {}
+    for col in df.columns:
+        if col in ("date", "US10Y"):
+            continue
+        v = _num(last.get(col))
+        if v is None:
+            continue
+        spreads[col] = v - us  # (country - US)
+
+    market_data["SOV_SPREADS"] = spreads
+
+    # convenience aliases (원하면 더)
+    if "KR10Y" in spreads:
+        market_data["KR_US_SPREAD"] = {"today": spreads["KR10Y"], "prev": None, "pct_change": None}
+    if "JP10Y" in spreads:
+        market_data["JP_US_SPREAD"] = {"today": spreads["JP10Y"], "prev": None, "pct_change": None}
+    if "DE10Y" in spreads:
+        market_data["DE_US_SPREAD"] = {"today": spreads["DE10Y"], "prev": None, "pct_change": None}
+
+    return market_data
+
 
 # -------------------------
 # Report
@@ -583,8 +653,10 @@ def generate_daily_report() -> None:
     market_data = attach_liquidity_layer(market_data) or market_data
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
+    market_data = attach_sovereign_spread_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
     market_data = attach_geopolitical_ew_layer(market_data, df, today_idx) or market_data
+    
 
     # ✅ Wall-Street Sentiment Proxy only (NO CNN, NO overwrite after this)
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
