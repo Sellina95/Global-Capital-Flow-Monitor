@@ -1201,6 +1201,9 @@ def _zscore_last(s: pd.Series, window: int) -> Optional[float]:
         return 0.0
     return (last - mu) / sd
 
+from typing import Dict, Any, Optional, List, Tuple
+import pandas as pd
+
 def attach_geopolitical_ew_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
@@ -1212,27 +1215,109 @@ def attach_geopolitical_ew_layer(
     - df 기반 rolling z-score
     - 없는 팩터는 스킵 (가중치 재정규화)
     - USDJPY는 inverse 처리 (USDJPY 하락 = risk-off)
+
+    ✅ v2 업그레이드:
+    - sovereign_spreads.csv를 df2에 merge해서 CDS proxy(국채 스프레드)를 GEO_FACTORS에 포함 가능
+    - *_SPREAD 키는 pct_change가 아니라 "level z-score"로 처리 (스프레드는 레벨이 더 의미있음)
     """
+
     if market_data is None:
         market_data = {}
 
-    # df가 date 정렬되어 있다고 가정(load_macro_df에서 보장)
-    # 오늘까지 slice
+    # -----------------------------------------
+    # 0) Build df2 (until today)
+    # -----------------------------------------
     df2 = df.iloc[: today_idx + 1].copy()
 
-    components = []
-    missing = []
+    # -----------------------------------------
+    # ✅ 0.5) Merge sovereign spreads into df2
+    # -----------------------------------------
+    try:
+        sov = load_sovereign_spreads_df()  # <- 너가 이미 만들었다고 한 함수
+        if sov is not None and not sov.empty and "date" in sov.columns:
+            sov2 = sov.copy()
+            sov2["date"] = pd.to_datetime(sov2["date"], errors="coerce")
+            sov2 = sov2.dropna(subset=["date"]).sort_values("date").drop_duplicates("date", keep="last")
+
+            # df2 date normalize
+            if "date" in df2.columns:
+                df2["date"] = pd.to_datetime(df2["date"], errors="coerce")
+
+            # 필요한 컬럼만 합치기 (존재하는 것만)
+            wanted_cols = ["date"]
+            for c in ["KR10Y_SPREAD", "JP10Y_SPREAD", "CN10Y_SPREAD", "IL10Y_SPREAD", "TR10Y_SPREAD", "DE10Y_SPREAD", "GB10Y_SPREAD"]:
+                if c in sov2.columns:
+                    wanted_cols.append(c)
+
+            if len(wanted_cols) > 1:
+                df2 = pd.merge(df2, sov2[wanted_cols], on="date", how="left")
+                # sovereign spread는 매일 안 나올 수 있으니 ffill로 정렬
+                for c in wanted_cols:
+                    if c != "date":
+                        df2[c] = pd.to_numeric(df2[c], errors="coerce").ffill()
+    except Exception:
+        # merge 실패해도 GEO는 계속 돌아가야 함
+        pass
+
+    # -----------------------------------------
+    # Helpers (local)
+    # -----------------------------------------
+    def _zscore_last_level(series: pd.Series, win: int) -> Optional[float]:
+        s = pd.to_numeric(series, errors="coerce").dropna()
+        if len(s) < max(10, min(win, 20)):
+            return None
+        tail = s.tail(win)
+        mu = float(tail.mean())
+        sd = float(tail.std(ddof=0))
+        if sd == 0:
+            return None
+        return float((tail.iloc[-1] - mu) / sd)
+
+    def _series_level_from_df(df_: pd.DataFrame, key: str) -> pd.Series:
+        return pd.to_numeric(df_.get(key), errors="coerce")
+
+    # -----------------------------------------
+    # 1) Compute score
+    # -----------------------------------------
+    components: List[Dict[str, Any]] = []
+    missing: List[str] = []
 
     raw_score = 0.0
     used_weight = 0.0
 
-    for key, w, transform in GEO_FACTORS:
+    # ✅ GEO_FACTORS 호환:
+    # - 기존: (key, w, transform)
+    # - 확장: (key, w, transform, mode) where mode in {"pct","level"}
+    #   * mode 생략 시:
+    #       - key가 *_SPREAD 이면 level
+    #       - 그 외는 pct
+    for item in GEO_FACTORS:
+        if not isinstance(item, (list, tuple)) or len(item) < 3:
+            continue
+
+        key = item[0]
+        w = item[1]
+        transform = item[2]
+        mode = None
+        if len(item) >= 4:
+            mode = item[3]
+
+        if mode is None:
+            mode = "level" if str(key).endswith("_SPREAD") else "pct"
+
         if key not in df2.columns:
             missing.append(key)
             continue
 
-        pct = _pct_series_from_df(df2, key)
-        z = _zscore_last(pct, window)
+        # mode별 zscore 계산
+        z = None
+        if mode == "level":
+            level_series = _series_level_from_df(df2, key)
+            z = _zscore_last_level(level_series, window)
+        else:
+            pct = _pct_series_from_df(df2, key)  # 기존 너 프로젝트 함수 그대로 사용
+            z = _zscore_last(pct, window)
+
         if z is None:
             missing.append(key)
             continue
@@ -1240,23 +1325,21 @@ def attach_geopolitical_ew_layer(
         # transform
         z_used = -z if transform == "inverse" else z
 
-        contrib = w * z_used
+        contrib = float(w) * float(z_used)
         raw_score += contrib
-        used_weight += w
+        used_weight += float(w)
 
         components.append({
             "key": key,
-            "weight": w,
+            "weight": float(w),
             "z": float(z),
             "z_used": float(z_used),
             "contrib": float(contrib),
             "transform": transform,
+            "mode": mode,  # ✅ NEW: pct vs level
         })
 
-    if used_weight > 0:
-        score = raw_score / used_weight  # weights 재정규화
-    else:
-        score = None
+    score = (raw_score / used_weight) if used_weight > 0 else None
 
     # level
     level = "N/A"
@@ -1276,7 +1359,6 @@ def attach_geopolitical_ew_layer(
     }
 
     return market_data
-
 
 def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     """
