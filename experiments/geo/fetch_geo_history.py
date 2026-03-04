@@ -2,121 +2,200 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Any, Tuple, Optional
-import json
-import time
+from typing import Dict, Optional, Tuple, List
 
 import pandas as pd
 
+# yfinance is already in your requirements (you were using it elsewhere)
+import yfinance as yf
+
+
+# -------------------------
+# Paths
+# -------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # repo root
 EXP_DATA_DIR = BASE_DIR / "exp_data" / "geo"
 OUT_CSV = EXP_DATA_DIR / "geo_history.csv"
-META_JSON = EXP_DATA_DIR / "sources_meta.json"
 
-FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
+# Optional: merge sovereign spreads (your CDS proxy)
+SOV_SPREADS_CSV = BASE_DIR / "data" / "sovereign_spreads.csv"
 
-# ✅ 최소 세트: 너의 7.2에 이미 쓰는 핵심만
-# (원하면 여기 추가해도 됨. 실험용이라 프로덕션 영향 없음)
-FRED_SERIES = {
-    "US10Y": "DGS10",
-    "DXY": "DTWEXBGS",          # Broad USD Index (FRED)
-    "WTI": "DCOILWTICO",
-    "VIX": "VIXCLS",
-    "GOLD": "GOLDAMGBD228NLBM", # London gold fixing (USD)
-    "USDCNH": "DEXCHUS",        # ⚠ 이건 CNH/CNY 소스가 다를 수 있음. 실패 가능.
-    "USDJPY": "DEXJPUS",
-    "USDMXN": "DEXMXUS",
+
+# -------------------------
+# Config
+# -------------------------
+START_DATE = "2018-01-01"   # 충분히 길게 (2022/2023/2024 이벤트 커버)
+END_DATE = None            # None => up to latest
+MIN_ROWS_ACCEPT = 120      # 너무 비면 실패로 간주
+
+
+# -------------------------
+# Universe (column -> yfinance ticker)
+# - 대부분 Adj Close를 쓰되, FX/Index는 Close가 더 자연스러운 케이스도 있어 둘 다 시도
+# -------------------------
+TICKERS: Dict[str, str] = {
+    # Market reaction
+    "VIX": "^VIX",
+    "WTI": "CL=F",      # Crude Oil futures
+    "GOLD": "GC=F",     # Gold futures
+    "USDCNH": "CNH=X",
+    "USDJPY": "JPY=X",
+    "USDMXN": "MXN=X",
+
+    # Capital flow proxies
+    "EEM": "EEM",
+    "EMB": "EMB",
+
+    # Shipping / supply chain proxies
+    "SEA": "SEA",       # Sea Limited (equity proxy)
+    "BDRY": "BDRY",     # Breakwave Dry Bulk Shipping ETF
+
+    # Defense attention proxies
+    "ITA": "ITA",       # iShares US Aerospace & Defense
+    "XAR": "XAR",       # SPDR S&P Aerospace & Defense
 }
 
-# 간단한 재시도
-RETRY = 3
-SLEEP_SEC = 1.2
 
-
-def _fetch_fred(series_id: str) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+def _pick_price_series(df: pd.DataFrame) -> Optional[pd.Series]:
     """
-    Returns (df, meta)
-    df columns: date, <series_id>
+    yfinance.download returns columns:
+      - Single ticker: columns like ["Open","High","Low","Close","Adj Close","Volume"]
+      - Multi ticker: MultiIndex columns
+    We want a single price series per ticker:
+      priority: Adj Close -> Close -> (fallback) Close-like
     """
-    meta: Dict[str, Any] = {"series_id": series_id, "status": "INIT", "rows": 0, "error": None}
+    if df is None or df.empty:
+        return None
 
-    url = f"{FRED_CSV}{series_id}"
-    last_err: Optional[str] = None
+    # Single ticker (normal columns)
+    if isinstance(df.columns, pd.Index) and "Adj Close" in df.columns:
+        s = df["Adj Close"].copy()
+        if s.dropna().empty and "Close" in df.columns:
+            s = df["Close"].copy()
+        return s
 
-    for i in range(RETRY):
-        try:
-            df = pd.read_csv(url)
-            if df is None or df.empty:
-                meta["status"] = "EMPTY"
-                meta["rows"] = 0
-                return pd.DataFrame(columns=["date", series_id]), meta
+    if isinstance(df.columns, pd.Index) and "Close" in df.columns:
+        return df["Close"].copy()
 
-            df.columns = ["date", series_id]
-            df["date"] = pd.to_datetime(df["date"], errors="coerce")
-            df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
-            df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
-
-            meta["status"] = "OK"
-            meta["rows"] = int(len(df))
-            return df, meta
-
-        except Exception as e:
-            last_err = f"{type(e).__name__}: {e}"
-            meta["status"] = "RETRY"
-            meta["error"] = last_err
-            time.sleep(SLEEP_SEC * (i + 1))
-
-    meta["status"] = "FAIL"
-    meta["error"] = last_err
-    return pd.DataFrame(columns=["date", series_id]), meta
+    return None
 
 
-def main(days: int = 1600) -> None:
+def _download_one(ticker: str) -> Optional[pd.Series]:
     """
-    days: keep last N rows after merge (대략 과거 ~몇년치)
+    Robust single-ticker download.
+    Returns: price series indexed by date (DatetimeIndex), or None.
     """
+    try:
+        df = yf.download(
+            ticker,
+            start=START_DATE,
+            end=END_DATE,
+            progress=False,
+            auto_adjust=False,
+            actions=False,
+            threads=False,
+        )
+    except Exception as e:
+        print(f"[WARN] download failed: {ticker} ({type(e).__name__}: {e})")
+        return None
+
+    s = _pick_price_series(df)
+    if s is None or s.dropna().empty:
+        print(f"[WARN] empty series: {ticker}")
+        return None
+
+    s.name = ticker
+    return s
+
+
+def load_sovereign_spreads_df() -> pd.DataFrame:
+    """
+    Load your existing sovereign_spreads.csv if exists.
+    Expected to have:
+      date, KR10Y_SPREAD, JP10Y_SPREAD, CN10Y_SPREAD, IL10Y_SPREAD, TR10Y_SPREAD, ...
+    """
+    if not SOV_SPREADS_CSV.exists():
+        return pd.DataFrame()
+
+    try:
+        df = pd.read_csv(SOV_SPREADS_CSV)
+    except Exception as e:
+        print(f"[WARN] cannot read sovereign_spreads.csv: {type(e).__name__}: {e}")
+        return pd.DataFrame()
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame()
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").drop_duplicates("date", keep="last").reset_index(drop=True)
+
+    # keep only SPREAD columns + date
+    keep = ["date"] + [c for c in df.columns if c.endswith("_SPREAD")]
+    df = df[keep].copy()
+
+    # numeric
+    for c in keep:
+        if c != "date":
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+
+    return df
+
+
+def main() -> None:
     EXP_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    meta_all: Dict[str, Any] = {"fred": {}, "note": "geo history fetch (experiment only)"}
+    # 1) download all series
+    series_map: Dict[str, pd.Series] = {}
+    meta: List[str] = []
 
-    merged: Optional[pd.DataFrame] = None
-
-    for key, series_id in FRED_SERIES.items():
-        print(f"[FETCH] {key} ({series_id})")
-        df, meta = _fetch_fred(series_id)
-        meta_all["fred"][key] = meta
-
-        if df.empty:
+    for col, ticker in TICKERS.items():
+        print(f"[FETCH] {col} <- {ticker}")
+        s = _download_one(ticker)
+        if s is None:
+            meta.append(f"{col}:EMPTY({ticker})")
             continue
 
-        df = df.rename(columns={series_id: key})
-        merged = df if merged is None else pd.merge(merged, df, on="date", how="outer")
+        # normalize index -> date
+        s = s.copy()
+        s.index = pd.to_datetime(s.index, errors="coerce")
+        s = s[~s.index.isna()].sort_index()
+        s = s.rename(col)
 
-    if merged is None or merged.empty:
-        # 파일은 만들되 빈 파일로 저장 (실험환경에서 안전)
-        empty = pd.DataFrame(columns=["date"] + list(FRED_SERIES.keys()))
-        empty.to_csv(OUT_CSV, index=False)
-        META_JSON.write_text(json.dumps(meta_all, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"[WARN] All series empty. Wrote empty file: {OUT_CSV}")
-        return
+        # drop duplicates in index
+        s = s[~s.index.duplicated(keep="last")]
+        series_map[col] = s
+        meta.append(f"{col}:OK({ticker}) rows={len(s)}")
 
-    merged = merged.sort_values("date").drop_duplicates(subset=["date"], keep="last")
+    if not series_map:
+        raise RuntimeError("No geo series downloaded (all EMPTY).")
 
-    # 일부 시리즈는 휴일/주간 등 간헐적 → forward fill
-    for c in merged.columns:
-        if c != "date":
-            merged[c] = pd.to_numeric(merged[c], errors="coerce").ffill()
+    # 2) merge into one df
+    df = pd.concat(series_map.values(), axis=1)
+    df = df.reset_index().rename(columns={"index": "date"})
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
-    # 마지막 N일만
-    merged = merged.dropna(subset=["date"]).tail(int(days)).reset_index(drop=True)
-    merged["date"] = pd.to_datetime(merged["date"]).dt.strftime("%Y-%m-%d")
+    # 3) merge sovereign spreads (optional)
+    sov = load_sovereign_spreads_df()
+    if sov is not None and not sov.empty:
+        df = pd.merge(df, sov, on="date", how="left")
+        # spreads can be sparse -> ffill to align with daily market series
+        for c in df.columns:
+            if c.endswith("_SPREAD"):
+                df[c] = pd.to_numeric(df[c], errors="coerce").ffill()
 
-    merged.to_csv(OUT_CSV, index=False)
-    META_JSON.write_text(json.dumps(meta_all, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[OK] geo_history updated: {OUT_CSV} (rows={len(merged)})")
-    print(f"[OK] meta saved: {META_JSON}")
+        print("[OK] merged sovereign spreads:", ", ".join([c for c in df.columns if c.endswith("_SPREAD")]))
+
+    # 4) sanity
+    if len(df) < MIN_ROWS_ACCEPT:
+        # still write, but warn loudly
+        print(f"[WARN] geo_history rows too small: {len(df)} (<{MIN_ROWS_ACCEPT})")
+
+    # 5) write
+    df.to_csv(OUT_CSV, index=False)
+    print(f"[OK] wrote: {OUT_CSV} (rows={len(df)})")
+    print("[META]", " | ".join(meta))
 
 
 if __name__ == "__main__":
-    # 기본은 1600 rows 정도 (대략 6년+)
-    main(days=1600)
+    main()
