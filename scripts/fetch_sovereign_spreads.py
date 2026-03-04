@@ -3,10 +3,9 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pandas as pd
-import yfinance as yf
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -15,7 +14,10 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_DAYS = 400
 
-# ✅ Stooq tickers MUST be lowercase for yfinance
+# ✅ Stooq direct CSV endpoint
+STOOQ_CSV = "https://stooq.com/q/d/l/?s={ticker}&i=d"
+
+# yields (in percent)
 STOOQ_TICKERS: Dict[str, str] = {
     "US10Y_Y": "10yusy.b",
     "KR10Y_Y": "10ykry.b",
@@ -23,75 +25,72 @@ STOOQ_TICKERS: Dict[str, str] = {
     "CN10Y_Y": "10ycny.b",
     "IL10Y_Y": "10yily.b",
     "TR10Y_Y": "10ytry.b",
-    # optional:
-    # "DE10Y_Y": "10ydedy.b",
-    # "GB10Y_Y": "10ygbpy.b",
-    # "MX10Y_Y": "10ymxpy.b",
 }
 
-# spreads vs US10Y_Y
 SPREAD_BASE = "US10Y_Y"
-SPREAD_TARGETS: List[str] = [
-    "KR10Y_Y",
-    "JP10Y_Y",
-    "CN10Y_Y",
-    "IL10Y_Y",
-    "TR10Y_Y",
-]
+SPREAD_TARGETS: List[str] = ["KR10Y_Y", "JP10Y_Y", "CN10Y_Y", "IL10Y_Y", "TR10Y_Y"]
 
-def _download_close_series_anycase(ticker: str, days: int) -> pd.Series:
-    """
-    Robust download for stooq tickers:
-    - try lowercase first
-    - then original
-    - then uppercase (just in case)
-    """
-    candidates = []
-    t0 = (ticker or "").strip()
-    if not t0:
-        return pd.Series(dtype="float64")
 
-    # prioritize lowercase for stooq
-    for t in [t0.lower(), t0, t0.upper()]:
-        if t and t not in candidates:
-            candidates.append(t)
-
-    for t in candidates:
+def _safe_read_existing() -> pd.DataFrame:
+    if OUT_CSV.exists() and OUT_CSV.stat().st_size > 0:
         try:
-            df = yf.download(
-                t,
-                period=f"{days}d",
-                interval="1d",
-                progress=False,
-                auto_adjust=False,
-                threads=False,
-            )
+            return pd.read_csv(OUT_CSV)
         except Exception:
-            continue
+            return pd.DataFrame()
+    return pd.DataFrame()
 
-        if df is None or df.empty:
-            continue
 
-        # Close column extraction
-        if isinstance(df.columns, pd.MultiIndex):
-            close_cols = [c for c in df.columns if str(c[0]).lower() == "close"]
-            if not close_cols:
-                continue
-            s = df[close_cols].iloc[:, -1]
+def _fetch_stooq_series(ticker: str, days: int) -> pd.DataFrame:
+    """
+    Fetch daily series from Stooq CSV endpoint.
+    Returns DataFrame columns: date, value
+    """
+    t = (ticker or "").strip().lower()
+    if not t:
+        return pd.DataFrame(columns=["date", "value"])
+
+    url = STOOQ_CSV.format(ticker=t)
+    try:
+        df = pd.read_csv(url)
+    except Exception:
+        return pd.DataFrame(columns=["date", "value"])
+
+    if df is None or df.empty:
+        return pd.DataFrame(columns=["date", "value"])
+
+    # stooq format usually: Date, Open, High, Low, Close, Volume
+    # Sometimes: Date, Close
+    cols = [c.lower() for c in df.columns]
+    df.columns = cols
+
+    if "date" not in df.columns:
+        return pd.DataFrame(columns=["date", "value"])
+
+    # pick close-like column
+    close_col = None
+    for cand in ["close", "zamkniecie", "c"]:  # extra fallback
+        if cand in df.columns:
+            close_col = cand
+            break
+    if close_col is None:
+        # if 2 columns only, assume second is value
+        if len(df.columns) >= 2:
+            close_col = df.columns[1]
         else:
-            if "Close" not in df.columns:
-                continue
-            s = df["Close"]
+            return pd.DataFrame(columns=["date", "value"])
 
-        s = pd.to_numeric(s, errors="coerce").dropna()
-        if s.empty:
-            continue
+    out = df[["date", close_col]].copy()
+    out["date"] = pd.to_datetime(out["date"], errors="coerce").dt.normalize()
+    out["value"] = pd.to_numeric(out[close_col], errors="coerce")
+    out = out.dropna(subset=["date", "value"]).sort_values("date")
+    out = out.drop_duplicates(subset=["date"], keep="last")
 
-        s.index = pd.to_datetime(s.index, errors="coerce").normalize()
-        s = s[~s.index.duplicated(keep="last")].sort_index()
-        return s
+    if out.empty:
+        return pd.DataFrame(columns=["date", "value"])
 
-    return pd.Series(dtype="float64")
+    # keep last N days
+    out = out.tail(days).reset_index(drop=True)
+    return out[["date", "value"]]
 
 
 def main() -> None:
@@ -100,26 +99,26 @@ def main() -> None:
     args = ap.parse_args()
     days = int(args.days)
 
+    existing = _safe_read_existing()
+
     frames = []
     meta = []
 
     for col, ticker in STOOQ_TICKERS.items():
-        # ✅ enforce lowercase base ticker for stooq
-        t = (ticker or "").strip().lower()
-
-        s = _download_close_series_anycase(t, days=days)
-        if s.empty:
-            meta.append(f"{col}:EMPTY({t})")
+        hist = _fetch_stooq_series(ticker, days=days)
+        if hist.empty:
+            meta.append(f"{col}:EMPTY({ticker})")
             continue
+        meta.append(f"{col}:OK({ticker}) rows={len(hist)}")
+        frames.append(hist.rename(columns={"value": col}))
 
-        meta.append(f"{col}:OK({t}) rows={len(s)}")
-        frames.append(pd.DataFrame({"date": s.index, col: s.values}))
-
-    # ✅ Never crash pipeline: if all EMPTY, still write a minimal csv and exit 0
+    # ✅ 핵심: 전부 EMPTY면 기존 파일을 절대 덮어쓰지 않음
     if not frames:
-        out = pd.DataFrame({"date": []})
-        out.to_csv(OUT_CSV, index=False)
-        print(f"[WARN] All stooq series EMPTY. Wrote empty file: {OUT_CSV}")
+        if not existing.empty:
+            print(f"[WARN] All stooq series EMPTY. Keeping existing file unchanged: {OUT_CSV}")
+        else:
+            print(f"[WARN] All stooq series EMPTY and no existing file. Writing empty header file: {OUT_CSV}")
+            pd.DataFrame({"date": []}).to_csv(OUT_CSV, index=False)
         print("[META]", " | ".join(meta))
         return
 
@@ -129,12 +128,12 @@ def main() -> None:
 
     merged = merged.sort_values("date").drop_duplicates(subset=["date"], keep="last")
 
-    # forward fill yields (important for sparse series)
+    # forward fill yields
     ycols = [c for c in merged.columns if c.endswith("_Y")]
     for c in ycols:
         merged[c] = pd.to_numeric(merged[c], errors="coerce").ffill()
 
-    # compute spreads
+    # compute spreads vs US10Y_Y
     if SPREAD_BASE in merged.columns:
         base = pd.to_numeric(merged[SPREAD_BASE], errors="coerce")
         for y_col in SPREAD_TARGETS:
@@ -143,10 +142,10 @@ def main() -> None:
             spread_col = y_col.replace("_Y", "_SPREAD")
             merged[spread_col] = pd.to_numeric(merged[y_col], errors="coerce") - base
 
-    # keep stable size
-    merged = merged.tail(min(250, len(merged))).reset_index(drop=True)
+    merged = merged.dropna(subset=["date"]).tail(250).reset_index(drop=True)
     merged["date"] = pd.to_datetime(merged["date"]).dt.strftime("%Y-%m-%d")
 
+    # ✅ write
     merged.to_csv(OUT_CSV, index=False)
     print(f"[OK] sovereign_spreads updated: {OUT_CSV} (rows={len(merged)})")
     print("[META]", " | ".join(meta))
