@@ -1121,58 +1121,59 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 
 # filters/strategist_filters.py (상단 상수 구간)
 
-GEO_WINDOW = 60  # 60~90 중 선택(백필 히스토리 있으니 60 추천)
+# filters/strategist_filters.py (상수 구간)
 
-# Sovereign stress (CDS proxy via 10Y spread vs US)
-# sovereign_spreads.csv 헤더 기준:
-# KR10Y_SPREAD, JP10Y_SPREAD, CN10Y_SPREAD, IL10Y_SPREAD, TR10Y_SPREAD
+GEO_WINDOW = 60
 
+# (key, weight, transform, mode)
+# mode: "pct" | "level"
 GEO_FACTORS = [
     # -----------------------
-    # Market Reaction (confirmation)
+    # Market Reaction
     # -----------------------
-    ("VIX",        0.18, "normal"),
-    ("WTI",        0.10, "normal"),
-    ("GOLD",       0.12, "normal"),
-    ("USDCNH",     0.18, "normal"),
+    ("VIX",    0.18, "normal", "pct"),
+    ("WTI",    0.10, "normal", "pct"),
+    ("GOLD",   0.12, "normal", "pct"),
+    ("USDCNH", 0.18, "normal", "pct"),
 
     # -----------------------
-    # EM Stress (capital flight)
+    # EM Stress
     # -----------------------
-    ("EEM",        0.10, "inverse"),
-    ("EMB",        0.12, "inverse"),
-    ("USDMXN",     0.05, "normal"),
-    ("USDJPY",     0.05, "inverse"),
+    ("EEM",    0.10, "inverse", "pct"),
+    ("EMB",    0.12, "inverse", "pct"),
+    ("USDMXN", 0.05, "normal",  "pct"),
+    ("USDJPY", 0.05, "inverse", "pct"),
 
     # -----------------------
-    # Supply Chain / Shipping proxy (early)
+    # Supply Chain / Shipping
     # -----------------------
-    ("SEA",        0.05, "inverse"),
-    ("BDRY",       0.05, "normal"),
+    ("SEA",    0.05, "inverse", "pct"),
+    ("BDRY",   0.05, "normal",  "pct"),
 
     # -----------------------
-    # Defense attention proxy (early)
+    # Defense
     # -----------------------
-    ("ITA",        0.03, "normal"),
-    ("XAR",        0.02, "normal"),
+    ("ITA",    0.03, "normal", "pct"),
+    ("XAR",    0.02, "normal", "pct"),
 
     # -----------------------
-    # Sovereign stress (CDS proxy) — spreads only
+    # ✅ Sovereign Spread (CDS proxy) — NEW
+    # spread는 pct_change보다 레벨 자체가 의미있어서 level z-score
     # -----------------------
-    ("KR10Y_SPREAD", 0.08, "normal"),
-    ("JP10Y_SPREAD", 0.05, "normal"),
-    ("CN10Y_SPREAD", 0.05, "normal"),
-    ("IL10Y_SPREAD", 0.07, "normal"),
-    ("TR10Y_SPREAD", 0.05, "normal"),
+    ("KR10Y_SPREAD", 0.08, "normal", "level"),
+    ("JP10Y_SPREAD", 0.06, "normal", "level"),
+    ("CN10Y_SPREAD", 0.06, "normal", "level"),
+    ("IL10Y_SPREAD", 0.05, "normal", "level"),
+    ("TR10Y_SPREAD", 0.05, "normal", "level"),
 ]
 
-# score -> level 구간
 GEO_THRESHOLDS = [
     ("NORMAL",   -0.75, 0.75),
     ("ELEVATED",  0.75, 1.50),
     ("HIGH",      1.50, 2.50),
     ("CONFLICT",  2.50, 99.0),
 ]
+
 
 def _to_num(x) -> Optional[float]:
     v = pd.to_numeric(x, errors="coerce")
