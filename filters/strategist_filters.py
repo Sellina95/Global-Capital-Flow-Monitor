@@ -1113,41 +1113,49 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 
 
 
-# -------------------------
-# Geo EW config
-# -------------------------
-GEO_WINDOW = 60  # rolling window (trading days-ish). data가 적으면 자동 축소됨
+# filters/strategist_filters.py (어딘가 상단 상수 구간)
 
+GEO_WINDOW = 60  # 60~90 중 선택(너는 백필 122라인 있으니 60 추천)
+
+# (key, weight, transform)
+# transform: "normal" | "inverse"
+# - inverse 예: USDJPY는 USDJPY 하락(=JPY강세)=risk-off니까 inverse가 합리적
 GEO_FACTORS = [
-    # key in df/market_data, weight, transform
-    ("VIX",     0.20, "normal"),
-    ("GOLD",    0.15, "normal"),
-    ("DXY",     0.10, "normal"),
-    ("WTI",     0.10, "normal"),
+    # -----------------------
+    # Market Reaction (confirmation)
+    # -----------------------
+    ("VIX",    0.18, "normal"),
+    ("WTI",    0.10, "normal"),
+    ("GOLD",   0.12, "normal"),
+    ("USDCNH", 0.18, "normal"),
 
-    # FX stress
-    ("USDCNH",  0.15, "normal"),   # CNH 약세(USDCNH↑) = stress
-    ("USDJPY",  0.05, "inverse"),  # USDJPY 하락(엔 강세) = risk-off → inverse
-    ("USDMXN",  0.05, "normal"),   # USDMXN↑(MXN 약세) = EM stress
+    # -----------------------
+    # EM Stress (capital flight)
+    # -----------------------
+    ("EEM",    0.10, "inverse"),  # EEM 하락 = risk-off
+    ("EMB",    0.12, "inverse"),  # EMB 하락 = risk-off
+    ("USDMXN", 0.05, "normal"),   # USD/MXN 상승(페소 약세) = stress
+    ("USDJPY", 0.05, "inverse"),  # USDJPY 하락(엔 강세)=risk-off
 
-    # Supply chain / shipping (대체지표)
-    ("SEA",     0.05, "normal"),   # 운임/해운 테마 강세는 공급망 스트레스/리스크 프리미엄 가능
-    ("BDRY",    0.05, "normal"),   # 드라이벌크 운임 민감
+    # -----------------------
+    # Supply Chain / Shipping proxy (early)
+    # -----------------------
+    ("SEA",    0.05, "inverse"),  # SEA 하락을 stress로 볼지(공급망 붕괴) 케이스가 있어 inverse로 시작
+    ("BDRY",   0.05, "normal"),   # BDRY는 방향성이 케이스별이라 v2에서는 일단 normal로 두고 관찰
 
-    # Defense
-    ("ITA",     0.05, "normal"),
-    ("XAR",     0.05, "normal"),
-
-    # EM stress (가격 하락 = stress)
-    ("EEM",     0.05, "inverse"),
-    ("EMB",     0.05, "inverse"),
+    # -----------------------
+    # Defense attention proxy (early)
+    # -----------------------
+    ("ITA",    0.03, "normal"),
+    ("XAR",    0.02, "normal"),
 ]
 
+# score -> level 구간 (너가 이미 쓰는 형태 유지)
 GEO_THRESHOLDS = [
-    ("NORMAL",   -math.inf, 0.8),
-    ("ELEVATED", 0.8,       1.5),
-    ("HIGH",     1.5,       2.2),
-    ("EXTREME",  2.2,       math.inf),
+    ("NORMAL",   -0.75, 0.75),
+    ("ELEVATED",  0.75, 1.50),
+    ("HIGH",      1.50, 2.50),
+    ("CONFLICT",  2.50, 99.0),
 ]
 
 
@@ -1711,7 +1719,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     market_data["FINAL_STATE"] = final_state
     # ... Narrative Engine이 FINAL_STATE를 market_data에 넣은 뒤
 
-    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
+    
     # --------------------------------------------------
     # 6️⃣ Output (기존 필터 스타일 통일)
     # --------------------------------------------------
@@ -2429,6 +2437,43 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
     state = market_data.get("FINAL_STATE", {}) or {}
     geo = market_data.get("GEO_EW", {}) or {}
 
+        # -------------------------
+    # ✅ Layer attribution (v2)
+    # -------------------------
+    layer_map = {
+        "Market": {"VIX", "WTI", "GOLD", "USDCNH"},
+        "EM": {"EEM", "EMB", "USDMXN", "USDJPY"},
+        "Shipping": {"SEA", "BDRY"},
+        "Defense": {"ITA", "XAR"},
+    }
+
+    comps = geo.get("components", []) or []
+    layer_sum = {k: 0.0 for k in layer_map.keys()}
+    used_keys = set()
+
+    for c in comps:
+        k = str(c.get("key"))
+        used_keys.add(k)
+        contrib = c.get("contrib")
+        try:
+            contrib = float(contrib)
+        except Exception:
+            continue
+
+        for layer, keys in layer_map.items():
+            if k in keys:
+                layer_sum[layer] += contrib
+                break
+
+    # show layer sums only if we have components
+    if comps:
+        lines.append("Layer Signals (sum of contributions):")
+        lines.append(f"- Market Reaction: {layer_sum['Market']:+.2f}")
+        lines.append(f"- EM Stress: {layer_sum['EM']:+.2f}")
+        lines.append(f"- Supply Chain/Shipping: {layer_sum['Shipping']:+.2f}")
+        lines.append(f"- Defense Attention: {layer_sum['Defense']:+.2f}")
+        lines.append("")
+    
     level = str(geo.get("level", "N/A")).upper()
     score = geo.get("score", None)
 
