@@ -615,6 +615,83 @@ def attach_sovereign_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]
 
     return market_data
 
+def load_sovereign_spreads_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "sovereign_spreads.csv"
+    if not csv_path.exists():
+        return pd.DataFrame(columns=["date"])
+
+    try:
+        if csv_path.stat().st_size == 0:
+            return pd.DataFrame(columns=["date"])
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return pd.DataFrame(columns=["date"])
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame(columns=["date"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
+
+def attach_sovereign_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Attach sovereign yields/spreads from data/sovereign_spreads.csv (last available).
+    Adds meta:
+      - _SOV_ASOF
+    Adds keys (if exist):
+      - KR10Y_SPREAD, IL10Y_SPREAD, ... as {today, prev, pct_change}
+      - optionally yields too: KR10Y_Y, IL10Y_Y, ...
+    """
+    if market_data is None:
+        market_data = {}
+
+    df = load_sovereign_spreads_df()
+    if df.empty:
+        market_data["_SOV_ASOF"] = None
+        return market_data
+
+    today_row = df.iloc[-1]
+    asof = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
+    market_data["_SOV_ASOF"] = asof
+
+    prev_row = df.iloc[-2] if len(df) >= 2 else None
+
+    def _add_series(col: str):
+        if col not in df.columns:
+            return
+
+        t = pd.to_numeric(today_row.get(col), errors="coerce")
+        if pd.isna(t):
+            return
+        t = float(t)
+
+        if prev_row is None:
+            market_data[col] = {"today": t, "prev": None, "pct_change": None}
+            return
+
+        p = pd.to_numeric(prev_row.get(col), errors="coerce")
+        if pd.isna(p):
+            market_data[col] = {"today": t, "prev": None, "pct_change": None}
+            return
+
+        p = float(p)
+        pct = 0.0 if p == 0 else ((t - p) / p) * 100.0
+        market_data[col] = {"today": t, "prev": p, "pct_change": pct}
+
+    # ✅ spreads 우선
+    spread_cols = [c for c in df.columns if c.endswith("_SPREAD")]
+    for c in spread_cols:
+        _add_series(c)
+
+    # 필요하면 yields도 붙임 (리포트/필터에서 쓰기 좋게)
+    yield_cols = [c for c in df.columns if c.endswith("_Y")]
+    for c in yield_cols:
+        _add_series(c)
+
+    return market_data
+
 
 # -------------------------
 # Report
