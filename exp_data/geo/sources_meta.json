@@ -1,0 +1,53 @@
+{
+  "fred": {
+    "US10Y": {
+      "series_id": "DGS10",
+      "status": "OK",
+      "rows": 16740,
+      "error": null
+    },
+    "DXY": {
+      "series_id": "DTWEXBGS",
+      "status": "OK",
+      "rows": 5260,
+      "error": null
+    },
+    "WTI": {
+      "series_id": "DCOILWTICO",
+      "status": "OK",
+      "rows": 10473,
+      "error": null
+    },
+    "VIX": {
+      "series_id": "VIXCLS",
+      "status": "OK",
+      "rows": 9436,
+      "error": null
+    },
+    "GOLD": {
+      "series_id": "GOLDAMGBD228NLBM",
+      "status": "FAIL",
+      "rows": 0,
+      "error": "HTTPError: HTTP Error 404: Not Found"
+    },
+    "USDCNH": {
+      "series_id": "DEXCHUS",
+      "status": "OK",
+      "rows": 11781,
+      "error": null
+    },
+    "USDJPY": {
+      "series_id": "DEXJPUS",
+      "status": "OK",
+      "rows": 14390,
+      "error": null
+    },
+    "USDMXN": {
+      "series_id": "DEXMXUS",
+      "status": "OK",
+      "rows": 8430,
+      "error": null
+    }
+  },
+  "note": "geo history fetch (experiment only)"
+}
