@@ -1,168 +1,70 @@
 {
-  "start": "2016-08-16",
-  "end_inclusive": "2026-03-05",
   "sources": {
     "VIX": {
-      "source": "fred_csv",
-      "series_id": "VIXCLS",
-      "status": "EMPTY",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": null
+      "status": "ERROR",
+      "error": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=30)"
     },
     "WTI": {
-      "source": "fred_csv",
-      "series_id": "DCOILWTICO",
-      "status": "EMPTY",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": null
+      "status": "ERROR",
+      "error": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=30)"
     },
     "GOLD": {
-      "source": "fred_csv",
-      "series_id": "GOLDAMGBD228NLBM",
       "status": "ERROR",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=GOLDAMGBD228NLBM&cosd=2016-08-16&coed=2026-03-05"
+      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=GOLDAMGBD228NLBM"
     },
     "USDCNH": {
-      "source": "fred_csv",
-      "series_id": "DEXCHUS",
-      "status": "EMPTY",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": null
+      "status": "ERROR",
+      "error": "FRED schema error DEXCHUS"
     },
     "USDJPY": {
-      "source": "fred_csv",
-      "series_id": "DEXJPUS",
-      "status": "EMPTY",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": null
+      "status": "ERROR",
+      "error": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=30)"
     },
     "USDMXN": {
-      "source": "fred_csv",
-      "series_id": "DEXMXUS",
-      "status": "EMPTY",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": null
+      "status": "ERROR",
+      "error": "FRED schema error DEXMXUS"
     },
     "US10Y_Y": {
-      "source": "fred_csv",
-      "series_id": "DGS10",
-      "status": "EMPTY",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": null
+      "status": "ERROR",
+      "error": "FRED schema error DGS10"
     },
     "KR10Y_Y": {
-      "source": "fred_csv",
-      "series_id": "IRLTLT01KRM156N",
-      "status": "EMPTY",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": null
+      "status": "ERROR",
+      "error": "FRED schema error IRLTLT01KRM156N"
     },
     "JP10Y_Y": {
-      "source": "fred_csv",
-      "series_id": "IRLTLT01JPM156N",
-      "status": "EMPTY",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": null
+      "status": "ERROR",
+      "error": "FRED schema error IRLTLT01JPM156N"
     },
     "CN10Y_Y": {
-      "source": "fred_csv",
-      "series_id": "IRLTLT01CNM156N",
       "status": "ERROR",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01CNM156N&cosd=2016-08-16&coed=2026-03-05"
+      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01CNM156N"
     },
     "IL10Y_Y": {
-      "source": "fred_csv",
-      "series_id": "IRLTLT01ILM156N",
-      "status": "EMPTY",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": null
+      "status": "ERROR",
+      "error": "FRED schema error IRLTLT01ILM156N"
     },
     "TR10Y_Y": {
-      "source": "fred_csv",
-      "series_id": "IRLTLT01TRM156N",
       "status": "ERROR",
-      "rows": 0,
-      "from": null,
-      "to": null,
-      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01TRM156N&cosd=2016-08-16&coed=2026-03-05"
+      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01TRM156N"
     },
     "EEM": {
-      "source": "stooq_csv",
-      "symbol": "eem.us",
-      "status": "OK",
-      "rows": 2400,
-      "from": "2016-08-16",
-      "to": "2026-03-04",
-      "error": null
+      "status": "OK"
     },
     "EMB": {
-      "source": "stooq_csv",
-      "symbol": "emb.us",
-      "status": "OK",
-      "rows": 2400,
-      "from": "2016-08-16",
-      "to": "2026-03-04",
-      "error": null
+      "status": "OK"
     },
     "SEA": {
-      "source": "stooq_csv",
-      "symbol": "sea.us",
-      "status": "OK",
-      "rows": 1032,
-      "from": "2022-01-21",
-      "to": "2026-03-04",
-      "error": null
+      "status": "OK"
     },
     "BDRY": {
-      "source": "stooq_csv",
-      "symbol": "bdry.us",
-      "status": "OK",
-      "rows": 1946,
-      "from": "2018-03-23",
-      "to": "2026-03-04",
-      "error": null
+      "status": "OK"
     },
     "ITA": {
-      "source": "stooq_csv",
-      "symbol": "ita.us",
-      "status": "OK",
-      "rows": 2400,
-      "from": "2016-08-16",
-      "to": "2026-03-04",
-      "error": null
+      "status": "OK"
     },
     "XAR": {
-      "source": "stooq_csv",
-      "symbol": "xar.us",
-      "status": "OK",
-      "rows": 2400,
-      "from": "2016-08-16",
-      "to": "2026-03-04",
-      "error": null
+      "status": "OK"
     }
   }
 }
