@@ -1,10 +1,18 @@
 # experiments/geo/fetch_geo_history.py
+# ------------------------------------------------------------
+# Geo EW 실험용 히스토리 수집기 (2016-08-16 ~ today)
+# - FRED: CSV endpoint 직접 호출 (pandas_datareader 불필요, 의존성 꼬임 방지)
+# - STOOQ: ETF/주식은 stooq csv endpoint 사용 (yfinance 불안정/레이트리밋 회피)
+# - OUTPUT: exp_data/geo/geo_history.csv  (TSV)
+# - META  : exp_data/geo/sources_meta.json
+# ------------------------------------------------------------
+
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Dict, Any, List, Tuple
 import json
-import io
+from io import StringIO
+from pathlib import Path
+from typing import Dict, Any, List, Tuple, Optional
 
 import pandas as pd
 import requests
@@ -12,149 +20,179 @@ import requests
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # repo root
 EXP_DATA_DIR = BASE_DIR / "exp_data" / "geo"
-EXP_DATA_DIR.mkdir(parents=True, exist_ok=True)
+OUT_CSV = EXP_DATA_DIR / "geo_history.csv"
+OUT_META = EXP_DATA_DIR / "sources_meta.json"
 
-OUT_TSV = EXP_DATA_DIR / "geo_history.csv"          # 이름은 csv 유지 (하지만 탭 구분)
-META_JSON = EXP_DATA_DIR / "sources_meta.json"
-
-DEFAULT_START = "2016-08-16"
-
-
-# ✅ FRED (안정)
-FRED_SERIES: Dict[str, str] = {
-    "VIX": "VIXCLS",
-    "WTI": "DCOILWTICO",
-    "GOLD": "GOLDAMGBD228NLBM",
-    "USDCNH": "DEXCHUS",
-    "USDJPY": "DEXJPUS",
-    "USDMXN": "DEXMXUS",
-
-    "US10Y_Y": "DGS10",
-    "KR10Y_Y": "IRLTLT01KRM156N",
-    "JP10Y_Y": "IRLTLT01JPM156N",
-    "CN10Y_Y": "IRLTLT01CNM156N",
-    "IL10Y_Y": "IRLTLT01ILM156N",
-    "TR10Y_Y": "IRLTLT01TRM156N",
-}
-
-# ✅ STOOQ (ETF/테마)
-STOOQ_SERIES: Dict[str, str] = {
-    "EEM": "eem.us",
-    "EMB": "emb.us",
-    "SEA": "sea.us",
-    "BDRY": "bdry.us",
-    "ITA": "ita.us",
-    "XAR": "xar.us",
-}
-
-SPREAD_PAIRS: List[Tuple[str, str]] = [
-    ("KR10Y_Y", "KR10Y_SPREAD"),
-    ("JP10Y_Y", "JP10Y_SPREAD"),
-    ("CN10Y_Y", "CN10Y_SPREAD"),
-    ("IL10Y_Y", "IL10Y_SPREAD"),
-    ("TR10Y_Y", "TR10Y_SPREAD"),
-]
+# ✅ 요구사항: 2016-08-16부터
+START_DATE = "2016-08-16"
 
 
-def _fred_csv_url(series_id: str, start: str, end: str) -> str:
-    base = "https://fred.stlouisfed.org/graph/fredgraph.csv"
-    return f"{base}?id={series_id}&cosd={start}&coed={end}"
-
-
-def _http_get_text(url: str, timeout: int = 30) -> str:
-    headers = {
-        "User-Agent": "Mozilla/5.0 (GitHubActions; geo-backtest) requests",
-        "Accept": "text/csv,text/plain,*/*",
-    }
-    r = requests.get(url, headers=headers, timeout=timeout)
+# -----------------------------
+# FRED via CSV endpoint
+# -----------------------------
+def fetch_fred_series(series_id: str, start: str, end: str, col_name: str) -> pd.Series:
+    """
+    FRED CSV endpoint로 시계열을 가져와 Series로 반환.
+    schema: DATE,<SERIES_ID>
+    """
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    r = requests.get(url, timeout=45)
     r.raise_for_status()
-    return r.text
 
-
-def fetch_fred_series(series_id: str, start: str, end: str) -> pd.Series:
-    """
-    ✅ FIXED: DATE를 index로 두고 numeric 변환 후 dropna.
-    """
-    url = _fred_csv_url(series_id, start, end)
-    text = _http_get_text(url)
-
-    df = pd.read_csv(io.StringIO(text))
-    if df.empty or "DATE" not in df.columns or series_id not in df.columns:
-        return pd.Series(dtype="float64")
+    df = pd.read_csv(StringIO(r.text))
+    if "DATE" not in df.columns or series_id not in df.columns:
+        raise RuntimeError(f"FRED CSV schema unexpected for {series_id}. cols={df.columns.tolist()}")
 
     df["DATE"] = pd.to_datetime(df["DATE"], errors="coerce")
     df = df.dropna(subset=["DATE"]).sort_values("DATE")
 
-    s = pd.to_numeric(df[series_id], errors="coerce")
-    s.index = df["DATE"]
-    s = s.dropna()
-    s = s[~s.index.isna()].sort_index()
+    df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
+
+    start_dt = pd.to_datetime(start)
+    end_dt = pd.to_datetime(end)
+    df = df[(df["DATE"] >= start_dt) & (df["DATE"] <= end_dt)]
+
+    s = df.set_index("DATE")[series_id]
+    s.name = col_name
     return s
 
 
-def fetch_stooq_close(symbol: str, start: str) -> pd.Series:
+# -----------------------------
+# STOOQ via CSV endpoint
+# -----------------------------
+def fetch_stooq_daily(symbol: str, start: str, end: str, col_name: str) -> pd.Series:
+    """
+    Stooq CSV endpoint로 일봉 Close를 가져와 Series로 반환.
+    - symbol 예: "eem.us", "emb.us", "sea.us"
+    schema(일반): Date,Open,High,Low,Close,Volume
+    """
     url = f"https://stooq.com/q/d/l/?s={symbol}&i=d"
-    text = _http_get_text(url)
+    r = requests.get(url, timeout=45)
+    r.raise_for_status()
 
-    df = pd.read_csv(io.StringIO(text))
-    if df.empty or "Date" not in df.columns or "Close" not in df.columns:
-        return pd.Series(dtype="float64")
+    df = pd.read_csv(StringIO(r.text))
+    if df.empty:
+        raise RuntimeError(f"STOOQ returned empty for {symbol}")
 
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-    df = df.dropna(subset=["Date"]).sort_values("Date")
-    df = df[df["Date"] >= pd.to_datetime(start)].copy()
+    # stooq는 Date 대문자/소문자 혼용 가능성 대비
+    date_col = "Date" if "Date" in df.columns else ("date" if "date" in df.columns else None)
+    if date_col is None or "Close" not in df.columns:
+        raise RuntimeError(f"STOOQ CSV schema unexpected for {symbol}. cols={df.columns.tolist()}")
 
-    s = pd.to_numeric(df["Close"], errors="coerce")
-    s.index = df["Date"]
-    s = s.dropna()
-    s = s[~s.index.isna()].sort_index()
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    df = df.dropna(subset=[date_col]).sort_values(date_col)
+
+    df["Close"] = pd.to_numeric(df["Close"], errors="coerce")
+
+    start_dt = pd.to_datetime(start)
+    end_dt = pd.to_datetime(end)
+    df = df[(df[date_col] >= start_dt) & (df[date_col] <= end_dt)]
+
+    s = df.set_index(date_col)["Close"]
+    s.name = col_name
     return s
 
 
-def _series_to_frame(s: pd.Series, colname: str) -> pd.DataFrame:
-    # ✅ 빈 시리즈여도 컬럼 “형태”를 유지 (merge 시 컬럼이 빠지지 않게)
-    if s is None or s.empty:
-        return pd.DataFrame({"date": pd.to_datetime([]), colname: pd.Series(dtype="float64")})
+def ensure_dir(p: Path) -> None:
+    p.mkdir(parents=True, exist_ok=True)
 
-    out = pd.DataFrame({"date": s.index, colname: s.values})
-    out["date"] = pd.to_datetime(out["date"], errors="coerce")
-    out = out.dropna(subset=["date"]).sort_values("date")
+
+def build_spreads(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Sovereign spreads proxy:
+    KR/JP/CN/IL/TR 10Y - US10Y (level spread, percentage points)
+    """
+    out = df.copy()
+
+    # 안전: 숫자화
+    for c in out.columns:
+        if c != "date":
+            out[c] = pd.to_numeric(out[c], errors="coerce")
+
+    if "US10Y_Y" not in out.columns:
+        return out
+
+    base = out["US10Y_Y"]
+
+    mapping = {
+        "KR10Y_Y": "KR10Y_SPREAD",
+        "JP10Y_Y": "JP10Y_SPREAD",
+        "CN10Y_Y": "CN10Y_SPREAD",
+        "IL10Y_Y": "IL10Y_SPREAD",
+        "TR10Y_Y": "TR10Y_SPREAD",
+    }
+    for y_col, sp_col in mapping.items():
+        if y_col in out.columns:
+            out[sp_col] = out[y_col] - base
+
     return out
 
 
 def main() -> None:
-    start = DEFAULT_START
-    today_utc = pd.Timestamp.now("UTC").date()
-    end = today_utc.strftime("%Y-%m-%d")
+    ensure_dir(EXP_DATA_DIR)
+
+    end_date = pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%d")
+
+    # -----------------------------
+    # 1) Define sources
+    # -----------------------------
+    fred_series: List[Tuple[str, str]] = [
+        # Market reaction
+        ("VIX", "VIXCLS"),
+        ("WTI", "DCOILWTICO"),
+        ("GOLD", "GOLDAMGBD228NLBM"),
+        # FX
+        ("USDCNH", "DEXCHUS"),  # NOTE: FRED에서 CNH가 아니라 CNY 계열일 수 있음
+        ("USDJPY", "DEXJPUS"),
+        ("USDMXN", "DEXMXUS"),
+        # Sovereign yields
+        ("US10Y_Y", "DGS10"),
+        ("KR10Y_Y", "IRLTLT01KRM156N"),
+        ("JP10Y_Y", "IRLTLT01JPM156N"),
+        ("CN10Y_Y", "IRLTLT01CNM156N"),
+        ("IL10Y_Y", "IRLTLT01ILM156N"),
+        ("TR10Y_Y", "IRLTLT01TRM156N"),
+    ]
+
+    stooq_series: List[Tuple[str, str]] = [
+        ("EEM", "eem.us"),
+        ("EMB", "emb.us"),
+        ("SEA", "sea.us"),
+        ("BDRY", "bdry.us"),
+        ("ITA", "ita.us"),
+        ("XAR", "xar.us"),
+    ]
 
     meta: Dict[str, Any] = {
-        "start": start,
-        "end_inclusive": end,
+        "start": START_DATE,
+        "end": end_date,
         "sources": {},
     }
 
-    frames: List[pd.DataFrame] = []
+    series_list: List[pd.Series] = []
 
-    # 1) FRED
-    for key, series_id in FRED_SERIES.items():
-        print(f"[FETCH] {key} <- FRED:{series_id}")
+    # -----------------------------
+    # 2) Fetch FRED
+    # -----------------------------
+    for col, sid in fred_series:
         try:
-            s = fetch_fred_series(series_id, start, end)
-            frames.append(_series_to_frame(s, key))
-            meta["sources"][key] = {
+            print(f"[FETCH] {col} <- FRED:{sid}")
+            s = fetch_fred_series(sid, START_DATE, end_date, col)
+            ok_rows = int(s.dropna().shape[0])
+            series_list.append(s)
+            meta["sources"][col] = {
                 "source": "fred_csv",
-                "series_id": series_id,
-                "status": "OK" if not s.empty else "EMPTY",
-                "rows": int(len(s)),
-                "from": (str(s.index.min().date()) if not s.empty else None),
-                "to": (str(s.index.max().date()) if not s.empty else None),
+                "id": sid,
+                "status": "OK",
+                "rows": ok_rows,
+                "from": str(s.index.min().date()) if ok_rows > 0 else None,
+                "to": str(s.index.max().date()) if ok_rows > 0 else None,
                 "error": None,
             }
         except Exception as e:
-            frames.append(_series_to_frame(pd.Series(dtype="float64"), key))
-            meta["sources"][key] = {
+            meta["sources"][col] = {
                 "source": "fred_csv",
-                "series_id": series_id,
+                "id": sid,
                 "status": "ERROR",
                 "rows": 0,
                 "from": None,
@@ -162,26 +200,28 @@ def main() -> None:
                 "error": str(e),
             }
 
-    # 2) STOOQ
-    for key, symbol in STOOQ_SERIES.items():
-        print(f"[FETCH] {key} <- STOOQ:{symbol}")
+    # -----------------------------
+    # 3) Fetch STOOQ
+    # -----------------------------
+    for col, sym in stooq_series:
         try:
-            s = fetch_stooq_close(symbol, start)
-            frames.append(_series_to_frame(s, key))
-            meta["sources"][key] = {
+            print(f"[FETCH] {col} <- STOOQ:{sym}")
+            s = fetch_stooq_daily(sym, START_DATE, end_date, col)
+            ok_rows = int(s.dropna().shape[0])
+            series_list.append(s)
+            meta["sources"][col] = {
                 "source": "stooq_csv",
-                "symbol": symbol,
-                "status": "OK" if not s.empty else "EMPTY",
-                "rows": int(len(s)),
-                "from": (str(s.index.min().date()) if not s.empty else None),
-                "to": (str(s.index.max().date()) if not s.empty else None),
+                "id": sym,
+                "status": "OK",
+                "rows": ok_rows,
+                "from": str(s.index.min().date()) if ok_rows > 0 else None,
+                "to": str(s.index.max().date()) if ok_rows > 0 else None,
                 "error": None,
             }
         except Exception as e:
-            frames.append(_series_to_frame(pd.Series(dtype="float64"), key))
-            meta["sources"][key] = {
+            meta["sources"][col] = {
                 "source": "stooq_csv",
-                "symbol": symbol,
+                "id": sym,
                 "status": "ERROR",
                 "rows": 0,
                 "from": None,
@@ -189,46 +229,64 @@ def main() -> None:
                 "error": str(e),
             }
 
-    # 3) outer merge (✅ 빈 프레임도 포함해야 컬럼이 유지됨)
-    out = frames[0].copy()
-    for f in frames[1:]:
-        out = pd.merge(out, f, on="date", how="outer")
+    # -----------------------------
+    # 4) Build output dataframe
+    # -----------------------------
+    # series_list가 비어있으면 기존 파일을 망가뜨리지 않기 위해 실패 처리
+    if not series_list:
+        raise RuntimeError("No series downloaded at all (FRED+STOOQ 모두 실패).")
 
-    if "date" not in out.columns:
-        META_JSON.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
-        raise RuntimeError("Internal error: merged output missing 'date' column.")
+    df = pd.concat(series_list, axis=1)
+    df = df.sort_index()
 
+    # ✅ 반드시 date 컬럼 생성
+    out = df.reset_index().rename(columns={"index": "date"})
     out["date"] = pd.to_datetime(out["date"], errors="coerce")
-    out = out.dropna(subset=["date"]).sort_values("date").drop_duplicates("date", keep="last").reset_index(drop=True)
+    out = out.dropna(subset=["date"]).sort_values("date")
 
-    # 4) spreads (level)
-    out["US10Y_Y"] = pd.to_numeric(out.get("US10Y_Y"), errors="coerce")
-    for local_key, spread_key in SPREAD_PAIRS:
-        out[local_key] = pd.to_numeric(out.get(local_key), errors="coerce")
-        out[spread_key] = out[local_key] - out["US10Y_Y"]
+    # spreads 계산
+    out = build_spreads(out)
 
-    # ✅ 결과가 비면: 기존 파일 있으면 보존하고 워크플로우는 안 죽게
-    if out.empty:
-        META_JSON.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
-        if OUT_TSV.exists():
-            print("[WARN] geo_history result is EMPTY. Existing geo_history.csv kept (no overwrite).")
-            print(f"[OK] meta : {META_JSON}")
-            return
-        raise RuntimeError("geo_history result is EMPTY (rows=0) and no existing file to keep.")
+    # ✅ 빈칸 없게: 숫자 컬럼 ffill/bfill
+    for c in out.columns:
+        if c != "date":
+            out[c] = pd.to_numeric(out[c], errors="coerce")
+    num_cols = [c for c in out.columns if c != "date"]
+    out[num_cols] = out[num_cols].ffill().bfill()
 
-    # date first
-    cols = ["date"] + [c for c in out.columns if c != "date"]
-    out = out[cols]
+    # ✅ 최종 헤더 순서 고정 (사용자가 원한 “원본과 동일”)
+    desired_cols = [
+        "date",
+        "VIX", "WTI", "GOLD", "USDCNH", "USDJPY", "USDMXN",
+        "US10Y_Y", "KR10Y_Y", "JP10Y_Y", "CN10Y_Y", "IL10Y_Y", "TR10Y_Y",
+        "EEM", "EMB", "SEA", "BDRY", "ITA", "XAR",
+        "KR10Y_SPREAD", "JP10Y_SPREAD", "CN10Y_SPREAD", "IL10Y_SPREAD", "TR10Y_SPREAD",
+    ]
+    # 존재하는 것만
+    final_cols = [c for c in desired_cols if c in out.columns]
+    # 혹시 새로 생긴 컬럼이 있으면 뒤에 붙임
+    for c in out.columns:
+        if c not in final_cols:
+            final_cols.append(c)
+    out = out[final_cols]
 
-    # ✅ 탭 구분으로 저장 (헤더 붙는 문제 끝)
-    tmp = OUT_TSV.with_suffix(".csv.tmp")
-    out.to_csv(tmp, index=False, encoding="utf-8", sep="\t")
-    tmp.replace(OUT_TSV)
+    # -----------------------------
+    # 5) Sanity check (EMPTY 방지)
+    # -----------------------------
+    if out.empty or out.shape[0] < 100:
+        raise RuntimeError(
+            f"geo_history result looks too small/empty (rows={out.shape[0]}). "
+            "fetch 실패 또는 date 파싱 문제."
+        )
 
-    META_JSON.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    # ✅ TSV 저장 (탭)
+    out.to_csv(OUT_CSV, sep="\t", index=False)
 
-    print(f"[OK] wrote: {OUT_TSV} (rows={len(out)})")
-    print(f"[OK] meta : {META_JSON}")
+    with open(OUT_META, "w", encoding="utf-8") as f:
+        json.dump(meta, f, ensure_ascii=False, indent=2)
+
+    print(f"[OK] wrote: {OUT_CSV} (rows={out.shape[0]})")
+    print(f"[OK] meta : {OUT_META}")
 
 
 if __name__ == "__main__":
