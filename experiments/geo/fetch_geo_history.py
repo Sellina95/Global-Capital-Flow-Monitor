@@ -3,10 +3,11 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
-
 import json
-import pandas as pd
+import io
 
+import pandas as pd
+import requests
 import yfinance as yf
 
 
@@ -17,13 +18,7 @@ EXP_DATA_DIR.mkdir(parents=True, exist_ok=True)
 OUT_CSV = EXP_DATA_DIR / "geo_history.csv"
 META_JSON = EXP_DATA_DIR / "sources_meta.json"
 
-
-# ----------------------------
-# Config
-# ----------------------------
 DEFAULT_START = "2016-08-16"
-DEFAULT_END = None  # None => today (UTC)
-
 
 # ✅ yfinance tickers (market proxies)
 YF_TICKERS: Dict[str, str] = {
@@ -38,25 +33,19 @@ YF_TICKERS: Dict[str, str] = {
     "BDRY": "BDRY",
     "ITA": "ITA",
     "XAR": "XAR",
-    # ⚠ USDCNH은 yfinance가 자주 1 row만 주거나 비는 케이스가 있어서 FRED로 받는 걸 권장
-    # "USDCNH": "CNH=X",
 }
 
-# ✅ FRED series (CSV URL로 직접 fetch)
-# - USDCNH: DEXCHUS (China / U.S. Foreign Exchange Rate)
-# - US10Y: DGS10
-# - Sovereign yields (가능한 것만; EMPTY여도 절대 죽지 않게)
+# ✅ FRED series (CSV URL)
 FRED_SERIES: Dict[str, str] = {
     "USDCNH": "DEXCHUS",
     "US10Y_Y": "DGS10",
     "KR10Y_Y": "IRLTLT01KRM156N",
     "JP10Y_Y": "IRLTLT01JPM156N",
-    "CN10Y_Y": "IRLTLT01CNM156N",  # 있으면 채워지고 없으면 EMPTY로 남음
-    "IL10Y_Y": "IRLTLT01ILM156N",  # 없을 수 있음
-    "TR10Y_Y": "IRLTLT01TRM156N",  # 없을 수 있음
+    "CN10Y_Y": "IRLTLT01CNM156N",
+    "IL10Y_Y": "IRLTLT01ILM156N",
+    "TR10Y_Y": "IRLTLT01TRM156N",
 }
 
-# Spread 계산할 대상들: (local_yield_key, spread_key)
 SPREAD_PAIRS: List[Tuple[str, str]] = [
     ("KR10Y_Y", "KR10Y_SPREAD"),
     ("JP10Y_Y", "JP10Y_SPREAD"),
@@ -66,31 +55,31 @@ SPREAD_PAIRS: List[Tuple[str, str]] = [
 ]
 
 
-# ----------------------------
-# Helpers
-# ----------------------------
-def _fred_csv_url(series_id: str, start: str, end: Optional[str]) -> str:
-    # FRED 그래프 CSV 엔드포인트 (가장 단순/안정)
-    # DATE, <series_id>
+def _fred_csv_url(series_id: str, start: str, end: str) -> str:
+    # end는 포함(coed inclusive)
     base = "https://fred.stlouisfed.org/graph/fredgraph.csv"
-    params = f"?id={series_id}&cosd={start}"
-    if end:
-        params += f"&coed={end}"
-    return base + params
+    return f"{base}?id={series_id}&cosd={start}&coed={end}"
 
 
-def fetch_fred_series(series_id: str, start: str, end: Optional[str]) -> pd.Series:
+def _http_get_text(url: str, timeout: int = 20) -> str:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (GitHubActions; geo-backtest) requests",
+        "Accept": "text/csv,text/plain,*/*",
+    }
+    r = requests.get(url, headers=headers, timeout=timeout)
+    r.raise_for_status()
+    return r.text
+
+
+def fetch_fred_series(series_id: str, start: str, end: str) -> pd.Series:
     url = _fred_csv_url(series_id, start, end)
-    df = pd.read_csv(url)
-    if df.empty or "DATE" not in df.columns:
+    text = _http_get_text(url)
+    df = pd.read_csv(io.StringIO(text))
+    if df.empty or "DATE" not in df.columns or series_id not in df.columns:
         return pd.Series(dtype="float64")
 
     df["DATE"] = pd.to_datetime(df["DATE"], errors="coerce")
     df = df.dropna(subset=["DATE"]).sort_values("DATE")
-
-    # 값 컬럼은 series_id 이름으로 옴
-    if series_id not in df.columns:
-        return pd.Series(dtype="float64")
 
     s = pd.to_numeric(df[series_id], errors="coerce")
     s.index = df["DATE"]
@@ -98,11 +87,11 @@ def fetch_fred_series(series_id: str, start: str, end: Optional[str]) -> pd.Seri
     return s.dropna()
 
 
-def fetch_yfinance_close(ticker: str, start: str, end: Optional[str]) -> pd.Series:
+def fetch_yfinance_close(ticker: str, start: str, end_exclusive: str) -> pd.Series:
     df = yf.download(
         ticker,
         start=start,
-        end=end,
+        end=end_exclusive,  # yfinance는 end가 exclusive라 "내일"로 넣어야 오늘 포함됨
         progress=False,
         auto_adjust=False,
         group_by="column",
@@ -111,7 +100,6 @@ def fetch_yfinance_close(ticker: str, start: str, end: Optional[str]) -> pd.Seri
     if df is None or df.empty:
         return pd.Series(dtype="float64")
 
-    # yfinance: Close 우선, 없으면 Adj Close
     col = "Close" if "Close" in df.columns else ("Adj Close" if "Adj Close" in df.columns else None)
     if col is None:
         return pd.Series(dtype="float64")
@@ -123,7 +111,6 @@ def fetch_yfinance_close(ticker: str, start: str, end: Optional[str]) -> pd.Seri
 
 
 def _series_to_frame(s: pd.Series, colname: str) -> pd.DataFrame:
-    # date index -> column
     if s is None or s.empty:
         return pd.DataFrame(columns=["date", colname])
     out = pd.DataFrame({"date": s.index, colname: s.values})
@@ -132,25 +119,32 @@ def _series_to_frame(s: pd.Series, colname: str) -> pd.DataFrame:
     return out
 
 
-# ----------------------------
-# Main
-# ----------------------------
 def main() -> None:
     start = DEFAULT_START
-    end = DEFAULT_END
 
-    meta: Dict[str, Any] = {"start": start, "end": end, "sources": {}}
+    # ✅ today 포함되게:
+    # - yfinance: end exclusive이므로 내일 날짜를 end로
+    # - FRED: coed는 inclusive이므로 오늘 날짜로
+    today_utc = pd.Timestamp.utcnow().date()
+    yfin_end_exclusive = (today_utc + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    fred_end_inclusive = today_utc.strftime("%Y-%m-%d")
+
+    meta: Dict[str, Any] = {
+        "start": start,
+        "end_yfinance_exclusive": yfin_end_exclusive,
+        "end_fred_inclusive": fred_end_inclusive,
+        "sources": {},
+    }
 
     frames: List[pd.DataFrame] = []
 
-    # 1) yfinance pulls
+    # 1) yfinance
     for key, ticker in YF_TICKERS.items():
         print(f"[FETCH] {key} <- {ticker}")
         try:
-            s = fetch_yfinance_close(ticker, start, end)
+            s = fetch_yfinance_close(ticker, start, yfin_end_exclusive)
             status = "OK" if not s.empty else "EMPTY"
-            frm = _series_to_frame(s, key)
-            frames.append(frm)
+            frames.append(_series_to_frame(s, key))
 
             meta["sources"][key] = {
                 "source": "yfinance",
@@ -172,14 +166,13 @@ def main() -> None:
                 "error": str(e),
             }
 
-    # 2) FRED pulls (NO pandas_datareader)
+    # 2) FRED
     for key, series_id in FRED_SERIES.items():
         print(f"[FETCH] {key} <- FRED:{series_id}")
         try:
-            s = fetch_fred_series(series_id, start, end)
+            s = fetch_fred_series(series_id, start, fred_end_inclusive)
             status = "OK" if not s.empty else "EMPTY"
-            frm = _series_to_frame(s, key)
-            frames.append(frm)
+            frames.append(_series_to_frame(s, key))
 
             meta["sources"][key] = {
                 "source": "fred_csv",
@@ -201,23 +194,32 @@ def main() -> None:
                 "error": str(e),
             }
 
-    # 3) Merge all frames on date
-    # frames: each has columns ["date", <key>]
-    # outer merge를 순차적으로
     if not frames:
         raise RuntimeError("No series fetched (frames empty).")
 
+    # 3) outer merge
     out = frames[0].copy()
     for f in frames[1:]:
         if f is None or f.empty:
             continue
         out = pd.merge(out, f, on="date", how="outer")
 
+    if "date" not in out.columns:
+        raise RuntimeError("Internal error: merged output missing 'date' column.")
+
     out["date"] = pd.to_datetime(out["date"], errors="coerce")
     out = out.dropna(subset=["date"]).sort_values("date").drop_duplicates("date", keep="last").reset_index(drop=True)
 
-    # 4) Sovereign spread 계산 (가능한 값만)
-    # spread = local_10y - US10Y_Y
+    # ✅ 핵심: rows=0이면 절대 기존 파일 덮어쓰지 마
+    if out.empty:
+        META_JSON.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        raise RuntimeError(
+            "geo_history result is EMPTY (rows=0). "
+            "FRED/yfinance fetch가 모두 실패하거나 date 파싱이 깨졌음. "
+            "기존 geo_history.csv는 보존됨."
+        )
+
+    # 4) spreads
     if "US10Y_Y" in out.columns:
         out["US10Y_Y"] = pd.to_numeric(out["US10Y_Y"], errors="coerce")
         for local_key, spread_key in SPREAD_PAIRS:
@@ -225,19 +227,19 @@ def main() -> None:
                 out[local_key] = pd.to_numeric(out[local_key], errors="coerce")
                 out[spread_key] = out[local_key] - out["US10Y_Y"]
             else:
-                # 컬럼이 없으면 생성만 (후속 코드에서 missing 확인 가능)
                 out[spread_key] = pd.NA
     else:
-        # US10Y 없으면 spreads 전부 NA로 생성
         for _, spread_key in SPREAD_PAIRS:
             out[spread_key] = pd.NA
 
-    # 5) Write outputs
-    # date column first
+    # 5) write (atomic)
     cols = ["date"] + [c for c in out.columns if c != "date"]
     out = out[cols]
 
-    out.to_csv(OUT_CSV, index=False, encoding="utf-8")
+    tmp_csv = OUT_CSV.with_suffix(".csv.tmp")
+    out.to_csv(tmp_csv, index=False, encoding="utf-8")
+    tmp_csv.replace(OUT_CSV)
+
     META_JSON.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print(f"[OK] wrote: {OUT_CSV} (rows={len(out)})")
