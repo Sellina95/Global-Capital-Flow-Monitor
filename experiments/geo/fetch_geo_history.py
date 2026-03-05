@@ -3,10 +3,19 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 
 import pandas as pd
 import yfinance as yf
+
+try:
+    from pandas_datareader.data import DataReader
+except Exception as e:
+    raise RuntimeError(
+        "pandas_datareader is required for FRED fetch. "
+        "requirements.txt에 pandas_datareader가 있어야 해."
+    ) from e
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # repo root
 EXP_DATA_DIR = BASE_DIR / "exp_data" / "geo"
@@ -15,15 +24,16 @@ EXP_DATA_DIR.mkdir(parents=True, exist_ok=True)
 OUT_CSV = EXP_DATA_DIR / "geo_history.csv"
 META_JSON = EXP_DATA_DIR / "sources_meta.json"
 
-# ---- Backtest horizon ----
-DAYS = 2400  # 넉넉히
+START_DATE = "2016-08-16"  # ✅ 요청대로 고정
+END_DATE = None  # today
 
-# ---- yfinance sources (Close 기준) ----
+# -----------------------------
+# yfinance sources (long history)
+# -----------------------------
 YF_SOURCES: List[Tuple[str, str]] = [
     ("VIX", "^VIX"),
     ("WTI", "CL=F"),
     ("GOLD", "GC=F"),
-    ("USDCNH", "CNH=X"),
     ("USDJPY", "JPY=X"),
     ("USDMXN", "MXN=X"),
     ("EEM", "EEM"),
@@ -34,55 +44,65 @@ YF_SOURCES: List[Tuple[str, str]] = [
     ("XAR", "XAR"),
 ]
 
+# -----------------------------
+# FRED sources (stable history)
+# -----------------------------
+# ✅ USDCNH 대체(안정): FRED DEXCHUS = Chinese Yuan per U.S. Dollar
+FRED_FX: List[Tuple[str, str]] = [
+    ("USDCNH", "DEXCHUS"),
+]
 
-def _series_from_history(df: pd.DataFrame) -> pd.Series:
-    """yfinance 결과(DataFrame)에서 Close/Adj Close Series만 안정적으로 뽑는다."""
+# ✅ Sovereign yields (FRED/OECD series) - 너가 이미 쓰던 것들 기반
+# 주의: 각 시리즈는 "존재하면" 가져오고, 없으면 meta에 ERROR로만 남김
+FRED_SOV_YIELDS: List[Tuple[str, str]] = [
+    ("US10Y_Y", "DGS10"),
+    ("KR10Y_Y", "IRLTLT01KRM156N"),
+    ("JP10Y_Y", "IRLTLT01JPM156N"),
+    ("CN10Y_Y", "IRLTLT01CNM156N"),
+    ("IL10Y_Y", "IRLTLT01ILM156N"),
+    ("TR10Y_Y", "IRLTLT01TRM156N"),
+]
+
+
+def _series_from_yf(df: pd.DataFrame) -> pd.Series:
     if df is None or df.empty:
         return pd.Series(dtype="float64")
 
-    # MultiIndex 방어
     if isinstance(df.columns, pd.MultiIndex):
-        for lvl0 in ["Close", "Adj Close"]:
-            if lvl0 in df.columns.get_level_values(0):
-                sub = df[lvl0]
-                if isinstance(sub, pd.DataFrame) and sub.shape[1] >= 1:
-                    s = sub.iloc[:, 0]
-                else:
-                    s = sub
-                s = pd.to_numeric(s, errors="coerce").dropna()
-                s.index = pd.to_datetime(s.index, errors="coerce")
-                s = s[~s.index.isna()].sort_index()
-                return s.dropna()
-        return pd.Series(dtype="float64")
+        # prefer Close
+        if ("Close" in df.columns.get_level_values(0)):
+            sub = df["Close"]
+            s = sub.iloc[:, 0] if isinstance(sub, pd.DataFrame) else sub
+        elif ("Adj Close" in df.columns.get_level_values(0)):
+            sub = df["Adj Close"]
+            s = sub.iloc[:, 0] if isinstance(sub, pd.DataFrame) else sub
+        else:
+            return pd.Series(dtype="float64")
+    else:
+        col = "Close" if "Close" in df.columns else ("Adj Close" if "Adj Close" in df.columns else None)
+        if col is None:
+            return pd.Series(dtype="float64")
+        s = df[col]
 
-    # 일반 컬럼
-    col = "Close" if "Close" in df.columns else ("Adj Close" if "Adj Close" in df.columns else None)
-    if col is None:
-        return pd.Series(dtype="float64")
-
-    s = pd.to_numeric(df[col], errors="coerce")
-    s.index = pd.to_datetime(df.index, errors="coerce")
+    s = pd.to_numeric(s, errors="coerce")
+    s.index = pd.to_datetime(s.index, errors="coerce")
     s = s[~s.index.isna()].sort_index().dropna()
     return s
 
 
-def _fetch_yf_close(ticker: str, days: int) -> pd.Series:
-    """
-    CI에서 yf.download()가 EMPTY 나오는 경우가 있어 2단계 폴백:
-    1) yf.download
-    2) yf.Ticker().history
-    """
+def fetch_yfinance_close(ticker: str, start: str) -> pd.Series:
     # 1) download
     try:
         df = yf.download(
             ticker,
-            period=f"{days}d",
+            start=start,
+            end=END_DATE,
             interval="1d",
             auto_adjust=False,
             progress=False,
             threads=False,
         )
-        s = _series_from_history(df)
+        s = _series_from_yf(df)
         if not s.empty:
             return s
     except Exception:
@@ -91,127 +111,173 @@ def _fetch_yf_close(ticker: str, days: int) -> pd.Series:
     # 2) history fallback
     try:
         tk = yf.Ticker(ticker)
-        df2 = tk.history(period=f"{days}d", interval="1d", auto_adjust=False)
-        s2 = _series_from_history(df2)
+        df2 = tk.history(start=start, end=END_DATE, interval="1d", auto_adjust=False)
+        s2 = _series_from_yf(df2)
         return s2
     except Exception:
         return pd.Series(dtype="float64")
 
 
-def _load_sovereign_spreads_csv() -> pd.DataFrame:
-    path = BASE_DIR / "data" / "sovereign_spreads.csv"
-    if not path.exists():
-        return pd.DataFrame()
-
-    df = pd.read_csv(path)
-    if df is None or df.empty or "date" not in df.columns:
-        return pd.DataFrame()
-
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df = df.dropna(subset=["date"]).sort_values("date").drop_duplicates("date", keep="last")
-
-    spread_cols = [c for c in df.columns if c.endswith("_SPREAD")]
-    keep = ["date"] + spread_cols
-    return df[keep].copy()
+def fetch_fred_series(series_id: str, start: str) -> pd.Series:
+    df = DataReader(series_id, "fred", start=start, end=END_DATE)  # returns DataFrame
+    if df is None or df.empty:
+        return pd.Series(dtype="float64")
+    s = df.iloc[:, 0]
+    s = pd.to_numeric(s, errors="coerce")
+    s.index = pd.to_datetime(s.index, errors="coerce")
+    s = s[~s.index.isna()].sort_index().dropna()
+    return s
 
 
 def main() -> None:
-    meta: Dict[str, Any] = {"days": DAYS, "sources": {}}
+    meta: Dict[str, Any] = {"start": START_DATE, "sources": {}}
     series_list: List[pd.Series] = []
 
-    # 1) yfinance series fetch (가능한 것만)
+    # -----------------------------
+    # 1) yfinance block
+    # -----------------------------
+    ok_yf = 0
     for key, ticker in YF_SOURCES:
         print(f"[FETCH] {key} <- {ticker}")
-
         try:
-            s = _fetch_yf_close(ticker, DAYS)
+            s = fetch_yfinance_close(ticker, START_DATE)
             status = "OK" if not s.empty else "EMPTY"
-
             meta["sources"][key] = {
                 "source": "yfinance",
                 "ticker": ticker,
                 "status": status,
                 "rows": int(len(s)),
-                "error": None,
                 "from": str(s.index.min().date()) if not s.empty else None,
                 "to": str(s.index.max().date()) if not s.empty else None,
+                "error": None,
             }
-
             if not s.empty:
+                ok_yf += 1
                 series_list.append(s.rename(key))
-
         except Exception as e:
             meta["sources"][key] = {
                 "source": "yfinance",
                 "ticker": ticker,
                 "status": "ERROR",
                 "rows": 0,
-                "error": str(e),
                 "from": None,
                 "to": None,
+                "error": str(e),
             }
 
-    # 2) concat -> "무조건 date 컬럼" 생성 (KeyError 방지 핵심)
-    if series_list:
-        df_idx = pd.concat(series_list, axis=1, sort=False)  # ✅ warning 제거
-        df_idx.index = pd.to_datetime(df_idx.index, errors="coerce")
-        df_idx = df_idx[~df_idx.index.isna()].sort_index()
+    if ok_yf == 0:
+        # ✅ 실험은 “일부만 살아도” 진행 가능하게 (전처럼 raise 하지 말고 진행)
+        meta["warn"] = "No yfinance series downloaded (all EMPTY/ERROR). Continue with FRED only."
 
-        # ✅ reset_index가 항상 'date' 컬럼을 만들도록 강제
-        df_idx.index.name = "date"
-        df = df_idx.reset_index()  # columns: ['date', ...]
+    # -----------------------------
+    # 2) FRED FX (USDCNH)
+    # -----------------------------
+    for key, sid in FRED_FX:
+        print(f"[FETCH] {key} <- FRED:{sid}")
+        try:
+            s = fetch_fred_series(sid, START_DATE)
+            status = "OK" if not s.empty else "EMPTY"
+            meta["sources"][key] = {
+                "source": "fred",
+                "series": sid,
+                "status": status,
+                "rows": int(len(s)),
+                "from": str(s.index.min().date()) if not s.empty else None,
+                "to": str(s.index.max().date()) if not s.empty else None,
+                "error": None,
+            }
+            if not s.empty:
+                series_list.append(s.rename(key))
+        except Exception as e:
+            meta["sources"][key] = {
+                "source": "fred",
+                "series": sid,
+                "status": "ERROR",
+                "rows": 0,
+                "from": None,
+                "to": None,
+                "error": str(e),
+            }
+
+    # -----------------------------
+    # 3) FRED Sovereign yields + spreads
+    # -----------------------------
+    sov_series: Dict[str, pd.Series] = {}
+    for key, sid in FRED_SOV_YIELDS:
+        print(f"[FETCH] {key} <- FRED:{sid}")
+        try:
+            s = fetch_fred_series(sid, START_DATE)
+            status = "OK" if not s.empty else "EMPTY"
+            meta["sources"][key] = {
+                "source": "fred",
+                "series": sid,
+                "status": status,
+                "rows": int(len(s)),
+                "from": str(s.index.min().date()) if not s.empty else None,
+                "to": str(s.index.max().date()) if not s.empty else None,
+                "error": None,
+            }
+            if not s.empty:
+                sov_series[key] = s
+        except Exception as e:
+            meta["sources"][key] = {
+                "source": "fred",
+                "series": sid,
+                "status": "ERROR",
+                "rows": 0,
+                "from": None,
+                "to": None,
+                "error": str(e),
+            }
+
+    # spreads 계산(가능한 것만)
+    if "US10Y_Y" in sov_series:
+        us = sov_series["US10Y_Y"]
+        for k in ["KR10Y_Y", "JP10Y_Y", "CN10Y_Y", "IL10Y_Y", "TR10Y_Y"]:
+            if k in sov_series:
+                spread_name = k.replace("_Y", "_SPREAD")
+                sp = (sov_series[k] - us).rename(spread_name)
+                series_list.append(sp)
+                meta["sources"][spread_name] = {
+                    "source": "computed",
+                    "formula": f"{k} - US10Y_Y",
+                    "status": "OK",
+                }
     else:
-        df = pd.DataFrame({"date": pd.to_datetime([])})
-
-    # 3) merge sovereign spreads (CDS proxy)
-    sov = _load_sovereign_spreads_csv()
-    if not sov.empty:
-        print("[MERGE] sovereign_spreads.csv -> geo_history")
-
-        if df.empty or len(df) == 0:
-            df = sov.copy()
-        else:
-            df = pd.merge(df, sov, on="date", how="left")
-
-        spread_cols = [c for c in df.columns if c.endswith("_SPREAD")]
-        for c in spread_cols:
-            df[c] = pd.to_numeric(df[c], errors="coerce").ffill()
-
-        meta["sources"]["SOVEREIGN_SPREADS"] = {
-            "source": "csv",
-            "path": "data/sovereign_spreads.csv",
-            "status": "OK",
-            "cols": spread_cols,
-            "rows": int(len(sov)),
-        }
-    else:
-        meta["sources"]["SOVEREIGN_SPREADS"] = {
-            "source": "csv",
-            "path": "data/sovereign_spreads.csv",
-            "status": "MISSING_OR_EMPTY",
-            "cols": [],
-            "rows": 0,
+        meta["sources"]["SOV_SPREADS"] = {
+            "source": "computed",
+            "status": "SKIPPED (missing US10Y_Y)",
         }
 
-    # 4) 최종 방어: date 컬럼 없으면 여기서 끝내야 함
-    if df is None or df.empty or "date" not in df.columns:
-        raise RuntimeError(
-            "No data available: yfinance all EMPTY/ERROR AND sovereign_spreads.csv missing/empty."
-        )
+    # -----------------------------
+    # 4) Build final dataframe
+    # -----------------------------
+    if not series_list:
+        raise RuntimeError("No series collected from both yfinance and FRED. (series_list empty)")
 
-    # 5) 정리
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df = df.dropna(subset=["date"]).sort_values("date").drop_duplicates("date", keep="last")
+    df_idx = pd.concat(series_list, axis=1, sort=False)
+    df_idx.index = pd.to_datetime(df_idx.index, errors="coerce")
+    df_idx = df_idx[~df_idx.index.isna()].sort_index()
+    df_idx.index.name = "date"
+    out = df_idx.reset_index()
 
-    for c in df.columns:
+    # numeric + sort
+    out["date"] = pd.to_datetime(out["date"], errors="coerce")
+    out = out.dropna(subset=["date"]).sort_values("date").drop_duplicates("date", keep="last")
+    for c in out.columns:
         if c == "date":
             continue
-        df[c] = pd.to_numeric(df[c], errors="coerce")
+        out[c] = pd.to_numeric(out[c], errors="coerce")
 
-    df.to_csv(OUT_CSV, index=False)
+    # ✅ spreads는 매일 안 나올 수 있으니 forward-fill
+    spread_cols = [c for c in out.columns if c.endswith("_SPREAD")]
+    for c in spread_cols:
+        out[c] = out[c].ffill()
+
+    out.to_csv(OUT_CSV, index=False)
     META_JSON.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    print(f"[OK] wrote: {OUT_CSV} (rows={len(df)})")
+    print(f"[OK] wrote: {OUT_CSV} (rows={len(out)})")
     print(f"[OK] meta : {META_JSON}")
 
 
