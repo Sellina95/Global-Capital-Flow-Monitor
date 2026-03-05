@@ -1,56 +1,77 @@
-🌍 Global Capital Flow Monitor
+# 🌍 Global Capital Flow Monitor
 ### Strategy & Capital Flow Research Initiative
 
 ---
 
-🧠 Overview
+# 🧠 Overview
 
-Global Capital Flow Monitor is a rule-based macro strategy engine.
+**Global Capital Flow Monitor** is a rule-based macro strategy engine designed to interpret **cross-asset capital flow dynamics** and translate them into a structured daily strategist framework.
 
-It is designed to interpret cross-asset capital flow dynamics and transform them into a structured daily strategist framework.
+The system integrates multiple layers of global market structure:
 
-The system integrates:
+- Interest Rate Structure  
+- USD Liquidity Conditions  
+- Volatility Regimes  
+- Credit Market Stress  
+- Policy Bias & Expectations  
+- Factor Sensitivity  
+- Style Rotation  
+- Sector Allocation Logic  
+- Execution Translation Layer  
 
-- Interest Rate Structure
-- USD Liquidity Conditions
-- Volatility Regimes
-- Credit Market Stress
-- Policy Bias & Expectations
-- Factor Sensitivity
-- Style Rotation
-- Sector Allocation Logic
-- Execution Translation Layer
+The objective is **not prediction**.
 
-The objective is not prediction.
-
-The objective is disciplined interpretation of market structure and risk allocation.
+The objective is **disciplined interpretation of market structure and risk allocation.**
 
 ---
 
-💡 Strategic Genesis
+# 💡 Strategic Genesis
 
-This project is not just a coding exercise; it is a synthesis of my professional journey and intellectual rigor. 
+This project is not merely a coding exercise — it represents a synthesis of professional experience and macro-structural thinking.
 
-* **The "Plumbing" Perspective:** My time at **Bank of America (Global Market Operations)** allowed me to see beyond price charts. I witnessed the "hidden pipes" of the financial system—how liquidity actually moves through TGA, RRP, and collateral chains. This project translates that "plumbing" into code.
-* **Cross-Border Intelligence:** Experience at **ICBC (Industrial and Commercial Bank of China)** provided a rare vantage point into the interplay between Eastern and Western capital flows. My fluency in **English and Chinese**, combined with a **Computer Science** background, enables me to parse multi-polar narratives that single-lens models often miss.
-* **Algorithmic Discipline:** As a CS graduate, I view the global market as a complex, non-linear system. I developed this engine to eliminate human bias and emotional noise, focusing instead on the mathematical reality of capital allocation.
+### The "Plumbing" Perspective
+My experience at **Bank of America (Global Markets Operations)** provided insight into the hidden mechanics of the financial system.
+
+Markets do not move purely because of narratives — they move because **liquidity flows through specific pipes**:
+
+- Treasury General Account (TGA)
+- Reverse Repo Facility (RRP)
+- Collateral chains
+- Institutional funding channels
+
+This project translates those **invisible liquidity mechanics into systematic signals.**
+
+### Cross-Border Intelligence
+Experience with **Industrial and Commercial Bank of China (ICBC)** exposed the structural interaction between **Western capital markets and Eastern financial systems**.
+
+Combined with:
+
+- English / Chinese financial literacy
+- Computer Science background
+
+the system is designed to interpret **multi-polar capital flow dynamics**.
+
+### Algorithmic Discipline
+Markets are complex, non-linear systems.
+
+This framework removes emotional interpretation and replaces it with **rule-based macro structure analysis**.
 
 ---
 
-🏗 Core Framework Philosophy
+# 🏗 Core Framework Philosophy
 
-Markets move in layers:
+Markets move in hierarchical layers:
 
-1. Structure (Policy & Liquidity)
-2. Price Confirmation (Rates / USD / Volatility)
-3. Credit Conditions
-4. Risk Budget Construction
-5. Volatility Adjustment
-6. Style & Factor Tilt
-7. Sector Allocation
-8. Execution Translation (Company Traits)
+1. **Structure** (Policy & Liquidity)
+2. **Price Confirmation** (Rates / USD / Volatility)
+3. **Credit Conditions**
+4. **Risk Budget Construction**
+5. **Volatility Adjustment**
+6. **Style & Factor Tilt**
+7. **Sector Allocation**
+8. **Execution Translation (Company Traits)**
 
-This system replicates that hierarchy using rule-based macro logic.
+This engine replicates that hierarchy using rule-based macro logic.
 
 It separates:
 
@@ -63,143 +84,232 @@ It separates:
 
 ---
 
-## System Architecture
+# ⚙️ System Architecture
+Macro Data
+↓
+Regime Detection
+↓
+Liquidity & Policy Analysis
+↓
+Credit Monitoring
+↓
+Narrative Engine
+↓
+Risk Budget Calculation
+↓
+Volatility-Controlled Exposure
+↓
+Style Tilt
+↓
+Factor Layer
+↓
+Sector Allocation Engine
+↓
+Execution / Style Translation Layer
+↓
+Correlation Break Monitoring
+↓
+Scenario Framework
+↓
+Decision Layer
+↓
+Transmission Mapping
 
-Macro Data  
-→ Regime Detection  
-→ Liquidity & Policy Analysis  
-→ Credit Monitoring  
-→ Narrative Engine  
-→ Risk Budget Calculation  
-→ Volatility-Controlled Exposure  
-→ Style Tilt  
-→ Factor Layer  
-→ Sector Allocation Engine  
-→ Execution / Style Translation Layer
-→ Correlation Break Monitoring
-→ Scenario Framework
-→ Decision Layer
-→ Transmission Mapping
-
-Each filter operates independently but feeds into a structured daily strategist report.
+Each filter operates independently but feeds into a structured **daily strategist report.**
 
 ---
 
-## Project Structure
-.github/ # CI automation workflows
-data/ # Raw & processed macro datasets
-filters/ # Core strategist filter engine
-insights/ # Regime change logs & risk alerts
-reports/ # Daily generated macro reports
-scripts/ # Data pipeline & report generation
-fetch_macro_data.py # Macro data fetch module
-requirements.txt # Dependencies
-README.md
+# 📂 Project Structure
+.github/                CI automation workflows
+data/                   Raw & processed macro datasets
+filters/                Core strategist filter engine
+insights/               Regime change logs & risk alerts
+reports/                Daily generated macro reports
+scripts/                Data pipeline & report generation
 
-Daily macro strategist outputs are automatically generated and stored in:
+fetch_macro_data.py     Macro data fetch module
+requirements.txt        Dependencies
+README.md
+Daily strategist outputs are automatically generated and stored in:
 /reports
 
-
-This directory contains structured capital flow interpretations — not raw data dumps.
-
----
-
-## Implemented Strategy Layers (19 Filters)
-
-Core Macro Structure
- 1. Market Regime Detection
- 2. Liquidity Structure (Enhanced)
- 3. Policy Bias Analysis
- 4. Fed Plumbing (TGA / RRP / Net Liquidity)
- 4.2 High Yield Spread (HY OAS)
- 4.5 Credit Stress (HYG vs LQD)
-
-Cross-Asset & Risk Mapping
- 6. Cross-Asset Interaction
- 6.5 Correlation Break Monitor (Macro-Level)
- 6.6 Sector Correlation Break Monitor
- 7. Risk Exposure Filter
- 8. Incentive Mapping
- 9. Cause Filter
- 10. Noise vs Signal Filter
- 11. Timing Framework
- 12. Structural Interpretation
-
-Narrative & Allocation Engine
- 13. Narrative Engine (FINAL_STATE)
- 14. Risk Budget Model
- 15. Divergence Monitor
- 16. Volatility-Controlled Exposure
- 17. Style Tilt (Growth / Value / Duration / Defensive)
- 18. Sector Allocation Engine (v2 Rule-Based Scoring)
-
-🆕 Strategic Translation Layer
- . Execution / Style Translation Layer
- - Preferred Company Traits
- - Avoided Company Traits
- - Environment-aware stock type guidance
-
-🆕 Decision & Strategic Framing
-. Executive Summary (3-Line Compression Layer)
-- Decision Layer (So What?)
-- Scenario Framework (Base / Bull / Bear)
-- Transmission Map (Macro → Industry → Company)
+These outputs represent **interpreted capital flow narratives**, not raw data dumps.
 
 ---
 
-📊 Sample Daily Output Snapshot
-Executive Summary (3 Lines)
-Risk Stance: HOLD (40%)
+# 🧠 Implemented Strategy Layers (19 Filters)
+
+## Core Macro Structure
+1. Market Regime Detection  
+2. Liquidity Structure (Enhanced)  
+3. Policy Bias Analysis  
+4. Fed Plumbing (TGA / RRP / Net Liquidity)  
+4.2 High Yield Spread (HY OAS)  
+4.5 Credit Stress (HYG vs LQD)
+
+---
+
+## Cross-Asset & Risk Mapping
+
+6. Cross-Asset Interaction  
+6.5 Correlation Break Monitor (Macro-Level)  
+6.6 Sector Correlation Break Monitor  
+
+7. Risk Exposure Filter  
+8. Incentive Mapping  
+9. Cause Filter  
+10. Noise vs Signal Filter  
+11. Timing Framework  
+12. Structural Interpretation  
+
+---
+
+## Narrative & Allocation Engine
+
+13. Narrative Engine (FINAL_STATE)
+
+14. Risk Budget Model
+
+15. Divergence Monitor
+
+16. Volatility-Controlled Exposure
+
+17. Style Tilt  
+(Growth / Value / Duration / Defensive)
+
+18. Sector Allocation Engine  
+(v2 Rule-Based Scoring)
+
+---
+
+# 🛰️ Geopolitical Early Warning System (Filter 7.2)
+
+The **Geopolitical Early Warning Monitor** detects market stress associated with geopolitical disruptions.
+
+Unlike simple news-driven models, the system observes **cross-asset market reactions** across multiple domains.
+
+### Market Reaction Layer
+
+- VIX (volatility shock)
+- WTI (energy supply risk)
+- GOLD (safe haven demand)
+- USDCNH (China capital flow proxy)
+
+### Emerging Market Stress Layer
+
+- EEM
+- EMB
+- USDMXN
+- USDJPY
+
+### Supply Chain / Shipping Signals
+
+- SEA (shipping companies)
+- BDRY (dry bulk freight index)
+
+### Defense Sector Reaction
+
+- ITA (US Aerospace & Defense ETF)
+- XAR (Defense equal-weight ETF)
+
+### Sovereign Stress Proxy
+
+Bond spread differentials used as **CDS proxies**:
+
+- KR10Y Spread
+- JP10Y Spread
+- CN10Y Spread
+- IL10Y Spread
+- TR10Y Spread
+
+These indicators collectively produce a **Geo Stress Score (z-score composite)**.
+
+### System Output
+
+Geo Stress Score
+↓
+Stress Level Classification
+(CALM / WATCH / ELEVATED / HIGH)
+↓
+Top Contributing Factors
+↓
+Strategic Interpretation
+
+### Example Event Backtest
+
+Tested on major geopolitical shocks:
+
+- 2022 Russia invasion of Ukraine
+- 2023 Gaza war outbreak
+- 2024 Red Sea shipping disruptions
+
+The system identifies:
+
+- dominant cross-asset reactions
+- stress propagation channels
+- sovereign spread responses
+
+---
+
+# 📊 Sample Daily Output Snapshot
+
+### Executive Summary (3 Lines)
+
+Risk Stance: **HOLD (40%)**
 
 Sector Tilt:
 Overweight: Staples, Health Care, Financials
 Underweight: Technology, Real Estate
 
 Execution Focus:
-High FCF / Low leverage / Defensive bias
+High Free Cash Flow
+Low Leverage
+Defensive Bias
 
-Scenario:
+Scenario Framework:
 Base: Liquidity mixed
 Bull: Liquidity recovery
 Bear: Credit stress breakout
 
-The output is not a trading signal.
+This output is **not a trading signal**.
 
-It is a structured macro interpretation and risk allocation framework.
+It is a **structured macro interpretation and risk allocation framework.**
 
 ---
 
-🎯 Differentiation
+# 🎯 Differentiation
 
-- Separation of structure vs price confirmation
-- Liquidity plumbing integration (TGA / RRP)
-- Risk Budget quantification
-- Volatility-adjusted exposure model
+This system differs from conventional macro dashboards in several ways:
+
+- Structural separation of **policy vs price reaction**
+- Explicit modeling of **liquidity plumbing (TGA / RRP)**
+- Quantified **risk budget construction**
+- Volatility-adjusted exposure framework
 - Macro → Style → Sector → Company translation
-- Correlation break detection
+- Cross-asset correlation break detection
 - Execution-layer interpretation
 - Scenario-driven strategist framing
 - Regime-based capital allocation logic
 
-This is not an indicator stack.
+This is **not an indicator stack.**
 
-It is a capital flow hierarchy model.
+It is a **capital flow hierarchy model.**
 
 ---
 
-## Intended Use Cases
+# 🧪 Intended Use Cases
 
 - Macro research portfolio
 - Cross-asset regime monitoring
 - Risk management experimentation
 - Asset allocation framework development
-- Interview demonstration for strategy / research roles
+- Strategy / research interview demonstration
 
 ---
 
-## Ongoing Development
+# 🔭 Ongoing Development
 
-Planned upgrades:
+Planned upgrades include:
 
 - Event-driven Cause Filter (Economic Calendar Integration)
 - Structural Trend Overlay (PMI / 200DMA)
@@ -209,12 +319,30 @@ Planned upgrades:
 
 ---
 
-## Strategic Philosophy
+# 📜 Strategic Philosophy
 
-> "Capital flows reflect incentives. Incentives reflect structure. Structure reflects the architecture of the global system."
+> "Capital flows reflect incentives.  
+> Incentives reflect structure.  
+> Structure reflects the architecture of the global system."
 
-In a world filled with information overload, the greatest asset is not data, but **Interpretation.** I believe that understanding capital flow is the ultimate way to understand human civilization—how we allocate **risk, trust, and belief.** This monitor is my lifelong commitment to decoding that language. It is built to protect sovereignty over one's own decisions in an era of engineered narratives.
+In a world overwhelmed by information, the greatest asset is **not data — but interpretation.**
+
+Understanding capital flow is ultimately a way of understanding how humanity allocates:
+
+- risk
+- trust
+- belief
+
+This monitor represents a long-term commitment to decoding that language.
+
+It is designed to preserve **sovereignty over decision-making in an era of engineered narratives.**
 
 ---
-**Strategy & Capital Flow Research Initiative** *Developed by a Strategist who believes in the power of logic, the depth of macro-history, and the resilience of the human spirit.*
 
+**Strategy & Capital Flow Research Initiative**
+
+Developed by a strategist who believes in:
+
+- the power of logic  
+- the depth of macro history  
+- the resilience of the human spirit
