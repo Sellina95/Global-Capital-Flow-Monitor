@@ -1,6 +1,6 @@
 {
   "start": "2016-08-16",
-  "end_fred_inclusive": "2026-03-05",
+  "end_inclusive": "2026-03-05",
   "sources": {
     "VIX": {
       "source": "fred_csv",
