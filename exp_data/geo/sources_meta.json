@@ -1,126 +1,168 @@
 {
-  "days": 2400,
+  "start": "2016-08-16",
+  "end_fred_inclusive": "2026-03-05",
   "sources": {
     "VIX": {
-      "source": "yfinance",
-      "ticker": "^VIX",
-      "status": "OK",
-      "rows": 2400,
-      "error": null,
-      "from": "2016-08-16",
-      "to": "2026-03-04"
+      "source": "fred_csv",
+      "series_id": "VIXCLS",
+      "status": "EMPTY",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": null
     },
     "WTI": {
-      "source": "yfinance",
-      "ticker": "CL=F",
-      "status": "OK",
-      "rows": 1985,
-      "error": null,
-      "from": "2018-04-13",
-      "to": "2026-03-04"
+      "source": "fred_csv",
+      "series_id": "DCOILWTICO",
+      "status": "EMPTY",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": null
     },
     "GOLD": {
-      "source": "yfinance",
-      "ticker": "GC=F",
-      "status": "OK",
-      "rows": 1985,
-      "error": null,
-      "from": "2018-04-13",
-      "to": "2026-03-04"
+      "source": "fred_csv",
+      "series_id": "GOLDAMGBD228NLBM",
+      "status": "ERROR",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=GOLDAMGBD228NLBM&cosd=2016-08-16&coed=2026-03-05"
     },
     "USDCNH": {
-      "source": "yfinance",
-      "ticker": "CNH=X",
-      "status": "OK",
-      "rows": 1,
-      "error": null,
-      "from": "2026-03-05",
-      "to": "2026-03-05"
+      "source": "fred_csv",
+      "series_id": "DEXCHUS",
+      "status": "EMPTY",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": null
     },
     "USDJPY": {
-      "source": "yfinance",
-      "ticker": "JPY=X",
-      "status": "OK",
-      "rows": 2392,
-      "error": null,
-      "from": "2016-12-23",
-      "to": "2026-03-05"
+      "source": "fred_csv",
+      "series_id": "DEXJPUS",
+      "status": "EMPTY",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": null
     },
     "USDMXN": {
-      "source": "yfinance",
-      "ticker": "MXN=X",
-      "status": "OK",
-      "rows": 2394,
-      "error": null,
-      "from": "2016-12-23",
-      "to": "2026-03-05"
+      "source": "fred_csv",
+      "series_id": "DEXMXUS",
+      "status": "EMPTY",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": null
+    },
+    "US10Y_Y": {
+      "source": "fred_csv",
+      "series_id": "DGS10",
+      "status": "EMPTY",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": null
+    },
+    "KR10Y_Y": {
+      "source": "fred_csv",
+      "series_id": "IRLTLT01KRM156N",
+      "status": "EMPTY",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": null
+    },
+    "JP10Y_Y": {
+      "source": "fred_csv",
+      "series_id": "IRLTLT01JPM156N",
+      "status": "EMPTY",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": null
+    },
+    "CN10Y_Y": {
+      "source": "fred_csv",
+      "series_id": "IRLTLT01CNM156N",
+      "status": "ERROR",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01CNM156N&cosd=2016-08-16&coed=2026-03-05"
+    },
+    "IL10Y_Y": {
+      "source": "fred_csv",
+      "series_id": "IRLTLT01ILM156N",
+      "status": "EMPTY",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": null
+    },
+    "TR10Y_Y": {
+      "source": "fred_csv",
+      "series_id": "IRLTLT01TRM156N",
+      "status": "ERROR",
+      "rows": 0,
+      "from": null,
+      "to": null,
+      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01TRM156N&cosd=2016-08-16&coed=2026-03-05"
     },
     "EEM": {
-      "source": "yfinance",
-      "ticker": "EEM",
+      "source": "stooq_csv",
+      "symbol": "eem.us",
       "status": "OK",
       "rows": 2400,
-      "error": null,
       "from": "2016-08-16",
-      "to": "2026-03-04"
+      "to": "2026-03-04",
+      "error": null
     },
     "EMB": {
-      "source": "yfinance",
-      "ticker": "EMB",
+      "source": "stooq_csv",
+      "symbol": "emb.us",
       "status": "OK",
       "rows": 2400,
-      "error": null,
       "from": "2016-08-16",
-      "to": "2026-03-04"
+      "to": "2026-03-04",
+      "error": null
     },
     "SEA": {
-      "source": "yfinance",
-      "ticker": "SEA",
+      "source": "stooq_csv",
+      "symbol": "sea.us",
       "status": "OK",
-      "rows": 1033,
-      "error": null,
-      "from": "2022-01-20",
-      "to": "2026-03-04"
+      "rows": 1032,
+      "from": "2022-01-21",
+      "to": "2026-03-04",
+      "error": null
     },
     "BDRY": {
-      "source": "yfinance",
-      "ticker": "BDRY",
+      "source": "stooq_csv",
+      "symbol": "bdry.us",
       "status": "OK",
-      "rows": 1998,
-      "error": null,
-      "from": "2018-03-22",
-      "to": "2026-03-04"
+      "rows": 1946,
+      "from": "2018-03-23",
+      "to": "2026-03-04",
+      "error": null
     },
     "ITA": {
-      "source": "yfinance",
-      "ticker": "ITA",
+      "source": "stooq_csv",
+      "symbol": "ita.us",
       "status": "OK",
       "rows": 2400,
-      "error": null,
       "from": "2016-08-16",
-      "to": "2026-03-04"
+      "to": "2026-03-04",
+      "error": null
     },
     "XAR": {
-      "source": "yfinance",
-      "ticker": "XAR",
+      "source": "stooq_csv",
+      "symbol": "xar.us",
       "status": "OK",
       "rows": 2400,
-      "error": null,
       "from": "2016-08-16",
-      "to": "2026-03-04"
-    },
-    "SOVEREIGN_SPREADS": {
-      "source": "csv",
-      "path": "data/sovereign_spreads.csv",
-      "status": "OK",
-      "cols": [
-        "KR10Y_SPREAD",
-        "JP10Y_SPREAD",
-        "CN10Y_SPREAD",
-        "IL10Y_SPREAD",
-        "TR10Y_SPREAD"
-      ],
-      "rows": 250
+      "to": "2026-03-04",
+      "error": null
     }
   }
 }
