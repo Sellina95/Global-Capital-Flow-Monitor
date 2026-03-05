@@ -1,70 +1,168 @@
 {
+  "start": "2016-08-16",
+  "end": "2026-03-05",
   "sources": {
     "VIX": {
-      "status": "ERROR",
-      "error": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=30)"
+      "source": "FRED",
+      "ticker": "VIXCLS",
+      "status": "OK",
+      "rows": 9135,
+      "error": null,
+      "from": "1990-01-02",
+      "to": "2026-03-03"
     },
     "WTI": {
-      "status": "ERROR",
-      "error": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=30)"
+      "source": "FRED",
+      "ticker": "DCOILWTICO",
+      "status": "OK",
+      "rows": 10109,
+      "error": null,
+      "from": "1986-01-02",
+      "to": "2026-03-02"
     },
     "GOLD": {
-      "status": "ERROR",
-      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=GOLDAMGBD228NLBM"
-    },
-    "USDCNH": {
-      "status": "ERROR",
-      "error": "FRED schema error DEXCHUS"
+      "source": "yfinance",
+      "ticker": "GC=F",
+      "status": "OK",
+      "rows": 2399,
+      "error": null,
+      "from": "2016-08-16",
+      "to": "2026-03-04"
     },
     "USDJPY": {
-      "status": "ERROR",
-      "error": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=30)"
+      "source": "FRED",
+      "ticker": "DEXJPUS",
+      "status": "OK",
+      "rows": 13824,
+      "error": null,
+      "from": "1971-01-04",
+      "to": "2026-02-27"
     },
     "USDMXN": {
-      "status": "ERROR",
-      "error": "FRED schema error DEXMXUS"
+      "source": "FRED",
+      "ticker": "DEXMXUS",
+      "status": "OK",
+      "rows": 8098,
+      "error": null,
+      "from": "1993-11-08",
+      "to": "2026-02-27"
     },
     "US10Y_Y": {
-      "status": "ERROR",
-      "error": "FRED schema error DGS10"
+      "source": "FRED",
+      "ticker": "DGS10",
+      "status": "OK",
+      "rows": 16025,
+      "error": null,
+      "from": "1962-01-02",
+      "to": "2026-03-03"
     },
     "KR10Y_Y": {
-      "status": "ERROR",
-      "error": "FRED schema error IRLTLT01KRM156N"
+      "source": "FRED",
+      "ticker": "IRLTLT01KRM156N",
+      "status": "OK",
+      "rows": 304,
+      "error": null,
+      "from": "2000-10-01",
+      "to": "2026-01-01"
     },
     "JP10Y_Y": {
-      "status": "ERROR",
-      "error": "FRED schema error IRLTLT01JPM156N"
+      "source": "FRED",
+      "ticker": "IRLTLT01JPM156N",
+      "status": "OK",
+      "rows": 445,
+      "error": null,
+      "from": "1989-01-01",
+      "to": "2026-01-01"
     },
     "CN10Y_Y": {
+      "source": "FRED",
+      "ticker": "IRLTLT01CNM156N",
       "status": "ERROR",
-      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01CNM156N"
+      "rows": 0,
+      "error": "HTTPError: HTTP Error 404: Not Found",
+      "from": null,
+      "to": null
     },
     "IL10Y_Y": {
-      "status": "ERROR",
-      "error": "FRED schema error IRLTLT01ILM156N"
+      "source": "FRED",
+      "ticker": "IRLTLT01ILM156N",
+      "status": "OK",
+      "rows": 349,
+      "error": null,
+      "from": "1997-01-01",
+      "to": "2026-01-01"
     },
     "TR10Y_Y": {
+      "source": "FRED",
+      "ticker": "IRLTLT01TRM156N",
       "status": "ERROR",
-      "error": "404 Client Error: Not Found for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01TRM156N"
+      "rows": 0,
+      "error": "HTTPError: HTTP Error 404: Not Found",
+      "from": null,
+      "to": null
     },
     "EEM": {
-      "status": "OK"
+      "source": "STOOQ",
+      "ticker": "eem.us",
+      "status": "OK",
+      "rows": 5287,
+      "error": null,
+      "from": "2005-02-25",
+      "to": "2026-03-04"
     },
     "EMB": {
-      "status": "OK"
+      "source": "STOOQ",
+      "ticker": "emb.us",
+      "status": "OK",
+      "rows": 4577,
+      "error": null,
+      "from": "2007-12-19",
+      "to": "2026-03-04"
     },
     "SEA": {
-      "status": "OK"
+      "source": "STOOQ",
+      "ticker": "sea.us",
+      "status": "OK",
+      "rows": 1032,
+      "error": null,
+      "from": "2022-01-21",
+      "to": "2026-03-04"
     },
     "BDRY": {
-      "status": "OK"
+      "source": "STOOQ",
+      "ticker": "bdry.us",
+      "status": "OK",
+      "rows": 1946,
+      "error": null,
+      "from": "2018-03-23",
+      "to": "2026-03-04"
     },
     "ITA": {
-      "status": "OK"
+      "source": "STOOQ",
+      "ticker": "ita.us",
+      "status": "OK",
+      "rows": 4987,
+      "error": null,
+      "from": "2006-05-05",
+      "to": "2026-03-04"
     },
     "XAR": {
-      "status": "OK"
+      "source": "STOOQ",
+      "ticker": "xar.us",
+      "status": "OK",
+      "rows": 3499,
+      "error": null,
+      "from": "2011-10-04",
+      "to": "2026-03-04"
+    },
+    "USDCNH": {
+      "source": "yfinance",
+      "ticker": "CNY=X",
+      "status": "OK",
+      "rows": 2483,
+      "error": null,
+      "from": "2016-08-16",
+      "to": "2026-03-04"
     }
   }
 }
