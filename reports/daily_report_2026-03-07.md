@@ -135,11 +135,16 @@
 - **유가 보합(WTI→)** → 물가 변수 제한
 
 ### ⚠ 6.5) Correlation Break Monitor
+⚠ Market Closed / Stale Data → Correlation signals muted.
+
+- DEBUG: US10Y=0.0, TECH(qqq/xlk)=0.0, SPY=0.0
 
 No significant correlation break detected.
 
 ### ⚠ 6.6) Sector Correlation Break Monitor
 - DEBUG: pct XLK=0.0, XLF=0.0, XLE=0.0, XLRE=0.0
+⚠ Market Closed / Stale Data → Sector signals muted.
+
 No significant sector-level correlation break detected.
 
 ### 🧩 7) Risk Exposure Filter (숨은 리스크 분석)
@@ -151,6 +156,8 @@ No significant sector-level correlation break detected.
 - **유가 보합(WTI→)** → 물가 변수 제한
 
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
+⚠ Market Closed / Stale Data → Price-based geo signals muted.
+
 - **Geo Stress Score (z-composite):** **+0.16**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.35 / defined weight: 1.35)*
 - **Top Drivers:**
