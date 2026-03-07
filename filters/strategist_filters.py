@@ -1268,7 +1268,7 @@ def attach_geopolitical_ew_layer(
                         df2[c] = pd.to_numeric(df2[c], errors="coerce").ffill()
 
                         # fallback → market_data
-                        if df2[c].iloc[-1] != df2[c].iloc[-1]:
+                        if pd.isna(df2[c].iloc[-1]):
                             if c in market_data:
                                 df2.loc[df2.index[-1], c] = market_data.get(c)
 
@@ -1278,47 +1278,37 @@ def attach_geopolitical_ew_layer(
     # -----------------------
     # helpers
     # -----------------------
-
     def _zscore_last_level(series: pd.Series, win: int):
-
         s = pd.to_numeric(series, errors="coerce").dropna()
 
         if len(s) < max(10, min(win, 20)):
             return None
 
         tail = s.tail(win)
-
         mu = float(tail.mean())
         sd = float(tail.std(ddof=0))
 
         if sd == 0:
-            return None
+            return 0.0
 
         return float((tail.iloc[-1] - mu) / sd)
 
     def _series_level_from_df(df_, key):
-
         return pd.to_numeric(df_.get(key), errors="coerce")
 
     # -----------------------
-    # compute score
+    # pass 1: collect usable factors
     # -----------------------
-
-    components = []
+    usable_components = []
     missing = []
 
-    raw_score = 0.0
-    used_weight = 0.0
+    total_defined_weight = sum(float(item[1]) for item in GEO_FACTORS)
 
     for item in GEO_FACTORS:
-
         key = item[0]
-        w = item[1]
+        raw_weight = float(item[1])
         transform = item[2]
-
-        mode = None
-        if len(item) >= 4:
-            mode = item[3]
+        mode = item[3] if len(item) >= 4 else None
 
         if mode is None:
             mode = "level" if key.endswith("_SPREAD") else "pct"
@@ -1326,12 +1316,9 @@ def attach_geopolitical_ew_layer(
         # -----------------------
         # fallback check
         # -----------------------
-
         if key not in df2.columns:
-
             if key in market_data:
                 val = market_data.get(key)
-
                 if val is not None:
                     df2.loc[df2.index[-1], key] = val
                 else:
@@ -1344,16 +1331,12 @@ def attach_geopolitical_ew_layer(
         # -----------------------
         # compute zscore
         # -----------------------
-
         z = None
 
         if mode == "level":
-
             level_series = _series_level_from_df(df2, key)
             z = _zscore_last_level(level_series, window)
-
         else:
-
             pct = _pct_series_from_df(df2, key)
             z = _zscore_last(pct, window)
 
@@ -1363,31 +1346,54 @@ def attach_geopolitical_ew_layer(
 
         z_used = -z if transform == "inverse" else z
 
-        contrib = float(w) * float(z_used)
-
-        raw_score += contrib
-        used_weight += float(w)
-
-        components.append(
+        usable_components.append(
             {
                 "key": key,
-                "weight": float(w),
+                "raw_weight": raw_weight,
                 "z": float(z),
                 "z_used": float(z_used),
-                "contrib": float(contrib),
                 "transform": transform,
                 "mode": mode,
             }
         )
 
-    score = (raw_score / used_weight) if used_weight > 0 else None
+    # -----------------------
+    # pass 2: dynamic re-weighting
+    # -----------------------
+    used_weight = sum(c["raw_weight"] for c in usable_components)
+    coverage = (used_weight / total_defined_weight) if total_defined_weight > 0 else 0.0
 
+    components = []
+    score = None
+
+    if used_weight > 0:
+        score = 0.0
+
+        for c in usable_components:
+            normalized_weight = c["raw_weight"] / used_weight
+            contrib = c["z_used"] * normalized_weight
+            score += contrib
+
+            components.append(
+                {
+                    "key": c["key"],
+                    "weight": c["raw_weight"],                 # 원래 weight
+                    "normalized_weight": normalized_weight,    # 실제 사용 weight
+                    "z": c["z"],
+                    "z_used": c["z_used"],
+                    "contrib": contrib,                        # normalized contrib
+                    "transform": c["transform"],
+                    "mode": c["mode"],
+                }
+            )
+
+    # -----------------------
+    # level label
+    # -----------------------
     level = "N/A"
 
     if score is not None:
-
         for name, lo, hi in GEO_THRESHOLDS:
-
             if score >= lo and score < hi:
                 level = name
                 break
@@ -1397,12 +1403,14 @@ def attach_geopolitical_ew_layer(
         "level": level,
         "window": window,
         "used_weight": used_weight,
+        "total_defined_weight": total_defined_weight,
+        "coverage": coverage,
         "missing": missing,
         "components": components,
     }
 
     return market_data
-
+    
 def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     """
     리포트 출력용 문자열
@@ -1433,7 +1441,16 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     # -----------------------
     # main score
     # -----------------------
+    coverage = geo.get("coverage")
+    used_weight = geo.get("used_weight")
+    total_defined_weight = geo.get("total_defined_weight")
+
     lines.append(f"- **Geo Stress Score (z-composite):** **{score:+.2f}**  *(Level: {level})*")
+
+    if coverage is not None:
+        lines.append(
+            f"- **Coverage:** {coverage:.0%} *(used weight: {used_weight:.2f} / defined weight: {total_defined_weight:.2f})*"
+    )
 
     # -----------------------
     # top contributors
@@ -1448,9 +1465,11 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 
     lines.append("- **Top Drivers:**")
     for c in top:
+        nw = c.get("normalized_weight", c.get("weight", 0.0))
         lines.append(
-            f"  - {c['key']}: z_used={c['z_used']:+.2f} (w={c['weight']:.2f}) → contrib={c['contrib']:+.2f}"
-        )
+            f"  - {c['key']}: z_used={c['z_used']:+.2f} "
+            f"(raw_w={c['weight']:.2f}, norm_w={nw:.2f}) → contrib={c['contrib']:+.2f}"
+    )
 
     # -----------------------
     # always show missing line
