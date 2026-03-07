@@ -6,7 +6,11 @@ import math
 # =========================
 # Helpers
 # =========================
-
+def _cumret_series_from_df(df: pd.DataFrame, col: str, days: int = 5) -> pd.Series:
+    s = pd.to_numeric(df[col], errors="coerce")
+    s = s.dropna()
+    return s.pct_change(days) * 100.0
+    
 def _to_float(x: Any) -> Optional[float]:
     try:
         if x is None:
@@ -1257,7 +1261,6 @@ def attach_geopolitical_ew_layer(
                     wanted_cols.append(c)
 
             if len(wanted_cols) > 1:
-
                 df2 = pd.merge(df2, sov2[wanted_cols], on="date", how="left")
 
                 for c in wanted_cols:
@@ -1329,13 +1332,31 @@ def attach_geopolitical_ew_layer(
         # compute zscore
         # -----------------------
         z = None
+        z_1d = None
+        z_5d = None
 
         if mode == "level":
             level_series = _series_level_from_df(df2, key)
             z = _zscore_last_level(level_series, window)
+
         else:
-            pct = _pct_series_from_df(df2, key)
-            z = _zscore_last(pct, window)
+            pct_1d = _pct_series_from_df(df2, key)
+            pct_5d = _cumret_series_from_df(df2, key, days=5)
+
+            z_1d = _zscore_last(pct_1d, window)
+            z_5d = _zscore_last(pct_5d, window)
+
+            # 둘 다 없으면 skip
+            if z_1d is None and z_5d is None:
+                z = None
+            # 하나만 있으면 그걸 사용
+            elif z_1d is None:
+                z = z_5d
+            elif z_5d is None:
+                z = z_1d
+            # 둘 다 있으면 blended
+            else:
+                z = 0.6 * float(z_1d) + 0.4 * float(z_5d)
 
         if z is None:
             missing.append(key)
@@ -1347,7 +1368,9 @@ def attach_geopolitical_ew_layer(
             {
                 "key": key,
                 "raw_weight": raw_weight,
-                "z": float(z),
+                "z": float(z),              # blended or level z
+                "z_1d": None if z_1d is None else float(z_1d),
+                "z_5d": None if z_5d is None else float(z_5d),
                 "z_used": float(z_used),
                 "transform": transform,
                 "mode": mode,
@@ -1376,7 +1399,9 @@ def attach_geopolitical_ew_layer(
                     "key": c["key"],
                     "weight": c["raw_weight"],                 # 원래 weight
                     "normalized_weight": normalized_weight,    # 실제 사용 weight
-                    "z": c["z"],
+                    "z": c["z"],                               # blended or level z
+                    "z_1d": c["z_1d"],
+                    "z_5d": c["z_5d"],
                     "z_used": c["z_used"],
                     "contrib": contrib,                        # normalized contrib
                     "transform": c["transform"],
@@ -1447,7 +1472,7 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     if coverage is not None:
         lines.append(
             f"- **Coverage:** {coverage:.0%} *(used weight: {used_weight:.2f} / defined weight: {total_defined_weight:.2f})*"
-    )
+        )
 
     # -----------------------
     # top contributors
@@ -1463,10 +1488,23 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     lines.append("- **Top Drivers:**")
     for c in top:
         nw = c.get("normalized_weight", c.get("weight", 0.0))
-        lines.append(
-            f"  - {c['key']}: z_used={c['z_used']:+.2f} "
-            f"(raw_w={c['weight']:.2f}, norm_w={nw:.2f}) → contrib={c['contrib']:+.2f}"
-    )
+
+        if c.get("mode") == "pct":
+            z1 = c.get("z_1d")
+            z5 = c.get("z_5d")
+            z1_txt = "NA" if z1 is None else f"{z1:+.2f}"
+            z5_txt = "NA" if z5 is None else f"{z5:+.2f}"
+
+            lines.append(
+                f"  - {c['key']}: z_used={c['z_used']:+.2f} "
+                f"(z1d={z1_txt}, z5d={z5_txt}, raw_w={c['weight']:.2f}, norm_w={nw:.2f}) "
+                f"→ contrib={c['contrib']:+.2f}"
+            )
+        else:
+            lines.append(
+                f"  - {c['key']}: z_used={c['z_used']:+.2f} "
+                f"(mode=level, raw_w={c['weight']:.2f}, norm_w={nw:.2f}) → contrib={c['contrib']:+.2f}"
+            )
 
     # -----------------------
     # always show missing line
@@ -1495,18 +1533,14 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 
     if level in ("NORMAL",):
         lines.append("- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.")
-
     elif level in ("ELEVATED",):
         lines.append("- 조기경보 ‘상승’ 구간: **사이징 보수적**, 이벤트 리스크(중동/중국/EM) 헤지 후보 점검.")
-
     elif level in ("HIGH",):
         lines.append("- 스트레스 ‘높음’: **리스크 익스포저 축소 준비**, EM/고베타/레버리지 노출 점검.")
-
     else:  # EXTREME / CONFLICT
         lines.append("- 스트레스 ‘극단’: **디레버리징 + 방어자산/헤지 우선**, 갭리스크 대비(현금/단기)")
 
     return "\n".join(lines)
-
 # =========================
 # 8) Incentive Filter
 # =========================
