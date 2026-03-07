@@ -762,14 +762,20 @@ def generate_daily_report() -> None:
     # - 기존 "pct_change==0" 기반은 장중/휴장/데이터지연에서 오탐이 잦음
     # - "데이터 날짜가 오늘(UTC) 기준으로 너무 오래됐는지"로 판단
     # -----------------------------
+        # -----------------------------
+    # Detect stale / market closed
+    # -----------------------------
     stale = False
     try:
         last_date = pd.to_datetime(df.iloc[today_idx]["date"]).date()
-        today_utc = pd.Timestamp.utcnow().date()
+        now_utc = pd.Timestamp.utcnow()
+        today_utc = now_utc.date()
 
-        # 금/토/일+월초 등에서 데이터가 하루 밀릴 수 있으니
-        # 기본은 2일 이상 차이나면 stale로 간주
-        if (today_utc - last_date).days >= 2:
+        # 주말이면 market closed / stale 처리
+        if now_utc.weekday() >= 5:   # 5=Sat, 6=Sun
+            stale = True
+        # 평일인데 데이터가 2일 이상 밀렸으면 stale
+        elif (today_utc - last_date).days >= 2:
             stale = True
     except Exception:
         stale = False
