@@ -2720,6 +2720,7 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(risk_exposure_filter(market_data))
     sections.append("")
+    print("DEBUG _STALE:", market_data.get("_STALE"))
     sections.append(geopolitical_early_warning_filter(market_data))
     sections.append("")
     sections.append(incentive_filter(market_data))
