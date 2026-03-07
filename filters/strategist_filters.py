@@ -1,7 +1,3 @@
-
-
-
-
 from __future__ import annotations
 from typing import Dict, Any, Optional, List, Tuple
 import pandas as pd
@@ -10,6 +6,34 @@ import math
 # =========================
 # Helpers
 # =========================
+def detect_stale_data(df: pd.DataFrame) -> bool:
+    """
+    주말/휴장성 stale 데이터 판정용.
+    현재는 보수적으로:
+    - 토/일이면 True
+    - 평일이면 마지막 데이터 날짜가 오늘보다 과거면 True
+    """
+    now = pd.Timestamp.now()
+
+    # 주말
+    if now.weekday() >= 5:  # 5=Sat, 6=Sun
+        return True
+
+    if df is None or df.empty or "date" not in df.columns:
+        return False
+
+    d = df.copy()
+    d["date"] = pd.to_datetime(d["date"], errors="coerce")
+    d = d.dropna(subset=["date"])
+
+    if d.empty:
+        return False
+
+    last_dt = d["date"].max().date()
+    today_dt = now.date()
+
+    return last_dt < today_dt
+
 def _to_float(x: Any) -> Optional[float]:
     try:
         if x is None:
