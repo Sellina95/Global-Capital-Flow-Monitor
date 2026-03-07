@@ -158,13 +158,13 @@ No significant sector-level correlation break detected.
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
 ⚠ Market Closed / Stale Data → Price-based geo signals muted.
 
-- **Geo Stress Score (z-composite):** **+0.16**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.66**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.35 / defined weight: 1.35)*
 - **Top Drivers:**
-  - KR10Y_SPREAD: z_used=+1.43 (raw_w=0.08, norm_w=0.06) → contrib=+0.08
-  - TR10Y_SPREAD: z_used=+1.74 (raw_w=0.05, norm_w=0.04) → contrib=+0.06
-  - USDCNH: z_used=+0.30 (raw_w=0.18, norm_w=0.13) → contrib=+0.04
-  - CN10Y_SPREAD: z_used=+0.50 (raw_w=0.06, norm_w=0.04) → contrib=+0.02
+  - USDCNH: z_used=+1.38 (z1d=+0.30, z5d=+2.99, raw_w=0.18, norm_w=0.13) → contrib=+0.18
+  - VIX: z_used=+0.91 (z1d=-0.15, z5d=+2.51, raw_w=0.18, norm_w=0.13) → contrib=+0.12
+  - WTI: z_used=+1.16 (z1d=-0.28, z5d=+3.33, raw_w=0.10, norm_w=0.07) → contrib=+0.09
+  - KR10Y_SPREAD: z_used=+1.43 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=+0.08
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, CN10Y_SPREAD, IL10Y_SPREAD, TR10Y_SPREAD
 
