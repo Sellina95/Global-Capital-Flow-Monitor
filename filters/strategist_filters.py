@@ -1,11 +1,28 @@
 from __future__ import annotations
 from typing import Dict, Any, Optional, List, Tuple
+
 import pandas as pd
 import math
 
 # =========================
 # Helpers
 # =========================
+
+def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold: float = -2.0) -> bool:
+    """
+    국가 ETF의 급락 여부를 체크하는 함수.
+    5일간의 누적 변화율이 threshold(기본값: -2%) 이상 하락한 경우 급락으로 간주.
+    """
+    # Calculate cumulative return (pct change over 5 days)
+    cum_ret = calculate_cumulative_return(df, days)
+    
+    # Check if the cumulative return is below the threshold
+    if cum_ret.iloc[-1] < threshold:
+        print(f"[INFO] {etf_symbol} has crashed: {cum_ret.iloc[-1]:.2f}% change")
+        return True
+    else:
+        return False
+        
 def _cumret_series_from_df(df: pd.DataFrame, col: str, days: int = 5) -> pd.Series:
     s = pd.to_numeric(df[col], errors="coerce")
     s = s.dropna()
@@ -148,7 +165,46 @@ def _strength_label(key: str, pct_change: Optional[float]) -> str:
     if p < 0.80:
         return "Clear"
     return "Strong"
+    
+def attach_country_risk_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int,
+    window: int = GEO_WINDOW,
+) -> Dict[str, Any]:
+    """
+    국가 리스크를 평가하기 위해 ETF 변동성을 반영 (예: EIS)
+    """
+    # ETF를 통한 리스크 평가 (예시: 이스라엘 ETF)
+    country_etf = 'EIS'  # 이스라엘 ETF 예시
+    pct_1d = _pct_series_from_df(df, country_etf)
+    pct_5d = _cumret_series_from_df(df, country_etf, days=5)
 
+    # zscore 계산 (급락 기준으로 zscore를 적용)
+    z_1d = _zscore_last(pct_1d, window)
+    z_5d = _zscore_last(pct_5d, window)
+
+    # 급락 여부 (예: z_5d < -2일 경우 급락으로 판단)
+    if z_5d is not None and z_5d < -2:
+        country_risk = "HIGH"  # 급락으로 인한 리스크 상승
+    else:
+        country_risk = "NORMAL"  # 급락이 없다면 정상 상태
+
+    # 급락 여부를 추가로 체크
+    is_crash = check_etf_crash(df, country_etf)
+    if is_crash:
+        country_risk = "EXTREME"  # 급락이 발생하면 리스크를 "EXTREME"로 설정
+
+    # 결과를 market_data에 추가
+    market_data["COUNTRY_RISK"] = {
+        "country_etf": country_etf,
+        "z_1d": z_1d,
+        "z_5d": z_5d,
+        "risk_level": country_risk,
+        "crash": is_crash,
+    }
+
+    return market_data
 
 # =========================
 # 1) Regime
@@ -1579,6 +1635,10 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     momentum = geo.get("momentum")
     momentum_label = geo.get("momentum_label", "N/A")
 
+    country_risk = market_data.get("COUNTRY_RISK", {})
+    country_etf = country_risk.get("country_etf", "N/A")
+    crash_status = "Yes" if country_risk.get("crash") else "No"
+
     lines = []
     lines.append("### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)")
 
@@ -1673,23 +1733,26 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
     lines.append("**So What?**")
 
-    # NEW: So What 문구 분기
+    # 기존 문구
     if level == "NORMAL":
-        if momentum > 0.25:  # RISING
+        if momentum == "RISING":
             lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 상승하고 있는 중입니다. 경계 강화 필요.")
-        elif momentum < -0.25:  # FALLING
+        elif momentum == "FALLING":
             lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 완화되고 있는 중입니다. 경계 유지.")
-        else:  # FLAT
+        else:
             lines.append("- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.")
     elif level == "ELEVATED":
-        if momentum > 0.25:  # RISING
+        if momentum == "RISING":
             lines.append("- 스트레스 ‘상승’ 구간: 리스크 상승 가속 → 헤지/사이징 축소 검토")
-        elif momentum < -0.25:  # FALLING
+        elif momentum == "FALLING":
             lines.append("- 스트레스 ‘상승’ 구간: 리스크 상승 억제 중 → 과잉 대응 금지, 선별 대응 필요")
     elif level == "HIGH":
         lines.append("- 스트레스 ‘높음’: 리스크 익스포저 축소 준비, EM/고베타/레버리지 노출 점검.")
     else:  # EXTREME / CONFLICT
         lines.append("- 스트레스 ‘극단’: 디레버리징 + 방어자산/헤지 우선, 갭리스크 대비(현금/단기)")
+
+    # 추가된 국가 리스크 정보
+    lines.append(f"- **Country ETF Crash?** {crash_status} ({country_etf})")
 
     return "\n".join(lines)
     
