@@ -171,7 +171,7 @@ No significant sector-level correlation break detected.
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, CN10Y_SPREAD, IL10Y_SPREAD, TR10Y_SPREAD
 
 **So What?**
-- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
+- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 완화되고 있는 중입니다. 경계 유지.
 
 ### 💸 8) Incentive Filter
 - **질문:** 누가 이득을 보고 있는가?
@@ -209,7 +209,7 @@ No significant sector-level correlation break detected.
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.020 / FCIΔ +0.000 / DXYΔ +0.000 / US10YΔ +0.000
-- **Sentiment (Fear&Greed):** 15.707449013506816 (FEAR)
+- **Sentiment (Fear&Greed):** 16.082899627680533 (FEAR)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=UP / level=HIGH
 - **Phase:** WAITING / RANGE (대기·박스권)
