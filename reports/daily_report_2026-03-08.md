@@ -4,7 +4,7 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.133  (+0.00% vs 4.133)
-- **달러 인덱스**: 98.990  (+0.00% vs 98.990)
+- **달러 인덱스**: 98.855  (+0.00% vs 98.855)
 - **WTI 유가**: 90.900  (+0.00% vs 90.900)
 - **변동성 지수 (VIX)**: 29.490  (+0.00% vs 29.490)
 - **원/달러 환율**: 1482.600  (+0.21% vs 1479.510)
@@ -158,18 +158,20 @@ No significant sector-level correlation break detected.
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
 ⚠ Market Closed / Stale Data → Price-based geo signals muted.
 
-- **Geo Stress Score (z-composite):** **+0.52**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.71**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.35 / defined weight: 1.35)*
+- **3D Avg Score:** +1.14
+- **Geo Momentum:** -0.43 *(Status: FALLING)*
 - **Top Drivers:**
-  - USDCNH: z_used=+0.85 (z1d=+0.29, z5d=+1.70, raw_w=0.18, norm_w=0.13) → contrib=+0.11
-  - USDMXN: z_used=+2.21 (z1d=+1.77, z5d=+2.86, raw_w=0.05, norm_w=0.04) → contrib=+0.08
-  - KR10Y_SPREAD: z_used=+1.38 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=+0.08
-  - VIX: z_used=+0.50 (z1d=-0.17, z5d=+1.50, raw_w=0.18, norm_w=0.13) → contrib=+0.07
+  - USDCNH: z_used=+1.38 (z1d=+0.30, z5d=+2.99, raw_w=0.18, norm_w=0.13) → contrib=+0.18
+  - VIX: z_used=+0.91 (z1d=-0.15, z5d=+2.51, raw_w=0.18, norm_w=0.13) → contrib=+0.12
+  - WTI: z_used=+1.16 (z1d=-0.28, z5d=+3.33, raw_w=0.10, norm_w=0.07) → contrib=+0.09
+  - KR10Y_SPREAD: z_used=+1.43 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=+0.08
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, CN10Y_SPREAD, IL10Y_SPREAD, TR10Y_SPREAD
 
 **So What?**
-- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
+- 공식 레벨은 아직 NORMAL이나, 최근 누적 기준으로 지정학 압력이 경계 상단으로 올라오는 중. 기존 매크로 레짐은 유지하되 EM/중국/원자재 민감 자산은 경계 강화.
 
 ### 💸 8) Incentive Filter
 - **질문:** 누가 이득을 보고 있는가?
@@ -194,7 +196,7 @@ No significant sector-level correlation break detected.
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.133), DXY(98.990), VIX(29.49)
+- **Today snapshot:** US10Y(4.133), DXY(98.855), VIX(29.49)
 
 ### 🏗️ 12) Structural Filter
 - **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
@@ -207,7 +209,7 @@ No significant sector-level correlation break detected.
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.020 / FCIΔ +0.000 / DXYΔ +0.000 / US10YΔ +0.000
-- **Sentiment (Fear&Greed):** 17.576257741468517 (FEAR)
+- **Sentiment (Fear&Greed):** 16.082899627680533 (FEAR)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=UP / level=HIGH
 - **Phase:** WAITING / RANGE (대기·박스권)
