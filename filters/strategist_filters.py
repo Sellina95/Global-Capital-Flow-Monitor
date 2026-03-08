@@ -8,20 +8,6 @@ import math
 # Helpers
 # =========================
 
-def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold: float = -2.0) -> bool:
-    """
-    국가 ETF의 급락 여부를 체크하는 함수.
-    5일간의 누적 변화율이 threshold(기본값: -2%) 이상 하락한 경우 급락으로 간주.
-    """
-    # Calculate cumulative return (pct change over 5 days)
-    cum_ret = calculate_cumulative_return(df, days)
-    
-    # Check if the cumulative return is below the threshold
-    if cum_ret.iloc[-1] < threshold:
-        print(f"[INFO] {etf_symbol} has crashed: {cum_ret.iloc[-1]:.2f}% change")
-        return True
-    else:
-        return False
         
 def _cumret_series_from_df(df: pd.DataFrame, col: str, days: int = 5) -> pd.Series:
     s = pd.to_numeric(df[col], errors="coerce")
@@ -1273,6 +1259,21 @@ def _zscore_last(s: pd.Series, window: int) -> Optional[float]:
     if sd == 0:
         return 0.0
     return (last - mu) / sd
+
+def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold: float = -2.0) -> bool:
+    """
+    국가 ETF의 급락 여부를 체크하는 함수.
+    5일간의 누적 변화율이 threshold(기본값: -2%) 이상 하락한 경우 급락으로 간주.
+    """
+    # Calculate cumulative return (pct change over 5 days)
+    cum_ret = calculate_cumulative_return(df, days)
+    
+    # Check if the cumulative return is below the threshold
+    if cum_ret.iloc[-1] < threshold:
+        print(f"[INFO] {etf_symbol} has crashed: {cum_ret.iloc[-1]:.2f}% change")
+        return True
+    else:
+        return False
 
 from typing import Dict, Any, Optional, List, Tuple
 import pandas as pd
