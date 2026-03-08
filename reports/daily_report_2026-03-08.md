@@ -7,7 +7,7 @@
 - **달러 인덱스**: 98.855  (+0.00% vs 98.855)
 - **WTI 유가**: 90.900  (+0.00% vs 90.900)
 - **변동성 지수 (VIX)**: 29.490  (+0.00% vs 29.490)
-- **원/달러 환율**: 1482.600  (+0.21% vs 1479.510)
+- **원/달러 환율**: 1484.590  (+0.34% vs 1479.510)
 
 ---
 
@@ -123,7 +123,7 @@
 - DXY **(Noise, +0.00%)** → 달러 보합(방향성 약함)
 - WTI **(Noise, +0.00%)** → 유가 보합(물가 변수 제한)
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
-- 원/달러(USDKRW) **(Clear, +0.21%)** → 원화 약세/수급 부담
+- 원/달러(USDKRW) **(Clear, +0.34%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -158,10 +158,10 @@ No significant sector-level correlation break detected.
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
 ⚠ Market Closed / Stale Data → Price-based geo signals muted.
 
-- **Geo Stress Score (z-composite):** **+0.71**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.68**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.35 / defined weight: 1.35)*
-- **3D Avg Score:** +1.14
-- **Geo Momentum:** -0.43 *(Status: FALLING)*
+- **3D Avg Score:** +1.13
+- **Geo Momentum:** -0.45 *(Status: FALLING)*
 - **Top Drivers:**
   - USDCNH: z_used=+1.38 (z1d=+0.30, z5d=+2.99, raw_w=0.18, norm_w=0.13) → contrib=+0.18
   - VIX: z_used=+0.91 (z1d=-0.15, z5d=+2.51, raw_w=0.18, norm_w=0.13) → contrib=+0.12
@@ -171,7 +171,8 @@ No significant sector-level correlation break detected.
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, CN10Y_SPREAD, IL10Y_SPREAD, TR10Y_SPREAD
 
 **So What?**
-- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 완화되고 있는 중입니다. 경계 유지.
+- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
+- **Country ETF Crash?** No (N/A)
 
 ### 💸 8) Incentive Filter
 - **질문:** 누가 이득을 보고 있는가?
@@ -209,7 +210,7 @@ No significant sector-level correlation break detected.
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.020 / FCIΔ +0.000 / DXYΔ +0.000 / US10YΔ +0.000
-- **Sentiment (Fear&Greed):** 16.082899627680533 (FEAR)
+- **Sentiment (Fear&Greed):** 15.707449013506816 (FEAR)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=UP / level=HIGH
 - **Phase:** WAITING / RANGE (대기·박스권)
