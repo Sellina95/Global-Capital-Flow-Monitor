@@ -171,7 +171,7 @@ No significant sector-level correlation break detected.
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, CN10Y_SPREAD, IL10Y_SPREAD, TR10Y_SPREAD
 
 **So What?**
-- 공식 레벨은 아직 NORMAL이나, 최근 누적 기준으로 지정학 압력이 경계 상단으로 올라오는 중. 기존 매크로 레짐은 유지하되 EM/중국/원자재 민감 자산은 경계 강화.
+- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
 
 ### 💸 8) Incentive Filter
 - **질문:** 누가 이득을 보고 있는가?
