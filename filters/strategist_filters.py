@@ -1296,6 +1296,105 @@ def attach_geopolitical_ew_layer(
     def _series_level_from_df(df_, key):
         return pd.to_numeric(df_.get(key), errors="coerce")
 
+    def _merge_spreads_for_hist(df_hist: pd.DataFrame) -> pd.DataFrame:
+        """
+        Geo momentum 계산용: 히스토리 slice에도 sovereign spreads 동일 방식으로 merge
+        """
+        out = df_hist.copy()
+
+        try:
+            sov_hist = load_sovereign_spreads_df()
+            if sov_hist is not None and not sov_hist.empty and "date" in sov_hist.columns:
+                sov_hist = sov_hist.copy()
+                sov_hist["date"] = pd.to_datetime(sov_hist["date"], errors="coerce")
+                sov_hist = (
+                    sov_hist.dropna(subset=["date"])
+                    .sort_values("date")
+                    .drop_duplicates("date", keep="last")
+                )
+
+                if "date" in out.columns:
+                    out["date"] = pd.to_datetime(out["date"], errors="coerce")
+
+                wanted_cols = ["date"]
+                for c in ["KR10Y_SPREAD", "JP10Y_SPREAD", "CN10Y_SPREAD", "IL10Y_SPREAD", "TR10Y_SPREAD"]:
+                    if c in sov_hist.columns:
+                        wanted_cols.append(c)
+
+                if len(wanted_cols) > 1:
+                    out = pd.merge(out, sov_hist[wanted_cols], on="date", how="left")
+                    for c in wanted_cols:
+                        if c != "date":
+                            out[c] = pd.to_numeric(out[c], errors="coerce").ffill()
+        except Exception:
+            pass
+
+        return out
+
+    def _compute_geo_score_only(df_input: pd.DataFrame) -> Optional[float]:
+        """
+        Momentum 계산용: score만 간단히 계산
+        """
+        local_usable_components = []
+
+        for item in GEO_FACTORS:
+            key = item[0]
+            raw_weight = float(item[1])
+            transform = item[2]
+            mode = item[3] if len(item) >= 4 else None
+
+            if mode is None:
+                mode = "level" if key.endswith("_SPREAD") else "pct"
+
+            if key not in df_input.columns:
+                continue
+
+            z = None
+            z_1d = None
+            z_5d = None
+
+            if mode == "level":
+                level_series = _series_level_from_df(df_input, key)
+                z = _zscore_last_level(level_series, window)
+            else:
+                pct_1d = _pct_series_from_df(df_input, key)
+                pct_5d = _cumret_series_from_df(df_input, key, days=5)
+
+                z_1d = _zscore_last(pct_1d, window)
+                z_5d = _zscore_last(pct_5d, window)
+
+                if z_1d is None and z_5d is None:
+                    z = None
+                elif z_1d is None:
+                    z = z_5d
+                elif z_5d is None:
+                    z = z_1d
+                else:
+                    z = 0.6 * float(z_1d) + 0.4 * float(z_5d)
+
+            if z is None:
+                continue
+
+            z_used = -z if transform == "inverse" else z
+
+            local_usable_components.append(
+                {
+                    "raw_weight": raw_weight,
+                    "z_used": float(z_used),
+                }
+            )
+
+        local_used_weight = sum(c["raw_weight"] for c in local_usable_components)
+        if local_used_weight <= 0:
+            return None
+
+        local_score = 0.0
+        for c in local_usable_components:
+            norm_w = c["raw_weight"] / local_used_weight
+            local_score += c["z_used"] * norm_w
+
+        return float(local_score)
+
     # -----------------------
     # pass 1: collect usable factors
     # -----------------------
@@ -1346,15 +1445,12 @@ def attach_geopolitical_ew_layer(
             z_1d = _zscore_last(pct_1d, window)
             z_5d = _zscore_last(pct_5d, window)
 
-            # 둘 다 없으면 skip
             if z_1d is None and z_5d is None:
                 z = None
-            # 하나만 있으면 그걸 사용
             elif z_1d is None:
                 z = z_5d
             elif z_5d is None:
                 z = z_1d
-            # 둘 다 있으면 blended
             else:
                 z = 0.6 * float(z_1d) + 0.4 * float(z_5d)
 
@@ -1368,7 +1464,7 @@ def attach_geopolitical_ew_layer(
             {
                 "key": key,
                 "raw_weight": raw_weight,
-                "z": float(z),              # blended or level z
+                "z": float(z),
                 "z_1d": None if z_1d is None else float(z_1d),
                 "z_5d": None if z_5d is None else float(z_5d),
                 "z_used": float(z_used),
@@ -1397,17 +1493,51 @@ def attach_geopolitical_ew_layer(
             components.append(
                 {
                     "key": c["key"],
-                    "weight": c["raw_weight"],                 # 원래 weight
-                    "normalized_weight": normalized_weight,    # 실제 사용 weight
-                    "z": c["z"],                               # blended or level z
+                    "weight": c["raw_weight"],
+                    "normalized_weight": normalized_weight,
+                    "z": c["z"],
                     "z_1d": c["z_1d"],
                     "z_5d": c["z_5d"],
                     "z_used": c["z_used"],
-                    "contrib": contrib,                        # normalized contrib
+                    "contrib": contrib,
                     "transform": c["transform"],
                     "mode": c["mode"],
                 }
             )
+
+    # -----------------------
+    # Geo Momentum
+    # -----------------------
+    geo_score_3d_avg = None
+    geo_momentum = None
+    geo_momentum_label = "N/A"
+
+    try:
+        recent_scores = []
+        start_idx = max(0, today_idx - 2)  # 최근 3개 시점
+
+        for idx in range(start_idx, today_idx + 1):
+            df_hist = df.iloc[: idx + 1].copy()
+            df_hist = _merge_spreads_for_hist(df_hist)
+
+            s = _compute_geo_score_only(df_hist)
+            if s is not None:
+                recent_scores.append(float(s))
+
+        if len(recent_scores) >= 2:
+            geo_score_3d_avg = float(sum(recent_scores) / len(recent_scores))
+
+            if score is not None:
+                geo_momentum = float(score - geo_score_3d_avg)
+
+                if geo_momentum >= 0.25:
+                    geo_momentum_label = "RISING"
+                elif geo_momentum <= -0.25:
+                    geo_momentum_label = "FALLING"
+                else:
+                    geo_momentum_label = "FLAT"
+    except Exception:
+        pass
 
     # -----------------------
     # level label
@@ -1429,6 +1559,9 @@ def attach_geopolitical_ew_layer(
         "coverage": coverage,
         "missing": missing,
         "components": components,
+        "score_3d_avg": geo_score_3d_avg,
+        "momentum": geo_momentum,
+        "momentum_label": geo_momentum_label,
     }
 
     return market_data
@@ -1466,6 +1599,9 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     coverage = geo.get("coverage")
     used_weight = geo.get("used_weight")
     total_defined_weight = geo.get("total_defined_weight")
+    score_3d_avg = geo.get("score_3d_avg")
+    momentum = geo.get("momentum")
+    momentum_label = geo.get("momentum_label", "N/A")
 
     lines.append(f"- **Geo Stress Score (z-composite):** **{score:+.2f}**  *(Level: {level})*")
 
@@ -1473,6 +1609,12 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
         lines.append(
             f"- **Coverage:** {coverage:.0%} *(used weight: {used_weight:.2f} / defined weight: {total_defined_weight:.2f})*"
         )
+
+    if score_3d_avg is not None:
+        lines.append(f"- **3D Avg Score:** {score_3d_avg:+.2f}")
+
+    if momentum is not None:
+        lines.append(f"- **Geo Momentum:** {momentum:+.2f} *(Status: {momentum_label})*")
 
     # -----------------------
     # top contributors
@@ -1531,16 +1673,20 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
     lines.append("**So What?**")
 
-    if level in ("NORMAL",):
-        lines.append("- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.")
-    elif level in ("ELEVATED",):
+    if level == "NORMAL":
+        if score is not None and score >= 0.25:
+            lines.append("- 공식 레벨은 아직 NORMAL이나, 최근 누적 기준으로 지정학 압력이 경계 상단으로 올라오는 중. 기존 매크로 레짐은 유지하되 EM/중국/원자재 민감 자산은 경계 강화.")
+        else:
+            lines.append("- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.")
+    elif level == "ELEVATED":
         lines.append("- 조기경보 ‘상승’ 구간: **사이징 보수적**, 이벤트 리스크(중동/중국/EM) 헤지 후보 점검.")
-    elif level in ("HIGH",):
+    elif level == "HIGH":
         lines.append("- 스트레스 ‘높음’: **리스크 익스포저 축소 준비**, EM/고베타/레버리지 노출 점검.")
     else:  # EXTREME / CONFLICT
         lines.append("- 스트레스 ‘극단’: **디레버리징 + 방어자산/헤지 우선**, 갭리스크 대비(현금/단기)")
 
     return "\n".join(lines)
+    
 # =========================
 # 8) Incentive Filter
 # =========================
