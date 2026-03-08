@@ -1129,7 +1129,7 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 
 GEO_WINDOW = 60
 
-def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold: float = -2.0) -> bool:
+def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold: float = -1.0) -> bool:
     """
     국가 ETF의 급락 여부를 체크하는 함수.
     5일간의 누적 변화율이 threshold(기본값: -2%) 이상 하락한 경우 급락으로 간주.
@@ -1162,6 +1162,9 @@ def attach_country_risk_layer(
     z_1d = _zscore_last(pct_1d, window)
     z_5d = _zscore_last(pct_5d, window)
 
+     # z_1d, z_5d 값 출력
+    print(f"[INFO] {country_etf} z_1d: {z_1d}, z_5d: {z_5d}")
+        
     # 급락 여부 (예: z_5d < -2일 경우 급락으로 판단)
     if z_5d is not None and z_5d < -2:
         country_risk = "HIGH"  # 급락으로 인한 리스크 상승
