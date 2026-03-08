@@ -152,45 +152,6 @@ def _strength_label(key: str, pct_change: Optional[float]) -> str:
         return "Clear"
     return "Strong"
     
-def attach_country_risk_layer(
-    market_data: Dict[str, Any],
-    df: pd.DataFrame,
-    today_idx: int,
-    window: int = GEO_WINDOW,
-) -> Dict[str, Any]:
-    """
-    국가 리스크를 평가하기 위해 ETF 변동성을 반영 (예: EIS)
-    """
-    # ETF를 통한 리스크 평가 (예시: 이스라엘 ETF)
-    country_etf = 'EIS'  # 이스라엘 ETF 예시
-    pct_1d = _pct_series_from_df(df, country_etf)
-    pct_5d = _cumret_series_from_df(df, country_etf, days=5)
-
-    # zscore 계산 (급락 기준으로 zscore를 적용)
-    z_1d = _zscore_last(pct_1d, window)
-    z_5d = _zscore_last(pct_5d, window)
-
-    # 급락 여부 (예: z_5d < -2일 경우 급락으로 판단)
-    if z_5d is not None and z_5d < -2:
-        country_risk = "HIGH"  # 급락으로 인한 리스크 상승
-    else:
-        country_risk = "NORMAL"  # 급락이 없다면 정상 상태
-
-    # 급락 여부를 추가로 체크
-    is_crash = check_etf_crash(df, country_etf)
-    if is_crash:
-        country_risk = "EXTREME"  # 급락이 발생하면 리스크를 "EXTREME"로 설정
-
-    # 결과를 market_data에 추가
-    market_data["COUNTRY_RISK"] = {
-        "country_etf": country_etf,
-        "z_1d": z_1d,
-        "z_5d": z_5d,
-        "risk_level": country_risk,
-        "crash": is_crash,
-    }
-
-    return market_data
 
 # =========================
 # 1) Regime
@@ -1182,6 +1143,47 @@ def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold:
         return True
     else:
         return False
+
+def attach_country_risk_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int,
+    window: int = GEO_WINDOW,
+) -> Dict[str, Any]:
+    """
+    국가 리스크를 평가하기 위해 ETF 변동성을 반영 (예: EIS)
+    """
+    # ETF를 통한 리스크 평가 (예시: 이스라엘 ETF)
+    country_etf = 'EIS'  # 이스라엘 ETF 예시
+    pct_1d = _pct_series_from_df(df, country_etf)
+    pct_5d = _cumret_series_from_df(df, country_etf, days=5)
+
+    # zscore 계산 (급락 기준으로 zscore를 적용)
+    z_1d = _zscore_last(pct_1d, window)
+    z_5d = _zscore_last(pct_5d, window)
+
+    # 급락 여부 (예: z_5d < -2일 경우 급락으로 판단)
+    if z_5d is not None and z_5d < -2:
+        country_risk = "HIGH"  # 급락으로 인한 리스크 상승
+    else:
+        country_risk = "NORMAL"  # 급락이 없다면 정상 상태
+
+    # 급락 여부를 추가로 체크
+    is_crash = check_etf_crash(df, country_etf)
+    if is_crash:
+        country_risk = "EXTREME"  # 급락이 발생하면 리스크를 "EXTREME"로 설정
+
+    # 결과를 market_data에 추가
+    market_data["COUNTRY_RISK"] = {
+        "country_etf": country_etf,
+        "z_1d": z_1d,
+        "z_5d": z_5d,
+        "risk_level": country_risk,
+        "crash": is_crash,
+    }
+
+    return market_data
+
             
 # (key, weight, transform, mode)
 # mode: "pct" | "level"
