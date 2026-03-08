@@ -1675,16 +1675,16 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 
     # NEW: So What 문구 분기
     if level == "NORMAL":
-        if momentum == "RISING":
+        if momentum > 0.25:  # RISING
             lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 상승하고 있는 중입니다. 경계 강화 필요.")
-        elif momentum == "FALLING":
+        elif momentum < -0.25:  # FALLING
             lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 완화되고 있는 중입니다. 경계 유지.")
-        else:
+        else:  # FLAT
             lines.append("- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.")
     elif level == "ELEVATED":
-        if momentum == "RISING":
+        if momentum > 0.25:  # RISING
             lines.append("- 스트레스 ‘상승’ 구간: 리스크 상승 가속 → 헤지/사이징 축소 검토")
-        elif momentum == "FALLING":
+        elif momentum < -0.25:  # FALLING
             lines.append("- 스트레스 ‘상승’ 구간: 리스크 상승 억제 중 → 과잉 대응 금지, 선별 대응 필요")
     elif level == "HIGH":
         lines.append("- 스트레스 ‘높음’: 리스크 익스포저 축소 준비, EM/고베타/레버리지 노출 점검.")
