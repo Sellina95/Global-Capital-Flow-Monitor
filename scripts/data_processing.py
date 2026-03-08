@@ -14,7 +14,7 @@ def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFram
     
     # 필요한 열만 선택하여 반환 (예: 'Date'와 'Close')
     df = df[['Close']]
-    
+    print(f"[INFO] Data for {etf_symbol}: {df.head()}")
     return df
 
 
