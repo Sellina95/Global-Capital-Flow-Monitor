@@ -209,7 +209,7 @@ No significant sector-level correlation break detected.
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.020 / FCIΔ +0.000 / DXYΔ +0.000 / US10YΔ +0.000
-- **Sentiment (Fear&Greed):** 16.082899627680533 (FEAR)
+- **Sentiment (Fear&Greed):** 15.707449013506816 (FEAR)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=UP / level=HIGH
 - **Phase:** WAITING / RANGE (대기·박스권)
