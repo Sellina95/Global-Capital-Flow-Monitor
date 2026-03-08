@@ -1575,6 +1575,9 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     level = geo.get("level", "N/A")
     missing = geo.get("missing", [])
     comps = geo.get("components", [])
+    score_3d_avg = geo.get("score_3d_avg")
+    momentum = geo.get("momentum")
+    momentum_label = geo.get("momentum_label", "N/A")
 
     lines = []
     lines.append("### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)")
@@ -1599,9 +1602,6 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     coverage = geo.get("coverage")
     used_weight = geo.get("used_weight")
     total_defined_weight = geo.get("total_defined_weight")
-    score_3d_avg = geo.get("score_3d_avg")
-    momentum = geo.get("momentum")
-    momentum_label = geo.get("momentum_label", "N/A")
 
     lines.append(f"- **Geo Stress Score (z-composite):** **{score:+.2f}**  *(Level: {level})*")
 
@@ -1673,17 +1673,23 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
     lines.append("**So What?**")
 
+    # NEW: So What 문구 분기
     if level == "NORMAL":
-        if score is not None and score >= 0.25:
-            lines.append("- 공식 레벨은 아직 NORMAL이나, 최근 누적 기준으로 지정학 압력이 경계 상단으로 올라오는 중. 기존 매크로 레짐은 유지하되 EM/중국/원자재 민감 자산은 경계 강화.")
+        if momentum == "RISING":
+            lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 상승하고 있는 중입니다. 경계 강화 필요.")
+        elif momentum == "FALLING":
+            lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 완화되고 있는 중입니다. 경계 유지.")
         else:
             lines.append("- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.")
     elif level == "ELEVATED":
-        lines.append("- 조기경보 ‘상승’ 구간: **사이징 보수적**, 이벤트 리스크(중동/중국/EM) 헤지 후보 점검.")
+        if momentum == "RISING":
+            lines.append("- 스트레스 ‘상승’ 구간: 리스크 상승 가속 → 헤지/사이징 축소 검토")
+        elif momentum == "FALLING":
+            lines.append("- 스트레스 ‘상승’ 구간: 리스크 상승 억제 중 → 과잉 대응 금지, 선별 대응 필요")
     elif level == "HIGH":
-        lines.append("- 스트레스 ‘높음’: **리스크 익스포저 축소 준비**, EM/고베타/레버리지 노출 점검.")
+        lines.append("- 스트레스 ‘높음’: 리스크 익스포저 축소 준비, EM/고베타/레버리지 노출 점검.")
     else:  # EXTREME / CONFLICT
-        lines.append("- 스트레스 ‘극단’: **디레버리징 + 방어자산/헤지 우선**, 갭리스크 대비(현금/단기)")
+        lines.append("- 스트레스 ‘극단’: 디레버리징 + 방어자산/헤지 우선, 갭리스크 대비(현금/단기)")
 
     return "\n".join(lines)
     
