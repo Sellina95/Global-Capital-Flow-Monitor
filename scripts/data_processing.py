@@ -71,6 +71,12 @@ def download_all_etfs_and_save():
     if etf_frames:
         combined_df = pd.concat(etf_frames, axis=1)
         combined_df.sort_index(ascending=True, inplace=True)  # 날짜별로 정렬
+
+        # 기존에 파일이 있으면 삭제하고 새로 저장
+        if os.path.exists('data/country_etf_data_combined.csv'):
+            os.remove('data/country_etf_data_combined.csv')
+
+        # 데이터 저장
         combined_df.to_csv('data/country_etf_data_combined.csv')
         print("[SUCCESS] Integrated CSV created at data/country_etf_data_combined.csv")
     else:
