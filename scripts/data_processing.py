@@ -64,11 +64,18 @@ def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str, output
     # ETF 데이터 가져오기
     df = get_etf_data(etf_symbol, start_date, end_date)
     
-    # 필요한 데이터만 저장
-    df = df[['Close', 'Date']]  # 'Close'와 'Date'만 저장
+    if df.empty:
+        print(f"[ERROR] No data for {etf_symbol}")
+        return
+    
+    # Date를 열로 변환
+    df['Date'] = df.index
+    
+    # 필요한 열만 추출 (Date와 Close)
+    df = df[['Date', 'Close']]
     
     # CSV 파일로 저장
-    df.to_csv(output_file, index=True)
+    df.to_csv(output_file, index=False)  # index=False로 인덱스 저장 방지
     print(f"[INFO] {etf_symbol} data saved to {output_file}")
 
 
