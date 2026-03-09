@@ -1,37 +1,31 @@
 import yfinance as yf
 import pandas as pd
 
-# ETF 목록 (대표적인 국가들)
-ETF_LIST = [
-    "EIS",   # 이스라엘
-    "SPY",   # 미국
-    "VTI",   # 미국 전체 (Vanguard Total Stock Market ETF)
-    "EEM",   # 이머징 마켓 (EM)
-    "GLD",   # 금 (Gold ETF)
-    "XLF",   # 금융 (Financials)
-    "XLE",   # 에너지 (Energy)
-    "XLY",   # 소비재 (Consumer Discretionary)
-    "IWM",   # 소형주 (Small Cap)
-    "VOO",   # S&P 500 ETF
+# 국가별 ETF 목록 정의 (전체 ETF 리스트)
+country_etf_list = [
+    "EIS",    # Israel ETF
+    "SPY",    # S&P 500 ETF (미국)
+    "EEM",    # Emerging Markets ETF
+    "EMB",    # Emerging Market Bonds ETF
+    "GLD",    # Gold ETF
+    "VXX",    # Volatility ETF
+    "FXI",    # China ETF
+    "EWJ",    # Japan ETF
+    "BND",    # Total Bond Market ETF
 ]
 
-# CSV 파일에 데이터를 저장하는 함수
-def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str, output_file: str) -> None:
+def load_etf_data_from_csv(file_path: str) -> pd.DataFrame:
     """
-    ETF 데이터를 받아와서 CSV 파일로 저장하는 함수
+    주어진 파일 경로에서 ETF 데이터를 로드하고 DataFrame으로 반환합니다.
     """
-    # ETF 데이터 가져오기
-    df = get_etf_data(etf_symbol, start_date, end_date)
-    
-    # pct 변화 및 누적 변화 계산
-    df['Pct Change'] = calculate_pct_change(df)
-    df['5D Cum Return'] = calculate_cumulative_return(df, 5)
-    
-    # CSV 파일로 저장
-    df.to_csv(output_file, mode='a', header=not pd.io.common.file_exists(output_file), index=True)
-    print(f"[INFO] {etf_symbol} data saved to {output_file}")
+    try:
+        df = pd.read_csv(file_path)
+        print(f"[INFO] Data for {file_path.split('/')[-1]}: {df.head()}")
+        return df
+    except Exception as e:
+        print(f"[ERROR] Failed to load ETF data from {file_path}: {e}")
+        return pd.DataFrame()  # 파일을 로드할 수 없을 경우 빈 DataFrame 반환
 
-# ETF 데이터를 Yahoo Finance에서 받아오는 함수
 def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
     ETF 데이터를 Yahoo Finance에서 받아오는 함수
@@ -48,28 +42,57 @@ def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFram
 
     return df
 
-# 주어진 데이터프레임에 대해 % 변화율을 계산하는 함수
 def calculate_pct_change(df: pd.DataFrame) -> pd.Series:
     """
     주어진 데이터프레임에 대해 % 변화율을 계산하는 함수
+    단일 열을 반환하도록 수정
     """
     pct_change = df['Close'].pct_change() * 100  # 'Close' 열 기준으로 계산
     return pct_change
 
-# DataFrame에서 n일 동안의 누적 변화를 계산하는 함수
 def calculate_cumulative_return(df: pd.DataFrame, days: int) -> pd.Series:
     """
     DataFrame에서 n일 동안의 누적 변화를 계산하는 함수
     """
     return (df['Close'].pct_change().add(1).rolling(window=days).apply(lambda x: x.prod(), raw=True) - 1) * 100
 
-# ETF 리스트에서 모든 데이터를 다운로드하고 CSV 파일로 저장하는 함수
-def download_and_save_etf_data(etf_list: list, start_date: str, end_date: str, output_file: str) -> None:
-    """
-    여러 국가 ETF 데이터를 다운로드하고 CSV로 저장하는 함수
-    """
-    for etf in etf_list:
-        save_etf_data_to_csv(etf, start_date, end_date, output_file)
 
-# 사용 예시: 2023년 1월 1일부터 2023년 12월 31일까지의 데이터를 다운로드하여 'data/country_etf_data.csv'에 저장
-download_and_save_etf_data(ETF_LIST, '2023-01-01', '2023-12-31', 'data/country_etf_data.csv')
+def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str, output_file: str) -> None:
+    """
+    ETF 데이터를 받아와서 CSV 파일로 저장하는 함수
+    """
+    # ETF 데이터 가져오기
+    df = get_etf_data(etf_symbol, start_date, end_date)
+    
+    # pct 변화 및 누적 변화 계산
+    df['Pct Change'] = calculate_pct_change(df)
+    df['5D Cum Return'] = calculate_cumulative_return(df, 5)
+    
+    # CSV 파일로 저장
+    df.to_csv(output_file, index=True)
+    print(f"[INFO] {etf_symbol} data saved to {output_file}")
+
+
+# 전체 국가 ETF 리스트를 순회하며 데이터 가져오기 및 저장하기
+def download_all_etfs_and_save():
+    start_date = '2023-01-01'
+    end_date = '2023-12-31'
+    output_file = 'data/country_etf_data.csv'
+
+    all_etf_data = pd.DataFrame()  # 빈 DataFrame 생성
+
+    for etf_symbol in country_etf_list:
+        save_etf_data_to_csv(etf_symbol, start_date, end_date, output_file)
+
+        # 로드한 데이터 병합
+        df = load_etf_data_from_csv(output_file)
+        if not df.empty:
+            all_etf_data = pd.concat([all_etf_data, df], axis=1)  # 데이터 병합
+
+    # 전체 데이터를 하나의 CSV 파일로 저장
+    all_etf_data.to_csv('data/country_etf_data_combined.csv', index=True)
+    print("[INFO] All ETF data combined and saved to data/country_etf_data_combined.csv")
+
+
+# 예시로 모든 ETF 데이터 다운로드
+download_all_etfs_and_save()
