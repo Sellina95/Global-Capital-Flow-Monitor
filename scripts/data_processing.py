@@ -20,10 +20,11 @@ def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFram
 
 def calculate_pct_change(df: pd.DataFrame) -> pd.Series:
     """
-    DataFrame에서 % 변화 (pct_change)를 계산하고 반환하는 함수
+    주어진 데이터프레임에 대해 % 변화율을 계산하는 함수
+    단일 열을 반환하도록 수정
     """
-    return df.pct_change() * 100.0
-
+    pct_change = df['Close'].pct_change() * 100  # 'Close' 열 기준으로 계산
+    return pct_change
 
 def calculate_cumulative_return(df: pd.DataFrame, days: int) -> pd.Series:
     """
