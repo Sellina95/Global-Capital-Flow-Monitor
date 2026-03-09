@@ -64,9 +64,8 @@ def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str, output
     # ETF 데이터 가져오기
     df = get_etf_data(etf_symbol, start_date, end_date)
     
-    # pct 변화 및 누적 변화 계산
-    df['Pct Change'] = calculate_pct_change(df)
-    df['5D Cum Return'] = calculate_cumulative_return(df, 5)
+    # 필요한 데이터만 저장
+    df = df[['Close', 'Date']]  # 'Close'와 'Date'만 저장
     
     # CSV 파일로 저장
     df.to_csv(output_file, index=True)
@@ -77,17 +76,17 @@ def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str, output
 def download_all_etfs_and_save():
     start_date = '2023-01-01'
     end_date = '2023-12-31'
-    output_file = 'data/country_etf_data.csv'
 
     all_etf_data = pd.DataFrame()  # 빈 DataFrame 생성
 
     for etf_symbol in country_etf_list:
+        output_file = f'data/{etf_symbol}_etf_data.csv'  # 파일명을 ETF 심볼로 설정
         save_etf_data_to_csv(etf_symbol, start_date, end_date, output_file)
 
         # 로드한 데이터 병합
         df = load_etf_data_from_csv(output_file)
         if not df.empty:
-            all_etf_data = pd.concat([all_etf_data, df], axis=1)  # 데이터 병합
+            all_etf_data = pd.concat([all_etf_data, df], axis=0)  # 데이터 병합 (행 단위로 병합)
 
     # 전체 데이터를 하나의 CSV 파일로 저장
     all_etf_data.to_csv('data/country_etf_data_combined.csv', index=True)
