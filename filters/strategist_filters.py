@@ -1144,7 +1144,7 @@ def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold:
         return True
     return False
 
-# 국가 리스크 평가 함수
+#국가리스크 평가함수
 def attach_country_risk_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
@@ -1154,47 +1154,58 @@ def attach_country_risk_layer(
     """
     국가 리스크를 평가하기 위해 ETF 변동성을 반영 (예: EIS)
     """
-    country_etf = 'EIS'  # 이스라엘 ETF 예시
-    
-    # CSV에서 데이터 불러오기
-    file_path = f"data/{country_etf}_data.csv"
-    etf_data = load_etf_data_from_csv(file_path)
-    
-    if etf_data.empty:
-        print(f"[ERROR] No data found for {country_etf}")
-        return market_data
-    
-    # ETF 데이터로 급락 여부 체크
-    pct_1d = _pct_series_from_df(etf_data, country_etf)
-    pct_5d = _cumret_series_from_df(etf_data, country_etf, days=5)
+    # 국가별 ETF 목록 정의
+    country_etf_list = [
+        "EIS",    # Israel ETF
+        "SPY",    # S&P 500 ETF (미국)
+        "EEM",    # Emerging Markets ETF
+        "EMB",    # Emerging Market Bonds ETF
+        "GLD",    # Gold ETF
+        "VXX",    # Volatility ETF
+        "FXI",    # China ETF
+        "EWJ",    # Japan ETF
+        "BND",    # Total Bond Market ETF
+    ]
 
-    # Z-score 계산 (급락 기준으로 Z-score 적용)
-    z_1d = _zscore_last(pct_1d, window)
-    z_5d = _zscore_last(pct_5d, window)
+    for country_etf in country_etf_list:
+        # CSV에서 데이터 불러오기
+        file_path = f"data/{country_etf}_data.csv"
+        etf_data = load_etf_data_from_csv(file_path)
 
-    print(f"[INFO] {country_etf} z_1d: {z_1d}, z_5d: {z_5d}")
-        
-    # 급락 여부 체크 (예: z_5d < -2일 경우 급락으로 판단)
-    country_risk = "NORMAL"
-    if z_5d is not None and z_5d < -2:
-        country_risk = "HIGH"
-    
-    # 급락 여부를 추가로 체크
-    is_crash = check_etf_crash(etf_data, country_etf)
-    if is_crash:
-        country_risk = "EXTREME"  # 급락 시 "EXTREME"으로 리스크 설정
+        if etf_data.empty:
+            print(f"[ERROR] No data found for {country_etf}")
+            continue
 
-    # 결과를 market_data에 추가
-    market_data["COUNTRY_RISK"] = {
-        "country_etf": country_etf,
-        "z_1d": z_1d,
-        "z_5d": z_5d,
-        "risk_level": country_risk,
-        "crash": is_crash,
-    }
+        # ETF 데이터로 급락 여부 체크
+        pct_1d = _pct_series_from_df(etf_data, country_etf)
+        pct_5d = _cumret_series_from_df(etf_data, country_etf, days=5)
+
+        # Z-score 계산 (급락 기준으로 Z-score 적용)
+        z_1d = _zscore_last(pct_1d, window)
+        z_5d = _zscore_last(pct_5d, window)
+
+        print(f"[INFO] {country_etf} z_1d: {z_1d}, z_5d: {z_5d}")
+
+        # 급락 여부 체크 (예: z_5d < -2일 경우 급락으로 판단)
+        country_risk = "NORMAL"
+        if z_5d is not None and z_5d < -2:
+            country_risk = "HIGH"
+
+        # 급락 여부를 추가로 체크
+        is_crash = check_etf_crash(etf_data, country_etf)
+        if is_crash:
+            country_risk = "EXTREME"  # 급락 시 "EXTREME"으로 리스크 설정
+
+        # 결과를 market_data에 추가
+        market_data[f"COUNTRY_RISK_{country_etf}"] = {
+            "country_etf": country_etf,
+            "z_1d": z_1d,
+            "z_5d": z_5d,
+            "risk_level": country_risk,
+            "crash": is_crash,
+        }
 
     return market_data
-        
 
             
 # (key, weight, transform, mode)
