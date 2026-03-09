@@ -20,8 +20,6 @@ def load_etf_data_from_csv(file_path: str) -> pd.DataFrame:
     """
     try:
         df = pd.read_csv(file_path)
-        # 'Date'를 컬럼으로 변환 (인덱스에서 제외)
-        df['Date'] = pd.to_datetime(df['Date'])
         print(f"[INFO] Data for {file_path.split('/')[-1]}: {df.head()}")
         return df
     except Exception as e:
@@ -42,15 +40,15 @@ def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFram
     else:
         print(f"[INFO] Data for {etf_symbol}: {df.head()}")
 
-    # 'Date' 열을 인덱스에서 컬럼으로 변경
-    df['Date'] = df.index
-    df = df[['Date', 'Close']]  # 'Close'와 'Date'만 사용
+    # 'Date'를 인덱스로 변환
+    df['Date'] = df.index  # Date를 컬럼으로 추가
+    df = df[['Date', 'Close']]  # 'Date'와 'Close'만 사용
 
     return df
 
 def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
-    ETF 데이터를 받아와서 CSV 파일로 저장하는 함수
+    ETF 데이터를 받아와서 DataFrame으로 반환하는 함수
     """
     # ETF 데이터 가져오기
     df = get_etf_data(etf_symbol, start_date, end_date)
