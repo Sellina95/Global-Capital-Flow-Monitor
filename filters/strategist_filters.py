@@ -1152,25 +1152,23 @@ def attach_country_risk_layer(
     window: int = GEO_WINDOW,
 ) -> Dict[str, Any]:
     """
-    국가 리스크를 평가하기 위해 ETF 변동성을 반영 (예: EIS)
+    국가 리스크를 평가하기 위해 ETF 변동성을 반영 (전체 국가 ETF 데이터 사용)
     """
-    # 국가별 ETF 목록 정의
-    country_etf_list = [
-        "EIS",    # Israel ETF
-        "SPY",    # S&P 500 ETF (미국)
-        "EEM",    # Emerging Markets ETF
-        "EMB",    # Emerging Market Bonds ETF
-        "GLD",    # Gold ETF
-        "VXX",    # Volatility ETF
-        "FXI",    # China ETF
-        "EWJ",    # Japan ETF
-        "BND",    # Total Bond Market ETF
-    ]
+    # 전체 ETF 데이터를 로드 (country_etf_data_combined.csv에서 데이터 불러오기)
+    file_path = 'data/country_etf_data_combined.csv'
+    all_etf_data = load_etf_data_from_csv(file_path)
+
+    if all_etf_data.empty:
+        print("[ERROR] No combined ETF data found.")
+        return market_data
+
+    # 'Date' 기준으로 데이터를 정렬
+    all_etf_data['Date'] = pd.to_datetime(all_etf_data['Date'])
+    all_etf_data = all_etf_data.sort_values(by='Date')
 
     for country_etf in country_etf_list:
-        # CSV에서 데이터 불러오기
-        file_path = f"data/{country_etf}_data.csv"
-        etf_data = load_etf_data_from_csv(file_path)
+        # ETF 데이터만 필터링
+        etf_data = all_etf_data[['Date', country_etf]]
 
         if etf_data.empty:
             print(f"[ERROR] No data found for {country_etf}")
