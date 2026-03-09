@@ -20,6 +20,8 @@ def load_etf_data_from_csv(file_path: str) -> pd.DataFrame:
     """
     try:
         df = pd.read_csv(file_path)
+        df['Date'] = pd.to_datetime(df['Date'])  # Date 컬럼을 날짜 형식으로 변환
+        df.set_index('Date', inplace=True)  # Date를 인덱스로 설정
         print(f"[INFO] Data for {file_path.split('/')[-1]}: {df.head()}")
         return df
     except Exception as e:
@@ -40,27 +42,30 @@ def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFram
     else:
         print(f"[INFO] Data for {etf_symbol}: {df.head()}")
 
-    # 'Date'를 컬럼으로 추가하고, 인덱스에서 제거
-    df['Date'] = df.index
-    df = df[['Date', 'Close']]  # 'Date'와 'Close'만 사용
-
     return df
 
-def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
+def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str, output_file: str) -> None:
     """
-    ETF 데이터를 받아와서 DataFrame으로 반환하는 함수
+    ETF 데이터를 받아와서 CSV 파일로 저장하는 함수
     """
     # ETF 데이터 가져오기
     df = get_etf_data(etf_symbol, start_date, end_date)
     
-    # 데이터가 없다면 종료
     if df.empty:
         print(f"[ERROR] No data for {etf_symbol}")
-        return pd.DataFrame()
+        return
+    
+    # Date를 열로 변환
+    df['Date'] = df.index
+    
+    # 필요한 열만 추출 (Date와 Close)
+    df = df[['Date', 'Close']]
+    
+    # CSV 파일로 저장, 인덱스를 포함하지 않도록 index=False 설정
+    df.to_csv(output_file, index=False)  # index=False로 인덱스 저장 방지
+    print(f"[INFO] {etf_symbol} data saved to {output_file}")
 
-    return df
-
-
+# 전체 국가 ETF 리스트를 순회하며 데이터 가져오기 및 저장하기
 def download_all_etfs_and_save():
     start_date = '2023-01-01'
     end_date = '2023-12-31'
@@ -68,21 +73,16 @@ def download_all_etfs_and_save():
     all_etf_data = pd.DataFrame()  # 빈 DataFrame 생성
 
     for etf_symbol in country_etf_list:
-        # ETF 데이터 저장
-        df = save_etf_data_to_csv(etf_symbol, start_date, end_date)
+        output_file = f'data/{etf_symbol}_etf_data.csv'  # 파일명을 ETF 심볼로 설정
+        save_etf_data_to_csv(etf_symbol, start_date, end_date, output_file)
 
+        # 로드한 데이터 병합
+        df = load_etf_data_from_csv(output_file)
         if not df.empty:
-            # 'Close' 컬럼을 국가별 심볼로 변경
-            df = df.rename(columns={'Close': etf_symbol})
+            all_etf_data = pd.concat([all_etf_data, df], axis=1)  # 'Date' 기준으로 병합할 예정
 
-            # 첫 번째 데이터프레임은 그냥 할당, 이후는 병합
-            if all_etf_data.empty:
-                all_etf_data = df
-            else:
-                all_etf_data = pd.merge(all_etf_data, df, on='Date', how='outer')  # 'Date' 기준으로 병합
-
-    # 전체 데이터를 하나의 CSV 파일로 저장 (파일 이름: country_etf_data_combined.csv)
-    all_etf_data.to_csv('data/country_etf_data_combined.csv', index=False)  # 인덱스는 저장하지 않음
+    # 전체 데이터를 하나의 CSV 파일로 저장
+    all_etf_data.to_csv('data/country_etf_data_combined.csv', index=True)  # 인덱스 포함해서 저장
     print("[INFO] All ETF data combined and saved to data/country_etf_data_combined.csv")
 
 # 예시로 모든 ETF 데이터 다운로드
