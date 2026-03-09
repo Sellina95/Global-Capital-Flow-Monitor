@@ -1,22 +1,22 @@
 import yfinance as yf
 import pandas as pd
 
+
 def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
-    주어진 ETF 심볼에 대한 데이터를 Yahoo Finance에서 가져와서 반환하는 함수
-    - ETF 심볼 (예: "EIS")
-    - 시작 날짜 (예: "2023-01-01")
-    - 종료 날짜 (예: "2023-12-31")
+    ETF 데이터를 Yahoo Finance에서 받아오는 함수
     """
     # Yahoo Finance에서 ETF 데이터 가져오기
     etf = yf.Ticker(etf_symbol)
     df = etf.history(start=start_date, end=end_date)
     
-    # 필요한 열만 선택하여 반환 (예: 'Date'와 'Close')
-    df = df[['Close']]
-    print(f"[INFO] Data for {etf_symbol}: {df.head()}")
-    return df
+    # 데이터가 제대로 받아졌는지 확인
+    if df.empty:
+        print(f"[ERROR] No data for {etf_symbol} between {start_date} and {end_date}")
+    else:
+        print(f"[INFO] Data for {etf_symbol}: {df.head()}")
 
+    return df
 
 def calculate_pct_change(df: pd.DataFrame) -> pd.Series:
     """
