@@ -1680,9 +1680,29 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     momentum = geo.get("momentum")
     momentum_label = geo.get("momentum_label", "N/A")
 
-    country_risk = market_data.get("COUNTRY_RISK", {})
-    country_etf = country_risk.get("country_etf", "N/A")
-    crash_status = "Yes" if country_risk.get("crash") else "No"
+    # -----------------------
+    # Country ETF risk aggregation
+    # -----------------------
+    country_risk_keys = sorted([k for k in market_data.keys() if k.startswith("COUNTRY_RISK_")])
+
+    crashed_etfs = []
+    tracked_etfs = []
+    high_risk_etfs = []
+    extreme_risk_etfs = []
+
+    for key in country_risk_keys:
+        item = market_data.get(key, {}) or {}
+        etf = item.get("country_etf", "UNKNOWN")
+        tracked_etfs.append(etf)
+
+        if item.get("crash"):
+            crashed_etfs.append(etf)
+
+        risk_level = item.get("risk_level", "NORMAL")
+        if risk_level == "HIGH":
+            high_risk_etfs.append(etf)
+        elif risk_level == "EXTREME":
+            extreme_risk_etfs.append(etf)
 
     lines = []
     lines.append("### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)")
@@ -1699,6 +1719,14 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
         lines.append(f"- **Missing/Skipped:** {', '.join(missing) if missing else 'None'}")
         lines.append("- **Sovereign Spread factors included:** None")
         lines.append("- **So What?:** 데이터가 쌓이거나 지표가 추가되면 조기경보 점수를 계산합니다.")
+
+        if tracked_etfs:
+            if crashed_etfs:
+                lines.append(f"- **Country ETF Crash?** Yes ({', '.join(crashed_etfs)})")
+            else:
+                lines.append(f"- **Country ETF Crash?** No ({', '.join(tracked_etfs)})")
+        else:
+            lines.append("- **Country ETF Crash?** N/A")
         return "\n".join(lines)
 
     # -----------------------
@@ -1778,26 +1806,48 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
     lines.append("**So What?**")
 
-    # 기존 문구
     if level == "NORMAL":
-        if momentum == "RISING":
+        if momentum_label == "RISING":
             lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 상승하고 있는 중입니다. 경계 강화 필요.")
-        elif momentum == "FALLING":
+        elif momentum_label == "FALLING":
             lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 완화되고 있는 중입니다. 경계 유지.")
-        else:
+        else:  # FLAT / N/A
             lines.append("- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.")
-    elif level == "ELEVATED":
-        if momentum == "RISING":
-            lines.append("- 스트레스 ‘상승’ 구간: 리스크 상승 가속 → 헤지/사이징 축소 검토")
-        elif momentum == "FALLING":
-            lines.append("- 스트레스 ‘상승’ 구간: 리스크 상승 억제 중 → 과잉 대응 금지, 선별 대응 필요")
-    elif level == "HIGH":
-        lines.append("- 스트레스 ‘높음’: 리스크 익스포저 축소 준비, EM/고베타/레버리지 노출 점검.")
-    else:  # EXTREME / CONFLICT
-        lines.append("- 스트레스 ‘극단’: 디레버리징 + 방어자산/헤지 우선, 갭리스크 대비(현금/단기)")
 
-    # 추가된 국가 리스크 정보
-    lines.append(f"- **Country ETF Crash?** {crash_status} ({country_etf})")
+    elif level == "ELEVATED":
+        if momentum_label == "RISING":
+            lines.append("- 스트레스 ‘상승’ 구간: 리스크 상승 가속 → 헤지/사이징 축소 검토.")
+        elif momentum_label == "FALLING":
+            lines.append("- 스트레스 ‘상승’ 구간: 리스크는 여전히 높지만 단기 압력은 완화 중. 과잉 대응보다는 선별 대응이 필요.")
+        else:  # FLAT / N/A
+            lines.append("- 지정학 스트레스가 경계 구간(ELEVATED)에 머물고 있습니다. 기존 레짐은 유지하되 EM·원자재·중국 민감 익스포저는 보수적으로 점검할 필요가 있습니다.")
+
+    elif level == "HIGH":
+        if momentum_label == "RISING":
+            lines.append("- 스트레스 ‘높음’ + 상승 중: 리스크 익스포저 축소와 헤지 강화가 우선입니다.")
+        elif momentum_label == "FALLING":
+            lines.append("- 스트레스 ‘높음’이지만 단기 과열은 일부 완화 중입니다. 다만 고베타·EM 노출은 여전히 점검이 필요합니다.")
+        else:
+            lines.append("- 스트레스 ‘높음’: EM/고베타/레버리지 노출 점검 및 방어적 대응이 필요합니다.")
+
+    else:  # CONFLICT / EXTREME
+        lines.append("- 스트레스 ‘극단’: 디레버리징 + 방어자산/헤지 우선, 갭리스크 대비(현금/단기).")
+
+    # -----------------------
+    # Country ETF Crash line
+    # -----------------------
+    if crashed_etfs:
+        lines.append(f"- **Country ETF Crash?** Yes ({', '.join(crashed_etfs)})")
+    elif tracked_etfs:
+        lines.append(f"- **Country ETF Crash?** No ({', '.join(tracked_etfs)})")
+    else:
+        lines.append("- **Country ETF Crash?** N/A")
+
+    # Optional: summarize country risk if any
+    if extreme_risk_etfs:
+        lines.append(f"- **Extreme Country Risk:** {', '.join(extreme_risk_etfs)}")
+    elif high_risk_etfs:
+        lines.append(f"- **High Country Risk:** {', '.join(high_risk_etfs)}")
 
     return "\n".join(lines)
     
