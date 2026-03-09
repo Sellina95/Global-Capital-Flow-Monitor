@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Dict, Any, Optional, List, Tuple
 from data_processing import download_all_etfs_and_save
+from data_processing import load_etf_data_from_csv
 
 import pandas as pd
 import math
@@ -1128,57 +1129,105 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 
 # filters/strategist_filters.py (상수 구간)
 
-GEO_WINDOW = 60
+
 
 # 급락 여부를 체크하는 함수
+GEO_WINDOW = 60
+
 def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold: float = -1.0) -> bool:
-    cum_ret = calculate_cumulative_return(df, days)
-    if cum_ret.iloc[-1] < threshold:
-        print(f"[INFO] {etf_symbol} has crashed: {cum_ret.iloc[-1]:.2f}% change")
+    """
+    국가 ETF의 급락 여부를 체크하는 함수.
+    5일간의 누적 변화율이 threshold(기본값: -1%)보다 낮으면 급락으로 간주.
+    df는 반드시 해당 ETF 컬럼 하나를 포함해야 함.
+    """
+    if etf_symbol not in df.columns:
+        return False
+
+    s = pd.to_numeric(df[etf_symbol], errors="coerce").dropna()
+    if len(s) < days + 1:
+        return False
+
+    cum_ret = (s.pct_change().add(1).rolling(window=days).apply(lambda x: x.prod(), raw=True) - 1) * 100
+
+    if cum_ret.dropna().empty:
+        return False
+
+    last_val = float(cum_ret.dropna().iloc[-1])
+    if last_val < threshold:
+        print(f"[INFO] {etf_symbol} has crashed: {last_val:.2f}% change")
         return True
+
     return False
 
-# 국가 리스크 평가 함수
+
 def attach_country_risk_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
     today_idx: int,
-    window: int = 60,
+    window: int = GEO_WINDOW,
 ) -> Dict[str, Any]:
     """
-    국가 리스크를 평가하기 위해 ETF 변동성을 반영 (전체 국가 ETF 데이터 사용)
+    country_etf_data_combined.csv 에서 전체 국가 ETF 데이터를 읽어
+    각 ETF별 급락 여부 / z-score를 계산
     """
-    # 전체 ETF 데이터를 로드 (country_etf_data_combined.csv에서 데이터 불러오기)
-    file_path = 'data/country_etf_data_combined.csv'
+    file_path = "data/country_etf_data_combined.csv"
     all_etf_data = load_etf_data_from_csv(file_path)
 
     if all_etf_data.empty:
         print("[ERROR] No combined ETF data found.")
         return market_data
 
-    # 'Date' 기준으로 데이터를 정렬
-    all_etf_data = all_etf_data.sort_values(by='Date')
+    # load_etf_data_from_csv에서 Date를 index로 세팅하므로
+    # 여기서는 index 기준으로 정렬만 하면 됨
+    all_etf_data = all_etf_data.sort_index()
 
-    # 국가별 ETF의 급락 여부를 체크
+    country_etf_list = [
+        "EIS",
+        "SPY",
+        "EEM",
+        "EMB",
+        "GLD",
+        "VXX",
+        "FXI",
+        "EWJ",
+        "BND",
+    ]
+
     for country_etf in country_etf_list:
-        # ETF 데이터만 필터링
-        etf_data = all_etf_data[['Date', country_etf]]
-
-        if etf_data.empty:
-            print(f"[ERROR] No data found for {country_etf}")
+        if country_etf not in all_etf_data.columns:
+            print(f"[WARN] {country_etf} not found in combined ETF data.")
             continue
 
-        # 급락 여부 체크
-        is_crash = check_etf_crash(etf_data, country_etf)
+        # 해당 ETF 1개 컬럼만 사용
+        etf_data = all_etf_data[[country_etf]].copy()
+        etf_data[country_etf] = pd.to_numeric(etf_data[country_etf], errors="coerce")
+        etf_data = etf_data.dropna()
 
-        # 리스크 계산
+        if etf_data.empty or len(etf_data) < 6:
+            print(f"[WARN] Not enough data for {country_etf}")
+            continue
+
+        # 1일 수익률 / 5일 누적수익률
+        pct_1d = etf_data[country_etf].pct_change() * 100
+        pct_5d = (etf_data[country_etf].pct_change().add(1).rolling(window=5).apply(lambda x: x.prod(), raw=True) - 1) * 100
+
+        z_1d = _zscore_last(pct_1d, window)
+        z_5d = _zscore_last(pct_5d, window)
+
+        print(f"[INFO] {country_etf} z_1d: {z_1d}, z_5d: {z_5d}")
+
         country_risk = "NORMAL"
-        if is_crash:
-            country_risk = "EXTREME"  # 급락 시 "EXTREME" 리스크 설정
+        if z_5d is not None and z_5d < -2:
+            country_risk = "HIGH"
 
-        # 결과를 market_data에 추가
+        is_crash = check_etf_crash(etf_data, country_etf)
+        if is_crash:
+            country_risk = "EXTREME"
+
         market_data[f"COUNTRY_RISK_{country_etf}"] = {
             "country_etf": country_etf,
+            "z_1d": z_1d,
+            "z_5d": z_5d,
             "risk_level": country_risk,
             "crash": is_crash,
         }
