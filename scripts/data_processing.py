@@ -63,7 +63,8 @@ def save_etf_data_to_combined_csv(etf_symbol: str, start_date: str, end_date: st
     if all_etf_data.empty:
         all_etf_data = df
     else:
-        all_etf_data = all_etf_data.merge(df, on='Date', how='outer')
+        # 'suffixes'를 사용하여 중복된 컬럼에 접미사 추가
+        all_etf_data = all_etf_data.merge(df, on='Date', how='outer', suffixes=('', f'_{etf_symbol}'))
 
     return all_etf_data
 
