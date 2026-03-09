@@ -2,8 +2,7 @@ from __future__ import annotations
 from filters.decision_layer import decision_layer_filter
 from filters.transmission_layer import transmission_layer_filter
 # generate_report.py 파일에서 'save_etf_data_to_combined_csv' 임포트 문을 제거
-from data_processing import load_etf_data_from_csv, get_etf_data, download_all_etfs_and_save
-from pathlib import Path
+from data_processing import download_all_etfs_and_save, load_etf_data_from_csv
 from typing import Dict, Any
 import pandas as pd
 
@@ -752,30 +751,42 @@ def attach_sovereign_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]
 def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # ETF 데이터 로드 (이미 country_etf_data_combined.csv에 통합된 데이터)
-    file_path = 'data/country_etf_data_combined.csv'
-    df = load_etf_data_from_csv(file_path)
-    
-    if df.empty:
+    # -----------------------------
+    # 0) ETF 통합 파일 먼저 갱신
+    # -----------------------------
+    download_all_etfs_and_save()
+
+    etf_check_df = load_etf_data_from_csv("data/country_etf_data_combined.csv")
+    if etf_check_df.empty:
         print("[ERROR] No data available in country_etf_data_combined.csv")
         return
 
+    print("[DEBUG] ETF combined shape:", etf_check_df.shape)
+    print("[DEBUG] ETF combined columns:", list(etf_check_df.columns))
+
+    # -----------------------------
+    # 1) 기존 매크로 데이터 로드
+    # -----------------------------
+    df = load_macro_df()
+    df = merge_sovereign_spreads_into_macro_df(df)
+
     today_idx = len(df) - 1
-    as_of_date = pd.to_datetime(df.iloc[today_idx]["Date"]).strftime("%Y-%m-%d")
+    as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
 
     market_data = build_market_data(df, today_idx)
 
     # -----------------------------
-    # Detect stale / market closed (Check if data is up-to-date)
+    # 2) Detect stale / market closed
+    # -----------------------------
     stale = False
     try:
-        last_date = pd.to_datetime(df.iloc[today_idx]["Date"]).date()
+        last_date = pd.to_datetime(df.iloc[today_idx]["date"]).date()
         now_utc = pd.Timestamp.utcnow()
         today_utc = now_utc.date()
 
-        if now_utc.weekday() >= 5:  # Weekends - market closed
+        if now_utc.weekday() >= 5:   # 5=Sat, 6=Sun
             stale = True
-        elif (today_utc - last_date).days >= 2:  # If data is older than 2 days
+        elif (today_utc - last_date).days >= 2:
             stale = True
     except Exception:
         stale = False
@@ -783,7 +794,7 @@ def generate_daily_report() -> None:
     market_data["_STALE"] = stale
 
     # -------------------------
-    # Attach layers
+    # 3) Attach layers
     # -------------------------
     market_data = attach_liquidity_layer(market_data) or market_data
     market_data = attach_credit_spread_layer(market_data) or market_data
@@ -792,44 +803,55 @@ def generate_daily_report() -> None:
     market_data = attach_expectation_layer(market_data) or market_data
     market_data = attach_geopolitical_ew_layer(market_data, df, today_idx) or market_data
 
-    #  전체 국가 ETF 데이터에서 급락 여부 확인
-    market_data = attach_country_risk_layer(market_data, df, today_idx)
+    # ✅ 국가 ETF 리스크 레이어
+    # 이 함수는 내부에서 data/country_etf_data_combined.csv 를 읽는 구조여야 함
+    market_data = attach_country_risk_layer(market_data, df, today_idx) or market_data
 
-    # 리포트 출력 (각 국가별 ETF의 급락 여부)
-    country_risk_keys = [key for key in market_data.keys() if key.startswith("COUNTRY_RISK")]
-
-    lines = []
-    for country_risk_key in country_risk_keys:
-        country_risk = market_data[country_risk_key]
-        
-        # 각 ETF에 대해 리스크 정보 출력
-        lines.append(f"### Country ETF: {country_risk['country_etf']}")
-        lines.append(f"  - **Crash?** {country_risk['crash']}")
-        lines.append(f"  - **Risk Level:** {country_risk['risk_level']}")
-        lines.append(f"  - **Z-Score (1d):** {country_risk['z_1d']}")
-        lines.append(f"  - **Z-Score (5d):** {country_risk['z_5d']}")
-        lines.append("---------------------------------------------------------")
-      
-    
-    # ✅ Wall-Street Sentiment Proxy only (NO CNN, NO overwrite after this)
+    # ✅ Wall-Street Sentiment Proxy only
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
 
-    # ✅ regime change monitor (always computed)
+    # ✅ regime change monitor
     regime_result = check_regime_change_and_alert(market_data, as_of_date)
 
     # -------------------------
-    # 1) Strategist Commentary FIRST (Narrative Engine sets FINAL_STATE inside)
+    # 4) Strategist Commentary
     # -------------------------
     commentary_block = build_strategist_commentary(market_data)
 
-    # ✅ Geo overlay는 FINAL_STATE가 생긴 다음에만!
+    # ✅ FINAL_STATE 이후 geo overlay
     market_data = apply_geo_overlay_to_final_state(market_data) or market_data
 
-    # 2) Top layers (need FINAL_STATE)
+    # -------------------------
+    # 5) Top layers
+    # -------------------------
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
     scenario_block = scenario_generator_filter(market_data)
     transmission_block = transmission_layer_filter(market_data)
+
+    # -------------------------
+    # 6) Country ETF risk block
+    # -------------------------
+    country_risk_keys = sorted([k for k in market_data.keys() if k.startswith("COUNTRY_RISK_")])
+
+    country_risk_lines = []
+    if country_risk_keys:
+        country_risk_lines.append("## 🌐 Country ETF Risk Monitor")
+        country_risk_lines.append("")
+        for key in country_risk_keys:
+            country_risk = market_data[key]
+            country_risk_lines.append(f"### {country_risk['country_etf']}")
+            country_risk_lines.append(f"- **Crash?** {country_risk['crash']}")
+            country_risk_lines.append(f"- **Risk Level:** {country_risk['risk_level']}")
+            country_risk_lines.append(f"- **Z-Score (1d):** {country_risk['z_1d']}")
+            country_risk_lines.append(f"- **Z-Score (5d):** {country_risk['z_5d']}")
+            country_risk_lines.append("")
+    else:
+        country_risk_lines.append("## 🌐 Country ETF Risk Monitor")
+        country_risk_lines.append("")
+        country_risk_lines.append("- No country ETF risk data available.")
+        country_risk_lines.append("")
+
 
     # -------------------------
     # Report assembly
