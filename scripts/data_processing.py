@@ -62,6 +62,8 @@ def download_all_etfs_and_save():
                 close_data = df['Close'].rename(symbol)
                 close_data.index = close_data.index.tz_localize(None)  # 타임존 제거
                 etf_frames.append(close_data)  # 리스트에 추가
+            else:
+                print(f"[ERROR] No data for {symbol}")
         except Exception as e:
             print(f"[ERROR] Failed {symbol}: {e}")
 
