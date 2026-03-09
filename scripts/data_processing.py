@@ -1,5 +1,7 @@
+import os
 import yfinance as yf
 import pandas as pd
+from datetime import datetime
 
 # 국가별 ETF 목록 정의 (전체 ETF 리스트)
 country_etf_list = [
@@ -20,69 +22,58 @@ def load_etf_data_from_csv(file_path: str) -> pd.DataFrame:
     """
     try:
         df = pd.read_csv(file_path)
-        df['Date'] = pd.to_datetime(df['Date'])  # Ensure Date is parsed as datetime
-        print(f"[INFO] Data for {file_path.split('/')[-1]}: {df.head()}")
+        if 'Date' in df.columns:
+            df['Date'] = pd.to_datetime(df['Date'])
+            df.set_index('Date', inplace=True)  # 'Date'를 인덱스로 설정
         return df
     except Exception as e:
-        print(f"[ERROR] Failed to load ETF data from {file_path}: {e}")
+        print(f"[ERROR] Failed to load: {e}")
         return pd.DataFrame()  # 파일을 로드할 수 없을 경우 빈 DataFrame 반환
 
 def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
     ETF 데이터를 Yahoo Finance에서 받아오는 함수
     """
-    etf = yf.Ticker(etf_symbol)
-    df = etf.history(start=start_date, end=end_date)
-
-    # Ensure Date is a column
-    df.reset_index(inplace=True)
-    df['Date'] = pd.to_datetime(df['Date'])  # Ensure Date is parsed as datetime
-
-    if df.empty:
-        print(f"[ERROR] No data for {etf_symbol} between {start_date} and {end_date}")
-    else:
-        print(f"[INFO] Data for {etf_symbol}: {df.head()}")
-    
+    ticker = yf.Ticker(etf_symbol)
+    df = ticker.history(start=start_date, end=end_date)
     return df
-
-def save_etf_data_to_combined_csv(etf_symbol: str, start_date: str, end_date: str, all_etf_data: pd.DataFrame) -> pd.DataFrame:
-    """
-    ETF 데이터를 가져오고 combined CSV 파일에 저장
-    """
-    df = get_etf_data(etf_symbol, start_date, end_date)
-
-    if df.empty:
-        print(f"[ERROR] No data found for {etf_symbol}")
-        return all_etf_data
-
-    # Date를 컬럼으로 설정하고 병합
-    df = df[['Date', 'Close']]
-    df.set_index('Date', inplace=True)  # 'Date'를 인덱스로 설정
-
-    # 병합: 기존 데이터와 병합
-    if all_etf_data.empty:
-        all_etf_data = df
-    else:
-        # 'suffixes'를 사용하여 중복된 컬럼에 접미사 추가
-        all_etf_data = all_etf_data.merge(df, on='Date', how='outer', suffixes=('', f'_{etf_symbol}'))
-
-    return all_etf_data
 
 def download_all_etfs_and_save():
     """
-    모든 ETF 데이터 다운로드 후 하나의 파일에 저장
+    모든 ETF 데이터를 다운로드하여 하나의 파일에 저장
     """
+    # 'data' 폴더 생성
+    os.makedirs('data', exist_ok=True)
+
     start_date = '2023-01-01'
-    end_date = '2023-12-31'
+    end_date = datetime.now().strftime('%Y-%m-%d')
 
-    all_etf_data = pd.DataFrame()  # 빈 DataFrame 생성
+    etf_frames = []  # 모든 ETF 데이터를 담을 리스트
 
-    for etf_symbol in country_etf_list:
-        all_etf_data = save_etf_data_to_combined_csv(etf_symbol, start_date, end_date, all_etf_data)
+    print(f"[INFO] Running combined ETF download...")
 
-    # 전체 데이터를 하나의 CSV 파일로 저장
-    all_etf_data.to_csv('data/country_etf_data_combined.csv', index=True)
-    print("[INFO] All ETF data combined and saved to data/country_etf_data_combined.csv")
+    for symbol in country_etf_list:
+        try:
+            ticker = yf.Ticker(symbol)
+            df = ticker.history(start=start_date, end=end_date)
 
-# 실행
-download_all_etfs_and_save()
+            if not df.empty:
+                # 'Close' 가격만 추출하고 타임존 제거
+                close_data = df['Close'].rename(symbol)
+                close_data.index = close_data.index.tz_localize(None)  # 타임존 제거
+                etf_frames.append(close_data)  # 리스트에 추가
+        except Exception as e:
+            print(f"[ERROR] Failed {symbol}: {e}")
+
+    # 모든 ETF 데이터가 저장된 리스트를 DataFrame으로 병합
+    if etf_frames:
+        combined_df = pd.concat(etf_frames, axis=1)
+        combined_df.sort_index(ascending=True, inplace=True)  # 날짜별로 정렬
+        combined_df.to_csv('data/country_etf_data_combined.csv')
+        print("[SUCCESS] Integrated CSV created at data/country_etf_data_combined.csv")
+    else:
+        print("[ERROR] No data to save")
+
+# 파일이 직접 실행될 때만 호출
+if __name__ == "__main__":
+    download_all_etfs_and_save()
