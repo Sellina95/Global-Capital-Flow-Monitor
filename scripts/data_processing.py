@@ -40,8 +40,8 @@ def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFram
     else:
         print(f"[INFO] Data for {etf_symbol}: {df.head()}")
 
-    # 'Date'를 인덱스로 변환
-    df['Date'] = df.index  # Date를 컬럼으로 추가
+    # 'Date'를 컬럼으로 추가하고, 인덱스에서 제거
+    df['Date'] = df.index
     df = df[['Date', 'Close']]  # 'Date'와 'Close'만 사용
 
     return df
@@ -72,9 +72,12 @@ def download_all_etfs_and_save():
         df = save_etf_data_to_csv(etf_symbol, start_date, end_date)
 
         if not df.empty:
-            df = df.rename(columns={'Close': etf_symbol})  # 'Close' 값을 ETF 심볼로 이름 변경
+            # 'Close' 컬럼을 국가별 심볼로 변경
+            df = df.rename(columns={'Close': etf_symbol})
+
+            # 첫 번째 데이터프레임은 그냥 할당, 이후는 병합
             if all_etf_data.empty:
-                all_etf_data = df  # 첫 번째 데이터프레임
+                all_etf_data = df
             else:
                 all_etf_data = pd.merge(all_etf_data, df, on='Date', how='outer')  # 'Date' 기준으로 병합
 
