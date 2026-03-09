@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Dict, Any, Optional, List, Tuple
-from data_processing import load_etf_data_from_csv, save_etf_data_to_csv, get_etf_data
+from data_processing import download_all_etfs_and_save
 
 import pandas as pd
 import math
@@ -1130,26 +1130,20 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 
 GEO_WINDOW = 60
 
+# 급락 여부를 체크하는 함수
 def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold: float = -1.0) -> bool:
-    """
-    국가 ETF의 급락 여부를 체크하는 함수.
-    5일간의 누적 변화율이 threshold(기본값: -1%) 이상 하락한 경우 급락으로 간주.
-    """
-    # 5일간의 누적 변화율 계산
     cum_ret = calculate_cumulative_return(df, days)
-    
-    # 급락 여부 확인
     if cum_ret.iloc[-1] < threshold:
         print(f"[INFO] {etf_symbol} has crashed: {cum_ret.iloc[-1]:.2f}% change")
         return True
     return False
 
-#국가리스크 평가함수
+# 국가 리스크 평가 함수
 def attach_country_risk_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
     today_idx: int,
-    window: int = GEO_WINDOW,
+    window: int = 60,
 ) -> Dict[str, Any]:
     """
     국가 리스크를 평가하기 위해 ETF 변동성을 반영 (전체 국가 ETF 데이터 사용)
@@ -1163,9 +1157,9 @@ def attach_country_risk_layer(
         return market_data
 
     # 'Date' 기준으로 데이터를 정렬
-    all_etf_data['Date'] = pd.to_datetime(all_etf_data['Date'])
     all_etf_data = all_etf_data.sort_values(by='Date')
 
+    # 국가별 ETF의 급락 여부를 체크
     for country_etf in country_etf_list:
         # ETF 데이터만 필터링
         etf_data = all_etf_data[['Date', country_etf]]
@@ -1174,36 +1168,24 @@ def attach_country_risk_layer(
             print(f"[ERROR] No data found for {country_etf}")
             continue
 
-        # ETF 데이터로 급락 여부 체크
-        pct_1d = _pct_series_from_df(etf_data, country_etf)
-        pct_5d = _cumret_series_from_df(etf_data, country_etf, days=5)
-
-        # Z-score 계산 (급락 기준으로 Z-score 적용)
-        z_1d = _zscore_last(pct_1d, window)
-        z_5d = _zscore_last(pct_5d, window)
-
-        print(f"[INFO] {country_etf} z_1d: {z_1d}, z_5d: {z_5d}")
-
-        # 급락 여부 체크 (예: z_5d < -2일 경우 급락으로 판단)
-        country_risk = "NORMAL"
-        if z_5d is not None and z_5d < -2:
-            country_risk = "HIGH"
-
-        # 급락 여부를 추가로 체크
+        # 급락 여부 체크
         is_crash = check_etf_crash(etf_data, country_etf)
+
+        # 리스크 계산
+        country_risk = "NORMAL"
         if is_crash:
-            country_risk = "EXTREME"  # 급락 시 "EXTREME"으로 리스크 설정
+            country_risk = "EXTREME"  # 급락 시 "EXTREME" 리스크 설정
 
         # 결과를 market_data에 추가
         market_data[f"COUNTRY_RISK_{country_etf}"] = {
             "country_etf": country_etf,
-            "z_1d": z_1d,
-            "z_5d": z_5d,
             "risk_level": country_risk,
             "crash": is_crash,
         }
 
     return market_data
+
+
 
             
 # (key, weight, transform, mode)
