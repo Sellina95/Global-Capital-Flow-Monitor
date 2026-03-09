@@ -42,28 +42,25 @@ def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFram
 
     return df
 
-
-def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str, output_file: str) -> None:
+def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
-    ETF 데이터를 받아와서 CSV 파일로 저장하는 함수
+    ETF 데이터를 받아와서 DataFrame으로 반환하는 함수 (CSV 저장X)
     """
     # ETF 데이터 가져오기
     df = get_etf_data(etf_symbol, start_date, end_date)
     
     if df.empty:
         print(f"[ERROR] No data for {etf_symbol}")
-        return
+        return pd.DataFrame()
     
-    # Date를 열로 변환
+    # 'Date' 컬럼 추가
     df['Date'] = df.index
     
     # 'Date'와 'Close'만 추출
     df = df[['Date', 'Close']]
     
-    # 필요한 데이터만 저장
-    df.to_csv(output_file, index=False)  # index=False로 인덱스 저장 방지
-    print(f"[INFO] {etf_symbol} data saved to {output_file}")
-    
+    return df
+
 def download_all_etfs_and_save():
     start_date = '2023-01-01'
     end_date = '2023-12-31'
@@ -71,15 +68,18 @@ def download_all_etfs_and_save():
     all_etf_data = pd.DataFrame()  # 빈 DataFrame 생성
 
     for etf_symbol in country_etf_list:
-        output_file = f'data/{etf_symbol}_etf_data.csv'  # 파일명을 ETF 심볼로 설정
-        save_etf_data_to_csv(etf_symbol, start_date, end_date, output_file)
-
-        # 로드한 데이터 병합
-        df = load_etf_data_from_csv(output_file)
+        # 각 ETF 데이터를 가져오고 병합
+        df = save_etf_data_to_csv(etf_symbol, start_date, end_date)
+        
+        # 데이터 병합 시 ETF 심볼 이름을 컬럼명으로 사용
         if not df.empty:
-            all_etf_data = pd.concat([all_etf_data, df], axis=0)  # 데이터 병합 (행 단위로 병합)
+            df = df.rename(columns={'Close': etf_symbol})  # 'Close' 값을 ETF 심볼로 이름 변경
+            if all_etf_data.empty:
+                all_etf_data = df  # 첫 번째 데이터프레임
+            else:
+                all_etf_data = pd.merge(all_etf_data, df, on='Date', how='outer')  # 'Date' 기준으로 병합
 
-    # 전체 데이터를 하나의 CSV 파일로 저장
+    # 전체 데이터를 하나의 CSV 파일로 저장 (파일 이름: country_etf_data_combined.csv)
     all_etf_data.to_csv('data/country_etf_data_combined.csv', index=False)  # 인덱스는 저장하지 않음
     print("[INFO] All ETF data combined and saved to data/country_etf_data_combined.csv")
 
