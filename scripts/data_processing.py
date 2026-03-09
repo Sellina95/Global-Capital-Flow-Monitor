@@ -48,7 +48,7 @@ def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFram
 
     return df
 
-def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str, output_file: str) -> None:
+def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
     ETF 데이터를 받아와서 CSV 파일로 저장하는 함수
     """
@@ -58,11 +58,10 @@ def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str, output
     # 데이터가 없다면 종료
     if df.empty:
         print(f"[ERROR] No data for {etf_symbol}")
-        return
-    
-    # 'Date'와 'Close'만 추출하여 저장
-    df.to_csv(output_file, index=False)  # 인덱스 제외하고 저장
-    print(f"[INFO] {etf_symbol} data saved to {output_file}")
+        return pd.DataFrame()
+
+    return df
+
 
 def download_all_etfs_and_save():
     start_date = '2023-01-01'
@@ -71,11 +70,9 @@ def download_all_etfs_and_save():
     all_etf_data = pd.DataFrame()  # 빈 DataFrame 생성
 
     for etf_symbol in country_etf_list:
-        output_file = f'data/{etf_symbol}_etf_data.csv'  # 파일명을 ETF 심볼로 설정
-        save_etf_data_to_csv(etf_symbol, start_date, end_date, output_file)
+        # ETF 데이터 저장
+        df = save_etf_data_to_csv(etf_symbol, start_date, end_date)
 
-        # 로드한 데이터 병합
-        df = load_etf_data_from_csv(output_file)
         if not df.empty:
             df = df.rename(columns={'Close': etf_symbol})  # 'Close' 값을 ETF 심볼로 이름 변경
             if all_etf_data.empty:
