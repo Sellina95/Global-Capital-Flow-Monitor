@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Dict, Any, Optional, List, Tuple
+from data_processing import load_etf_data_from_csv, save_etf_data_to_csv, get_etf_data
 
 import pandas as pd
 import math
@@ -1132,18 +1133,18 @@ GEO_WINDOW = 60
 def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold: float = -1.0) -> bool:
     """
     국가 ETF의 급락 여부를 체크하는 함수.
-    5일간의 누적 변화율이 threshold(기본값: -2%) 이상 하락한 경우 급락으로 간주.
+    5일간의 누적 변화율이 threshold(기본값: -1%) 이상 하락한 경우 급락으로 간주.
     """
-    # Calculate cumulative return (pct change over 5 days)
+    # 5일간의 누적 변화율 계산
     cum_ret = calculate_cumulative_return(df, days)
     
-    # Check if the cumulative return is below the threshold
+    # 급락 여부 확인
     if cum_ret.iloc[-1] < threshold:
         print(f"[INFO] {etf_symbol} has crashed: {cum_ret.iloc[-1]:.2f}% change")
         return True
-    else:
-        return False
+    return False
 
+# 국가 리스크 평가 함수
 def attach_country_risk_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
@@ -1153,28 +1154,35 @@ def attach_country_risk_layer(
     """
     국가 리스크를 평가하기 위해 ETF 변동성을 반영 (예: EIS)
     """
-    # ETF를 통한 리스크 평가 (예시: 이스라엘 ETF)
     country_etf = 'EIS'  # 이스라엘 ETF 예시
-    pct_1d = _pct_series_from_df(df, country_etf)
-    pct_5d = _cumret_series_from_df(df, country_etf, days=5)
+    
+    # CSV에서 데이터 불러오기
+    file_path = f"data/{country_etf}_data.csv"
+    etf_data = load_etf_data_from_csv(file_path)
+    
+    if etf_data.empty:
+        print(f"[ERROR] No data found for {country_etf}")
+        return market_data
+    
+    # ETF 데이터로 급락 여부 체크
+    pct_1d = _pct_series_from_df(etf_data, country_etf)
+    pct_5d = _cumret_series_from_df(etf_data, country_etf, days=5)
 
-    # zscore 계산 (급락 기준으로 zscore를 적용)
+    # Z-score 계산 (급락 기준으로 Z-score 적용)
     z_1d = _zscore_last(pct_1d, window)
     z_5d = _zscore_last(pct_5d, window)
 
-     # z_1d, z_5d 값 출력
     print(f"[INFO] {country_etf} z_1d: {z_1d}, z_5d: {z_5d}")
         
-    # 급락 여부 (예: z_5d < -2일 경우 급락으로 판단)
+    # 급락 여부 체크 (예: z_5d < -2일 경우 급락으로 판단)
+    country_risk = "NORMAL"
     if z_5d is not None and z_5d < -2:
-        country_risk = "HIGH"  # 급락으로 인한 리스크 상승
-    else:
-        country_risk = "NORMAL"  # 급락이 없다면 정상 상태
-
+        country_risk = "HIGH"
+    
     # 급락 여부를 추가로 체크
-    is_crash = check_etf_crash(df, country_etf)
+    is_crash = check_etf_crash(etf_data, country_etf)
     if is_crash:
-        country_risk = "EXTREME"  # 급락이 발생하면 리스크를 "EXTREME"로 설정
+        country_risk = "EXTREME"  # 급락 시 "EXTREME"으로 리스크 설정
 
     # 결과를 market_data에 추가
     market_data["COUNTRY_RISK"] = {
@@ -1186,6 +1194,7 @@ def attach_country_risk_layer(
     }
 
     return market_data
+        
 
             
 # (key, weight, transform, mode)
@@ -1254,27 +1263,16 @@ def _pct_series_from_df(df: pd.DataFrame, col: str) -> pd.Series:
     return s.pct_change() * 100.0
 
 
+# Z-score 계산용 헬퍼 함수
 def _zscore_last(s: pd.Series, window: int) -> Optional[float]:
-    """
-    Rolling z-score의 마지막 값을 반환.
-    ✅ 핵심: 새로 추가된 컬럼(히스토리 짧음)도 계산되도록 최소 샘플 수를 허용.
-    """
-    if s is None:
-        return None
-
     s = pd.to_numeric(s, errors="coerce").dropna()
     if s.empty:
         return None
-
-    # 최근 window만
     x = s.tail(window).dropna()
     if len(x) < 5:
-        # ✅ 히스토리 너무 짧으면 아직은 스킵
         return None
-
     mu = float(x.mean())
     sd = float(x.std(ddof=0))
-
     last = float(x.iloc[-1])
     if sd == 0:
         return 0.0
