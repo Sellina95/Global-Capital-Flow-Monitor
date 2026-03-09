@@ -791,8 +791,11 @@ def generate_daily_report() -> None:
     market_data = attach_sovereign_spread_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
     market_data = attach_geopolitical_ew_layer(market_data, df, today_idx) or market_data
+    market_data = attach_country_risk_layer(market_data, df, today_idx)
+    # 리포트 출력
+    print(f"Country ETF Crash: {market_data['COUNTRY_RISK']['crash']}")
+    print(f"Risk Level: {market_data['COUNTRY_RISK']['risk_level']}")
     
-
     # ✅ Wall-Street Sentiment Proxy only (NO CNN, NO overwrite after this)
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
 
