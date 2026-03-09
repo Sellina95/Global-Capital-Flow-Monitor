@@ -2,6 +2,18 @@ import yfinance as yf
 import pandas as pd
 
 
+def load_etf_data_from_csv(file_path: str) -> pd.DataFrame:
+    """
+    주어진 파일 경로에서 ETF 데이터를 로드하고 DataFrame으로 반환합니다.
+    """
+    try:
+        df = pd.read_csv(file_path)
+        print(f"[INFO] Data for {file_path.split('/')[-1]}: {df.head()}")
+        return df
+    except Exception as e:
+        print(f"[ERROR] Failed to load ETF data from {file_path}: {e}")
+        return pd.DataFrame()  # 파일을 로드할 수 없을 경우 빈 DataFrame 반환
+
 def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
     ETF 데이터를 Yahoo Finance에서 받아오는 함수
