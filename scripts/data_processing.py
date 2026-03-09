@@ -3,59 +3,61 @@ import pandas as pd
 import os
 from datetime import datetime
 
-# 1. 국가별 ETF 목록
+# 국가별 ETF 목록
 country_etf_list = ["EIS", "SPY", "EEM", "EMB", "GLD", "VXX", "FXI", "EWJ", "BND"]
 
-def download_all_etfs_and_save():
-    # 데이터 저장 폴더 생성 (없을 경우)
-    os.makedirs('data', exist_ok=True)
+# --- [1] 기존 파일들과의 호환성을 위한 함수들 (Restore) ---
 
-    # 2026년 현재 시점에 맞춰 날짜 설정 (필요에 따라 수정하세요)
+def load_etf_data_from_csv(file_path: str) -> pd.DataFrame:
+    try:
+        df = pd.read_csv(file_path)
+        if 'Date' in df.columns:
+            df['Date'] = pd.to_datetime(df['Date'])
+            df.set_index('Date', inplace=True)
+        return df
+    except Exception as e:
+        print(f"[ERROR] Failed to load: {e}")
+        return pd.DataFrame()
+
+def get_etf_data(etf_symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
+    ticker = yf.Ticker(etf_symbol)
+    df = ticker.history(start=start_date, end=end_date)
+    return df
+
+def save_etf_data_to_csv(etf_symbol: str, start_date: str, end_date: str, output_file: str) -> None:
+    df = get_etf_data(etf_symbol, start_date, end_date)
+    if not df.empty:
+        df.to_csv(output_file)
+        print(f"[INFO] {etf_symbol} saved to {output_file}")
+
+# --- [2] 우리가 새로 만든 효율적인 통합 함수 ---
+
+def download_all_etfs_and_save():
+    os.makedirs('data', exist_ok=True)
     start_date = '2023-01-01'
     end_date = datetime.now().strftime('%Y-%m-%d')
-
-    # 모든 ETF 데이터를 담을 리스트
     etf_frames = []
 
-    print(f"[INFO] Fetching data from {start_date} to {end_date}...")
+    print(f"[INFO] Running combined ETF download...")
 
     for symbol in country_etf_list:
         try:
-            # Yahoo Finance에서 데이터 가져오기
             ticker = yf.Ticker(symbol)
             df = ticker.history(start=start_date, end=end_date)
-
-            if df.empty:
-                print(f"[WARNING] No data found for {symbol}")
-                continue
-
-            # 'Close' 가격만 추출하고 컬럼명을 해당 티커(symbol)로 변경
-            # timezone 정보가 있으면 제거하여 병합 시 오류 방지
-            close_data = df['Close'].rename(symbol)
-            close_data.index = close_data.index.tz_localize(None) 
-            
-            etf_frames.append(close_data)
-            print(f"[SUCCESS] Downloaded {symbol}")
-
+            if not df.empty:
+                # 'Close' 가격만 추출하고 타임존 제거
+                close_data = df['Close'].rename(symbol)
+                close_data.index = close_data.index.tz_localize(None)
+                etf_frames.append(close_data)
         except Exception as e:
-            print(f"[ERROR] Failed to download {symbol}: {e}")
+            print(f"[ERROR] Failed {symbol}: {e}")
 
-    # 모든 Series를 'Date' 기준으로 옆으로 병합 (axis=1)
     if etf_frames:
         combined_df = pd.concat(etf_frames, axis=1)
-        
-        # 날짜 내림차순 정렬 (최신 데이터가 위로 오게 하려면 False, 과거가 위면 True)
         combined_df.sort_index(ascending=True, inplace=True)
+        combined_df.to_csv('data/country_etf_data_combined.csv')
+        print("[SUCCESS] Integrated CSV created at data/country_etf_data_combined.csv")
 
-        # 3. 최종 통합 파일 하나만 저장
-        output_path = 'data/country_etf_data_combined.csv'
-        combined_df.to_csv(output_path)
-        
-        print("-" * 30)
-        print(f"[FINISH] Combined data saved to: {output_path}")
-        print(combined_df.tail()) # 마지막 5행 출력해서 확인
-    else:
-        print("[ERROR] No data was collected. Check your internet or symbols.")
-
+# 파일이 직접 실행될 때만 통합 함수 호출
 if __name__ == "__main__":
     download_all_etfs_and_save()
