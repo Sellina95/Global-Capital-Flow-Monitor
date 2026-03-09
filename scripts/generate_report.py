@@ -1,7 +1,7 @@
 from __future__ import annotations
 from filters.decision_layer import decision_layer_filter
 from filters.transmission_layer import transmission_layer_filter
-
+from data_processing import load_etf_data_from_csv, save_etf_data_to_combined_csv, get_etf_data, download_all_etfs_and_save
 from pathlib import Path
 from typing import Dict, Any
 import pandas as pd
@@ -751,32 +751,30 @@ def attach_sovereign_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]
 def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    df = load_macro_df()
-    df = merge_sovereign_spreads_into_macro_df(df)
+    # ETF 데이터 로드 (이미 country_etf_data_combined.csv에 통합된 데이터)
+    file_path = 'data/country_etf_data_combined.csv'
+    df = load_etf_data_from_csv(file_path)
+    
+    if df.empty:
+        print("[ERROR] No data available in country_etf_data_combined.csv")
+        return
+
     today_idx = len(df) - 1
-    as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
+    as_of_date = pd.to_datetime(df.iloc[today_idx]["Date"]).strftime("%Y-%m-%d")
 
     market_data = build_market_data(df, today_idx)
 
     # -----------------------------
-    # Detect stale / data feed delay
-    # - 기존 "pct_change==0" 기반은 장중/휴장/데이터지연에서 오탐이 잦음
-    # - "데이터 날짜가 오늘(UTC) 기준으로 너무 오래됐는지"로 판단
-    # -----------------------------
-        # -----------------------------
-    # Detect stale / market closed
-    # -----------------------------
+    # Detect stale / market closed (Check if data is up-to-date)
     stale = False
     try:
-        last_date = pd.to_datetime(df.iloc[today_idx]["date"]).date()
+        last_date = pd.to_datetime(df.iloc[today_idx]["Date"]).date()
         now_utc = pd.Timestamp.utcnow()
         today_utc = now_utc.date()
 
-        # 주말이면 market closed / stale 처리
-        if now_utc.weekday() >= 5:   # 5=Sat, 6=Sun
+        if now_utc.weekday() >= 5:  # Weekends - market closed
             stale = True
-        # 평일인데 데이터가 2일 이상 밀렸으면 stale
-        elif (today_utc - last_date).days >= 2:
+        elif (today_utc - last_date).days >= 2:  # If data is older than 2 days
             stale = True
     except Exception:
         stale = False
@@ -792,15 +790,17 @@ def generate_daily_report() -> None:
     market_data = attach_sovereign_spread_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
     market_data = attach_geopolitical_ew_layer(market_data, df, today_idx) or market_data
+
+    #  전체 국가 ETF 데이터에서 급락 여부 확인
     market_data = attach_country_risk_layer(market_data, df, today_idx)
-    # 리포트 출력
-     # 리포트 출력: 각 국가 ETF에 대한 리스크 정보
+
+    # 리포트 출력 (각 국가별 ETF의 급락 여부)
     country_risk_keys = [key for key in market_data.keys() if key.startswith("COUNTRY_RISK")]
 
     lines = []
     for country_risk_key in country_risk_keys:
         country_risk = market_data[country_risk_key]
-
+        
         # 각 ETF에 대해 리스크 정보 출력
         lines.append(f"### Country ETF: {country_risk['country_etf']}")
         lines.append(f"  - **Crash?** {country_risk['crash']}")
