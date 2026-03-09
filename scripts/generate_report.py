@@ -1,7 +1,8 @@
 from __future__ import annotations
 from filters.decision_layer import decision_layer_filter
 from filters.transmission_layer import transmission_layer_filter
-from data_processing import load_etf_data_from_csv, save_etf_data_to_combined_csv, get_etf_data, download_all_etfs_and_save
+# generate_report.py 파일에서 'save_etf_data_to_combined_csv' 임포트 문을 제거
+from data_processing import load_etf_data_from_csv, get_etf_data, download_all_etfs_and_save
 from pathlib import Path
 from typing import Dict, Any
 import pandas as pd
