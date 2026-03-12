@@ -1134,10 +1134,10 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 # 급락 여부를 체크하는 함수
 GEO_WINDOW = 60
 
-def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold: float = -1.0) -> bool:
+def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold: float = -2.0) -> bool:
     """
     국가 ETF의 급락 여부를 체크하는 함수.
-    5일간의 누적 변화율이 threshold(기본값: -1%)보다 낮으면 급락으로 간주.
+    5일간의 누적 변화율이 threshold(기본값: -2%)보다 낮으면 급락으로 간주.
     df는 반드시 해당 ETF 컬럼 하나를 포함해야 함.
     """
     if etf_symbol not in df.columns:
@@ -1159,7 +1159,6 @@ def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold:
 
     return False
 
-
 def attach_country_risk_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
@@ -1178,7 +1177,6 @@ def attach_country_risk_layer(
         return market_data
 
     # load_etf_data_from_csv에서 Date를 index로 세팅하므로
-    # 여기서는 index 기준으로 정렬만 하면 됨
     all_etf_data = all_etf_data.sort_index()
 
     country_etf_list = [
@@ -1233,7 +1231,6 @@ def attach_country_risk_layer(
         }
 
     return market_data
-
 
 
             
@@ -1804,7 +1801,7 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     # So What
     # -----------------------
     lines.append("")
-    lines.append("**So What?**")
+    lines.append("**Trade Information**")
 
     if level == "NORMAL":
         if momentum_label == "RISING":
