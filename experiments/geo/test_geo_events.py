@@ -227,19 +227,62 @@ def backtest_strategy(df: pd.DataFrame, crisis_dates: list, risk_threshold: floa
     :return: 리스크 관리 후 수익률
     """
     results = []
+
+    # crisis_dates를 pd.Timestamp로 변환하여 비교할 수 있도록 변경
+    crisis_dates = pd.to_datetime(crisis_dates)
+
     for date in crisis_dates:
         start_date = date - pd.Timedelta(days=window)
         end_date = date + pd.Timedelta(days=window)
         
+        # 날짜 범위가 올바르게 처리되는지 확인
+        print(f"Processing crisis date: {date}, range: {start_date} to {end_date}")
+        
         # 리스크 지표가 임계값을 초과하면 리스크 회피
         df_window = df[(df.index >= start_date) & (df.index <= end_date)]
-        if df_window["Geo Stress Score"].iloc[-1] > risk_threshold:
-            # 리스크 회피 전략 적용 (예: ETF 매도)
-            results.append(df_window["Return"].sum())  # 수익률 방어량
-        else:
-            results.append(df_window["Return"].sum())  # 리스크 회피 안함
-    
-    return np.mean(results)  # 평균 수익률 방어율 반환
+        
+        # df_window 출력으로 선택된 데이터 확인
+        print(f"df_window selected: {df_window}")
+
+        if df_window.empty:
+            print(f"Warning: No data available for the date range {start_date} to {end_date}.")
+            continue
+        
+        try:
+            geo_stress_score = df_window["Geo Stress Score"].iloc[-1]
+            print(f"Geo Stress Score: {geo_stress_score}")
+            
+            if geo_stress_score > risk_threshold:
+                results.append(df_window["Return"].sum())  # 수익률 방어량
+            else:
+                results.append(df_window["Return"].sum())  # 리스크 회피 안함
+        except KeyError as e:
+            print(f"Error: KeyError - {e}. 'Geo Stress Score' column might be missing.")
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+
+    if results:
+        return np.mean(results)  # 평균 수익률 방어율 반환
+    else:
+        return None  # 결과가 없으면 None 반환
+
+
+# 테스트 실행
+df = pd.DataFrame({
+    'Geo Stress Score': [0.8, 1.2, 0.5, 0.6],  # 예시 값
+    'Return': [0.02, -0.01, 0.03, -0.02],  # 예시 수익률
+    'date': pd.to_datetime(['2022-02-20', '2022-02-24', '2022-02-28', '2022-03-05'])
+})
+df.set_index('date', inplace=True)  # 'date'를 인덱스로 설정
+
+# 예시 위기 날짜
+crisis_dates = pd.to_datetime(['2022-02-24', '2023-10-07'])
+backtest_result = backtest_strategy(df, crisis_dates, risk_threshold=1.0, window=5)
+
+if backtest_result:
+    print(f"Backtest Result: {backtest_result}")
+else:
+    print("No valid backtest results.")
 
 
 if __name__ == "__main__":
