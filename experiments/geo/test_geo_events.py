@@ -241,11 +241,6 @@ def backtest_strategy(df: pd.DataFrame, crisis_dates: list, risk_threshold: floa
     
     return np.mean(results)  # 평균 수익률 방어율 반환
 
-# 예시로 위기 시점 (datetime 형식), 리스크 임계값, 리스크 회피 전략을 적용할 기간을 설정하여 백테스트
-crisis_dates = pd.to_datetime(['2022-02-24', '2023-10-07'])  # 예시 날짜
-backtest_results = backtest_strategy(df, crisis_dates, risk_threshold=1.0, window=5)
-print(f"Average risk-adjusted return: {backtest_results}")
-
 
 if __name__ == "__main__":
     main()
