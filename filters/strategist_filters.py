@@ -1696,7 +1696,7 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     """
     리포트 출력용 문자열
     """
-    from experiments.geo.test_geo_events import backtest_strategy 
+    from experiments.geo.test_geo_events import backtest_strategy
     geo = (market_data.get("GEO_EW") or {})
     score = geo.get("score")
     level = geo.get("level", "N/A")
@@ -1833,10 +1833,13 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     lines.append("**Trade Information:**")
 
     # backtest_strategy 사용 (핵심 수정 부분)
-    backtest_result = backtest_strategy(df, EVENTS)
+    # **df는 이제 잘 정의된 데이터프레임이어야 합니다.**
+    crisis_dates = pd.to_datetime(['2022-02-24', '2023-10-07'])  # 예시 날짜, 실제 위기 날짜로 수정
+    backtest_result = backtest_strategy(df, crisis_dates, risk_threshold=1.0, window=5)
     if backtest_result:
         lines.append(f"- **Backtest Result:** {backtest_result}")
 
+    # 스트레스 레벨에 따른 조건부 메시지
     if level == "NORMAL":
         if momentum_label == "RISING":
             lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 상승하고 있는 중입니다. 경계 강화 필요.")
