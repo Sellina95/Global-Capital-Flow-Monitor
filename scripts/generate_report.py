@@ -818,6 +818,7 @@ def generate_daily_report() -> None:
     # -------------------------
     # 4) Strategist Commentary
     # -------------------------
+    print(f"[DEBUG] market_data before build_strategist_commentary: {market_data}")
     commentary_block = build_strategist_commentary(market_data)
 
     # ✅ FINAL_STATE 이후 geo overlay
