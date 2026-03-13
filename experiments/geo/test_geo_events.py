@@ -3,7 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
+
 import pandas as pd
+import numpy as np
+from datetime import datetime
 
 # =========================================================
 # Paths
@@ -207,9 +210,41 @@ def main() -> None:
             pass
 
         lines.append("")
+        
 
     _write_md(lines)
     print("\n".join(lines))
+
+# test_geo_events.py에서 백테스트 함수 추기
+
+def backtest_strategy(df: pd.DataFrame, crisis_dates: list, risk_threshold: float, window: int) -> pd.DataFrame:
+    """
+    과거 위기 시나리오에서 리스크 회피 전략을 백테스트하여 수익률을 방어한지 평가
+    :param df: 리스크 지표 (Geo Stress Score, Momentum 등) 포함된 데이터
+    :param crisis_dates: 위기 시점 (datetime 형식)
+    :param risk_threshold: 리스크 임계값 (예: Geo Stress Score > 1.0 일 때 리스크 회피)
+    :param window: 리스크 회피 전략을 적용할 기간 (예: 5일)
+    :return: 리스크 관리 후 수익률
+    """
+    results = []
+    for date in crisis_dates:
+        start_date = date - pd.Timedelta(days=window)
+        end_date = date + pd.Timedelta(days=window)
+        
+        # 리스크 지표가 임계값을 초과하면 리스크 회피
+        df_window = df[(df.index >= start_date) & (df.index <= end_date)]
+        if df_window["Geo Stress Score"].iloc[-1] > risk_threshold:
+            # 리스크 회피 전략 적용 (예: ETF 매도)
+            results.append(df_window["Return"].sum())  # 수익률 방어량
+        else:
+            results.append(df_window["Return"].sum())  # 리스크 회피 안함
+    
+    return np.mean(results)  # 평균 수익률 방어율 반환
+
+# 예시로 위기 시점 (datetime 형식), 리스크 임계값, 리스크 회피 전략을 적용할 기간을 설정하여 백테스트
+crisis_dates = pd.to_datetime(['2022-02-24', '2023-10-07'])  # 예시 날짜
+backtest_results = backtest_strategy(df, crisis_dates, risk_threshold=1.0, window=5)
+print(f"Average risk-adjusted return: {backtest_results}")
 
 
 if __name__ == "__main__":
