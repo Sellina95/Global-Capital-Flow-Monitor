@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing import Dict, Any, Optional, List, Tuple
 from data_processing import download_all_etfs_and_save
 from data_processing import load_etf_data_from_csv
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 import pandas as pd
 import math
@@ -1663,6 +1665,30 @@ def attach_geopolitical_ew_layer(
     }
 
     return market_data
+
+def calculate_cosine_similarity(current_vector: np.array, historical_vectors: np.array) -> np.array:
+    """
+    현재 리스크 지표 벡터와 과거 위기 시나리오의 리스크 지표 벡터 간 유사도를 계산
+    :param current_vector: 현재 리스크 지표 (Geo Stress Score, Momentum 등)
+    :param historical_vectors: 과거 위기 시나리오에 해당하는 리스크 지표 벡터들
+    :return: 각 과거 시나리오와의 유사도 값
+    """
+    return cosine_similarity([current_vector], historical_vectors)[0]
+
+# 예시: 과거 위기 시나리오 벡터 (Geo Stress Score, Geo Momentum 등)
+historical_vectors = np.array([
+    [0.5, 0.3],  # Ukraine war
+    [0.7, 0.2],  # Israel war
+    [0.6, 0.4],  # Taiwan tension
+    [0.4, 0.5],  # Red Sea
+])
+
+# 현재 상황 벡터 (예시로 Geo Stress Score, Geo Momentum을 포함)
+current_vector = np.array([0.6, 0.25])
+
+# 유사도 계산
+similarities = calculate_cosine_similarity(current_vector, historical_vectors)
+print(similarities)
     
 def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     """
