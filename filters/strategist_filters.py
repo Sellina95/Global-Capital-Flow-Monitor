@@ -1843,6 +1843,7 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
             'Return': [0.02, -0.01, 0.03, -0.02],  # 예시 수익률
             'date': pd.to_datetime(['2022-02-20', '2022-02-24', '2022-02-28', '2022-03-05'])
         })
+        print(df)  # df가 정확히 출력되는지 확인
         backtest_result = backtest_strategy(df, crisis_dates, risk_threshold=1.0, window=5)
         if backtest_result:
             lines.append(f"- **Backtest Result:** {backtest_result}")
