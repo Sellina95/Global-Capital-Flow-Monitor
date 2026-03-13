@@ -3,6 +3,8 @@ from typing import Dict, Any, Optional, List, Tuple
 from data_processing import download_all_etfs_and_save
 from data_processing import load_etf_data_from_csv
 from sklearn.metrics.pairwise import cosine_similarity
+from experiments.geo.test_geo_events import backtest_strategy 
+
 import numpy as np
 
 import pandas as pd
@@ -1690,6 +1692,7 @@ current_vector = np.array([0.6, 0.25])
 similarities = calculate_cosine_similarity(current_vector, historical_vectors)
 print(similarities)
     
+
 def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     """
     리포트 출력용 문자열
@@ -1741,7 +1744,7 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
         lines.append("- **Status:** N/A (insufficient data)")
         lines.append(f"- **Missing/Skipped:** {', '.join(missing) if missing else 'None'}")
         lines.append("- **Sovereign Spread factors included:** None")
-        lines.append("- **Trade Implication:** 데이터가 쌓이거나 지표가 추가되면 조기경보 점수를 계산합니다.")
+        lines.append("- **So What?:** 데이터가 쌓이거나 지표가 추가되면 조기경보 점수를 계산합니다.")
 
         if tracked_etfs:
             if crashed_etfs:
@@ -1773,7 +1776,7 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
         lines.append(f"- **Geo Momentum:** {momentum:+.2f} *(Status: {momentum_label})*")
 
     # -----------------------
-    # Top contributors
+    # top contributors
     # -----------------------
     comps_sorted = sorted(
         comps,
@@ -1824,10 +1827,15 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
         lines.append("- **Sovereign Spread factors included:** None")
 
     # -----------------------
-    # Trade Implication
+    # So What → Trade Information
     # -----------------------
     lines.append("")
-    lines.append("**Trade Implication:**")
+    lines.append("**Trade Information:**")
+
+    # backtest_strategy 사용 (핵심 수정 부분)
+    backtest_result = backtest_strategy(df, EVENTS)
+    if backtest_result:
+        lines.append(f"- **Backtest Result:** {backtest_result}")
 
     if level == "NORMAL":
         if momentum_label == "RISING":
