@@ -20,7 +20,7 @@ KST = timezone(timedelta(hours=9))
 # -------------------------
 INDICATORS: Dict[str, str] = {
     "US10Y": "^TNX",      # US 10Y
-    "DXY": "DX-Y.NYB",    # Dollar Index
+    "DXY": "^DXY",    # Dollar Index
     "WTI": "CL=F",        # Oil
     "VIX": "^VIX",        # Volatility
     "USDKRW": "KRW=X",    # USD/KRW
@@ -111,7 +111,7 @@ def _safe_last_close(df: pd.DataFrame) -> Optional[float]:
 def fetch_macro_data() -> Dict[str, float]:
     """
     Fetch all INDICATORS from yfinance.
-    - REQUIRED_KEYS missing => raise
+    - REQUIRED_KEYS missing => store as NaN instead of raising error
     - Optional indicators missing => store as NaN
     - FX tickers (USDCNH) use robust fallback (download -> history)
     """
@@ -132,8 +132,9 @@ def fetch_macro_data() -> Dict[str, float]:
             v = _safe_last_close(df)
             if v is not None:
                 return float(v)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Error fetching {ticker}: {e}")
+            return None
 
         # 2) fallback: Ticker().history (often more reliable for FX)
         try:
@@ -146,7 +147,8 @@ def fetch_macro_data() -> Dict[str, float]:
             if close.empty:
                 return None
             return float(close.iloc[-1])
-        except Exception:
+        except Exception as e:
+            print(f"Error with fallback for {ticker}: {e}")
             return None
 
     for name, ticker in INDICATORS.items():
@@ -165,9 +167,10 @@ def fetch_macro_data() -> Dict[str, float]:
 
         if value is None:
             if name in REQUIRED_KEYS:
-                raise RuntimeError(f"[{name}] No valid Close data from yfinance (tickers tried={tickers_to_try}).")
-            results[name] = float("nan")
-            print(f"  → {name}: NaN (optional, skipped)")
+                print(f"[WARNING] [{name}] No valid Close data from yfinance (tickers tried={tickers_to_try}). Storing NaN.")
+                results[name] = float("nan")
+            else:
+                results[name] = float("nan")
             continue
 
         results[name] = float(value)
@@ -177,7 +180,6 @@ def fetch_macro_data() -> Dict[str, float]:
             print(f"  → {name}: {value}")
 
     return results
-
 
 def _read_existing_header(csv_path: Path) -> List[str]:
     with open(csv_path, "r", encoding="utf-8") as f:
