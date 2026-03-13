@@ -3,7 +3,6 @@ from typing import Dict, Any, Optional, List, Tuple
 from data_processing import download_all_etfs_and_save
 from data_processing import load_etf_data_from_csv
 from sklearn.metrics.pairwise import cosine_similarity
-from experiments.geo.test_geo_events import backtest_strategy 
 
 import numpy as np
 
@@ -1697,6 +1696,7 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     """
     리포트 출력용 문자열
     """
+    from experiments.geo.test_geo_events import backtest_strategy 
     geo = (market_data.get("GEO_EW") or {})
     score = geo.get("score")
     level = geo.get("level", "N/A")
