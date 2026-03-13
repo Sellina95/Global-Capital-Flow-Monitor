@@ -1835,16 +1835,20 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 
     # backtest_strategy 사용 (핵심 수정 부분)
     # **df는 이제 잘 정의된 데이터프레임이어야 합니다.**
-    crisis_dates = pd.to_datetime(['2022-02-24', '2023-10-07'])  # 예시 날짜, 실제 위기 날짜로 수정
-    # 여기서 df는 리스크 지표와 수익률 컬럼을 포함한 데이터프레임이어야 합니다.
-    df = pd.DataFrame({
-        'Geo Stress Score': [0.8, 1.2, 0.5, 0.6],  # 예시 값
-        'Return': [0.02, -0.01, 0.03, -0.02],  # 예시 수익률
-        'date': pd.to_datetime(['2022-02-20', '2022-02-24', '2022-02-28', '2022-03-05'])
-    })
-    backtest_result = backtest_strategy(df, crisis_dates, risk_threshold=1.0, window=5)
-    if backtest_result:
-        lines.append(f"- **Backtest Result:** {backtest_result}")
+    # 백테스트를 실행하고 결과를 리포트에 추가
+    try:
+        crisis_dates = pd.to_datetime(['2022-02-24', '2023-10-07'])  # 예시 날짜, 실제 위기 날짜로 수정
+        df = pd.DataFrame({
+            'Geo Stress Score': [0.8, 1.2, 0.5, 0.6],  # 예시 값
+            'Return': [0.02, -0.01, 0.03, -0.02],  # 예시 수익률
+            'date': pd.to_datetime(['2022-02-20', '2022-02-24', '2022-02-28', '2022-03-05'])
+        })
+        backtest_result = backtest_strategy(df, crisis_dates, risk_threshold=1.0, window=5)
+        if backtest_result:
+            lines.append(f"- **Backtest Result:** {backtest_result}")
+    except Exception as e:
+        lines.append("- **Backtest Result:** Not Available")
+        print(f"Backtest error: {e}")
 
     # 스트레스 레벨에 따른 조건부 메시지
     if level == "NORMAL":
