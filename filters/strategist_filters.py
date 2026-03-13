@@ -1741,7 +1741,7 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
         lines.append("- **Status:** N/A (insufficient data)")
         lines.append(f"- **Missing/Skipped:** {', '.join(missing) if missing else 'None'}")
         lines.append("- **Sovereign Spread factors included:** None")
-        lines.append("- **So What?:** 데이터가 쌓이거나 지표가 추가되면 조기경보 점수를 계산합니다.")
+        lines.append("- **Trade Implication:** 데이터가 쌓이거나 지표가 추가되면 조기경보 점수를 계산합니다.")
 
         if tracked_etfs:
             if crashed_etfs:
@@ -1773,7 +1773,7 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
         lines.append(f"- **Geo Momentum:** {momentum:+.2f} *(Status: {momentum_label})*")
 
     # -----------------------
-    # top contributors
+    # Top contributors
     # -----------------------
     comps_sorted = sorted(
         comps,
@@ -1824,10 +1824,10 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
         lines.append("- **Sovereign Spread factors included:** None")
 
     # -----------------------
-    # So What
+    # Trade Implication
     # -----------------------
     lines.append("")
-    lines.append("**Trade Information**")
+    lines.append("**Trade Implication:**")
 
     if level == "NORMAL":
         if momentum_label == "RISING":
