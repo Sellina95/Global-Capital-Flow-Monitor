@@ -20,7 +20,7 @@ KST = timezone(timedelta(hours=9))
 # -------------------------
 INDICATORS: Dict[str, str] = {
     "US10Y": "^TNX",      # US 10Y
-    "DXY": "^DXY",    # Dollar Index
+    "DXY": "DX-Y.NYB",    # Dollar Index
     "WTI": "CL=F",        # Oil
     "VIX": "^VIX",        # Volatility
     "USDKRW": "KRW=X",    # USD/KRW
