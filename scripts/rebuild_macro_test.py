@@ -1,6 +1,5 @@
 import pandas as pd
 import yfinance as yf
-from pandas_datareader import data as pdr
 from datetime import datetime
 
 START_DATE = "2022-01-01"
@@ -8,49 +7,29 @@ END_DATE = datetime.today().strftime("%Y-%m-%d")
 
 # 먼저 5개만 테스트
 YAHOO_TICKERS = {
+    "US10Y": "^TNX",
     "DXY": "DX-Y.NYB",
     "WTI": "CL=F",
     "VIX": "^VIX",
     "USDKRW": "KRW=X",
 }
 
-FRED_SERIES = {
-    "US10Y": "DGS10",
-}
-
 def download_yahoo_series(ticker: str, start: str, end: str) -> pd.Series:
     df = yf.download(ticker, start=start, end=end, auto_adjust=False, progress=False)
     if df.empty:
         return pd.Series(dtype="float64")
+
     if "Adj Close" in df.columns:
         series = df["Adj Close"]
     else:
         series = df["Close"]
-    series.name = None
-    return series
 
-def download_fred_series(series_code: str, start: str, end: str) -> pd.Series:
-    df = pdr.DataReader(series_code, "fred", start, end)
-    if df.empty:
-        return pd.Series(dtype="float64")
-    series = df[series_code]
     series.name = None
     return series
 
 # 전체 날짜 틀 만들기
 full_index = pd.date_range(start=START_DATE, end=END_DATE, freq="D")
 macro_df = pd.DataFrame(index=full_index)
-
-# FRED 다운로드
-for col, fred_code in FRED_SERIES.items():
-    try:
-        s = download_fred_series(fred_code, START_DATE, END_DATE)
-        s.index = pd.to_datetime(s.index).normalize()
-        macro_df[col] = s.reindex(full_index)
-        print(f"[OK] FRED - {col}")
-    except Exception as e:
-        macro_df[col] = pd.NA
-        print(f"[ERROR] FRED - {col}: {e}")
 
 # Yahoo 다운로드
 for col, ticker in YAHOO_TICKERS.items():
