@@ -8,7 +8,7 @@ END_DATE = datetime.today().strftime("%Y-%m-%d")
 # 먼저 5개만 테스트
 YAHOO_TICKERS = {
     "US10Y": "^TNX",
-    "DXY": "DX-Y.NYB",
+    "DXY": "UUP",
     "WTI": "CL=F",
     "VIX": "^VIX",
     "USDKRW": "KRW=X",
@@ -17,7 +17,7 @@ YAHOO_TICKERS = {
 def download_yahoo_series(ticker: str, start: str, end: str) -> pd.Series:
     df = yf.download(ticker, start=start, end=end, auto_adjust=False, progress=False)
     if df.empty:
-        return pd.Series(dtype="float64")
+        raise ValueError(f"No data returned for ticker: {ticker}")
 
     if "Adj Close" in df.columns:
         series = df["Adj Close"]
