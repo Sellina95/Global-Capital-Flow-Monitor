@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Dict, Any, Optional, List, Tuple
-from data_processing import download_all_etfs_and_save
-from data_processing import load_etf_data_from_csv
+from scripts.data_processing import download_all_etfs_and_save
+from scripts.data_processing import load_etf_data_from_csv
 from sklearn.metrics.pairwise import cosine_similarity
 
 import numpy as np
@@ -1274,9 +1274,8 @@ GEO_FACTORS = [
     # -----------------------
     ("KR10Y_SPREAD", 0.08, "normal", "level"),
     ("JP10Y_SPREAD", 0.06, "normal", "level"),
-    ("CN10Y_SPREAD", 0.06, "normal", "level"),
+    ("DE10Y_SPREAD", 0.06, "normal", "level"),
     ("IL10Y_SPREAD", 0.05, "normal", "level"),
-    ("TR10Y_SPREAD", 0.05, "normal", "level"),
 ]
 
 GEO_THRESHOLDS = [
@@ -1354,9 +1353,8 @@ def attach_geopolitical_ew_layer(
             for c in [
                 "KR10Y_SPREAD",
                 "JP10Y_SPREAD",
-                "CN10Y_SPREAD",
+                "DE10Y_SPREAD",
                 "IL10Y_SPREAD",
-                "TR10Y_SPREAD",
             ]:
                 if c in sov2.columns:
                     wanted_cols.append(c)
@@ -1418,7 +1416,7 @@ def attach_geopolitical_ew_layer(
                     out["date"] = pd.to_datetime(out["date"], errors="coerce")
 
                 wanted_cols = ["date"]
-                for c in ["KR10Y_SPREAD", "JP10Y_SPREAD", "CN10Y_SPREAD", "IL10Y_SPREAD", "TR10Y_SPREAD"]:
+                for c in ["KR10Y_SPREAD", "JP10Y_SPREAD", "DE10Y_SPREAD", "IL10Y_SPREAD"]:
                     if c in sov_hist.columns:
                         wanted_cols.append(c)
 
@@ -1667,36 +1665,251 @@ def attach_geopolitical_ew_layer(
 
     return market_data
 
-def calculate_cosine_similarity(current_vector: np.array, historical_vectors: np.array) -> np.array:
+GEO_SIMILARITY_FEATURES = [
+    "geo_score",
+    "geo_momentum",
+    "VIX",
+    "WTI",
+    "GOLD",
+    "USDCNH",
+    "EEM",
+    "EMB",
+    "BDRY",
+    "ITA",
+    "KR10Y_SPREAD",
+    "IL10Y_SPREAD",
+    "country_crash_count",
+    "country_high_count",
+]
+
+GEO_EVENT_TEMPLATES = {
+    "Ukraine_2022": {
+        "geo_score": 2.4,
+        "geo_momentum": 0.8,
+        "VIX": 2.0,
+        "WTI": 2.2,
+        "GOLD": 1.4,
+        "USDCNH": 1.0,
+        "EEM": 1.3,
+        "EMB": 1.1,
+        "BDRY": 0.6,
+        "ITA": 1.7,
+        "KR10Y_SPREAD": 0.7,
+        "IL10Y_SPREAD": 0.3,
+        "country_crash_count": 1.0,
+        "country_high_count": 2.0,
+    },
+    "Israel_2023": {
+        "geo_score": 1.8,
+        "geo_momentum": 0.5,
+        "VIX": 1.1,
+        "WTI": 1.0,
+        "GOLD": 1.2,
+        "USDCNH": 0.4,
+        "EEM": 0.7,
+        "EMB": 0.6,
+        "BDRY": 0.2,
+        "ITA": 2.0,
+        "KR10Y_SPREAD": 0.2,
+        "IL10Y_SPREAD": 1.8,
+        "country_crash_count": 1.0,
+        "country_high_count": 1.0,
+    },
+    "Taiwan_Tension": {
+        "geo_score": 1.5,
+        "geo_momentum": 0.6,
+        "VIX": 0.9,
+        "WTI": 0.4,
+        "GOLD": 0.8,
+        "USDCNH": 1.8,
+        "EEM": 0.9,
+        "EMB": 0.7,
+        "BDRY": 0.4,
+        "ITA": 0.5,
+        "KR10Y_SPREAD": 0.4,
+        "IL10Y_SPREAD": 0.0,
+        "country_crash_count": 0.0,
+        "country_high_count": 2.0,
+    },
+    "Red_Sea": {
+        "geo_score": 1.6,
+        "geo_momentum": 0.7,
+        "VIX": 0.8,
+        "WTI": 1.4,
+        "GOLD": 0.7,
+        "USDCNH": 0.3,
+        "EEM": 0.4,
+        "EMB": 0.4,
+        "BDRY": 1.8,
+        "ITA": 0.6,
+        "KR10Y_SPREAD": 0.2,
+        "IL10Y_SPREAD": 0.2,
+        "country_crash_count": 0.0,
+        "country_high_count": 1.0,
+    },
+}
+
+
+def _safe_float(x, default: float = 0.0) -> float:
+    try:
+        if x is None or pd.isna(x):
+            return default
+        return float(x)
+    except Exception:
+        return default
+
+
+def _extract_geo_component_map(market_data: Dict[str, Any]) -> Dict[str, float]:
+    geo = market_data.get("GEO_EW", {}) or {}
+    comps = geo.get("components", []) or []
+
+    out = {}
+    for c in comps:
+        key = c.get("key")
+        if key is None:
+            continue
+        out[key] = _safe_float(c.get("z_used"), 0.0)
+
+    return out
+
+
+def _extract_country_risk_counts(market_data: Dict[str, Any]) -> Tuple[int, int]:
+    crash_count = 0
+    high_count = 0
+
+    for k, v in market_data.items():
+        if not str(k).startswith("COUNTRY_RISK_"):
+            continue
+
+        item = v or {}
+
+        if item.get("crash"):
+            crash_count += 1
+
+        risk_level = item.get("risk_level", "NORMAL")
+        if risk_level in ["HIGH", "EXTREME"]:
+            high_count += 1
+
+    return crash_count, high_count
+
+
+def build_current_geo_similarity_vector(market_data: Dict[str, Any]) -> Tuple[np.ndarray, Dict[str, float]]:
+    geo = market_data.get("GEO_EW", {}) or {}
+    comp_map = _extract_geo_component_map(market_data)
+    crash_count, high_count = _extract_country_risk_counts(market_data)
+
+    feature_map = {
+        "geo_score": _safe_float(geo.get("score"), 0.0),
+        "geo_momentum": _safe_float(geo.get("momentum"), 0.0),
+        "VIX": _safe_float(comp_map.get("VIX"), 0.0),
+        "WTI": _safe_float(comp_map.get("WTI"), 0.0),
+        "GOLD": _safe_float(comp_map.get("GOLD"), 0.0),
+        "USDCNH": _safe_float(comp_map.get("USDCNH"), 0.0),
+        "EEM": _safe_float(comp_map.get("EEM"), 0.0),
+        "EMB": _safe_float(comp_map.get("EMB"), 0.0),
+        "BDRY": _safe_float(comp_map.get("BDRY"), 0.0),
+        "ITA": _safe_float(comp_map.get("ITA"), 0.0),
+        "KR10Y_SPREAD": _safe_float(comp_map.get("KR10Y_SPREAD"), 0.0),
+        "IL10Y_SPREAD": _safe_float(comp_map.get("IL10Y_SPREAD"), 0.0),
+        "country_crash_count": float(crash_count),
+        "country_high_count": float(high_count),
+    }
+
+    current_vector = np.array(
+        [feature_map[k] for k in GEO_SIMILARITY_FEATURES],
+        dtype=float
+    )
+
+    return current_vector, feature_map
+
+
+def calculate_cosine_similarity(current_vector: np.ndarray, historical_vectors: np.ndarray) -> np.ndarray:
     """
-    현재 리스크 지표 벡터와 과거 위기 시나리오의 리스크 지표 벡터 간 유사도를 계산
-    :param current_vector: 현재 리스크 지표 (Geo Stress Score, Momentum 등)
-    :param historical_vectors: 과거 위기 시나리오에 해당하는 리스크 지표 벡터들
-    :return: 각 과거 시나리오와의 유사도 값
+    현재 벡터와 과거 이벤트 벡터들 간 cosine similarity를 계산한다.
     """
-    return cosine_similarity([current_vector], historical_vectors)[0]
+    current_vector = np.asarray(current_vector, dtype=float).reshape(1, -1)
+    historical_vectors = np.asarray(historical_vectors, dtype=float)
 
-# 예시: 과거 위기 시나리오 벡터 (Geo Stress Score, Geo Momentum 등)
-historical_vectors = np.array([
-    [0.5, 0.3],  # Ukraine war
-    [0.7, 0.2],  # Israel war
-    [0.6, 0.4],  # Taiwan tension
-    [0.4, 0.5],  # Red Sea
-])
+    if historical_vectors.ndim != 2:
+        raise ValueError("historical_vectors must be a 2D array")
 
-# 현재 상황 벡터 (예시로 Geo Stress Score, Geo Momentum을 포함)
-current_vector = np.array([0.6, 0.25])
+    if current_vector.shape[1] != historical_vectors.shape[1]:
+        raise ValueError(
+            f"Feature size mismatch: current_vector has {current_vector.shape[1]} features, "
+            f"historical_vectors has {historical_vectors.shape[1]} features"
+        )
 
-# 유사도 계산
-similarities = calculate_cosine_similarity(current_vector, historical_vectors)
-print(similarities)
+    if np.isnan(current_vector).any():
+        current_vector = np.nan_to_num(current_vector, nan=0.0)
+
+    if np.isnan(historical_vectors).any():
+        historical_vectors = np.nan_to_num(historical_vectors, nan=0.0)
+
+    return cosine_similarity(current_vector, historical_vectors)[0]
+
+
+def attach_geo_similarity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    if market_data is None:
+        market_data = {}
+
+    geo = market_data.get("GEO_EW", {}) or {}
+
+    if geo.get("score") is None:
+        geo["cosine_similarity"] = {
+            "score": None,
+            "matched_event": None,
+            "signal": "N/A",
+            "all_scores": {},
+            "feature_map": {},
+        }
+        market_data["GEO_EW"] = geo
+        return market_data
+
+    current_vector, feature_map = build_current_geo_similarity_vector(market_data)
+
+    template_names = list(GEO_EVENT_TEMPLATES.keys())
+
+    historical_vectors = np.array([
+        [GEO_EVENT_TEMPLATES[name].get(k, 0.0) for k in GEO_SIMILARITY_FEATURES]
+        for name in template_names
+    ], dtype=float)
+
+    similarities = calculate_cosine_similarity(current_vector, historical_vectors)
+
+    score_map = {
+        name: float(score)
+        for name, score in zip(template_names, similarities)
+    }
+
+    best_idx = int(np.argmax(similarities))
+    best_score = float(similarities[best_idx])
+    best_match = template_names[best_idx]
+
+    if best_score >= 0.90:
+        signal = "EXTREME_MATCH"
+    elif best_score >= 0.80:
+        signal = "HIGH_MATCH"
+    elif best_score >= 0.70:
+        signal = "ELEVATED_MATCH"
+    else:
+        signal = "LOW_MATCH"
+
+    geo["cosine_similarity"] = {
+        "score": best_score,
+        "matched_event": best_match,
+        "signal": signal,
+        "all_scores": score_map,
+        "feature_map": feature_map,
+    }
+
+    market_data["GEO_EW"] = geo
+    return market_data
     
 
 def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     """
     리포트 출력용 문자열
     """
-    from experiments.geo.test_geo_events import backtest_strategy
 
     geo = (market_data.get("GEO_EW") or {})
     score = geo.get("score")
@@ -1706,6 +1919,25 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     score_3d_avg = geo.get("score_3d_avg")
     momentum = geo.get("momentum")
     momentum_label = geo.get("momentum_label", "N/A")
+
+    cosine_info = geo.get("cosine_similarity", {}) or {}
+    cosine_score = cosine_info.get("score")
+    cosine_match = cosine_info.get("matched_event")
+    cosine_signal = cosine_info.get("signal")
+    cosine_all = cosine_info.get("all_scores", {}) or {}
+
+    # -----------------------
+    # Friendly label mapping
+    # -----------------------
+    similarity_label_map = {
+        "LOW_MATCH": "Weak Historical Match",
+        "ELEVATED_MATCH": "Moderate Historical Match",
+        "HIGH_MATCH": "Strong Historical Match",
+        "EXTREME_MATCH": "Extreme Historical Match",
+        "N/A": "N/A",
+        None: "N/A",
+    }
+    cosine_signal_label = similarity_label_map.get(cosine_signal, str(cosine_signal))
 
     # -----------------------
     # Country ETF risk aggregation
@@ -1745,6 +1977,7 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
         lines.append("- **Status:** N/A (insufficient data)")
         lines.append(f"- **Missing/Skipped:** {', '.join(missing) if missing else 'None'}")
         lines.append("- **Sovereign Spread factors included:** None")
+        lines.append("- **Cosine Similarity Score:** N/A")
         lines.append("- **So What?:** 데이터가 쌓이거나 지표가 추가되면 조기경보 점수를 계산합니다.")
 
         if tracked_etfs:
@@ -1775,6 +2008,24 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 
     if momentum is not None:
         lines.append(f"- **Geo Momentum:** {momentum:+.2f} *(Status: {momentum_label})*")
+
+    # -----------------------
+    # cosine similarity section
+    # -----------------------
+    if cosine_score is not None:
+        lines.append("")
+        lines.append("**Historical Pattern Match (Cosine Similarity):**")
+        lines.append(f"- **Closest Historical Match:** {cosine_match}")
+        lines.append(f"- **Cosine Similarity Score:** {cosine_score:.3f}")
+        lines.append(f"- **Similarity Signal:** {cosine_signal_label}")
+
+        top_similarity = sorted(cosine_all.items(), key=lambda x: x[1], reverse=True)[:3]
+        if top_similarity:
+            lines.append("- **Top Similarity Matches:**")
+            for name, sc in top_similarity:
+                lines.append(f"  - {name}: {sc:.3f}")
+    else:
+        lines.append("- **Cosine Similarity Score:** N/A")
 
     # -----------------------
     # top contributors
@@ -1833,34 +2084,13 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
     lines.append("**Trade Information:**")
 
-    # backtest_strategy 사용 (핵심 수정 부분)
-    # **df는 이제 잘 정의된 데이터프레임이어야 합니다.**
-    # 백테스트를 실행하고 결과를 리포트에 추가
-    try:
-        crisis_dates = pd.to_datetime(['2022-02-24', '2023-10-07'])  # 예시 날짜, 실제 위기 날짜로 수정
-        df = pd.DataFrame({
-            'Geo Stress Score': [0.8, 1.2, 0.5, 0.6],  # 예시 값
-            'Return': [0.02, -0.01, 0.03, -0.02],  # 예시 수익률
-            'date': pd.to_datetime(['2022-02-20', '2022-02-24', '2022-02-28', '2022-03-05'])
-        })
-        print("=== df ===")
-        print(df)  # df가 정확히 출력되는지 확인
-
-            
-        backtest_result = backtest_strategy(df, crisis_dates, risk_threshold=1.0, window=5)
-        if backtest_result:
-            lines.append(f"- **Backtest Result:** {backtest_result}")
-    except Exception as e:
-        lines.append("- **Backtest Result:** Not Available")
-        print(f"Backtest error: {e}")
-
-    # 스트레스 레벨에 따른 조건부 메시지
+    # 1) Geo stress regime interpretation
     if level == "NORMAL":
         if momentum_label == "RISING":
             lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 상승하고 있는 중입니다. 경계 강화 필요.")
         elif momentum_label == "FALLING":
             lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 완화되고 있는 중입니다. 경계 유지.")
-        else:  # FLAT / N/A
+        else:
             lines.append("- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.")
 
     elif level == "ELEVATED":
@@ -1868,7 +2098,7 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
             lines.append("- 스트레스 ‘상승’ 구간: 리스크 상승 가속 → 헤지/사이징 축소 검토.")
         elif momentum_label == "FALLING":
             lines.append("- 스트레스 ‘상승’ 구간: 리스크는 여전히 높지만 단기 압력은 완화 중. 과잉 대응보다는 선별 대응이 필요.")
-        else:  # FLAT / N/A
+        else:
             lines.append("- 지정학 스트레스가 경계 구간(ELEVATED)에 머물고 있습니다. 기존 레짐은 유지하되 EM·원자재·중국 민감 익스포저는 보수적으로 점검할 필요가 있습니다.")
 
     elif level == "HIGH":
@@ -1879,12 +2109,25 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
         else:
             lines.append("- 스트레스 ‘높음’: EM/고베타/레버리지 노출 점검 및 방어적 대응이 필요합니다.")
 
-    else:  # CONFLICT / EXTREME
+    else:
         lines.append("- 스트레스 ‘극단’: 디레버리징 + 방어자산/헤지 우선, 갭리스크 대비(현금/단기).")
 
-    # -----------------------
-    # Country ETF Crash line
-    # -----------------------
+    # 2) Similarity interpretation
+    if cosine_score is not None:
+        if cosine_score >= 0.80:
+            lines.append(
+                f"- 과거 위기 패턴과의 유사도가 높습니다. 현재 시장은 **{cosine_match}** 유형의 지정학 리스크 재현 가능성을 시사하므로, 단기 risk-off 대응을 강화할 필요가 있습니다."
+            )
+        elif cosine_score >= 0.60:
+            lines.append(
+                f"- 과거 위기 패턴과 부분적으로 유사합니다. 현재 시장은 **{cosine_match}** 계열의 초기 징후를 일부 보이고 있어, 관련 자산군과 지역 노출을 점검할 필요가 있습니다."
+            )
+        else:
+            lines.append(
+                f"- 역사적 위기 패턴 유사도는 낮습니다. 현재는 **{cosine_match}** 유형과 가장 가깝지만, 전면적 지정학 쇼크보다는 제한적·국지적 리스크 모니터링 구간으로 해석됩니다."
+            )
+
+    # 3) Country ETF crash line
     if crashed_etfs:
         lines.append(f"- **Country ETF Crash?** Yes ({', '.join(crashed_etfs)})")
     elif tracked_etfs:
@@ -1892,14 +2135,13 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     else:
         lines.append("- **Country ETF Crash?** N/A")
 
-    # Optional: summarize country risk if any
     if extreme_risk_etfs:
         lines.append(f"- **Extreme Country Risk:** {', '.join(extreme_risk_etfs)}")
     elif high_risk_etfs:
         lines.append(f"- **High Country Risk:** {', '.join(high_risk_etfs)}")
 
     return "\n".join(lines)
-    
+
 # =========================
 # 8) Incentive Filter
 # =========================

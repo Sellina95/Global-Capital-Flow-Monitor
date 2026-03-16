@@ -3,15 +3,17 @@ from filters.decision_layer import decision_layer_filter
 from filters.transmission_layer import transmission_layer_filter
 from pathlib import Path
 # generate_report.py 파일에서 'save_etf_data_to_combined_csv' 임포트 문을 제거
-from data_processing import download_all_etfs_and_save, load_etf_data_from_csv
+from scripts.data_processing import download_all_etfs_and_save, load_etf_data_from_csv
 from typing import Dict, Any
 import pandas as pd
+import os
 
 
 from filters.strategist_filters import build_strategist_commentary
 from filters.strategist_filters import attach_geopolitical_ew_layer
 from filters.strategist_filters import geopolitical_early_warning_filter
 from filters.strategist_filters import attach_country_risk_layer
+from filters.strategist_filters import attach_geo_similarity_layer
 from filters.executive_layer import executive_summary_filter
 from filters.scenario_layer import scenario_generator_filter
 from filters.strategist_filters import apply_geo_overlay_to_final_state
@@ -754,11 +756,15 @@ def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # -----------------------------
-    # 0) ETF 통합 파일 먼저 갱신
+    # 0) ETF 통합 파일 확인 / 없을 때만 생성
     # -----------------------------
-    download_all_etfs_and_save()
+    etf_file_path = "data/country_etf_data_combined.csv"
 
-    etf_check_df = load_etf_data_from_csv("data/country_etf_data_combined.csv")
+    if not os.path.exists(etf_file_path):
+        print("[INFO] country_etf_data_combined.csv not found. Running combined ETF download...")
+        download_all_etfs_and_save()
+
+    etf_check_df = load_etf_data_from_csv(etf_file_path)
     if etf_check_df.empty:
         print("[ERROR] No data available in country_etf_data_combined.csv")
         return
@@ -783,7 +789,7 @@ def generate_daily_report() -> None:
     stale = False
     try:
         last_date = pd.to_datetime(df.iloc[today_idx]["date"]).date()
-        now_utc = pd.Timestamp.utcnow()
+        now_utc = pd.Timestamp.now("UTC")
         today_utc = now_utc.date()
 
         if now_utc.weekday() >= 5:   # 5=Sat, 6=Sun
@@ -805,11 +811,13 @@ def generate_daily_report() -> None:
     market_data = attach_expectation_layer(market_data) or market_data
     market_data = attach_geopolitical_ew_layer(market_data, df, today_idx) or market_data
 
-    # ✅ 국가 ETF 리스크 레이어
-    # 이 함수는 내부에서 data/country_etf_data_combined.csv 를 읽는 구조여야 함
+    # ✅ 국가 ETF 리스크 레이어 먼저
     market_data = attach_country_risk_layer(market_data, df, today_idx) or market_data
 
-    # ✅ Wall-Street Sentiment Proxy only
+    # ✅ Cosine Similarity는 country risk 이후
+    market_data = attach_geo_similarity_layer(market_data) or market_data
+
+    # ✅ Wall-Street Sentiment Proxy
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
 
     # ✅ regime change monitor
@@ -854,7 +862,6 @@ def generate_daily_report() -> None:
         country_risk_lines.append("")
         country_risk_lines.append("- No country ETF risk data available.")
         country_risk_lines.append("")
-
 
     # -------------------------
     # Report assembly
@@ -912,7 +919,7 @@ def generate_daily_report() -> None:
             f"- **원/달러 환율**: {market_data['USDKRW']['today']:.3f}"
         )
 
-    # Optional: Liquidity Snapshot block (independent)
+    # Optional: Liquidity Snapshot block
     if SHOW_LIQUIDITY_SNAPSHOT:
         liq_asof = market_data.get("_LIQ_ASOF")
         tga = market_data.get("TGA", {}).get("today")
@@ -930,7 +937,7 @@ def generate_daily_report() -> None:
             if net is not None:
                 lines.append(f"- **NET_LIQ**: {float(net):.1f}")
 
-    # ✅ Regime Change Monitor (ALWAYS ON)
+    # ✅ Regime Change Monitor
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -968,8 +975,15 @@ def generate_daily_report() -> None:
     lines.append("---")
     lines.append("")
 
-    # Detailed commentary last
+    # Detailed commentary
     lines.append(commentary_block)
+
+    # Optional country block append
+    if country_risk_lines:
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+        lines.extend(country_risk_lines)
 
     report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
