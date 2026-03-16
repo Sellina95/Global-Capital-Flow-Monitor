@@ -4,9 +4,9 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.285  (+0.00% vs 4.285)
-- **WTI 유가**: 98.710  (+0.00% vs 98.710)
+- **WTI 유가**: 98.850  (+0.14% vs 98.710)
 - **변동성 지수 (VIX)**: 27.190  (+0.00% vs 27.190)
-- **원/달러 환율**: 1499.990  (+0.37% vs 1494.400)
+- **원/달러 환율**: 1495.450  (+1.69% vs 1470.580)
 
 ---
 
@@ -120,9 +120,9 @@
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
 - DXY **(N/A, N/A)** → 달러 보합(방향성 약함)
-- WTI **(Noise, +0.00%)** → 유가 보합(물가 변수 제한)
+- WTI **(Noise, +0.14%)** → 인플레 재자극 가능성
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
-- 원/달러(USDKRW) **(Clear, +0.37%)** → 원화 약세/수급 부담
+- 원/달러(USDKRW) **(Strong, +1.69%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -131,19 +131,14 @@
 
 - **금리 보합(US10Y→)** → 할인율 변수 제한
 - **변동성 보합(VIX→)** → 심리 변화 제한
-- **유가 보합(WTI→)** → 물가 변수 제한
+- **유가 상승(WTI↑)** → 인플레 재자극 가능성 / 금리 상방 압력
 
 ### ⚠ 6.5) Correlation Break Monitor
-⚠ Market Closed / Stale Data → Correlation signals muted.
-
-- DEBUG: US10Y=0.0, TECH(qqq/xlk)=0.0, SPY=0.0
 
 No significant correlation break detected.
 
 ### ⚠ 6.6) Sector Correlation Break Monitor
 - DEBUG: pct XLK=0.0, XLF=0.0, XLE=0.0, XLRE=0.0
-⚠ Market Closed / Stale Data → Sector signals muted.
-
 No significant sector-level correlation break detected.
 
 ### 🧩 7) Risk Exposure Filter (숨은 리스크 분석)
@@ -152,41 +147,39 @@ No significant sector-level correlation break detected.
 - **VIX 보합(VIX→)** → 심리 변화 제한
 - **금리 보합(US10Y→)** → 금리 변수 제한
 - **달러 보합(DXY→)** → 달러 변수 제한
-- **유가 보합(WTI→)** → 물가 변수 제한
+- **유가 상승(WTI↑)** → 인플레 압력/실질소득 부담 가능
 
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
-⚠ Market Closed / Stale Data → Price-based geo signals muted.
-
-- **Geo Stress Score (z-composite):** **+0.23**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.49**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.35 / defined weight: 1.35)*
-- **3D Avg Score:** +0.39
-- **Geo Momentum:** -0.16 *(Status: FLAT)*
+- **3D Avg Score:** +0.47
+- **Geo Momentum:** +0.01 *(Status: FLAT)*
 - **Top Drivers:**
-  - KR10Y_SPREAD: z_used=+1.17 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=+0.07
-  - EMB: z_used=+0.78 (z1d=+0.11, z5d=-2.11, raw_w=0.12, norm_w=0.09) → contrib=+0.07
-  - TR10Y_SPREAD: z_used=+1.57 (mode=level, raw_w=0.05, norm_w=0.04) → contrib=+0.06
-  - GOLD: z_used=-0.52 (z1d=-0.12, z5d=-1.12, raw_w=0.12, norm_w=0.09) → contrib=-0.05
+  - USDCNH: z_used=+2.32 (z1d=+3.20, z5d=+1.01, raw_w=0.18, norm_w=0.13) → contrib=+0.31
+  - EMB: z_used=+0.82 (z1d=+0.13, z5d=-2.25, raw_w=0.12, norm_w=0.09) → contrib=+0.07
+  - KR10Y_SPREAD: z_used=+1.21 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=+0.07
+  - TR10Y_SPREAD: z_used=+1.60 (mode=level, raw_w=0.05, norm_w=0.04) → contrib=+0.06
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, CN10Y_SPREAD, IL10Y_SPREAD, TR10Y_SPREAD
 
 **Trade Information:**
-- **Backtest Result:** Not Available
+- **Backtest Result:** 0.04
 - 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
 - **Country ETF Crash?** Yes (EIS, GLD)
 - **Extreme Country Risk:** EIS, GLD
 
 ### 💸 8) Incentive Filter
 - **질문:** 누가 이득을 보고 있는가?
-- **핵심 신호:** US10Y(→) / DXY(→) / WTI(→)
+- **핵심 신호:** US10Y(→) / DXY(→) / WTI(↑)
 - **이득을 보는 주체:**
-  - None
+  - Energy producers
 - **손해를 보는 주체:**
-  - None
+  - Energy consumers
 
 ### 🔍 9) Cause Filter
 - **질문:** 무엇이 이 움직임을 만들었는가?
-- **핵심 신호:** US10Y(→) / DXY(→) / WTI(→) / VIX(→)
-- **판정:** **원인 신호 뚜렷하지 않음**
+- **핵심 신호:** US10Y(→) / DXY(→) / WTI(↑) / VIX(→)
+- **판정:** **유가 상승(WTI↑)**
 
 ### 🔄 10) Direction Filter
 - **질문:** 오늘 움직임은 ‘노이즈’인가 ‘의미 있는 변화’인가?
@@ -202,7 +195,7 @@ No significant sector-level correlation break detected.
 
 ### 🏗️ 12) Structural Filter
 - **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
-- **핵심 신호:** US10Y(→) / DXY(→) / VIX(→) / WTI(→)
+- **핵심 신호:** US10Y(→) / DXY(→) / VIX(→) / WTI(↑)
 - **판정:** **NEUTRAL**
 - **근거:** 패권/구조 신호가 뚜렷하지 않음
 
@@ -211,7 +204,7 @@ No significant sector-level correlation break detected.
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.040 / FCIΔ +0.000 / DXYΔ N/A / US10YΔ +0.000
-- **Sentiment (Fear&Greed):** 28.08050434229085 (FEAR)
+- **Sentiment (Fear&Greed):** 27.17210917519957 (FEAR)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=UP / level=HIGH
 - **Phase:** WAITING / RANGE (대기·박스권)
