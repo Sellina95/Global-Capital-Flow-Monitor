@@ -226,6 +226,10 @@ def backtest_strategy(df: pd.DataFrame, crisis_dates: list, risk_threshold: floa
     :param window: 리스크 회피 전략을 적용할 기간 (예: 5일)
     :return: 리스크 관리 후 수익률
     """
+    # --- FIX: ensure datetime index ---
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.set_index("date")
     results = []
 
     # crisis_dates를 pd.Timestamp로 변환하여 비교할 수 있도록 변경
