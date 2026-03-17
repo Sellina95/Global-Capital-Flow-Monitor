@@ -1,5 +1,6 @@
 # 🌍 Global Capital Flow – Daily Brief
 **Date:** 2026-03-17
+**Data as of:** 2026-03-17
 
 ## 📊 Daily Macro Signals
 
