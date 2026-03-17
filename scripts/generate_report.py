@@ -748,10 +748,40 @@ def attach_sovereign_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]
 
     return market_data
 
+def _find_effective_market_idx(
+    df: pd.DataFrame,
+    core_cols: Optional[List[str]] = None,
+    min_valid_count: int = 4,
+) -> int:
+    """
+    마지막 행이 비어 있을 수 있으므로,
+    핵심 지표가 충분히 채워진 마지막 유효 row index를 찾는다.
+    기본은 core 5개 중 4개 이상 값이 있는 마지막 행.
+    """
+    if core_cols is None:
+        core_cols = ["US10Y", "DXY", "WTI", "VIX", "USDKRW"]
 
-# -------------------------
-# Report
-# -------------------------
+    existing = [c for c in core_cols if c in df.columns]
+    if not existing:
+        return len(df) - 1
+
+    tmp = df.copy()
+    for c in existing:
+        tmp[c] = pd.to_numeric(tmp[c], errors="coerce")
+
+    valid_count = tmp[existing].notna().sum(axis=1)
+    candidates = tmp.index[valid_count >= min_valid_count].tolist()
+
+    if candidates:
+        return int(candidates[-1])
+
+    # fallback: 핵심지표 중 하나라도 있는 마지막 행
+    candidates_any = tmp.index[tmp[existing].notna().any(axis=1)].tolist()
+    if candidates_any:
+        return int(candidates_any[-1])
+
+    return len(df) - 1
+
 def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -778,8 +808,25 @@ def generate_daily_report() -> None:
     df = load_macro_df()
     df = merge_sovereign_spreads_into_macro_df(df)
 
-    today_idx = len(df) - 1
-    as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
+    # ✅ 마지막 행이 아니라 "핵심 5개 지표가 충분히 채워진 마지막 유효 행" 사용
+    today_idx = _find_effective_market_idx(
+        df,
+        core_cols=["US10Y", "DXY", "WTI", "VIX", "USDKRW"],
+        min_valid_count=4,
+    )
+
+    data_as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
+    report_date = pd.Timestamp.now(tz="Asia/Seoul").strftime("%Y-%m-%d")
+
+    # 디버그용
+    print("[DEBUG] effective today_idx =", today_idx)
+    print("[DEBUG] report_date (KST) =", report_date)
+    print("[DEBUG] data_as_of_date =", data_as_of_date)
+    print(
+        df[["date", "US10Y", "DXY", "WTI", "VIX", "USDKRW"]]
+        .tail(10)
+        .to_string(index=False)
+    )
 
     market_data = build_market_data(df, today_idx)
 
@@ -821,7 +868,7 @@ def generate_daily_report() -> None:
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
 
     # ✅ regime change monitor
-    regime_result = check_regime_change_and_alert(market_data, as_of_date)
+    regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
 
     # -------------------------
     # 4) Strategist Commentary
@@ -868,7 +915,8 @@ def generate_daily_report() -> None:
     # -------------------------
     lines = []
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
-    lines.append(f"**Date:** {as_of_date}")
+    lines.append(f"**Date:** {report_date}")
+    lines.append(f"**Data as of:** {data_as_of_date}")
     lines.append("")
     lines.append("## 📊 Daily Macro Signals")
     lines.append("")
@@ -985,12 +1033,9 @@ def generate_daily_report() -> None:
         lines.append("")
         lines.extend(country_risk_lines)
 
-    report_path = REPORTS_DIR / f"daily_report_{as_of_date}.md"
+    report_path = REPORTS_DIR / f"daily_report_{report_date}.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Report written: {report_path}")
-   
-     
-
 
 
 if __name__ == "__main__":
