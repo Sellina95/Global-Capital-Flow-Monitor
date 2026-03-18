@@ -55,7 +55,8 @@ INDICATORS: Dict[str, str] = {
 }
 # --- Fallback ticker mapping (for flaky FX like CNH) ---
 FALLBACK_TICKERS = {
-    "USDCNH": ["CNH=X", "CNY=X"],  # try offshore first, then onshore
+    "USDCNH": ["CNH=X", "CNY=X"],
+    "DXY": ["DX-Y.NYB", "DX=F","UUP"],# try offshore first, then onshore
 }
 
 # 핵심 파이프라인이 죽으면 안 되는 지표들(없으면 raise)
