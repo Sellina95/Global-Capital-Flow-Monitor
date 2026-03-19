@@ -686,59 +686,6 @@ def load_sovereign_yields_df() -> pd.DataFrame:
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
     return df
 
-
-def attach_sovereign_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    CDS proxy:
-      SPREAD_X = (COUNTRY_10Y - US10Y)
-    Adds:
-      - SOV_SPREADS dict
-      - convenience keys: KR_US_SPREAD, JP_US_SPREAD, DE_US_SPREAD ...
-    Never raises.
-    """
-    if market_data is None:
-        market_data = {}
-
-    df = load_sovereign_yields_df()
-    if df.empty or "US10Y" not in df.columns:
-        market_data["SOV_SPREADS"] = {}
-        market_data["_SOV_ASOF"] = None
-        return market_data
-
-    last = df.iloc[-1]
-    asof = pd.to_datetime(last["date"]).strftime("%Y-%m-%d")
-    market_data["_SOV_ASOF"] = asof
-
-    def _num(x):
-        v = pd.to_numeric(x, errors="coerce")
-        return None if pd.isna(v) else float(v)
-
-    us = _num(last.get("US10Y"))
-    if us is None:
-        market_data["SOV_SPREADS"] = {}
-        return market_data
-
-    spreads = {}
-    for col in df.columns:
-        if col in ("date", "US10Y"):
-            continue
-        v = _num(last.get(col))
-        if v is None:
-            continue
-        spreads[col] = v - us  # (country - US)
-
-    market_data["SOV_SPREADS"] = spreads
-
-    # convenience aliases (원하면 더)
-    if "KR10Y" in spreads:
-        market_data["KR_US_SPREAD"] = {"today": spreads["KR10Y"], "prev": None, "pct_change": None}
-    if "JP10Y" in spreads:
-        market_data["JP_US_SPREAD"] = {"today": spreads["JP10Y"], "prev": None, "pct_change": None}
-    if "DE10Y" in spreads:
-        market_data["DE_US_SPREAD"] = {"today": spreads["DE10Y"], "prev": None, "pct_change": None}
-
-    return market_data
-
 def load_sovereign_spreads_df() -> pd.DataFrame:
     csv_path = DATA_DIR / "sovereign_spreads.csv"
     if not csv_path.exists():
@@ -761,30 +708,61 @@ def load_sovereign_spreads_df() -> pd.DataFrame:
 
 def attach_sovereign_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Attach sovereign yields/spreads from data/sovereign_spreads.csv (last available).
+    Attach sovereign yields/spreads from data/sovereign_spreads.csv using
+    last available valid values (not just the last row).
+
     Adds meta:
       - _SOV_ASOF
+
     Adds keys (if exist):
-      - KR10Y_SPREAD, IL10Y_SPREAD, ... as {today, prev, pct_change}
-      - optionally yields too: KR10Y_Y, IL10Y_Y, ...
+      - KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD ...
+      - KR10Y_Y, JP10Y_Y, DE10Y_Y, IL10Y_Y ...
+      as {today, prev, pct_change}
     """
     if market_data is None:
         market_data = {}
 
     df = load_sovereign_spreads_df()
-    if df.empty:
+    if df is None or df.empty:
         market_data["_SOV_ASOF"] = None
         return market_data
 
-    today_row = df.iloc[-1]
-    asof = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
-    market_data["_SOV_ASOF"] = asof
+    if "date" not in df.columns:
+        market_data["_SOV_ASOF"] = None
+        return market_data
 
-    prev_row = df.iloc[-2] if len(df) >= 2 else None
+    df = df.copy()
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
-    def _add_series(col: str):
+    # 숫자 컬럼 정리
+    value_cols = [c for c in df.columns if c != "date"]
+    for c in value_cols:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
+    spread_cols = [c for c in df.columns if c.endswith("_SPREAD")]
+    yield_cols = [c for c in df.columns if c.endswith("_Y")]
+    target_cols = spread_cols + yield_cols
+
+    # ✅ "하나라도 값이 있는 마지막 날짜"를 asof로 사용
+    valid_any_df = df.dropna(subset=target_cols, how="all").copy() if target_cols else pd.DataFrame()
+    if valid_any_df.empty:
+        market_data["_SOV_ASOF"] = None
+        return market_data
+
+    latest_any_row = valid_any_df.iloc[-1]
+    market_data["_SOV_ASOF"] = pd.to_datetime(latest_any_row["date"]).strftime("%Y-%m-%d")
+
+    def _attach_one(col: str):
         if col not in df.columns:
             return
+
+        valid_df = df.dropna(subset=[col]).copy()
+        if valid_df.empty:
+            return
+
+        today_row = valid_df.iloc[-1]
+        prev_row = valid_df.iloc[-2] if len(valid_df) >= 2 else None
 
         t = pd.to_numeric(today_row.get(col), errors="coerce")
         if pd.isna(t):
@@ -804,15 +782,11 @@ def attach_sovereign_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]
         pct = 0.0 if p == 0 else ((t - p) / p) * 100.0
         market_data[col] = {"today": t, "prev": p, "pct_change": pct}
 
-    # ✅ spreads 우선
-    spread_cols = [c for c in df.columns if c.endswith("_SPREAD")]
     for c in spread_cols:
-        _add_series(c)
+        _attach_one(c)
 
-    # 필요하면 yields도 붙임 (리포트/필터에서 쓰기 좋게)
-    yield_cols = [c for c in df.columns if c.endswith("_Y")]
     for c in yield_cols:
-        _add_series(c)
+        _attach_one(c)
 
     return market_data
 
