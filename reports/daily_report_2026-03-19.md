@@ -5,10 +5,10 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.259  (+0.00% vs 4.259)
-- **달러 인덱스**: 100.074  (-0.02% vs 100.090)
-- **WTI 유가**: 96.740  (+0.44% vs 96.320)
-- **변동성 지수 (VIX)**: 25.960  (+3.47% vs 25.090)
-- **원/달러 환율**: 1499.550  (+0.99% vs 1484.870)
+- **달러 인덱스**: 100.083  (-0.01% vs 100.090)
+- **WTI 유가**: 96.550  (+0.24% vs 96.320)
+- **변동성 지수 (VIX)**: 26.090  (+3.99% vs 25.090)
+- **원/달러 환율**: 1503.680  (+1.27% vs 1484.870)
 
 ---
 
@@ -23,17 +23,17 @@
 ## 🧾 Executive Summary (3 Lines)
 - 현재 시장은 방향성이 제한된 혼합 국면이며, 구조는 완화 기조.
 - 유동성 여건이 개선되며 리스크 자산에 우호적이다.
-- 전략적으로는 공격적 확대보다 65% 내외의 선별적 노출 유지가 적절하다.
+- 전략적으로는 노출 확대가 가능하나, 규율 기반으로 70% 내에서 단계적으로 접근한다.
 
 ## 🧭 So What? (Decision Layer)
-- **Risk Stance:** **HOLD** *(target exposure: 65%)*
+- **Risk Stance:** **INCREASE** *(target exposure: 70%)*
 - **Context:** phase=TRANSITION / MIXED (전환·혼조) / liquidity=UP-MID / credit_calm=True / geo=NORMAL
 
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
 ### 🔹 Base Case
 - 조건: 유동성 혼조 + 크레딧 안정 유지 / 변동성 급등 없이 박스권 장세 지속
-- 전략: 노출 65% 유지, 퀄리티 중심 선별적 접근
+- 전략: 노출 70% 유지, 퀄리티 중심 선별적 접근
 
 ### 🔼 Bull Case
 - 조건: NET_LIQ 회복 (dir=UP & level=MID 이상) / 크레딧 스프레드 추가 축소
@@ -60,7 +60,7 @@
 - **정의:** 지금 어떤 장(場)인지 판단하는 *시장 국면 필터*
 - **추가 이유:** 같은 지표도 ‘국면’에 따라 의미가 완전히 달라지기 때문
 
-- **VIX 레벨:** 25.96 → **High (Risk-off bias)**
+- **VIX 레벨:** 26.09 → **High (Risk-off bias)**
 - **핵심 조합(전일 대비 방향):** US10Y(→) / DXY(↓) / VIX(↑)
 - **판정:** **TRANSITION / MIXED (전환·혼조)**
 - **근거:** 금리/달러/변동성 축이 한 방향으로 정렬되지 않음
@@ -80,7 +80,7 @@
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(→) / DXY(↓) / VIX(↑)
-- **Policy Bias: EASING (완화) (MODERATE, score=-2.0) | REAL_RATEΔ -0.040 / FCIΔ +0.000 / DXYΔ -0.016 / US10YΔ +0.000**
+- **Policy Bias: EASING (완화) (MODERATE, score=-2.0) | REAL_RATEΔ -0.040 / FCIΔ +0.000 / DXYΔ -0.007 / US10YΔ +0.000**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY MIXED (정책 신호 혼조)**
@@ -121,10 +121,10 @@
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
-- DXY **(Noise, -0.02%)** → 달러 약세/리스크 선호
-- WTI **(Mild, +0.44%)** → 인플레 재자극 가능성
-- VIX **(Strong, +3.47%)** → 심리 악화/리스크오프
-- 원/달러(USDKRW) **(Strong, +0.99%)** → 원화 약세/수급 부담
+- DXY **(Noise, -0.01%)** → 달러 약세/리스크 선호
+- WTI **(Mild, +0.24%)** → 인플레 재자극 가능성
+- VIX **(Strong, +3.99%)** → 심리 악화/리스크오프
+- 원/달러(USDKRW) **(Strong, +1.27%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -152,24 +152,24 @@ No significant sector-level correlation break detected.
 - **유가 상승(WTI↑)** → 인플레 압력/실질소득 부담 가능
 
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
-- **Geo Stress Score (z-composite):** **-0.05**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.02**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
-- **3D Avg Score:** +0.08
-- **Geo Momentum:** -0.13 *(Status: FLAT)*
+- **3D Avg Score:** +0.10
+- **Geo Momentum:** -0.08 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.422
+- **Cosine Similarity Score:** 0.434
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.422
-  - Ukraine_2022: 0.228
-  - Israel_2023: 0.138
+  - Taiwan_Tension: 0.434
+  - Ukraine_2022: 0.227
+  - Israel_2023: 0.134
 - **Top Drivers:**
-  - USDCNH: z_used=+1.38 (z1d=+0.95, z5d=+2.04, raw_w=0.18, norm_w=0.14) → contrib=+0.19
-  - GOLD: z_used=-2.07 (z1d=-1.96, z5d=-2.23, raw_w=0.12, norm_w=0.09) → contrib=-0.19
+  - USDCNH: z_used=+1.68 (z1d=+1.28, z5d=+2.26, raw_w=0.18, norm_w=0.14) → contrib=+0.23
+  - GOLD: z_used=-2.30 (z1d=-2.25, z5d=-2.38, raw_w=0.12, norm_w=0.09) → contrib=-0.21
   - KR10Y_SPREAD: z_used=-1.00 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
-  - DE10Y_SPREAD: z_used=+1.00 (mode=level, raw_w=0.06, norm_w=0.05) → contrib=+0.05
+  - USDMXN: z_used=+1.41 (z1d=+1.90, z5d=+0.69, raw_w=0.05, norm_w=0.04) → contrib=+0.05
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
 
@@ -204,7 +204,7 @@ No significant sector-level correlation break detected.
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.259), DXY(100.074), VIX(25.96)
+- **Today snapshot:** US10Y(4.259), DXY(100.083), VIX(26.09)
 
 ### 🏗️ 12) Structural Filter
 - **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
@@ -216,15 +216,15 @@ No significant sector-level correlation break detected.
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-2.0) | REAL_RATEΔ -0.040 / FCIΔ +0.000 / DXYΔ -0.016 / US10YΔ +0.000
-- **Sentiment (Fear&Greed):** 27.305537227374668 (FEAR)
+- **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-2.0) | REAL_RATEΔ -0.040 / FCIΔ +0.000 / DXYΔ -0.007 / US10YΔ +0.000
+- **Sentiment (Fear&Greed):** 30.571110186184523 (NEUTRAL)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=UP / level=MID
 - **Phase:** TRANSITION / MIXED (전환·혼조)
 
-- **🎯 Final Risk Action:** **HOLD**
-- **Risk Budget (0~100):** **65**
-- **Narrative:** 구조=EASING / 심리=FEAR / 유동성=증가/중간 / 크레딧=안정 → Phase=TRANSITION / MIXED (전환·혼조)
+- **🎯 Final Risk Action:** **INCREASE**
+- **Risk Budget (0~100):** **70**
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 → Phase=TRANSITION / MIXED (전환·혼조)
 
 ### ⚠ 14) Divergence Monitor
 - **정의:** 구조(정책)와 가격(시장 국면)의 충돌 여부 감지
@@ -239,13 +239,13 @@ No significant sector-level correlation break detected.
 - **정의:** Risk Budget을 실제 익스포저로 변환 (Pro Version)
 - **추가 이유:** 변동성·스트레스·국면을 모두 반영한 실전형 리스크 제어
 
-- **Risk Budget:** 65
+- **Risk Budget:** 70
 - **Phase Cap:** 70
-- **VIX Level:** 25.96 (HIGH)
-- **VIX Change (%):** +3.47%
+- **VIX Level:** 26.09 (HIGH)
+- **VIX Change (%):** +3.99%
 - **Final Multiplier:** 0.80x
 
-- **📊 Recommended Exposure:** **61%**
+- **📊 Recommended Exposure:** **66%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
