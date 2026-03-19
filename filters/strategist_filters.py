@@ -266,26 +266,21 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
     fci = _get_series(market_data, "FCI")
     rr  = _get_series(market_data, "REAL_RATE")
 
+    def _valid(x):
+        return x is not None and not pd.isna(x)
+
     us10y_dir = _sign_from(us10y)
     dxy_dir   = _sign_from(dxy)
     vix_dir   = _sign_from(vix)
 
-    # Direction: for FCI/REAL_RATE, lower is better (easier / more incentive)
+    # Direction: for FCI/REAL_RATE, lower is better
     fci_raw_dir = _sign_from(fci)
     rr_raw_dir  = _sign_from(rr)
-    fci_eff_dir = -fci_raw_dir if fci.get("today") is not None else 0
-    rr_eff_dir  = -rr_raw_dir  if rr.get("today") is not None else 0
+    fci_eff_dir = -fci_raw_dir if _valid(fci.get("today")) else 0
+    rr_eff_dir  = -rr_raw_dir  if _valid(rr.get("today")) else 0
 
-    # -------------------------
-    # Level labels (no numbers)
-    # -------------------------
     def fci_level_label(x: Optional[float]) -> str:
-        """
-        NFCI is often centered around 0:
-        - below 0: easier-than-average conditions
-        - above 0: tighter-than-average
-        """
-        if x is None:
+        if x is None or pd.isna(x):
             return "N/A"
         if x <= -0.25:
             return "EASY (완화)"
@@ -294,13 +289,7 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
         return "TIGHT (압박)"
 
     def rr_level_label(x: Optional[float]) -> str:
-        """
-        10Y TIPS real yield rough bands (can be tuned):
-        - < 1.0 : supportive for risk-taking
-        - 1.0~2.0 : neutral-ish
-        - > 2.0 : restrictive
-        """
-        if x is None:
+        if x is None or pd.isna(x):
             return "N/A"
         if x < 1.0:
             return "SUPPORTIVE (유인↑)"
@@ -311,16 +300,9 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
     fci_level = fci_level_label(_to_float(fci.get("today")))
     rr_level  = rr_level_label(_to_float(rr.get("today")))
 
-    # -------------------------
-    # Expectation (price) signal
-    # -------------------------
     exp_easing = (us10y_dir == -1 and dxy_dir == -1 and vix_dir in (-1, 0))
     exp_tight  = (us10y_dir == 1 and dxy_dir == 1)
 
-    # -------------------------
-    # Reality + Incentive states from levels
-    # -------------------------
-    # Map level labels to coarse score: +1 supportive / 0 neutral / -1 tight
     def level_score(label: str) -> int:
         if label in ("EASY (완화)", "SUPPORTIVE (유인↑)"):
             return 1
@@ -328,12 +310,9 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
             return -1
         return 0
 
-    reality_score = level_score(fci_level)   # FCI
-    incentive_score = level_score(rr_level)  # Real Rates
+    reality_score = level_score(fci_level)
+    incentive_score = level_score(rr_level)
 
-    # -------------------------
-    # Final decision logic
-    # -------------------------
     state = "LIQUIDITY MIXED / FRAGILE (혼조·취약)"
     rationale = "기대(가격)와 현실(FCI)/유인(실질금리) 정렬이 불완전"
 
@@ -353,7 +332,6 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
         state = "LIQUIDITY MIXED / FRAGILE (혼조·취약)"
         rationale = "가격은 타이트하지만 FCI/유인은 완화 → ‘가격 신호의 과잉’ 가능"
 
-    # as-of meta
     fci_asof = market_data.get("_FCI_ASOF")
     rr_asof  = market_data.get("_REAL_ASOF")
 
@@ -369,7 +347,7 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
         f"- **기대(가격) 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})"
     )
 
-    if fci.get("today") is None:
+    if not _valid(fci.get("today")):
         lines.append("- **현실(FCI):** N/A (not available)")
     else:
         lines.append(
@@ -377,7 +355,7 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
             + (f" | as of: {fci_asof} (FRED last available)" if fci_asof else "")
         )
 
-    if rr.get("today") is None:
+    if not _valid(rr.get("today")):
         lines.append("- **유인(Real Rates):** N/A (not available)")
     else:
         lines.append(
