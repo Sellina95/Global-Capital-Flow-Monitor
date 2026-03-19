@@ -1115,11 +1115,21 @@ def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
 # 급락 여부를 체크하는 함수
 GEO_WINDOW = 60
 
-def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold: float = -2.0) -> bool:
+def check_etf_crash(
+    df: pd.DataFrame,
+    etf_symbol: str,
+    days: int = 5,
+    threshold: float = 2.0,
+) -> bool:
     """
-    국가 ETF의 급락 여부를 체크하는 함수.
-    5일간의 누적 변화율이 threshold(기본값: -2%)보다 낮으면 급락으로 간주.
-    df는 반드시 해당 ETF 컬럼 하나를 포함해야 함.
+    ETF별 '위험 방향'을 반영한 crash/stress 체크 함수.
+
+    - 일반 risk asset (EEM, EMB, SPY, EIS, FXI, EWJ, BND 등):
+        5일 누적수익률이 -threshold%보다 낮으면 급락/위험
+    - safe haven / stress asset (GLD, VXX):
+        5일 누적수익률이 +threshold%보다 높으면 stress 확대(위험)
+
+    threshold는 절대값 기준 (기본 2.0%)
     """
     if etf_symbol not in df.columns:
         return False
@@ -1128,17 +1138,34 @@ def check_etf_crash(df: pd.DataFrame, etf_symbol: str, days: int = 5, threshold:
     if len(s) < days + 1:
         return False
 
-    cum_ret = (s.pct_change().add(1).rolling(window=days).apply(lambda x: x.prod(), raw=True) - 1) * 100
+    cum_ret = (
+        (s.pct_change().add(1).rolling(window=days).apply(lambda x: x.prod(), raw=True) - 1)
+        * 100
+    )
 
     if cum_ret.dropna().empty:
         return False
 
     last_val = float(cum_ret.dropna().iloc[-1])
-    if last_val < threshold:
-        print(f"[INFO] {etf_symbol} has crashed: {last_val:.2f}% change")
-        return True
+
+    # ✅ 방향성 정의
+    upside_risk_assets = {"GLD", "VXX"}   # 상승이 stress / risk-off
+    downside_risk_assets = {"EIS", "SPY", "EEM", "EMB", "FXI", "EWJ", "BND"}
+
+    if etf_symbol in upside_risk_assets:
+        if last_val > threshold:
+            print(f"[INFO] {etf_symbol} stress spike detected: {last_val:.2f}% change")
+            return True
+        return False
+
+    # default: 하락이 위험
+    if etf_symbol in downside_risk_assets or True:
+        if last_val < -threshold:
+            print(f"[INFO] {etf_symbol} has crashed: {last_val:.2f}% change")
+            return True
 
     return False
+
 
 def attach_country_risk_layer(
     market_data: Dict[str, Any],
@@ -1157,7 +1184,6 @@ def attach_country_risk_layer(
         print("[ERROR] No combined ETF data found.")
         return market_data
 
-    # load_etf_data_from_csv에서 Date를 index로 세팅하므로
     all_etf_data = all_etf_data.sort_index()
 
     country_etf_list = [
@@ -1172,12 +1198,15 @@ def attach_country_risk_layer(
         "BND",
     ]
 
+    # ✅ 방향성 정의
+    upside_risk_assets = {"GLD", "VXX"}  # 상승이 stress
+    downside_risk_assets = {"EIS", "SPY", "EEM", "EMB", "FXI", "EWJ", "BND"}  # 하락이 stress
+
     for country_etf in country_etf_list:
         if country_etf not in all_etf_data.columns:
             print(f"[WARN] {country_etf} not found in combined ETF data.")
             continue
 
-        # 해당 ETF 1개 컬럼만 사용
         etf_data = all_etf_data[[country_etf]].copy()
         etf_data[country_etf] = pd.to_numeric(etf_data[country_etf], errors="coerce")
         etf_data = etf_data.dropna()
@@ -1186,9 +1215,11 @@ def attach_country_risk_layer(
             print(f"[WARN] Not enough data for {country_etf}")
             continue
 
-        # 1일 수익률 / 5일 누적수익률
         pct_1d = etf_data[country_etf].pct_change() * 100
-        pct_5d = (etf_data[country_etf].pct_change().add(1).rolling(window=5).apply(lambda x: x.prod(), raw=True) - 1) * 100
+        pct_5d = (
+            (etf_data[country_etf].pct_change().add(1).rolling(window=5).apply(lambda x: x.prod(), raw=True) - 1)
+            * 100
+        )
 
         z_1d = _zscore_last(pct_1d, window)
         z_5d = _zscore_last(pct_5d, window)
@@ -1196,8 +1227,13 @@ def attach_country_risk_layer(
         print(f"[INFO] {country_etf} z_1d: {z_1d}, z_5d: {z_5d}")
 
         country_risk = "NORMAL"
-        if z_5d is not None and z_5d < -2:
-            country_risk = "HIGH"
+
+        # ✅ z_5d 방향성도 ETF별로 다르게 해석
+        if z_5d is not None:
+            if country_etf in upside_risk_assets and z_5d > 2:
+                country_risk = "HIGH"
+            elif country_etf in downside_risk_assets and z_5d < -2:
+                country_risk = "HIGH"
 
         is_crash = check_etf_crash(etf_data, country_etf)
         if is_crash:
