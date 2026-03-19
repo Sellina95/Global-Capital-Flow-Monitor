@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 import time
-import pandas as pd
-import urllib.error
+from datetime import datetime, timezone, timedelta
 
+import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -18,8 +18,11 @@ SERIES = {
     "WALCL": "WALCL",     # Fed Total Assets (Millions of $) - weekly
 }
 
+KST = timezone(timedelta(hours=9))
+
+
 def fetch_fred(series_id: str, retries: int = 3, delay: int = 5) -> pd.DataFrame:
-    """Fetch a FRED series with retries. On failure, return empty DataFrame (fail-soft)."""
+    """Fetch a FRED series with retries. On failure, return empty DataFrame."""
     url = f"{FRED_CSV}{series_id}"
 
     last_err = None
@@ -29,7 +32,7 @@ def fetch_fred(series_id: str, retries: int = 3, delay: int = 5) -> pd.DataFrame
             df.columns = ["date", series_id]
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
             df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
-            df = df.dropna(subset=["date", series_id]).sort_values("date").reset_index(drop=True)
+            df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
             return df
         except Exception as e:
             last_err = e
@@ -42,64 +45,112 @@ def fetch_fred(series_id: str, retries: int = 3, delay: int = 5) -> pd.DataFrame
 
 
 def safe_read_existing(csv_path: Path) -> pd.DataFrame:
+    base_cols = ["date", "TGA", "RRP", "WALCL", "NET_LIQ"]
+
     if not csv_path.exists():
-        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+        return pd.DataFrame(columns=base_cols)
 
     if csv_path.stat().st_size == 0:
-        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+        return pd.DataFrame(columns=base_cols)
 
     try:
         df = pd.read_csv(csv_path)
         if df.empty or "date" not in df.columns:
-            return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
-        return df
-    except Exception:
-        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+            return pd.DataFrame(columns=base_cols)
+
+        for col in base_cols:
+            if col not in df.columns:
+                df[col] = pd.NA
+
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        for col in ["TGA", "RRP", "WALCL", "NET_LIQ"]:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+        df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+        return df[base_cols]
+    except Exception as e:
+        print(f"[WARN] safe_read_existing failed: {type(e).__name__}: {e}")
+        return pd.DataFrame(columns=base_cols)
 
 
 def main() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+    old = safe_read_existing(OUT_CSV)
+
     tga_df = fetch_fred(SERIES["TGA"])
     rrp_df = fetch_fred(SERIES["RRP"])
     walcl_df = fetch_fred(SERIES["WALCL"])
 
-    # ✅ fail-soft: if any required series is missing, don't break the workflow
-    if tga_df.empty or rrp_df.empty or walcl_df.empty:
-        print("[WARN] liquidity fetch incomplete (one or more series empty). Skipping update; keeping previous CSV.")
-        return
+    today_kst = datetime.now(KST).date()
+    today_ts = pd.Timestamp(today_kst)
 
-    as_of = min(tga_df.iloc[-1]["date"], rrp_df.iloc[-1]["date"])
+    # 시작일 결정:
+    # 1) 기존 csv가 있으면 그 시작일 유지
+    # 2) 없으면 FRED 데이터 시작일 중 가장 빠른 날 사용
+    candidate_starts = []
 
-    def last_value_on_or_before(df: pd.DataFrame, col: str) -> float:
-        sub = df[df["date"] <= as_of]
-        if sub.empty:
-            raise ValueError(f"No data on or before {as_of.date()} for {col}")
-        return float(sub.iloc[-1][col])
+    if not old.empty:
+        candidate_starts.append(old["date"].min())
 
-    tga = last_value_on_or_before(tga_df, SERIES["TGA"])
-    rrp = last_value_on_or_before(rrp_df, SERIES["RRP"])
-    walcl = last_value_on_or_before(walcl_df, SERIES["WALCL"])
+    for df in [tga_df, rrp_df, walcl_df]:
+        if not df.empty:
+            candidate_starts.append(df["date"].min())
 
-    net_liq = walcl - tga - rrp
+    if candidate_starts:
+        start_date = min(candidate_starts)
+    else:
+        start_date = today_ts
 
-    new_row = pd.DataFrame([{
-        "date": as_of.strftime("%Y-%m-%d"),
-        "TGA": tga,
-        "RRP": rrp,
-        "WALCL": walcl,
-        "NET_LIQ": net_liq,
-    }])
+    # ✅ 핵심: 오늘까지 날짜를 무조건 daily로 생성
+    full_dates = pd.date_range(start=start_date, end=today_ts, freq="D")
+    base = pd.DataFrame({"date": full_dates})
 
-    old = safe_read_existing(OUT_CSV)
+    # 기존 csv merge
+    combined = base.merge(old, on="date", how="left")
 
-    combined = pd.concat([old, new_row], ignore_index=True)
-    combined["date"] = pd.to_datetime(combined["date"], errors="coerce")
-    combined = combined.dropna(subset=["date"]).sort_values("date")
-    combined = combined.drop_duplicates(subset=["date"], keep="last")
+    # 새 FRED 데이터 merge (같은 날짜에 값 있으면 overwrite)
+    for col, fred_code in SERIES.items():
+        fred_df = {
+            "TGA": tga_df,
+            "RRP": rrp_df,
+            "WALCL": walcl_df,
+        }[col].copy()
+
+        if fred_df.empty:
+            combined[f"{col}__new"] = pd.NA
+            continue
+
+        fred_df = fred_df.rename(columns={fred_code: f"{col}__new"})
+        fred_df = fred_df[["date", f"{col}__new"]]
+        combined = combined.merge(fred_df, on="date", how="left")
+
+        # 새 데이터가 있으면 새 데이터 우선, 없으면 기존 값 유지
+        combined[col] = combined[f"{col}__new"].combine_first(combined[col])
+        combined = combined.drop(columns=[f"{col}__new"])
+
+    # NET_LIQ 재계산: 세 값이 모두 있을 때만 계산
+    combined["NET_LIQ"] = pd.NA
+    mask = combined["TGA"].notna() & combined["RRP"].notna() & combined["WALCL"].notna()
+    combined.loc[mask, "NET_LIQ"] = (
+        combined.loc[mask, "WALCL"]
+        - combined.loc[mask, "TGA"]
+        - combined.loc[mask, "RRP"]
+    )
+
+    # 타입 정리
+    for col in ["TGA", "RRP", "WALCL", "NET_LIQ"]:
+        combined[col] = pd.to_numeric(combined[col], errors="coerce")
+
+    combined = combined.sort_values("date").drop_duplicates(subset=["date"], keep="last")
     combined["date"] = combined["date"].dt.strftime("%Y-%m-%d")
 
     combined.to_csv(OUT_CSV, index=False)
+
+    print(f"[DEBUG] TGA last fetched date: {tga_df['date'].max() if not tga_df.empty else 'EMPTY'}")
+    print(f"[DEBUG] RRP last fetched date: {rrp_df['date'].max() if not rrp_df.empty else 'EMPTY'}")
+    print(f"[DEBUG] WALCL last fetched date: {walcl_df['date'].max() if not walcl_df.empty else 'EMPTY'}")
+    print(f"[DEBUG] CSV last date after update: {combined['date'].iloc[-1] if not combined.empty else 'EMPTY'}")
     print(f"[OK] liquidity_data updated: {OUT_CSV} (rows={len(combined)})")
 
 
