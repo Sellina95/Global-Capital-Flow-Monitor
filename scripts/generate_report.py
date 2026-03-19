@@ -200,29 +200,54 @@ def merge_sovereign_spreads_into_macro_df(df_macro: pd.DataFrame) -> pd.DataFram
 
 def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Attach FCI & REAL_RATE using FRED 'last available' values.
+    Attach FCI & REAL_RATE using FRED 'last available valid' values.
     Adds meta:
-      - _FCI_ASOF, _REAL_ASOF (same as last row date)
+      - _FCI_ASOF, _REAL_ASOF (each uses its own last valid row date)
     Adds series:
       - FCI, REAL_RATE as {today, prev, pct_change}
     """
+    if market_data is None:
+        market_data = {}
+
     df = load_fred_extras_df()
-    if df.empty:
+    if df is None or df.empty:
         market_data["_FCI_ASOF"] = None
         market_data["_REAL_ASOF"] = None
         return market_data
 
-    today_row = df.iloc[-1]
-    asof = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
-    market_data["_FCI_ASOF"] = asof
-    market_data["_REAL_ASOF"] = asof
+    df = df.copy()
 
-    prev_row = df.iloc[-2] if len(df) >= 2 else None
+    if "date" not in df.columns:
+        market_data["_FCI_ASOF"] = None
+        market_data["_REAL_ASOF"] = None
+        return market_data
 
-    def add_key(key: str):
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+    for col in ["FCI", "REAL_RATE"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        else:
+            df[col] = pd.NA
+
+    def _attach_one(key: str, asof_key: str):
+        valid_df = df.dropna(subset=[key]).copy()
+
+        if valid_df.empty:
+            market_data[asof_key] = None
+            return
+
+        today_row = valid_df.iloc[-1]
+        prev_row = valid_df.iloc[-2] if len(valid_df) >= 2 else None
+
+        asof = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
+        market_data[asof_key] = asof
+
         today_val = pd.to_numeric(today_row.get(key), errors="coerce")
         if pd.isna(today_val):
             return
+
         today_val_f = float(today_val)
 
         if prev_row is None:
@@ -238,10 +263,10 @@ def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         pct = 0.0 if prev_val_f == 0 else ((today_val_f - prev_val_f) / prev_val_f) * 100.0
         market_data[key] = {"today": today_val_f, "prev": prev_val_f, "pct_change": pct}
 
-    add_key("FCI")
-    add_key("REAL_RATE")
-    return market_data
+    _attach_one("FCI", "_FCI_ASOF")
+    _attach_one("REAL_RATE", "_REAL_ASOF")
 
+    return market_data
 
 def load_liquidity_df() -> pd.DataFrame:
     csv_path = DATA_DIR / "liquidity_data.csv"
