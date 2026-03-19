@@ -332,11 +332,11 @@ def build_market_data(df: pd.DataFrame, today_idx: int) -> Dict[str, Any]:
 
 def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Attach TGA/RRP/NET_LIQ into market_data using FRED 'last available' values.
+    Attach TGA/RRP/NET_LIQ into market_data using FRED 'last available valid' values.
     Adds meta: _LIQ_ASOF = 'YYYY-MM-DD'
     Also computes:
       - NET_LIQ dir: UP/DOWN/FLAT
-      - NET_LIQ level_bucket: LOW/MID/HIGH (never N/A if today exists)
+      - NET_LIQ level_bucket: LOW/MID/HIGH
     """
     if market_data is None:
         market_data = {}
@@ -344,46 +344,91 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     liq_df = load_liquidity_df()
     if liq_df is None or liq_df.empty:
         market_data["_LIQ_ASOF"] = None
-        # ensure keys exist to avoid downstream N/A confusion
-        market_data.setdefault("NET_LIQ", {"today": None, "prev": None, "pct_change": None, "dir": "N/A", "level_bucket": "N/A"})
+        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None}
+        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None}
+        market_data["NET_LIQ"] = {
+            "today": None,
+            "prev": None,
+            "pct_change": None,
+            "dir": "N/A",
+            "level_bucket": "N/A",
+        }
         return market_data
 
-    # --- normalize columns safety ---
-    # expected: date, TGA, RRP, WALCL, NET_LIQ
     if "date" not in liq_df.columns:
         market_data["_LIQ_ASOF"] = None
-        market_data.setdefault("NET_LIQ", {"today": None, "prev": None, "pct_change": None, "dir": "N/A", "level_bucket": "N/A"})
+        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None}
+        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None}
+        market_data["NET_LIQ"] = {
+            "today": None,
+            "prev": None,
+            "pct_change": None,
+            "dir": "N/A",
+            "level_bucket": "N/A",
+        }
         return market_data
 
     liq_df = liq_df.copy()
     liq_df["date"] = pd.to_datetime(liq_df["date"], errors="coerce")
+
+    for col in ["TGA", "RRP", "WALCL", "NET_LIQ"]:
+        if col in liq_df.columns:
+            liq_df[col] = pd.to_numeric(liq_df[col], errors="coerce")
+        else:
+            liq_df[col] = pd.NA
+
     liq_df = liq_df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
-    liq_today = liq_df.iloc[-1]
+    # ✅ 마지막 row가 아니라 마지막 유효 liquidity row 사용
+    valid_liq_df = liq_df.dropna(subset=["NET_LIQ"]).copy()
+
+    if valid_liq_df.empty:
+        market_data["_LIQ_ASOF"] = None
+        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None}
+        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None}
+        market_data["NET_LIQ"] = {
+            "today": None,
+            "prev": None,
+            "pct_change": None,
+            "dir": "N/A",
+            "level_bucket": "N/A",
+        }
+        return market_data
+
+    liq_today = valid_liq_df.iloc[-1]
+    liq_prev = valid_liq_df.iloc[-2] if len(valid_liq_df) >= 2 else None
+
     liq_asof = pd.to_datetime(liq_today["date"]).strftime("%Y-%m-%d")
     market_data["_LIQ_ASOF"] = liq_asof
-
-    liq_prev = liq_df.iloc[-2] if len(liq_df) >= 2 else None
 
     def _to_float(x) -> Optional[float]:
         if x is None:
             return None
         try:
+            if pd.isna(x):
+                return None
             return float(x)
         except Exception:
             try:
-                return float(str(x).replace(",", "").replace("%", "").strip())
+                x2 = str(x).replace(",", "").replace("%", "").strip()
+                if x2 == "":
+                    return None
+                return float(x2)
             except Exception:
                 return None
 
     def add_liq_key(key: str, today_val, prev_val):
         t = _to_float(today_val)
         p = _to_float(prev_val)
+
         if t is None:
+            market_data[key] = {"today": None, "prev": None if p is None else p, "pct_change": None}
             return
+
         if p is None:
             market_data[key] = {"today": t, "prev": None, "pct_change": None}
             return
+
         pct = 0.0 if p == 0 else ((t - p) / p) * 100.0
         market_data[key] = {"today": t, "prev": p, "pct_change": pct}
 
@@ -391,14 +436,10 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     add_liq_key("RRP", liq_today.get("RRP"), None if liq_prev is None else liq_prev.get("RRP"))
     add_liq_key("NET_LIQ", liq_today.get("NET_LIQ"), None if liq_prev is None else liq_prev.get("NET_LIQ"))
 
-    # -------------------------
-    # ✅ NET_LIQ dir + level bucket
-    # -------------------------
     net = market_data.get("NET_LIQ") or {"today": None, "prev": None, "pct_change": None}
     net_today = _to_float(net.get("today"))
     net_prev = _to_float(net.get("prev"))
 
-    # dir
     if net_today is None or net_prev is None:
         net_dir = "N/A"
     else:
@@ -409,17 +450,13 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         else:
             net_dir = "FLAT"
 
-    # level bucket (HIGH/MID/LOW) — never N/A if net_today exists
     level_bucket = "N/A"
-    if net_today is not None and "NET_LIQ" in liq_df.columns:
-        series = pd.to_numeric(liq_df["NET_LIQ"], errors="coerce").dropna()
+    if net_today is not None and "NET_LIQ" in valid_liq_df.columns:
+        series = pd.to_numeric(valid_liq_df["NET_LIQ"], errors="coerce").dropna()
 
-        # if we have enough samples -> percentile bucket
         if len(series) >= 20:
-            # percentile rank of latest value within history
-            pct_rank = (series <= net_today).mean()  # 0~1
+            pct_rank = (series <= net_today).mean()
         else:
-            # small sample fallback -> min/max position bucket
             vmin, vmax = float(series.min()), float(series.max())
             if vmax == vmin:
                 pct_rank = 0.5
@@ -433,12 +470,10 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         else:
             level_bucket = "HIGH"
 
-    # store back into NET_LIQ dict (Narrative에서 바로 쓰기 좋게)
     net["dir"] = net_dir
     net["level_bucket"] = level_bucket
     market_data["NET_LIQ"] = net
 
-    # optional: also store top-level convenience keys
     market_data["NET_LIQ_DIR"] = net_dir
     market_data["NET_LIQ_LEVEL_BUCKET"] = level_bucket
 
@@ -447,7 +482,7 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
 def attach_credit_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Attach HY_OAS (FRED last available) into market_data.
+    Attach HY_OAS (FRED last available valid) into market_data.
     Adds:
       - HY_OAS = {today, prev, pct_change}
       - _HY_ASOF = 'YYYY-MM-DD'
@@ -456,31 +491,39 @@ def attach_credit_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         market_data = {}
 
     df = load_credit_spread_df()
-    if df.empty:
+    if df is None or df.empty:
         market_data["_HY_ASOF"] = None
         return market_data
 
-    today_row = df.iloc[-1]
+    df = df.copy()
+
+    if "date" not in df.columns or "HY_OAS" not in df.columns:
+        market_data["_HY_ASOF"] = None
+        return market_data
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df["HY_OAS"] = pd.to_numeric(df["HY_OAS"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+    # ✅ 마지막 row가 아니라 마지막 유효 HY_OAS row 사용
+    valid_df = df.dropna(subset=["HY_OAS"]).copy()
+    if valid_df.empty:
+        market_data["_HY_ASOF"] = None
+        return market_data
+
+    today_row = valid_df.iloc[-1]
+    prev_row = valid_df.iloc[-2] if len(valid_df) >= 2 else None
+
     asof = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
     market_data["_HY_ASOF"] = asof
 
-    prev_row = df.iloc[-2] if len(df) >= 2 else None
-    today_val = pd.to_numeric(today_row.get("HY_OAS"), errors="coerce")
-    if pd.isna(today_val):
-        return market_data
+    today_val_f = float(today_row["HY_OAS"])
 
-    today_val_f = float(today_val)
-
-    if prev_row is None:
+    if prev_row is None or pd.isna(prev_row.get("HY_OAS")):
         market_data["HY_OAS"] = {"today": today_val_f, "prev": None, "pct_change": None}
         return market_data
 
-    prev_val = pd.to_numeric(prev_row.get("HY_OAS"), errors="coerce")
-    if pd.isna(prev_val):
-        market_data["HY_OAS"] = {"today": today_val_f, "prev": None, "pct_change": None}
-        return market_data
-
-    prev_val_f = float(prev_val)
+    prev_val_f = float(prev_row["HY_OAS"])
     pct = 0.0 if prev_val_f == 0 else ((today_val_f - prev_val_f) / prev_val_f) * 100.0
     market_data["HY_OAS"] = {"today": today_val_f, "prev": prev_val_f, "pct_change": pct}
     return market_data
