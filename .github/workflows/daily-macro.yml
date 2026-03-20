@@ -62,6 +62,12 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_fred_macro_extras.py
+            # ✅ Country ETF combined data (Geo EW / Country Risk)
+
+      - name: Fetch country ETF combined data
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/fetch_country_etf_data_combined.py
 
       # ✅ Sovereign yields (FRED 기반)
       - name: Fetch Sovereign Yields (CDS proxy)
