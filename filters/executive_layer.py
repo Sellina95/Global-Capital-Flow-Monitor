@@ -1,6 +1,20 @@
 # filters/executive_layer.py
 from typing import Dict, Any
 
+
+
+def calculate_raroc(risk_adjusted_return: float, capital: float) -> float:
+    """
+    RAROC (Risk-Adjusted Return on Capital) 계산
+    - risk_adjusted_return: 위험 조정된 수익률
+    - capital: 자본 (리스크 자본)
+    
+    RAROC = risk_adjusted_return / capital
+    """
+    if capital == 0:  # 자본이 0일 때 RAROC 계산 방지
+        return 0
+    return risk_adjusted_return / capital
+    
 def executive_summary_filter(market_data: Dict[str, Any]) -> str:
     """
     Executive Compression (3 lines)
