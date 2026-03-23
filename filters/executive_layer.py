@@ -85,7 +85,7 @@ def executive_summary_filter(market_data: Dict[str, Any]) -> str:
     lines.append("**Risk Control / Avoid:**")
     for a in avoid:
         lines.append(f"- {a}")
-        
+    
     return "\n".join(lines)
 
 def _uniq_keep_order(items: List[str]) -> List[str]:
