@@ -15,6 +15,7 @@ from filters.strategist_filters import geopolitical_early_warning_filter
 from filters.strategist_filters import attach_country_risk_layer
 from filters.strategist_filters import attach_geo_similarity_layer
 from filters.executive_layer import executive_summary_filter
+from filters.executive_layer import calculate_raroc
 from filters.scenario_layer import scenario_generator_filter
 from filters.strategist_filters import apply_geo_overlay_to_final_state
 from scripts.risk_alerts import check_regime_change_and_alert
