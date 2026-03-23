@@ -826,7 +826,7 @@ def _find_effective_market_idx(
 
 def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-
+    print("[DEBUG] market_data (before adding RAROC):", market_data)  # 
     # -----------------------------
     # 0) ETF 통합 파일 확인 / 없을 때만 생성
     # -----------------------------
