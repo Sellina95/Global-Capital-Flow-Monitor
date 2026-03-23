@@ -13,6 +13,7 @@ def calculate_raroc(risk_adjusted_return: float, capital: float) -> float:
     return risk_adjusted_return / capital
 
 def executive_summary_filter(market_data: Dict[str, Any]) -> str:
+    print("[DEBUG] market_data:", market_data)  # 디버깅용 출력
     """
     Execution / Style Translation Layer (v1.1)
     - 환경에 맞는 주식 선택 기준을 제공
