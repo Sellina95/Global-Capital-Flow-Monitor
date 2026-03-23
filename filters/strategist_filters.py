@@ -3188,14 +3188,13 @@ def execution_layer_filter(market_data: Dict[str, Any]) -> str:
     credit_calm = state.get("credit_calm", None)
 
     # (선택) 18번 결과가 market_data에 저장돼 있다면 가져오기
-    # v2 섹터엔진에서 아래 키로 저장하도록 맞추면 좋음:
-    # market_data["SECTOR_OW"] = [...]
-    # market_data["SECTOR_UW"] = [...]
     sector_ow = market_data.get("SECTOR_OW", []) or []
     sector_uw = market_data.get("SECTOR_UW", []) or []
 
     preferred: List[str] = []
     avoid: List[str] = []
+
+    print(f"[DEBUG] liquidity_dir: {liq_dir}, liquidity_level: {liq_lvl}, structure: {structure}, credit_calm: {credit_calm}")
 
     # ---- Priority 1: Liquidity ----
     if liq_dir == "DOWN" or liq_lvl == "LOW":
@@ -3210,16 +3209,19 @@ def execution_layer_filter(market_data: Dict[str, Any]) -> str:
             "High leverage / refinancing-dependent names",
             "Long-duration, high-multiple growth",
         ]
+        print("[DEBUG] Liquidity conditions met. Preferred & Avoid updated.")
 
     # ---- Priority 2: Structure ----
     if structure == "TIGHTENING":
         preferred.append("Cash flow visibility and earnings stability")
         avoid.append("Rate-sensitive long-duration equities")
+        print("[DEBUG] Structure conditions met. Preferred & Avoid updated.")
 
     # ---- Priority 3: Credit ----
     if credit_calm is False:
         preferred.append("Strong liquidity buffers and defensive balance sheets")
         avoid.append("Highly levered capital structures")
+        print("[DEBUG] Credit conditions met. Preferred & Avoid updated.")
 
     preferred = _uniq_keep_order(preferred)
     avoid = _uniq_keep_order(avoid)
@@ -3246,7 +3248,6 @@ def execution_layer_filter(market_data: Dict[str, Any]) -> str:
     for a in avoid:
         lines.append(f"- {a}")
         
-
     return "\n".join(lines)
 
 def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
