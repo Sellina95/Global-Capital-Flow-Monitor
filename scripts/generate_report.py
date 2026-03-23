@@ -826,7 +826,6 @@ def _find_effective_market_idx(
 
 def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    print("[DEBUG] market_data (before adding RAROC):", market_data)  # 
     # -----------------------------
     # 0) ETF 통합 파일 확인 / 없을 때만 생성
     # -----------------------------
@@ -920,11 +919,18 @@ def generate_daily_report() -> None:
 
     # ✅ FINAL_STATE 이후 geo overlay
     market_data = apply_geo_overlay_to_final_state(market_data) or market_data
-
+        # 2) RAROC 출력: market_data에 RAROC 계산이 추가된 후 확인
+    print("[DEBUG] market_data (before adding RAROC):", market_data)  # market_data 확인
+    # RAROC 값이 market_data에 들어가는지 확인
+    if "RAROC" in market_data:
+        print("[DEBUG] RAROC value:", market_data["RAROC"])
+    else:
+        print("[DEBUG] RAROC value not found in market_data.")
     # -------------------------
     # 5) Top layers
     # -------------------------
     exec_block = executive_summary_filter(market_data)
+    
     decision_block = decision_layer_filter(market_data)
     scenario_block = scenario_generator_filter(market_data)
     transmission_block = transmission_layer_filter(market_data)
