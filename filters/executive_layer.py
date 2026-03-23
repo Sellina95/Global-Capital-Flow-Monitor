@@ -58,15 +58,8 @@ def executive_summary_filter(market_data: Dict[str, Any]) -> str:
 
     # ---- Priority 4: RAROC ----
     # RAROC가 높은 종목을 우선적으로 선택하는 로직 추가
-    # 여기서 RAROC 계산 및 적용
-    if "risk_adjusted_return" in market_data and "capital" in market_data:
-        risk_adjusted_return = market_data["risk_adjusted_return"]
-        capital = market_data["capital"]
-        raroc = calculate_raroc(risk_adjusted_return, capital)
-        market_data["RAROC"] = raroc  # RAROC 값 계산 후 market_data에 추가
-
-        if raroc > 0.1:  # 예시: RAROC가 0.1 이상인 기업 우선
-            preferred.append("High RAROC Focus")
+    if "RAROC" in market_data and market_data["RAROC"] > 0.1:
+        preferred.append("High RAROC Focus")  # RAROC가 0.1 이상인 기업 우선
 
     preferred = _uniq_keep_order(preferred)
     avoid = _uniq_keep_order(avoid)
