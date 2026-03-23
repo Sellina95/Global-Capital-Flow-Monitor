@@ -924,7 +924,8 @@ def generate_daily_report() -> None:
     # 2) RAROC 값 추가
     risk_adjusted_return = 0.05  # 예시: 위험 조정된 수익률, 실제 값에 맞게 조정 필요
     capital = 1000  # 예시: 자본, 실제 값에 맞게 조정 필요
-
+    market_data["risk_adjusted_return"] = risk_adjusted_return
+    market_data["capital"] = capital
     # RAROC 계산 함수 호출
     market_data["RAROC"] = calculate_raroc(risk_adjusted_return, capital)
     
