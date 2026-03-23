@@ -920,12 +920,15 @@ def generate_daily_report() -> None:
     # ✅ FINAL_STATE 이후 geo overlay
     market_data = apply_geo_overlay_to_final_state(market_data) or market_data
         # 2) RAROC 출력: market_data에 RAROC 계산이 추가된 후 확인
-    print("[DEBUG] market_data (before adding RAROC):", market_data)  # market_data 확인
-    # RAROC 값이 market_data에 들어가는지 확인
-    if "RAROC" in market_data:
-        print("[DEBUG] RAROC value:", market_data["RAROC"])
-    else:
-        print("[DEBUG] RAROC value not found in market_data.")
+    # 2) RAROC 값 추가
+    risk_adjusted_return = 0.05  # 예시: 위험 조정된 수익률, 실제 값에 맞게 조정 필요
+    capital = 1000  # 예시: 자본, 실제 값에 맞게 조정 필요
+
+    # RAROC 계산 함수 호출
+    market_data["RAROC"] = calculate_raroc(risk_adjusted_return, capital)
+    
+    # RAROC가 잘 추가되었는지 확인
+    print("[DEBUG] market_data (after adding RAROC):", market_data)
     # -------------------------
     # 5) Top layers
     # -------------------------
