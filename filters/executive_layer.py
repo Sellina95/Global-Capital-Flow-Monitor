@@ -1,7 +1,4 @@
-# filters/executive_layer.py
-from typing import Dict, Any
-
-
+from typing import Dict, Any, List
 
 def calculate_raroc(risk_adjusted_return: float, capital: float) -> float:
     """
@@ -14,73 +11,92 @@ def calculate_raroc(risk_adjusted_return: float, capital: float) -> float:
     if capital == 0:  # 자본이 0일 때 RAROC 계산 방지
         return 0
     return risk_adjusted_return / capital
-    
-def executive_summary_filter(market_data: Dict[str, Any]) -> str:
-    """
-    Executive Compression (3 lines)
-    Uses market_data["FINAL_STATE"] produced by narrative_engine_filter.
-    """
 
+def execution_summary_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Execution / Style Translation Layer (v1.1)
+    - 환경에 맞는 주식 선택 기준을 제공
+    - RAROC 우수 종목을 우선 고려하는 로직 추가
+    """
     state = market_data.get("FINAL_STATE", {}) or {}
-    print("[DEBUG][EXEC] structure_tag=", state.get("structure_tag"), "| policy_bias_line=", state.get("policy_bias_line"))
-
-    phase = str(state.get("phase", "N/A"))
-    structure = str(state.get("structure_tag", "MIXED"))
-    liq_dir = str(state.get("liquidity_dir", "N/A"))
-    liq_lvl = str(state.get("liquidity_level_bucket", "N/A"))
+    structure = str(state.get("structure_tag", "MIXED")).upper()
+    liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
+    liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
     credit_calm = state.get("credit_calm", None)
-    risk_budget = state.get("risk_budget", None)
-    risk_action = str(state.get("risk_action", "HOLD"))
 
-    # 1) Line 1: phase + structure
-    phase_line = (
-        "단기 리스크 선호가 회복되는 국면"
-        if "RISK-ON" in phase.upper()
-        else "리스크 회피가 우세한 국면"
-        if "RISK-OFF" in phase.upper()
-        else "방향성이 제한된 혼합 국면"
-    )
+    # (선택) 18번 결과가 market_data에 저장돼 있다면 가져오기
+    sector_ow = market_data.get("SECTOR_OW", []) or []
+    sector_uw = market_data.get("SECTOR_UW", []) or []
 
-    struct_line = (
-        "구조는 완화 기조"
-        if structure == "EASING"
-        else "구조는 긴축 기조"
-        if structure == "TIGHTENING"
-        else "구조 신호는 혼조"
-    )
+    preferred: List[str] = []
+    avoid: List[str] = []
 
-    # 2) Line 2: liquidity/credit risk
+    # ---- Priority 1: Liquidity ----
     if liq_dir == "DOWN" or liq_lvl == "LOW":
-        line2 = "유동성은 약화(흡수) 국면으로 상방 동력을 제한할 수 있다."
-    elif liq_dir == "UP" and liq_lvl in ("MID", "HIGH"):
-        line2 = "유동성 여건이 개선되며 리스크 자산에 우호적이다."
-    else:
-        # if liquidity ambiguous, use credit when available
-        if credit_calm is True:
-            line2 = "크레딧은 안정적이어서 급격한 리스크오프 신호는 제한적이다."
-        elif credit_calm is False:
-            line2 = "크레딧 스트레스가 높아 리스크 관리 우선순위가 상승했다."
-        else:
-            line2 = "유동성·크레딧 신호가 혼조로, 추세 확인이 필요하다."
+        preferred += [
+            "High Free Cash Flow generators",
+            "Net cash or low leverage balance sheets",
+            "Stable margins / pricing power",
+            "Low to mid beta exposure",
+            "High RAROC Focus",  # RAROC가 높은 종목 우선 고려
+        ]
+        avoid += [
+            "Negative FCF / cash-burn models",
+            "High leverage / refinancing-dependent names",
+            "Long-duration, high-multiple growth",
+        ]
 
-    # 3) Line 3: action guidance
-    budget_txt = f"{risk_budget}%" if isinstance(risk_budget, int) else "중립 수준"
+    # ---- Priority 2: Structure ----
+    if structure == "TIGHTENING":
+        preferred.append("Cash flow visibility and earnings stability")
+        avoid.append("Rate-sensitive long-duration equities")
 
-    if risk_action == "INCREASE":
-        line3 = f"전략적으로는 노출 확대가 가능하나, 규율 기반으로 {budget_txt} 내에서 단계적으로 접근한다."
-    elif risk_action == "REDUCE":
-        line3 = f"전략적으로는 노출 축소가 필요하며, {budget_txt} 이하로 리스크를 재조정한다."
-    else:
-        line3 = f"전략적으로는 공격적 확대보다 {budget_txt} 내외의 선별적 노출 유지가 적절하다."
+    # ---- Priority 3: Credit ----
+    if credit_calm is False:
+        preferred.append("Strong liquidity buffers and defensive balance sheets")
+        avoid.append("Highly levered capital structures")
 
-    line1 = f"현재 시장은 {phase_line}이며, {struct_line}."
+    # ---- Priority 4: RAROC ----
+    # RAROC가 높은 종목을 우선적으로 선택하는 로직 추가
+    if "RAROC" in market_data:
+        if market_data["RAROC"] > 0.1:  # 예시: RAROC가 0.1 이상인 기업 우선
+            preferred.append("High RAROC Focus")
 
-    # store for later layers if needed
-    market_data["EXEC_SUMMARY_LINES"] = [line1, line2, line3]
+    preferred = _uniq_keep_order(preferred)
+    avoid = _uniq_keep_order(avoid)
 
     lines = []
-    lines.append("## 🧾 Executive Summary (3 Lines)")
-    lines.append(f"- {line1}")
-    lines.append(f"- {line2}")
-    lines.append(f"- {line3}")
+    lines.append("### 🧬 19) Execution / Style Translation Layer")
+    lines.append("- **Implementation Focus:** Environment-Aware Stock Types")
+    lines.append("")
+  
+    # 섹터 연결(있으면)
+    if sector_ow or sector_uw:
+        if sector_ow:
+            lines.append(f"- **Apply to Overweight Sectors:** {', '.join(sector_ow)}")
+        if sector_uw:
+            lines.append(f"- **Apply to Underweight Sectors:** {', '.join(sector_uw)}")
+        lines.append("")
+
+    lines.append("**Preferred Company Traits:**")
+    for p in preferred:
+        lines.append(f"- {p}")
+
+    lines.append("")
+    lines.append("**Risk Control / Avoid:**")
+    for a in avoid:
+        lines.append(f"- {a}")
+        
     return "\n".join(lines)
+
+def _uniq_keep_order(items: List[str]) -> List[str]:
+    seen = set()
+    out = []
+    for x in items:
+        if not x:
+            continue
+        if x in seen:
+            continue
+        seen.add(x)
+        out.append(x)
+    return out
