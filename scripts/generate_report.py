@@ -927,7 +927,9 @@ def generate_daily_report() -> None:
     market_data["RAROC"] = calculate_raroc(risk_adjusted_return, capital)
 
     print("[DEBUG] market_data (after adding RAROC):", market_data)
-
+    
+    print(f"[DEBUG] market_data before build_strategist_commentary: {market_data}")
+    commentary_block = build_strategist_commentary(market_data)
     # -------------------------
     # 5) Top layers
     # -------------------------
@@ -935,12 +937,6 @@ def generate_daily_report() -> None:
     decision_block = decision_layer_filter(market_data)
     scenario_block = scenario_generator_filter(market_data)
     transmission_block = transmission_layer_filter(market_data)
-
-    # -------------------------
-    # 6) Strategist Commentary
-    # -------------------------
-    print(f"[DEBUG] market_data before build_strategist_commentary: {market_data}")
-    commentary_block = build_strategist_commentary(market_data)
 
     # -------------------------
     # 6) Country ETF risk block
