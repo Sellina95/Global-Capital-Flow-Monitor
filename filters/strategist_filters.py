@@ -3392,7 +3392,7 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")      
     sections.append(sector_allocation_filter(market_data))  
     sections.append("")
-    sections.append(execution_layer_filter(market_data))
-    sections.append("")
+    #sections.append(execution_layer_filter(market_data))
+    #sections.append("")
     
     return "\n".join(sections)
