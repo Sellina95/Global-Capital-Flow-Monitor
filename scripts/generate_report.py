@@ -825,7 +825,7 @@ def _find_effective_market_idx(
 
     return len(df) - 1
     
-    def generate_daily_report() -> None:
+def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # -----------------------------
