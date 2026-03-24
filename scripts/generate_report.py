@@ -824,9 +824,10 @@ def _find_effective_market_idx(
         return int(candidates_any[-1])
 
     return len(df) - 1
-
-def generate_daily_report() -> None:
+    
+    def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
     # -----------------------------
     # 0) ETF 통합 파일 확인 / 없을 때만 생성
     # -----------------------------
@@ -850,7 +851,7 @@ def generate_daily_report() -> None:
     df = load_macro_df()
     df = merge_sovereign_spreads_into_macro_df(df)
 
-    # ✅ 마지막 행이 아니라 "핵심 5개 지표가 충분히 채워진 마지막 유효 행" 사용
+    # 마지막 행이 아니라 "핵심 5개 지표가 충분히 채워진 마지막 유효 행" 사용
     today_idx = _find_effective_market_idx(
         df,
         core_cols=["US10Y", "DXY", "WTI", "VIX", "USDKRW"],
@@ -860,7 +861,6 @@ def generate_daily_report() -> None:
     data_as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
     report_date = pd.Timestamp.now(tz="Asia/Seoul").strftime("%Y-%m-%d")
 
-    # 디버그용
     print("[DEBUG] effective today_idx =", today_idx)
     print("[DEBUG] report_date (KST) =", report_date)
     print("[DEBUG] data_as_of_date =", data_as_of_date)
@@ -881,7 +881,7 @@ def generate_daily_report() -> None:
         now_utc = pd.Timestamp.now("UTC")
         today_utc = now_utc.date()
 
-        if now_utc.weekday() >= 5:   # 5=Sat, 6=Sun
+        if now_utc.weekday() >= 5:  # 5=Sat, 6=Sun
             stale = True
         elif (today_utc - last_date).days >= 2:
             stale = True
@@ -900,45 +900,47 @@ def generate_daily_report() -> None:
     market_data = attach_expectation_layer(market_data) or market_data
     market_data = attach_geopolitical_ew_layer(market_data, df, today_idx) or market_data
 
-    # ✅ 국가 ETF 리스크 레이어 먼저
+    # 국가 ETF 리스크 레이어 먼저
     market_data = attach_country_risk_layer(market_data, df, today_idx) or market_data
 
-    # ✅ Cosine Similarity는 country risk 이후
+    # Cosine Similarity는 country risk 이후
     market_data = attach_geo_similarity_layer(market_data) or market_data
 
-    # ✅ Wall-Street Sentiment Proxy
+    # Wall-Street Sentiment Proxy
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
 
-    # ✅ regime change monitor
+    # regime change monitor
     regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
 
     # -------------------------
-    # 4) Strategist Commentary
+    # 4) FINAL_STATE 이후 overlay / RAROC 먼저 반영
     # -------------------------
-    print(f"[DEBUG] market_data before build_strategist_commentary: {market_data}")
-    commentary_block = build_strategist_commentary(market_data)
-
-    # ✅ FINAL_STATE 이후 geo overlay
     market_data = apply_geo_overlay_to_final_state(market_data) or market_data
-        # 2) RAROC 출력: market_data에 RAROC 계산이 추가된 후 확인
-    # 2) RAROC 값 추가
-    risk_adjusted_return = 0.05  # 예시: 위험 조정된 수익률, 실제 값에 맞게 조정 필요
-    capital = 1000  # 예시: 자본, 실제 값에 맞게 조정 필요
+
+    # TODO: 아래 두 값은 임시 예시값
+    # 나중에 실제 portfolio return / capital(or RWA) 로 교체
+    risk_adjusted_return = 0.05
+    capital = 1000
+
     market_data["risk_adjusted_return"] = risk_adjusted_return
     market_data["capital"] = capital
-    # RAROC 계산 함수 호출
     market_data["RAROC"] = calculate_raroc(risk_adjusted_return, capital)
-    
-    # RAROC가 잘 추가되었는지 확인
+
     print("[DEBUG] market_data (after adding RAROC):", market_data)
+
     # -------------------------
     # 5) Top layers
     # -------------------------
     exec_block = executive_summary_filter(market_data)
-    
     decision_block = decision_layer_filter(market_data)
     scenario_block = scenario_generator_filter(market_data)
     transmission_block = transmission_layer_filter(market_data)
+
+    # -------------------------
+    # 6) Strategist Commentary
+    # -------------------------
+    print(f"[DEBUG] market_data before build_strategist_commentary: {market_data}")
+    commentary_block = build_strategist_commentary(market_data)
 
     # -------------------------
     # 6) Country ETF risk block
