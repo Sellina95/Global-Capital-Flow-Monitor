@@ -1063,6 +1063,10 @@ def generate_daily_report() -> None:
     lines.append("")
     lines.append("---")
     lines.append("")
+    lines.append(commentary_block)
+    lines.append("")
+    lines.append("---")
+    lines.append("")
     lines.append(exec_block)
     lines.append("")
     lines.append(decision_block)
@@ -1074,8 +1078,7 @@ def generate_daily_report() -> None:
     lines.append("---")
     lines.append("")
 
-    # Detailed commentary
-    lines.append(commentary_block)
+  
 
     # Optional country block append
     if country_risk_lines:
