@@ -902,13 +902,16 @@ def generate_daily_report() -> None:
     }
 
     weights = {
-        "XLP": 0.3,
-        "XLV": 0.3,
-        "XLF": 0.3,
-        "XLK": 0.05,
-        "XLRE": 0.05
+    "BND": 0.1,
+    "EEM": 0.2,
+    "EIS": 0.2,
+    "EMB": 0.1,
+    "EWJ": 0.1,
+    "FXI": 0.1,
+    "GLD": 0.05,
+    "SPY": 0.1,
+    "VXX": 0.05,
     }
-
     # 포트폴리오 수익률 계산
     portfolio_return = sum(
         weights[ticker] * market_data[ticker]["pct_change"]
