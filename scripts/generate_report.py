@@ -871,7 +871,8 @@ def generate_daily_report() -> None:
     )
 
     market_data = build_market_data(df, today_idx)
-
+    
+    
     # -----------------------------
     # 2) Detect stale / market closed
     # -----------------------------
@@ -889,7 +890,32 @@ def generate_daily_report() -> None:
         stale = False
 
     market_data["_STALE"] = stale
+        # -----------------------------
+    # 3) ETF 수익률 계산
+    # -----------------------------
+    sector_to_etf = {
+        "Consumer Staples": "XLP",
+        "Health Care": "XLV",
+        "Financials": "XLF",
+        "Technology": "XLK",
+        "Real Estate": "XLRE"
+    }
 
+    weights = {
+        "XLP": 0.3,
+        "XLV": 0.3,
+        "XLF": 0.3,
+        "XLK": 0.05,
+        "XLRE": 0.05
+    }
+
+    # 포트폴리오 수익률 계산
+    portfolio_return = sum(
+        weights[ticker] * market_data[ticker]["pct_change"]
+        for ticker in weights
+    )
+    print(f"[DEBUG] Portfolio Return: {portfolio_return}")
+    
     # -------------------------
     # 3) Attach layers
     # -------------------------
