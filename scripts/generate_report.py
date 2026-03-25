@@ -912,6 +912,8 @@ def generate_daily_report() -> None:
     "SPY": 0.1,
     "VXX": 0.05,
 }
+# generate_daily_report() 안에 추가
+    print("[DEBUG] market_data keys:", market_data.keys())  # 모든 키 출력
     # 포트폴리오 수익률 계산
     portfolio_return = sum(
         weights[ticker] * market_data[ticker]["pct_change"]
