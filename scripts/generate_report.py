@@ -894,12 +894,12 @@ def generate_daily_report() -> None:
     # 3) ETF 수익률 계산
     # -----------------------------
     sector_to_etf = {
-        "Consumer Staples": "XLP",
-        "Health Care": "XLV",
-        "Financials": "XLF",
-        "Technology": "XLK",
-        "Real Estate": "XLRE"
-    }
+    "Consumer Staples": "SPY",  # XLP 대신 SPY 등으로 대체 가능
+    "Health Care": "SPY",       # XLV 대신 다른 ETF
+    "Financials": "XLF",        # 기존 Financial ETF를 사용
+    "Technology": "XLY",        # 기존 ETFs 중 Tech ETF로 대체
+    "Real Estate": "VXX",       # 부동산 ETF는 없는 경우 VXX 등으로 설정
+}
 
     weights = {
     "BND": 0.1,
@@ -911,7 +911,7 @@ def generate_daily_report() -> None:
     "GLD": 0.05,
     "SPY": 0.1,
     "VXX": 0.05,
-    }
+}
     # 포트폴리오 수익률 계산
     portfolio_return = sum(
         weights[ticker] * market_data[ticker]["pct_change"]
