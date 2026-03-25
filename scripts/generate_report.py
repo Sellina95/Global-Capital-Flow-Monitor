@@ -891,35 +891,7 @@ def generate_daily_report() -> None:
 
     market_data["_STALE"] = stale
         # -----------------------------
-    # 3) ETF 수익률 계산
-    # -----------------------------
-    sector_to_etf = {
-    "Consumer Staples": "SPY",  # XLP 대신 SPY 등으로 대체 가능
-    "Health Care": "SPY",       # XLV 대신 다른 ETF
-    "Financials": "XLF",        # 기존 Financial ETF를 사용
-    "Technology": "XLY",        # 기존 ETFs 중 Tech ETF로 대체
-    "Real Estate": "VXX",       # 부동산 ETF는 없는 경우 VXX 등으로 설정
-}
-
-    weights = {
-    "BND": 0.1,
-    "EEM": 0.2,
-    "EIS": 0.2,
-    "EMB": 0.1,
-    "EWJ": 0.1,
-    "FXI": 0.1,
-    "GLD": 0.05,
-    "SPY": 0.1,
-    "VXX": 0.05,
-}
-# generate_daily_report() 안에 추가
-    print("[DEBUG] market_data keys:", market_data.keys())  # 모든 키 출력
-    # 포트폴리오 수익률 계산
-    portfolio_return = sum(
-        weights[ticker] * market_data[ticker]["pct_change"]
-        for ticker in weights
-    )
-    print(f"[DEBUG] Portfolio Return: {portfolio_return}")
+   
     
     # -------------------------
     # 3) Attach layers
