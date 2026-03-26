@@ -308,45 +308,28 @@ def load_credit_spread_df() -> pd.DataFrame:
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
     return df
 
-
 def load_fred_data_from_csv() -> pd.DataFrame:
-    """
-    FRED 데이터를 CSV 파일에서 로드하여 데이터프레임으로 반환.
-    - ffill() 로직을 추가하여 주말/시차로 인한 빈칸(NaN)을 최신값으로 채웁니다.
-    """
     csv_path = "data/fred_macro_sctorallo.csv"
-
-    if not os.path.exists(csv_path):
-        print(f"[ERROR] {csv_path} not found.")
-        return pd.DataFrame()
+    if not os.path.exists(csv_path): return pd.DataFrame()
 
     try:
-        if os.stat(csv_path).st_size == 0:
-            print(f"[ERROR] {csv_path} is empty.")
-            return pd.DataFrame()
-        
         df = pd.read_csv(csv_path)
+        # 🔥 핵심 1: 헤더의 대소문자가 다를 수 있으니 공백 제거 및 확인
+        df.columns = [c.strip() for c in df.columns] 
+        
+        # 🔥 핵심 2: 세연 님 CSV 헤더인 'Date' (대문자)로 변경
+        date_col = "Date" if "Date" in df.columns else "date"
+        
+        df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+        df = df.dropna(subset=[date_col]).sort_values(date_col).reset_index(drop=True)
+        
+        # 🔥 핵심 3: 빈칸 채우기
+        df = df.ffill()
+        return df
     except Exception as e:
-        print(f"[ERROR] Failed to read {csv_path}: {e}")
+        print(f"Error: {e}")
         return pd.DataFrame()
 
-    if "date" not in df.columns:
-        print(f"[ERROR] 'date' column not found in {csv_path}.")
-        return pd.DataFrame()
-
-    # 1. 날짜 형식 변환 및 정렬
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
-
-    # ---------------------------------------------------------
-    # 🔥 [추가된 로직] 데이터 공백 메우기 (Forward Fill)
-    # ---------------------------------------------------------
-    # 'date'를 제외한 모든 수치 데이터 컬럼에 대해, 
-    # 값이 비어 있으면(NaN) 직전 날짜의 값으로 채워줍니다.
-    df = df.ffill() 
-    # ---------------------------------------------------------
-
-    return df
 
 
 # -------------------------
