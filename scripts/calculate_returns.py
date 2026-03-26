@@ -1,23 +1,21 @@
 import pandas as pd
-import os
 
-# 수익률 계산을 위한 함수
-def calculate_daily_returns():
-    etf_files = [f for f in os.listdir('data') if f.endswith('_data.csv')]
-    etf_data = {}
+def calculate_returns(etf_symbols):
+    # 예시로 각 ETF 심볼에 대해 종가 가격을 받아 수익률 계산
+    etf_data = {}  # etf 심볼별 데이터 저장
+    for symbol in etf_symbols:
+        # 데이터 수집하고 수익률 계산 로직 추가
+        # 예시: 데이터를 받아와서 수익률 계산
+        etf_data[symbol] = calculate_somehow(symbol)  # 실제 계산 함수 필요
 
-    # 각 ETF 데이터 로드
-    for file in etf_files:
-        df = pd.read_csv(f"data/{file}", index_col="Date", parse_dates=True)
-        ticker = file.split('_')[0]  # 파일 이름에서 ETF 티커 추출
-        df['Adj Close'] = df['Adj Close'].fillna(0)  # 결측값 처리
-        df['Pct Change'] = df['Adj Close'].pct_change()  # 일일 수익률 계산
-        etf_data[ticker] = df
+    return etf_data
 
-    # 모든 ETF의 수익률 출력
-    for ticker, data in etf_data.items():
-        print(f"[INFO] {ticker} daily returns:")
-        print(data['Pct Change'].tail())  # 마지막 5일 수익률 출력
+def save_to_csv(etf_data):
+    # 계산된 수익률을 CSV로 저장
+    df = pd.DataFrame(etf_data)
+    df.to_csv("data/etf_returns.csv", index=False)
 
 if __name__ == "__main__":
-    calculate_daily_returns()
+    etf_symbols = ["BND", "EEM", "EWJ", "SPY", "VXX"]  # 예시 ETF 리스트
+    etf_data = calculate_returns(etf_symbols)
+    save_to_csv(etf_data)
