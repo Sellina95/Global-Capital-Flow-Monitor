@@ -12,7 +12,14 @@ etf_symbols = {
     "FXI": "iShares China Large-Cap ETF",
     "GLD": "SPDR Gold Shares",
     "SPY": "SPDR S&P 500 ETF Trust",
-    "VXX": "iPath Series B S&P 500 VIX Short-Term Futures ETN"
+    "VXX": "iPath Series B S&P 500 VIX Short-Term Futures ETN",
+    "XLK": "Technology Select Sector SPDR",
+    "XLV": "Health Care Select Sector SPDR",
+    "XLP": "Consumer Staples Select Sector SPDR",
+    "XLF": "Financials Select Sector SPDR",
+    "QUAL": "iShares MSCI USA Quality Factor ETF",
+    "COWZ": "Pacer US Cash Cows 100 ETF",
+    "MTUM": "iShares MSCI USA Momentum Factor ETF"
 }
 
 def download_etf_data(symbols: dict, start_date="2010-01-01", end_date="2026-01-01"):
