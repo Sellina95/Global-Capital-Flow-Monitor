@@ -966,6 +966,12 @@ def generate_daily_report() -> None:
     print("[DEBUG] market_data (after adding RAROC):", market_data)
     
     print(f"[DEBUG] market_data before build_strategist_commentary: {market_data}")
+    portfolio_return = calculate_portfolio_return()
+
+    # 포트폴리오 수익률을 리포트에 출력
+    print(f"Portfolio Return (with random weights): {portfolio_return:.2f}%")
+    
+    # 이전 코드...
     commentary_block = build_strategist_commentary(market_data)
     # -------------------------
     # 5) Top layers
