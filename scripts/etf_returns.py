@@ -31,6 +31,7 @@ def calculate_returns(etf_symbols):
         file_path = os.path.join(data_directory, f"{symbol}_data.csv")  # 각 ETF에 대한 데이터 파일 경로
         if os.path.exists(file_path):
             # header=0으로 수정하여 첫 번째 데이터 행을 읽도록
+            print(f"Loading data for {symbol} from {file_path}")
             data = pd.read_csv(file_path, index_col="Date", header=0, parse_dates=True)  # 날짜별 데이터 로드
             
             # 데이터의 컬럼명 확인
@@ -53,8 +54,8 @@ def save_to_csv(etf_data):
     df.to_csv("data/etf_returns.csv")
     
     # 파일 내용 확인 (첫 5줄 출력)
+    print(f"ETF returns saved to 'data/etf_returns.csv'. Here is the preview:")
     print(df.head())
-    print("ETF 수익률이 'data/etf_returns.csv'에 저장되었습니다.")
 
 if __name__ == "__main__":
     # ETF 수익률 계산
