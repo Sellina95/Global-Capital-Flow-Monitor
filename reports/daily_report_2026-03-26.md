@@ -5,10 +5,10 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.328  (+0.00% vs 4.328)
-- **달러 인덱스**: 99.685  (+0.09% vs 99.600)
-- **WTI 유가**: 93.560  (+3.59% vs 90.320)
-- **변동성 지수 (VIX)**: 27.420  (+8.25% vs 25.330)
-- **원/달러 환율**: 1504.780  (+0.50% vs 1497.310)
+- **달러 인덱스**: 99.653  (+0.05% vs 99.600)
+- **WTI 유가**: 93.330  (+3.33% vs 90.320)
+- **변동성 지수 (VIX)**: 27.430  (+8.29% vs 25.330)
+- **원/달러 환율**: 1504.380  (+0.47% vs 1497.310)
 
 ---
 
@@ -26,7 +26,7 @@
 - **정의:** 지금 어떤 장(場)인지 판단하는 *시장 국면 필터*
 - **추가 이유:** 같은 지표도 ‘국면’에 따라 의미가 완전히 달라지기 때문
 
-- **VIX 레벨:** 27.42 → **High (Risk-off bias)**
+- **VIX 레벨:** 27.43 → **High (Risk-off bias)**
 - **핵심 조합(전일 대비 방향):** US10Y(→) / DXY(↑) / VIX(↑)
 - **판정:** **RISK-OFF (부분 정렬)**
 - **근거:** VIX↑ + (금리↑ 또는 달러↑) → 불안/긴축 우려 확대
@@ -46,7 +46,7 @@
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(→) / DXY(↑) / VIX(↑)
-- **Policy Bias: TIGHTENING (긴축) (STRONG, score=+3.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ +0.085 / US10YΔ +0.000**
+- **Policy Bias: TIGHTENING (긴축) (STRONG, score=+3.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ +0.053 / US10YΔ +0.000**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY MIXED (정책 신호 혼조)**
@@ -87,10 +87,10 @@
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
-- DXY **(Mild, +0.09%)** → 달러 강세/신흥국 부담
-- WTI **(Strong, +3.59%)** → 인플레 재자극 가능성
-- VIX **(Strong, +8.25%)** → 심리 악화/리스크오프
-- 원/달러(USDKRW) **(Clear, +0.50%)** → 원화 약세/수급 부담
+- DXY **(Mild, +0.05%)** → 달러 강세/신흥국 부담
+- WTI **(Strong, +3.33%)** → 인플레 재자극 가능성
+- VIX **(Strong, +8.29%)** → 심리 악화/리스크오프
+- 원/달러(USDKRW) **(Clear, +0.47%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -125,16 +125,16 @@ No significant sector-level correlation break detected.
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.338
+- **Cosine Similarity Score:** 0.333
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.338
-  - Ukraine_2022: 0.136
-  - Red_Sea: 0.068
+  - Taiwan_Tension: 0.333
+  - Ukraine_2022: 0.127
+  - Red_Sea: 0.059
 - **Top Drivers:**
-  - USDCNH: z_used=+1.61 (z1d=+1.32, z5d=+2.06, raw_w=0.18, norm_w=0.14) → contrib=+0.22
-  - VIX: z_used=+0.74 (z1d=+0.79, z5d=+0.67, raw_w=0.18, norm_w=0.14) → contrib=+0.10
-  - GOLD: z_used=-1.01 (z1d=-1.16, z5d=-0.77, raw_w=0.12, norm_w=0.09) → contrib=-0.09
+  - USDCNH: z_used=+1.59 (z1d=+1.29, z5d=+2.04, raw_w=0.18, norm_w=0.14) → contrib=+0.22
+  - VIX: z_used=+0.75 (z1d=+0.79, z5d=+0.68, raw_w=0.18, norm_w=0.14) → contrib=+0.10
+  - GOLD: z_used=-1.00 (z1d=-1.15, z5d=-0.77, raw_w=0.12, norm_w=0.09) → contrib=-0.09
   - KR10Y_SPREAD: z_used=-1.00 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
@@ -169,7 +169,7 @@ No significant sector-level correlation break detected.
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.328), DXY(99.685), VIX(27.42)
+- **Today snapshot:** US10Y(4.328), DXY(99.653), VIX(27.43)
 
 ### 🏗️ 12) Structural Filter
 - **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
@@ -181,8 +181,8 @@ No significant sector-level correlation break detected.
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (STRONG, score=+3.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ +0.085 / US10YΔ +0.000
-- **Sentiment (Fear&Greed):** 29.76827011394705 (FEAR)
+- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (STRONG, score=+3.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ +0.053 / US10YΔ +0.000
+- **Sentiment (Fear&Greed):** 29.741806863864657 (FEAR)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=DOWN / level=MID
 - **Phase:** RISK-OFF (부분 정렬)
@@ -206,8 +206,8 @@ No significant sector-level correlation break detected.
 
 - **Risk Budget:** 25
 - **Phase Cap:** 35
-- **VIX Level:** 27.42 (HIGH)
-- **VIX Change (%):** +8.25%
+- **VIX Level:** 27.43 (HIGH)
+- **VIX Change (%):** +8.29%
 - **Final Multiplier:** 0.68x
 
 - **📊 Recommended Exposure:** **23%**
@@ -320,8 +320,8 @@ No significant sector-level correlation break detected.
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 2.346879253772983
-- **Z-Score (5d):** 0.3096671701620851
+- **Z-Score (1d):** 2.3468817384126277
+- **Z-Score (5d):** 0.3096676923165241
 
 ### EWJ
 - **Crash?** False
