@@ -309,6 +309,37 @@ def load_credit_spread_df() -> pd.DataFrame:
     return df
 
 
+def load_fred_data_from_csv() -> pd.DataFrame:
+    """
+    FRED 데이터를 CSV 파일에서 로드하여 데이터프레임으로 반환.
+    """
+    csv_path = "data/fred_macro_sctorallo.csv"
+
+    if not os.path.exists(csv_path):
+        print(f"[ERROR] {csv_path} not found.")
+        return pd.DataFrame()  # 빈 DataFrame 반환
+
+    try:
+        # 파일이 비어 있지 않은지 확인
+        if os.stat(csv_path).st_size == 0:
+            print(f"[ERROR] {csv_path} is empty.")
+            return pd.DataFrame()
+        
+        # CSV 파일 읽기
+        df = pd.read_csv(csv_path)
+    except Exception as e:
+        print(f"[ERROR] Failed to read {csv_path}: {e}")
+        return pd.DataFrame()
+
+    # 날짜 형식 확인 후 정렬
+    if "date" not in df.columns:
+        print(f"[ERROR] 'date' column not found in {csv_path}.")
+        return pd.DataFrame()
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
 # -------------------------
 # Builders
 # -------------------------
