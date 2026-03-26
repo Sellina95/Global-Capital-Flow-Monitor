@@ -3370,6 +3370,12 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
 
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
+    sections.append("Some commentary here")
+    
+    # 예시로 market_data에 있는 데이터가 포함될 수도 있습니다
+    if market_data.get("some_key"):
+        sections.append({"key": "value"})
+        
     sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
     sections.append(market_regime_filter(market_data))
     sections.append("")
