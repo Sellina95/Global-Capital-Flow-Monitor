@@ -1,79 +1,55 @@
 import os
 import pandas as pd
 
-etf_symbols = {
-    "BND": "Vanguard Total Bond Market", "EEM": "iShares MSCI Emerging Markets",
-    "EIS": "iShares MSCI Israel", "EMB": "iShares J.P. Morgan USD EM Bond",
-    "EWJ": "iShares MSCI Japan", "FXI": "iShares China Large-Cap",
-    "GLD": "SPDR Gold Shares", "SPY": "SPDR S&P 500 ETF Trust",
-    "VXX": "iPath S&P 500 VIX Short-Term", "XLK": "Technology Select Sector",
-    "XLV": "Health Care Select Sector", "XLP": "Consumer Staples Select Sector",
-    "XLF": "Financials Select Sector", "QUAL": "iShares MSCI USA Quality",
-    "COWZ": "Pacer US Cash Cows 100", "MTUM": "iShares MSCI USA Momentum"
-}
-
 def calculate_returns():
     all_returns = []
     data_directory = 'data/' 
+    # ETF 심볼 리스트 (위와 동일)
+    symbols = ["BND", "EEM", "EIS", "EMB", "EWJ", "FXI", "GLD", "SPY", "VXX", "XLK", "XLV", "XLP", "XLF", "QUAL", "COWZ", "MTUM"]
 
-    for symbol in etf_symbols:
+    for symbol in symbols:
         file_path = os.path.join(data_directory, f"{symbol}_data.csv")
         
         if os.path.exists(file_path):
             try:
-                # 1. 데이터 로드: 상단 2줄(Price..., Ticker..., Date...)을 건너뜁니다.
-                # 세연 님의 파일 예시를 보면 3번째 줄부터 실제 날짜 데이터가 나오므로 skiprows=2 혹은 3을 시도해야 합니다.
-                # 여기서는 'Date'라는 글자가 있는 줄까지 건너뛰고 읽어오겠습니다.
-                df = pd.read_csv(file_path, skiprows=2) 
+                # 1. 일단 3줄 건너뛰고 읽어오기 (Date 데이터가 시작되는 지점)
+                # 만약 에러가 나면 header=None으로 읽어서 강제로 구조를 봅니다.
+                df = pd.read_csv(file_path, skiprows=3, header=None)
                 
-                # 컬럼명 정리 (공백 제거)
-                df.columns = df.columns.str.strip()
+                # 2. 첫 번째 컬럼(날짜)과 두 번째 컬럼(수정 종가 또는 종가)만 추출
+                # 예시 데이터 순서: Date(0), Price(1), Close(2)... 인지 확인이 필요하지만
+                # 세연 님 데이터 예시 기준: 0번은 날짜, 1번은 Price(수정종가) 입니다.
+                df = df.iloc[:, [0, 1]] 
+                df.columns = ['Date', 'Price']
                 
-                # 'Unnamed'로 시작하는 불필요한 컬럼이 생길 수 있어 정리
-                df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-
-                # 첫 번째 컬럼 이름을 강제로 'Date'로 변경 (만약 이름이 비어있을 경우 대비)
-                if df.columns[0] != 'Date':
-                    df.rename(columns={df.columns[0]: 'Date'}, inplace=True)
-
-                if 'Date' in df.columns and 'Close' in df.columns:
-                    # 날짜 형식이 아닌 행(에러 방지) 제거 후 변환
-                    df = df[df['Date'].str.contains(r'\d{4}-\d{2}-\d{2}', na=False)]
-                    df['Date'] = pd.to_datetime(df['Date'])
-                    df = df.set_index('Date')
-                    
-                    # 'Close' 컬럼을 숫자형으로 변환 (문자열 섞임 방지)
-                    df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
-                    
-                    # 수익률 계산
-                    returns = df['Close'].pct_change()
-                    returns.name = symbol 
-                    
-                    all_returns.append(returns)
-                    print(f"✅ {symbol}: 계산 성공 (데이터 {len(df)}건)")
-                else:
-                    print(f"⚠️ {symbol}: 필수 컬럼(Date, Close)을 찾을 수 없습니다. 현재 컬럼: {df.columns.tolist()}")
+                # 3. 데이터 전처리
+                df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+                df['Price'] = pd.to_numeric(df['Price'], errors='coerce')
+                df = df.dropna() # 날짜나 가격이 이상한 행 제거
+                df = df.set_index('Date').sort_index()
+                
+                # 4. 수익률 계산
+                returns = df['Price'].pct_change()
+                returns.name = symbol 
+                
+                all_returns.append(returns)
+                print(f"✅ {symbol}: 데이터 로드 및 수익률 계산 성공")
+                
             except Exception as e:
-                print(f"❌ {symbol} 처리 중 에러 발생: {e}")
+                print(f"❌ {symbol} 처리 중 치명적 에러: {e}")
         else:
             print(f"⚠️ 파일 없음: {file_path}")
 
     if all_returns:
         combined_df = pd.concat(all_returns, axis=1)
-        # 날짜순 정렬
-        combined_df = combined_df.sort_index()
         return combined_df
-    else:
-        return None
+    return None
 
 if __name__ == "__main__":
     final_returns_df = calculate_returns()
-    
     if final_returns_df is not None:
-        output_path = "data/etf_daily_returns_combined.csv"
-        final_returns_df.to_csv(output_path)
-        print("-" * 30)
-        print(f"🚀 통합 완료! 저장 경로: {output_path}")
-        print(final_returns_df.tail()) # 최근 데이터 확인
+        final_returns_df.to_csv("data/etf_daily_returns_combined.csv")
+        print("🚀 모든 ETF 수익률 통합 완료!")
+        print(final_returns_df.tail())
     else:
-        print("데이터 통합 실패.")
+        print("❌ 통합할 데이터가 없습니다.")
