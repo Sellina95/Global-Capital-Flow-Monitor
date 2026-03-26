@@ -5,10 +5,10 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.328  (+0.00% vs 4.328)
-- **달러 인덱스**: 99.653  (+0.05% vs 99.600)
-- **WTI 유가**: 93.330  (+3.33% vs 90.320)
-- **변동성 지수 (VIX)**: 27.430  (+8.29% vs 25.330)
-- **원/달러 환율**: 1504.380  (+0.47% vs 1497.310)
+- **달러 인덱스**: 99.926  (+0.33% vs 99.600)
+- **WTI 유가**: 94.710  (+4.86% vs 90.320)
+- **변동성 지수 (VIX)**: 27.560  (+8.80% vs 25.330)
+- **원/달러 환율**: 1506.450  (+0.61% vs 1497.310)
 
 ---
 
@@ -20,13 +20,14 @@
 
 ---
 
+Some commentary here
 ## 🧭 Strategist Commentary (Seyeon’s Filters)
 
 ### 🧩 1) Market Regime Filter
 - **정의:** 지금 어떤 장(場)인지 판단하는 *시장 국면 필터*
 - **추가 이유:** 같은 지표도 ‘국면’에 따라 의미가 완전히 달라지기 때문
 
-- **VIX 레벨:** 27.43 → **High (Risk-off bias)**
+- **VIX 레벨:** 27.56 → **High (Risk-off bias)**
 - **핵심 조합(전일 대비 방향):** US10Y(→) / DXY(↑) / VIX(↑)
 - **판정:** **RISK-OFF (부분 정렬)**
 - **근거:** VIX↑ + (금리↑ 또는 달러↑) → 불안/긴축 우려 확대
@@ -46,7 +47,7 @@
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(→) / DXY(↑) / VIX(↑)
-- **Policy Bias: TIGHTENING (긴축) (STRONG, score=+3.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ +0.053 / US10YΔ +0.000**
+- **Policy Bias: TIGHTENING (긴축) (STRONG, score=+3.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ +0.326 / US10YΔ +0.000**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY MIXED (정책 신호 혼조)**
@@ -87,10 +88,10 @@
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
-- DXY **(Mild, +0.05%)** → 달러 강세/신흥국 부담
-- WTI **(Strong, +3.33%)** → 인플레 재자극 가능성
-- VIX **(Strong, +8.29%)** → 심리 악화/리스크오프
-- 원/달러(USDKRW) **(Clear, +0.47%)** → 원화 약세/수급 부담
+- DXY **(Clear, +0.33%)** → 달러 강세/신흥국 부담
+- WTI **(Strong, +4.86%)** → 인플레 재자극 가능성
+- VIX **(Strong, +8.80%)** → 심리 악화/리스크오프
+- 원/달러(USDKRW) **(Strong, +0.61%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -118,29 +119,29 @@ No significant sector-level correlation break detected.
 - **유가 상승(WTI↑)** → 인플레 압력/실질소득 부담 가능
 
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
-- **Geo Stress Score (z-composite):** **+0.24**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.30**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
-- **3D Avg Score:** +0.01
-- **Geo Momentum:** +0.23 *(Status: FLAT)*
+- **3D Avg Score:** +0.03
+- **Geo Momentum:** +0.27 *(Status: RISING)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.333
+- **Cosine Similarity Score:** 0.386
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.333
-  - Ukraine_2022: 0.127
-  - Red_Sea: 0.059
+  - Taiwan_Tension: 0.386
+  - Ukraine_2022: 0.203
+  - Red_Sea: 0.133
 - **Top Drivers:**
-  - USDCNH: z_used=+1.59 (z1d=+1.29, z5d=+2.04, raw_w=0.18, norm_w=0.14) → contrib=+0.22
-  - VIX: z_used=+0.75 (z1d=+0.79, z5d=+0.68, raw_w=0.18, norm_w=0.14) → contrib=+0.10
+  - USDCNH: z_used=+1.86 (z1d=+1.61, z5d=+2.24, raw_w=0.18, norm_w=0.14) → contrib=+0.26
+  - VIX: z_used=+0.80 (z1d=+0.85, z5d=+0.72, raw_w=0.18, norm_w=0.14) → contrib=+0.11
   - GOLD: z_used=-1.00 (z1d=-1.15, z5d=-0.77, raw_w=0.12, norm_w=0.09) → contrib=-0.09
   - KR10Y_SPREAD: z_used=-1.00 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
 
 **Trade Information:**
-- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
+- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 상승하고 있는 중입니다. 경계 강화 필요.
 - 역사적 위기 패턴 유사도는 낮습니다. 현재는 **Taiwan_Tension** 유형과 가장 가깝지만, 전면적 지정학 쇼크보다는 제한적·국지적 리스크 모니터링 구간으로 해석됩니다.
 - **Country ETF Crash?** No (BND, EEM, EIS, EMB, EWJ, FXI, GLD, SPY, VXX)
 
@@ -161,7 +162,7 @@ No significant sector-level correlation break detected.
 
 ### 🔄 10) Direction Filter
 - **질문:** 오늘 움직임은 ‘노이즈’인가 ‘의미 있는 변화’인가?
-- **강도:** US10Y(Noise) / DXY(Mild) / WTI(Strong) / VIX(Strong)
+- **강도:** US10Y(Noise) / DXY(Clear) / WTI(Strong) / VIX(Strong)
 - **판정:** **SIGNIFICANT MOVE (의미 있는 변화)**
 
 ### ⏳ 11) Timing Filter
@@ -169,7 +170,7 @@ No significant sector-level correlation break detected.
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.328), DXY(99.653), VIX(27.43)
+- **Today snapshot:** US10Y(4.328), DXY(99.926), VIX(27.56)
 
 ### 🏗️ 12) Structural Filter
 - **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
@@ -181,8 +182,8 @@ No significant sector-level correlation break detected.
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (STRONG, score=+3.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ +0.053 / US10YΔ +0.000
-- **Sentiment (Fear&Greed):** 29.741806863864657 (FEAR)
+- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (STRONG, score=+3.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ +0.326 / US10YΔ +0.000
+- **Sentiment (Fear&Greed):** 29.398180801165733 (FEAR)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=DOWN / level=MID
 - **Phase:** RISK-OFF (부분 정렬)
@@ -206,8 +207,8 @@ No significant sector-level correlation break detected.
 
 - **Risk Budget:** 25
 - **Phase Cap:** 35
-- **VIX Level:** 27.43 (HIGH)
-- **VIX Change (%):** +8.29%
+- **VIX Level:** 27.56 (HIGH)
+- **VIX Change (%):** +8.80%
 - **Final Multiplier:** 0.68x
 
 - **📊 Recommended Exposure:** **23%**
@@ -226,24 +227,21 @@ No significant sector-level correlation break detected.
 
 - **Duration Factor:** NEUTRAL
 - **Inflation Factor:** NEUTRAL
-- **USD Factor:** NEUTRAL
+- **USD Factor:** USD TIGHTENING
 - **Credit Factor:** CREDIT SUPPORTIVE
 
 ### 🏭 18) Sector Allocation Engine (v2)
-- **정의:** Macro + Style/Factor/FINAL_STATE 종합 섹터 기울기 판단 (rule-based scoring)
-- **추가 이유:** 리포트의 최종 output(포지셔닝)이 비어있지 않도록, 최소 OW/UW를 항상 생성
-
-- **Context:** phase=RISK-OFF (부분 정렬) / liquidity=DOWN-MID / structure=TIGHTENING / credit_calm=True
+- **Context:** phase=RISK-OFF (부분 정렬) / T10Y2Y=0.00 / VIX=20.0 / credit=True
 - **Overweight:** **Consumer Staples, Health Care, Financials**
 - **Underweight:** **Technology, Real Estate, Consumer Discretionary**
 
 - **Rationale (top drivers):**
   - OW Consumer Staples: +3: 유동성 흡수 → 방어/필수소비 선호
   - OW Health Care: +3: 유동성 흡수 → 현금흐름 안정 섹터 선호
-  - OW Financials: +2: 긴축/고금리 → NIM/금리 환경 우호 가능
-  - UW Technology: -3: 유동성 흡수 → 고베타/장기듀레이션 부담
-  - UW Real Estate: -2: 유동성 흡수 → 레버리지/금리 민감도 부담
-  - UW Consumer Discretionary: -2: 유동성 흡수 → 경기민감 소비 압박
+  - OW Financials: +2: 긴축 → 금리 환경 우호
+  - UW Technology: -3: 유동성 흡수 → 고베타 부담
+  - UW Real Estate: -2: 유동성 흡수 → 레버리지 부담
+  - UW Consumer Discretionary: -2: 유동성 흡수 → 소비 압박
 
 
 ---
