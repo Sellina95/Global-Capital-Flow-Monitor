@@ -109,6 +109,11 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/backfill_geo_history.py --days 180
+      # ✅ ETF 데이터 다운로드
+      - name: Fetch ETF data
+        run: |
+         export PYTHONPATH="$GITHUB_WORKSPACE"
+         python scripts/fetch_etf_data.py
 
       # ✅ 3) 리포트 생성
       - name: Run report generator
