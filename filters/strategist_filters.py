@@ -2972,215 +2972,164 @@ def factor_layer_filter(market_data: Dict[str, Any]) -> str:
 
 from typing import Dict, Any, List, Tuple, Optional
 
+
 def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     """
-    Sector Allocation Engine (v2)
-    - FINAL_STATE(phase/structure/liquidity/credit) 기반으로
-      Overweight/Underweight를 최소 1개 이상 생성
-    - 결과는 market_data["SECTOR_TILT"]에 저장 (다른 레이어에서도 재사용 가능)
-
-    섹터 기준: GICS 11
-    Tech, Financials, Energy, Industrials, Materials,
-    Consumer Discretionary, Consumer Staples,
-    Health Care, Utilities, Real Estate, Communication Services
+    Sector Allocation Engine (v2) - 월가 매크로 지표 반영 통합본
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
 
+    # 매크로 상태 및 지표 추출
     phase = str(state.get("phase", "N/A")).upper()
-    structure = str(state.get("structure_tag", "MIXED")).upper()  # EASING/TIGHTENING/MIXED
-    liq_dir = str(state.get("liquidity_dir", "N/A")).upper()      # UP/DOWN/FLAT/N/A
-    liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()  # HIGH/MID/LOW/N/A
-    credit_calm = state.get("credit_calm", None)                  # True/False/None
+    structure = str(state.get("structure_tag", "MIXED")).upper()
+    liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
+    liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
+    credit_calm = state.get("credit_calm", None)
+    
+    # 세연 님이 추가하신 신규 지표 (T10Y2Y, VIX)
+    # 데이터가 없을 경우를 대비해 기본값(0.0, 20.0)을 설정합니다.
+    try:
+        t10y2y = float(state.get("T10Y2Y", 0.0))
+    except (TypeError, ValueError):
+        t10y2y = 0.0
+        
+    try:
+        vix = float(state.get("VIX", 20.0))
+    except (TypeError, ValueError):
+        vix = 20.0
 
     # --------------------------------------------------
     # Scoring map (rule-based)
     # --------------------------------------------------
     sectors = [
-        "Technology",
-        "Financials",
-        "Energy",
-        "Industrials",
-        "Materials",
-        "Consumer Discretionary",
-        "Consumer Staples",
-        "Health Care",
-        "Utilities",
-        "Real Estate",
-        "Communication Services",
+        "Technology", "Financials", "Energy", "Industrials", "Materials",
+        "Consumer Discretionary", "Consumer Staples", "Health Care",
+        "Utilities", "Real Estate", "Communication Services"
     ]
 
     score = {s: 0 for s in sectors}
     reasons = {s: [] for s in sectors}
 
     def add(s: str, pts: int, why: str):
-        score[s] += pts
-        reasons[s].append(f"{'+' if pts>0 else ''}{pts}: {why}")
+        if s in score:
+            score[s] += pts
+            reasons[s].append(f"{'+' if pts > 0 else ''}{pts}: {why}")
 
     # -------------------------
-    # A) Liquidity rules (가장 중요)
+    # A) Liquidity rules
     # -------------------------
     liq_tight = (liq_dir == "DOWN") or (liq_lvl == "LOW")
     liq_easy = (liq_dir == "UP") and (liq_lvl in ("MID", "HIGH"))
 
     if liq_tight:
-        # Quality/Defensive 선호
         add("Consumer Staples", +3, "유동성 흡수 → 방어/필수소비 선호")
         add("Health Care", +3, "유동성 흡수 → 현금흐름 안정 섹터 선호")
-        add("Utilities", +2, "유동성 흡수 → 방어적 수요(단, 금리 민감)")
-        # High beta / long-duration 압박
-        add("Technology", -3, "유동성 흡수 → 고베타/장기듀레이션 부담")
-        add("Consumer Discretionary", -2, "유동성 흡수 → 경기민감 소비 압박")
-        add("Real Estate", -2, "유동성 흡수 → 레버리지/금리 민감도 부담")
+        add("Utilities", +2, "유동성 흡수 → 방어적 수요")
+        add("Technology", -3, "유동성 흡수 → 고베타 부담")
+        add("Consumer Discretionary", -2, "유동성 흡수 → 소비 압박")
+        add("Real Estate", -2, "유동성 흡수 → 레버리지 부담")
     elif liq_easy:
-        # Cyclical/High beta 확장
-        add("Technology", +2, "유동성 공급 → 베타 확장 환경")
-        add("Consumer Discretionary", +2, "유동성 공급 → 경기민감 섹터 우호")
-        add("Industrials", +2, "유동성 공급 → 경기순환(투자/생산) 우호")
-        add("Financials", +1, "유동성 공급 → 리스크 선호 회복 구간 우호")
-        # Defensive는 상대 약화
-        add("Consumer Staples", -1, "유동성 공급 → 방어 섹터 상대매력 감소")
-        add("Utilities", -1, "유동성 공급 → 방어 섹터 상대매력 감소")
-    else:
-        # Mixed liquidity -> barbell
-        add("Health Care", +1, "유동성 혼조 → 퀄리티 선호 잔존")
-        add("Consumer Staples", +1, "유동성 혼조 → 방어적 바벨 한 축")
-        add("Industrials", +1, "유동성 혼조 → 선별적 경기순환")
+        add("Technology", +2, "유동성 공급 → 성장주 우호")
+        add("Consumer Discretionary", +2, "유동성 공급 → 소비 활성화")
+        add("Industrials", +2, "유동성 공급 → 생산/투자 활성화")
+        add("Financials", +1, "유동성 공급 → 리스크 선호")
 
     # -------------------------
-    # B) Structure rules (금리/할인율)
+    # B) Structure rules
     # -------------------------
     if structure == "TIGHTENING":
-        # Long-duration 압박
-        add("Technology", -2, "긴축 → 할인율↑ → 장기듀레이션 멀티플 압박")
-        add("Communication Services", -1, "긴축 → 성장/멀티플 부담")
-        add("Real Estate", -2, "긴축 → 금리 민감/레버리지 비용 부담")
-        add("Utilities", -1, "긴축 → 채권 대체재 성격(듀레이션) 부담")
-        # Value/Financials 상대 우위 가능
-        add("Financials", +2, "긴축/고금리 → NIM/금리 환경 우호 가능")
-        add("Energy", +1, "인플레/공급 변수 시 방어적 인플레 헤지 성격")
+        add("Technology", -2, "긴축 → 할인율 상승 부담")
+        add("Financials", +2, "긴축 → 금리 환경 우호")
+        add("Real Estate", -2, "긴축 → 이자 비용 부담")
     elif structure == "EASING":
-        add("Technology", +2, "완화 → 할인율↓ → 멀티플 확장 여지")
-        add("Communication Services", +1, "완화 → 성장주 우호")
-        add("Real Estate", +1, "완화 → 금리 민감 섹터 완화")
-        add("Utilities", +1, "완화 → 배당/방어 매력 회복")
-    else:
-        # MIXED
-        add("Financials", +1, "정책 혼조 → 가치/캐리 성격 일부 유지")
-        add("Health Care", +1, "정책 혼조 → 퀄리티 선호")
+        add("Technology", +2, "완화 → 멀티플 확장")
+        add("Real Estate", +1, "완화 → 금리 부담 완화")
 
     # -------------------------
-    # C) Credit rules (스프레드/조달환경)
+    # C) Credit rules
     # -------------------------
-    if credit_calm is True:
-        add("Industrials", +1, "크레딧 안정 → 경기순환/기업활동 리스크 완화")
-        add("Materials", +1, "크레딧 안정 → 실물/투자 사이클 방어")
-        add("Financials", +1, "크레딧 안정 → 금융 스트레스 제한")
-    elif credit_calm is False:
-        add("Financials", -2, "크레딧 불안 → 금융 스트레스/리스크 관리 우선")
-        add("Real Estate", -2, "크레딧 불안 → 레버리지 민감 섹터 취약")
-        add("Consumer Discretionary", -1, "크레딧 불안 → 소비/경기 민감 부담")
-        add("Consumer Staples", +1, "크레딧 불안 → 방어 섹터 선호 강화")
-        add("Health Care", +1, "크레딧 불안 → 방어/퀄리티 선호 강화")
+    if credit_calm is False:
+        add("Financials", -2, "크레딧 불안 → 금융 스트레스")
+        add("Consumer Staples", +1, "크레딧 불안 → 방어 섹터 선호")
 
     # -------------------------
-    # D) Phase rules (risk-on/off flavor)
+    # D) Phase rules
     # -------------------------
     if "RISK-OFF" in phase:
-        add("Consumer Staples", +2, "리스크오프 → 방어 섹터 선호")
+        add("Consumer Staples", +2, "리스크오프 → 필수소비 방어")
         add("Health Care", +2, "리스크오프 → 퀄리티 선호")
-        add("Technology", -2, "리스크오프 → 고베타 부담")
-        add("Consumer Discretionary", -2, "리스크오프 → 경기민감 부담")
-    elif "RISK-ON" in phase:
-        add("Industrials", +1, "리스크온 → 경기순환 선호")
-        add("Financials", +1, "리스크온 → 위험선호 구간 우호")
-        add("Technology", +1, "리스크온 → 성장/베타 회복")
-    elif "EVENT" in phase or "WATCH" in phase:
-        # 관망 구간은 extremes 줄이고 퀄리티로
-        add("Health Care", +1, "이벤트 관망 → 방어/퀄리티 선호")
-        add("Consumer Staples", +1, "이벤트 관망 → 변동성 낮은 섹터 선호")
+        add("Technology", -2, "리스크오프 → 베타 축소")
+
+    # -------------------------
+    # E) Macro Sentiment & Curve (야근의 산물! 여기서 점수를 더합니다)
+    # -------------------------
+    # 1. Yield Curve 반영
+    if t10y2y < 0:
+        add("Real Estate", -3, "금리 역전 → 침체 우려 및 조달 압박")
+        add("Financials", -2, "금리 역전 → 예대마진 압박")
+        add("Health Care", +2, "금리 역전 → 방어주 선호")
+    elif t10y2y > 0.5:
+        add("Financials", +3, "스티프닝 → 은행 수익성 개선")
+        add("Industrials", +1, "스티프닝 → 경기 회복 기대")
+
+    # 2. VIX 반영
+    if vix > 25:
+        add("Consumer Staples", +3, "VIX 패닉 → 필수소비 방어")
+        add("Health Care", +3, "VIX 패닉 → 헬스케어 도피")
+        add("Technology", -3, "VIX 패닉 → 위험자산 투매")
+    elif vix < 15:
+        add("Technology", +2, "VIX 안정 → 리스크 온")
 
     # --------------------------------------------------
-    # Pick Over/Under (at least 1)
+    # Pick Over/Under (모든 점수가 합산된 후 랭킹 산정)
     # --------------------------------------------------
     ranked = sorted(sectors, key=lambda s: score[s], reverse=True)
     over = [s for s in ranked if score[s] > 0][:3]
     under = [s for s in reversed(ranked) if score[s] < 0][:3]
 
-    # Safety: ensure not empty
-    if not over:
-        over = ranked[:2]
-    if not under:
-        under = list(reversed(ranked))[:2]
+    if not over: over = ranked[:2]
+    if not under: under = list(reversed(ranked))[:2]
 
-    # store for other layers
+    # 결과 데이터 저장 (딕셔너리 형태)
     market_data["SECTOR_TILT"] = {
         "overweight": over,
         "underweight": under,
         "scores": score,
         "context": {
             "phase": phase,
-            "structure": structure,
-            "liquidity": f"{liq_dir}-{liq_lvl}",
-            "credit_calm": credit_calm,
+            "T10Y2Y": t10y2y,
+            "VIX": vix
         }
     }
-    
-    # -------------------------
-    # E) Macro Sentiment & Curve
-    # -------------------------
-    # 금리 역전 및 VIX 반영
-    t10y2y = state.get("T10Y2Y", 0.0)
-    vix = state.get("VIX", 20.0)
-
-    # 1. Yield Curve (장단기 금리차)
-    if t10y2y < 0:
-        add("Real Estate", -3, "금리 역전 → 자금조달 압박 및 침체 우려")
-        add("Financials", -2, "금리 역전 → 예대마진 압박")
-        add("Health Care", +2, "금리 역전 → 침체 대비 방어주 선호")
-    elif t10y2y > 0.5:
-        add("Financials", +3, "커브 스티프닝 → 은행 수익성 개선 기대")
-        add("Industrials", +1, "커브 스티프닝 → 경기 회복 시그널")
-
-    # 2. VIX (시장 공포)
-    if vix > 25:
-        add("Consumer Staples", +3, "VIX 급등 → 극도의 공포, 방어주 도피")
-        add("Health Care", +3, "VIX 급등 → 퀄리티/방어 섹터 집중")
-        add("Technology", -3, "VIX 급등 → 고베타 자산 투매")
-    elif vix < 15:
-        add("Technology", +2, "VIX 안정 → 위험선호(Risk-On) 확대")
-        add("Consumer Discretionary", +2, "VIX 안정 → 소비 심리 회복 우호")
-
-    return market_data
 
     # --------------------------------------------------
-    # Output block
+    # Output block (리포트 텍스트 생성)
     # --------------------------------------------------
     def fmt_list(xs: List[str]) -> str:
         return ", ".join(xs) if xs else "None"
 
-    context_line = f"phase={phase or 'N/A'} / liquidity={liq_dir}-{liq_lvl} / structure={structure} / credit_calm={credit_calm}"
+    context_line = f"phase={phase} / T10Y2Y={t10y2y:.2f} / VIX={vix:.1f} / credit={credit_calm}"
 
     lines = []
     lines.append("### 🏭 18) Sector Allocation Engine (v2)")
-    lines.append("- **정의:** Macro + Style/Factor/FINAL_STATE 종합 섹터 기울기 판단 (rule-based scoring)")
-    lines.append("- **추가 이유:** 리포트의 최종 output(포지셔닝)이 비어있지 않도록, 최소 OW/UW를 항상 생성")
-    lines.append("")
     lines.append(f"- **Context:** {context_line}")
     lines.append(f"- **Overweight:** **{fmt_list(over)}**")
     lines.append(f"- **Underweight:** **{fmt_list(under)}**")
     lines.append("")
 
-    # add brief rationale: top 1 reason per sector
     lines.append("- **Rationale (top drivers):**")
     for s in over:
-        top = reasons[s][0] if reasons[s] else "rule-based tilt"
+        # reasons[s][0]이 문자열인지 확인하며 추가
+        top = str(reasons[s][0]) if reasons[s] else "매크로 우호적 환경"
         lines.append(f"  - OW {s}: {top}")
     for s in under:
-        top = reasons[s][0] if reasons[s] else "rule-based tilt"
+        top = str(reasons[s][0]) if reasons[s] else "매크로 불확실성 증대"
         lines.append(f"  - UW {s}: {top}")
 
+    # 최종적으로 "문자열"을 리턴합니다.
     return "\n".join(lines)
+
 
 
 # filters/execution_layer.py
