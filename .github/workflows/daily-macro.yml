@@ -115,6 +115,11 @@ jobs:
          export PYTHONPATH="$GITHUB_WORKSPACE"
          python scripts/fetch_etf_data.py
 
+      - name: Calculate ETF returns
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/etf_returns.py
+
       # ✅ 3) 리포트 생성
       - name: Run report generator
         run: |
