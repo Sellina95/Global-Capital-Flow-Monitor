@@ -25,7 +25,7 @@ def calculate_returns(etf_symbols):
     etf_data = {}  # ETF별 수익률 데이터를 담을 dictionary
 
     # 파일 경로 (기존에 다운로드 받은 ETF 파일들이 이 경로에 있어야 한다고 가정)
-    data_directory = 'data/etf_data_files/'  # 기존 데이터가 저장된 폴더
+    data_directory = 'data/' 기존 데이터가 저장된 폴더
 
     for symbol in etf_symbols:
         file_path = os.path.join(data_directory, f"{symbol}_data.csv")  # 각 ETF에 대한 데이터 파일 경로
