@@ -1,71 +1,79 @@
 import os
 import pandas as pd
 
-# ETF 심볼 리스트 (전체)
 etf_symbols = {
-    "BND": "Vanguard Total Bond Market ETF",
-    "EEM": "iShares MSCI Emerging Markets ETF",
-    "EIS": "iShares MSCI Israel ETF",
-    "EMB": "iShares J.P. Morgan USD Emerging Markets Bond ETF",
-    "EWJ": "iShares MSCI Japan ETF",
-    "FXI": "iShares China Large-Cap ETF",
-    "GLD": "SPDR Gold Shares",
-    "SPY": "SPDR S&P 500 ETF Trust",
-    "VXX": "iPath Series B S&P 500 VIX Short-Term Futures ETN",
-    "XLK": "Technology Select Sector SPDR",
-    "XLV": "Health Care Select Sector SPDR",
-    "XLP": "Consumer Staples Select Sector SPDR",
-    "XLF": "Financials Select Sector SPDR",
-    "QUAL": "iShares MSCI USA Quality Factor ETF",
-    "COWZ": "Pacer US Cash Cows 100 ETF",
-    "MTUM": "iShares MSCI USA Momentum Factor ETF"
+    "BND": "Vanguard Total Bond Market", "EEM": "iShares MSCI Emerging Markets",
+    "EIS": "iShares MSCI Israel", "EMB": "iShares J.P. Morgan USD EM Bond",
+    "EWJ": "iShares MSCI Japan", "FXI": "iShares China Large-Cap",
+    "GLD": "SPDR Gold Shares", "SPY": "SPDR S&P 500 ETF Trust",
+    "VXX": "iPath S&P 500 VIX Short-Term", "XLK": "Technology Select Sector",
+    "XLV": "Health Care Select Sector", "XLP": "Consumer Staples Select Sector",
+    "XLF": "Financials Select Sector", "QUAL": "iShares MSCI USA Quality",
+    "COWZ": "Pacer US Cash Cows 100", "MTUM": "iShares MSCI USA Momentum"
 }
 
-def calculate_returns(etf_symbols):
-    etf_data = {}  # ETF별 수익률 데이터를 담을 dictionary
-
-    # 파일 경로 (정확한 경로로 수정)
-    data_directory = 'data/'  # 수정된 경로
+def calculate_returns():
+    all_returns = []
+    data_directory = 'data/' 
 
     for symbol in etf_symbols:
-        file_path = os.path.join(data_directory, f"{symbol}_data.csv")  # 각 ETF에 대한 데이터 파일 경로
+        file_path = os.path.join(data_directory, f"{symbol}_data.csv")
+        
         if os.path.exists(file_path):
-            print(f"Loading data for {symbol} from {file_path}")
-            # 파일 경로와 파일의 첫 5줄을 출력하여 경로와 파일을 확인
-            with open(file_path, 'r') as f:
-                lines = f.readlines()
-                print(f"First few lines of {file_path}:")
-                print("".join(lines[:5]))  # 첫 5줄만 출력
+            try:
+                # 1. 데이터 로드: 상단 2줄(Price..., Ticker..., Date...)을 건너뜁니다.
+                # 세연 님의 파일 예시를 보면 3번째 줄부터 실제 날짜 데이터가 나오므로 skiprows=2 혹은 3을 시도해야 합니다.
+                # 여기서는 'Date'라는 글자가 있는 줄까지 건너뛰고 읽어오겠습니다.
+                df = pd.read_csv(file_path, skiprows=2) 
+                
+                # 컬럼명 정리 (공백 제거)
+                df.columns = df.columns.str.strip()
+                
+                # 'Unnamed'로 시작하는 불필요한 컬럼이 생길 수 있어 정리
+                df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
-            # header=0으로 수정하여 첫 번째 데이터 행을 읽도록
-            data = pd.read_csv(file_path, index_col="Date", header=0, parse_dates=True)  # 날짜별 데이터 로드
-            
-            # 데이터의 컬럼명 확인
-            print(f"Columns for {symbol}: {data.columns.tolist()}")
+                # 첫 번째 컬럼 이름을 강제로 'Date'로 변경 (만약 이름이 비어있을 경우 대비)
+                if df.columns[0] != 'Date':
+                    df.rename(columns={df.columns[0]: 'Date'}, inplace=True)
 
-            # 'Close' 컬럼이 있는지 확인 후 수익률 계산
-            if 'Close' in data.columns:
-                data['pct_change'] = data['Close'].pct_change()  # 종가 수익률 계산
-                etf_data[symbol] = data['pct_change'].mean()  # 평균 수익률을 기록
-            else:
-                print(f"Warning: 'Close' column not found in {symbol} data.")
+                if 'Date' in df.columns and 'Close' in df.columns:
+                    # 날짜 형식이 아닌 행(에러 방지) 제거 후 변환
+                    df = df[df['Date'].str.contains(r'\d{4}-\d{2}-\d{2}', na=False)]
+                    df['Date'] = pd.to_datetime(df['Date'])
+                    df = df.set_index('Date')
+                    
+                    # 'Close' 컬럼을 숫자형으로 변환 (문자열 섞임 방지)
+                    df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
+                    
+                    # 수익률 계산
+                    returns = df['Close'].pct_change()
+                    returns.name = symbol 
+                    
+                    all_returns.append(returns)
+                    print(f"✅ {symbol}: 계산 성공 (데이터 {len(df)}건)")
+                else:
+                    print(f"⚠️ {symbol}: 필수 컬럼(Date, Close)을 찾을 수 없습니다. 현재 컬럼: {df.columns.tolist()}")
+            except Exception as e:
+                print(f"❌ {symbol} 처리 중 에러 발생: {e}")
         else:
-            print(f"Warning: {file_path} not found.")
-    
-    return etf_data
+            print(f"⚠️ 파일 없음: {file_path}")
 
-def save_to_csv(etf_data):
-    # 계산된 수익률을 CSV로 저장
-    df = pd.DataFrame.from_dict(etf_data, orient='index', columns=['Mean Return'])
-    df.to_csv("data/etf_returns.csv")
-    
-    # 파일 내용 확인 (첫 5줄 출력)
-    print(f"ETF returns saved to 'data/etf_returns.csv'. Here is the preview:")
-    print(df.head())
+    if all_returns:
+        combined_df = pd.concat(all_returns, axis=1)
+        # 날짜순 정렬
+        combined_df = combined_df.sort_index()
+        return combined_df
+    else:
+        return None
 
 if __name__ == "__main__":
-    # ETF 수익률 계산
-    etf_data = calculate_returns(etf_symbols)
+    final_returns_df = calculate_returns()
     
-    # CSV 파일로 저장
-    save_to_csv(etf_data)
+    if final_returns_df is not None:
+        output_path = "data/etf_daily_returns_combined.csv"
+        final_returns_df.to_csv(output_path)
+        print("-" * 30)
+        print(f"🚀 통합 완료! 저장 경로: {output_path}")
+        print(final_returns_df.tail()) # 최근 데이터 확인
+    else:
+        print("데이터 통합 실패.")
