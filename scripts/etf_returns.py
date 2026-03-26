@@ -30,10 +30,18 @@ def calculate_returns(etf_symbols):
     for symbol in etf_symbols:
         file_path = os.path.join(data_directory, f"{symbol}_data.csv")  # 각 ETF에 대한 데이터 파일 경로
         if os.path.exists(file_path):
-            # header=2로 수정하여 첫 번째 데이터 행을 읽도록
-            data = pd.read_csv(file_path, index_col="Date", header=2, parse_dates=True)  # 날짜별 데이터 로드
-            data['pct_change'] = data['Close'].pct_change()  # 종가 수익률 계산
-            etf_data[symbol] = data['pct_change'].mean()  # 평균 수익률을 기록
+            # header=0으로 수정하여 첫 번째 데이터 행을 읽도록
+            data = pd.read_csv(file_path, index_col="Date", header=0, parse_dates=True)  # 날짜별 데이터 로드
+            
+            # 데이터의 컬럼명 확인
+            print(f"Columns for {symbol}: {data.columns.tolist()}")
+
+            # 'Close' 컬럼이 있는지 확인 후 수익률 계산
+            if 'Close' in data.columns:
+                data['pct_change'] = data['Close'].pct_change()  # 종가 수익률 계산
+                etf_data[symbol] = data['pct_change'].mean()  # 평균 수익률을 기록
+            else:
+                print(f"Warning: 'Close' column not found in {symbol} data.")
         else:
             print(f"Warning: {file_path} not found.")
     
