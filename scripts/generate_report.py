@@ -908,7 +908,6 @@ def generate_daily_report() -> None:
     df = load_macro_df()
     df = merge_sovereign_spreads_into_macro_df(df)
 
-    # 마지막 행이 아니라 "핵심 5개 지표가 충분히 채워진 마지막 유효 행" 사용
     today_idx = _find_effective_market_idx(
         df,
         core_cols=["US10Y", "DXY", "WTI", "VIX", "USDKRW"],
@@ -929,7 +928,6 @@ def generate_daily_report() -> None:
 
     market_data = build_market_data(df, today_idx)
     
-    
     # -----------------------------
     # 2) Detect stale / market closed
     # -----------------------------
@@ -947,23 +945,10 @@ def generate_daily_report() -> None:
         stale = False
 
     market_data["_STALE"] = stale
-        # -----------------------------
-  
-    # -------------------------
-    # 3) Attach layers (기존 코드 시작)
-    # -------------------------
-    market_data = attach_liquidity_layer(market_data) or market_data
-    # ... (이하 기존 코드 동일)
 
-    # -------------------------
+    # -----------------------------
     # 3) Attach layers (기존 코드 시작)
-    # -------------------------
-    market_data = attach_liquidity_layer(market_data) or market_data
-    # ... (이하 기존 코드 동일)
-
-    # -------------------------
-    # 3) Attach layers
-    # -------------------------
+    # -----------------------------
     market_data = attach_liquidity_layer(market_data) or market_data
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
@@ -988,11 +973,13 @@ def generate_daily_report() -> None:
     # -------------------------
     market_data = apply_geo_overlay_to_final_state(market_data) or market_data
 
-
-    # 이전 코드...
+    # 5) Commentary
     commentary_block = build_strategist_commentary(market_data)
+
     # -------------------------
-    df_fred_extra = load_fred_data_from_csv() # 우리가 ffill() 추가한 그 함수
+    # 6) Fred Data Loading and Injection
+    # -------------------------
+    df_fred_extra = load_fred_data_from_csv()  # 우리가 ffill() 추가한 그 함수
     if not df_fred_extra.empty:
         latest_fred = df_fred_extra.iloc[-1]
         
@@ -1004,8 +991,8 @@ def generate_daily_report() -> None:
         market_data["FINAL_STATE"]["VIX"] = latest_fred.get("VIX", 20.0)
         
         print(f"[DEBUG] Fred Extra Injected: T10Y2Y={market_data['FINAL_STATE']['T10Y2Y']}, VIX={market_data['FINAL_STATE']['VIX']}")
+
     # 5) Top layers
-    # -------------------------
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
     scenario_block = scenario_generator_filter(market_data)
