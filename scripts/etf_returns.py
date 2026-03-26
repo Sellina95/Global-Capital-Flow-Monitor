@@ -1,4 +1,4 @@
-import yfinance as yf
+import os
 import pandas as pd
 
 # ETF 심볼 리스트 (전체)
@@ -24,20 +24,25 @@ etf_symbols = {
 def calculate_returns(etf_symbols):
     etf_data = {}  # ETF별 수익률 데이터를 담을 dictionary
 
-    for symbol, name in etf_symbols.items():
-        # 각 ETF에 대해 데이터 가져오기 (Yahoo Finance에서 다운로드)
-        data = yf.download(symbol, start="2024-01-01", end="2024-12-01")  # 원하는 기간 설정
-        data['pct_change'] = data['Adj Close'].pct_change()  # 조정 종가 수익률 계산
-        
-        # 계산된 수익률을 저장
-        etf_data[symbol] = data['pct_change'].mean()  # 평균 수익률을 기록
+    # 파일 경로 (기존에 다운로드 받은 ETF 파일들이 이 경로에 있어야 한다고 가정)
+    data_directory = 'data/etf_data_files/'  # 기존 데이터가 저장된 폴더
+
+    for symbol in etf_symbols:
+        file_path = os.path.join(data_directory, f"{symbol}_data.csv")  # 각 ETF에 대한 데이터 파일 경로
+        if os.path.exists(file_path):
+            data = pd.read_csv(file_path, index_col="Date", parse_dates=True)  # 날짜별 데이터 로드
+            data['pct_change'] = data['Adj Close'].pct_change()  # 조정 종가 수익률 계산
+            etf_data[symbol] = data['pct_change'].mean()  # 평균 수익률을 기록
+
+        else:
+            print(f"Warning: {file_path} not found.")
     
     return etf_data
 
 def save_to_csv(etf_data):
-    # 계산된 수익률을 CSV로 저장 (덮어쓰기 모드)
+    # 계산된 수익률을 CSV로 저장
     df = pd.DataFrame.from_dict(etf_data, orient='index', columns=['Mean Return'])
-    df.to_csv("data/etf_returns.csv", mode='w', index=False)
+    df.to_csv("data/etf_returns.csv")
     print("ETF 수익률이 'data/etf_returns.csv'에 저장되었습니다.")
 
 if __name__ == "__main__":
