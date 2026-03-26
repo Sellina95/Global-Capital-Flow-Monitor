@@ -2972,36 +2972,39 @@ def factor_layer_filter(market_data: Dict[str, Any]) -> str:
 
 from typing import Dict, Any, List, Tuple, Optional
 
-
 def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     """
     Sector Allocation Engine (v2) - 월가 매크로 지표 반영 통합본
+    - CSV 헤더(T10Y2Y, VIX)와 대소문자 일치화 완료
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
 
-    # 매크로 상태 및 지표 추출
+    # 1. 매크로 상태 및 지표 추출
     phase = str(state.get("phase", "N/A")).upper()
     structure = str(state.get("structure_tag", "MIXED")).upper()
     liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
     liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
     credit_calm = state.get("credit_calm", None)
     
-    # 세연 님이 추가하신 신규 지표 (T10Y2Y, VIX)
-    # 데이터가 없을 경우를 대비해 기본값(0.0, 20.0)을 설정합니다.
-    try:
-        t10y2y = float(state.get("T10Y2Y", 0.0))
-    except (TypeError, ValueError):
-        t10y2y = 0.0
-        
-    try:
-        vix = float(state.get("VIX", 20.0))
-    except (TypeError, ValueError):
-        vix = 20.0
+    # ---------------------------------------------------------
+    # 🔥 [수정 포인트] CSV 헤더(대문자) 우선 추출 및 타입 변환
+    # ---------------------------------------------------------
+    def safe_float(key, default):
+        val = state.get(key)
+        if val is None or val == "": # 빈 문자열 처리
+            return default
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return default
 
-    # --------------------------------------------------
-    # Scoring map (rule-based)
-    # --------------------------------------------------
+    # CSV 헤더가 T10Y2Y, VIX이므로 대문자를 먼저 찾습니다.
+    t10y2y = safe_float("T10Y2Y", safe_float("t10y2y", 0.0))
+    vix = safe_float("VIX", safe_float("vix", 20.0))
+    # ---------------------------------------------------------
+
+    # Scoring map
     sectors = [
         "Technology", "Financials", "Energy", "Industrials", "Materials",
         "Consumer Discretionary", "Consumer Staples", "Health Care",
@@ -3016,9 +3019,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             score[s] += pts
             reasons[s].append(f"{'+' if pts > 0 else ''}{pts}: {why}")
 
-    # -------------------------
     # A) Liquidity rules
-    # -------------------------
     liq_tight = (liq_dir == "DOWN") or (liq_lvl == "LOW")
     liq_easy = (liq_dir == "UP") and (liq_lvl in ("MID", "HIGH"))
 
@@ -3035,9 +3036,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add("Industrials", +2, "유동성 공급 → 생산/투자 활성화")
         add("Financials", +1, "유동성 공급 → 리스크 선호")
 
-    # -------------------------
     # B) Structure rules
-    # -------------------------
     if structure == "TIGHTENING":
         add("Technology", -2, "긴축 → 할인율 상승 부담")
         add("Financials", +2, "긴축 → 금리 환경 우호")
@@ -3046,24 +3045,18 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add("Technology", +2, "완화 → 멀티플 확장")
         add("Real Estate", +1, "완화 → 금리 부담 완화")
 
-    # -------------------------
     # C) Credit rules
-    # -------------------------
     if credit_calm is False:
         add("Financials", -2, "크레딧 불안 → 금융 스트레스")
         add("Consumer Staples", +1, "크레딧 불안 → 방어 섹터 선호")
 
-    # -------------------------
     # D) Phase rules
-    # -------------------------
     if "RISK-OFF" in phase:
         add("Consumer Staples", +2, "리스크오프 → 필수소비 방어")
         add("Health Care", +2, "리스크오프 → 퀄리티 선호")
         add("Technology", -2, "리스크오프 → 베타 축소")
 
-    # -------------------------
-    # E) Macro Sentiment & Curve (야근의 산물! 여기서 점수를 더합니다)
-    # -------------------------
+    # E) Macro Sentiment & Curve (세연 님의 야심작)
     # 1. Yield Curve 반영
     if t10y2y < 0:
         add("Real Estate", -3, "금리 역전 → 침체 우려 및 조달 압박")
@@ -3073,7 +3066,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add("Financials", +3, "스티프닝 → 은행 수익성 개선")
         add("Industrials", +1, "스티프닝 → 경기 회복 기대")
 
-    # 2. VIX 반영
+    # 2. VIX 반영 (진짜 숫자가 들어오면 여기서 점수가 크게 갈립니다!)
     if vix > 25:
         add("Consumer Staples", +3, "VIX 패닉 → 필수소비 방어")
         add("Health Care", +3, "VIX 패닉 → 헬스케어 도피")
@@ -3082,7 +3075,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add("Technology", +2, "VIX 안정 → 리스크 온")
 
     # --------------------------------------------------
-    # Pick Over/Under (모든 점수가 합산된 후 랭킹 산정)
+    # Pick Over/Under
     # --------------------------------------------------
     ranked = sorted(sectors, key=lambda s: score[s], reverse=True)
     over = [s for s in ranked if score[s] > 0][:3]
@@ -3091,16 +3084,12 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     if not over: over = ranked[:2]
     if not under: under = list(reversed(ranked))[:2]
 
-    # 결과 데이터 저장 (딕셔너리 형태)
+    # 데이터 저장
     market_data["SECTOR_TILT"] = {
         "overweight": over,
         "underweight": under,
         "scores": score,
-        "context": {
-            "phase": phase,
-            "T10Y2Y": t10y2y,
-            "VIX": vix
-        }
+        "context": {"phase": phase, "T10Y2Y": t10y2y, "VIX": vix}
     }
 
     # --------------------------------------------------
@@ -3109,7 +3098,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     def fmt_list(xs: List[str]) -> str:
         return ", ".join(xs) if xs else "None"
 
-    context_line = f"phase={phase} / T10Y2Y={t10y2y:.2f} / VIX={vix:.1f} / credit={credit_calm}"
+    # Context 라인에 진짜 숫자가 찍히도록 변수 연결 확인
+    context_line = f"phase={phase} / T10Y2Y={t10y2y:.2f} / VIX={vix:.2f} / credit={credit_calm}"
 
     lines = []
     lines.append("### 🏭 18) Sector Allocation Engine (v2)")
@@ -3117,17 +3107,15 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Overweight:** **{fmt_list(over)}**")
     lines.append(f"- **Underweight:** **{fmt_list(under)}**")
     lines.append("")
-
     lines.append("- **Rationale (top drivers):**")
+    
     for s in over:
-        # reasons[s][0]이 문자열인지 확인하며 추가
         top = str(reasons[s][0]) if reasons[s] else "매크로 우호적 환경"
         lines.append(f"  - OW {s}: {top}")
     for s in under:
         top = str(reasons[s][0]) if reasons[s] else "매크로 불확실성 증대"
         lines.append(f"  - UW {s}: {top}")
 
-    # 최종적으로 "문자열"을 리턴합니다.
     return "\n".join(lines)
 
 
