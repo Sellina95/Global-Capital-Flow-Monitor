@@ -3125,6 +3125,33 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             "credit_calm": credit_calm,
         }
     }
+    
+    # -------------------------
+    # E) Macro Sentiment & Curve
+    # -------------------------
+    # 금리 역전 및 VIX 반영
+    t10y2y = state.get("T10Y2Y", 0.0)
+    vix = state.get("VIX", 20.0)
+
+    # 1. Yield Curve (장단기 금리차)
+    if t10y2y < 0:
+        add("Real Estate", -3, "금리 역전 → 자금조달 압박 및 침체 우려")
+        add("Financials", -2, "금리 역전 → 예대마진 압박")
+        add("Health Care", +2, "금리 역전 → 침체 대비 방어주 선호")
+    elif t10y2y > 0.5:
+        add("Financials", +3, "커브 스티프닝 → 은행 수익성 개선 기대")
+        add("Industrials", +1, "커브 스티프닝 → 경기 회복 시그널")
+
+    # 2. VIX (시장 공포)
+    if vix > 25:
+        add("Consumer Staples", +3, "VIX 급등 → 극도의 공포, 방어주 도피")
+        add("Health Care", +3, "VIX 급등 → 퀄리티/방어 섹터 집중")
+        add("Technology", -3, "VIX 급등 → 고베타 자산 투매")
+    elif vix < 15:
+        add("Technology", +2, "VIX 안정 → 위험선호(Risk-On) 확대")
+        add("Consumer Discretionary", +2, "VIX 안정 → 소비 심리 회복 우호")
+
+    return market_data
 
     # --------------------------------------------------
     # Output block
