@@ -2971,89 +2971,113 @@ def factor_layer_filter(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)    
 
 from typing import Dict, Any, List, Tuple, Optional
-
 def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     """
-    Sector Allocation Engine (v2) - 월가 매크로 지표 반영 통합본
-    - [해결] CSV 헤더(T10Y2Y, VIX)와 대소문자 일치화 및 주입 데이터 우선 참조
+    [최종 완결판] 매크로 주입 데이터(T10Y2Y, VIX)와 섹터 배분 로직 통합본
     """
-
-    # 1. 매크로 상태 및 지표 추출
-    # market_data["FINAL_STATE"]가 없을 경우를 대비해 get()으로 안전하게 가져옵니다.
+    # 1. 데이터 추출 (FINAL_STATE 우선, 없으면 상위 노드 탐색)
     state = market_data.get("FINAL_STATE", {}) or {}
+    
+    def fetch_val(key, default):
+        # 1순위: 우리가 주입한 대문자 KEY
+        val = state.get(key.upper())
+        # 2순위: 혹시 모를 소문자 KEY
+        if val is None: val = state.get(key.lower())
+        # 3순위: market_data 최상위 노드의 'today' 값 (기본 매크로 DF용)
+        if val is None:
+            node = market_data.get(key.upper(), {})
+            if isinstance(node, dict): val = node.get("today")
+        
+        try:
+            return float(val) if val is not None else default
+        except:
+            return default
 
+    # 핵심 변수 확정
+    t10y2y = fetch_val("T10Y2Y", 0.0)
+    vix = fetch_val("VIX", 20.0)
     phase = str(state.get("phase", "N/A")).upper()
-    structure = str(state.get("structure_tag", "MIXED")).upper()
     liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
     liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
-    credit_calm = state.get("credit_calm", None)
-    
-    # ---------------------------------------------------------
-    # 🔥 [수정 핵심] 주입된 대문자 KEY(T10Y2Y, VIX)를 최우선으로 읽음
-    # ---------------------------------------------------------
-    def safe_float(key, default):
-        val = state.get(key)
-        if val is None or str(val).strip() == "":
-            return default
-        try:
-            return float(val)
-        except (ValueError, TypeError):
-            return default
+    credit_calm = state.get("credit_calm", True)
 
-    # 1순위: 대문자(CSV 주입값), 2순위: 소문자(기존값), 3순위: 기본값
-    t10y2y = safe_float("T10Y2Y", safe_float("t10y2y", 0.0))
-    vix = safe_float("VIX", safe_float("vix", 20.0))
-    
-    # ---------------------------------------------------------
-
-    # Scoring map 초기화
+    # 2. 섹터 리스트 및 스코어링 초기화
     sectors = [
         "Technology", "Financials", "Energy", "Industrials", "Materials",
         "Consumer Discretionary", "Consumer Staples", "Health Care",
         "Utilities", "Real Estate", "Communication Services"
     ]
-
     score = {s: 0 for s in sectors}
     reasons = {s: [] for s in sectors}
 
-    def add(s: str, pts: int, why: str):
+    def add_score(s: str, pts: int, why: str):
         if s in score:
             score[s] += pts
             reasons[s].append(f"{'+' if pts > 0 else ''}{pts}: {why}")
 
-    # A) Liquidity rules (기존 로직 유지)
+    # ---------------------------------------------------------
+    # 3. 계산 로직 (Logic Core)
+    # ---------------------------------------------------------
+    
+    # A) 유동성 환경 (Liquidity)
     liq_tight = (liq_dir == "DOWN") or (liq_lvl == "LOW")
-    liq_easy = (liq_dir == "UP") and (liq_lvl in ("MID", "HIGH"))
-
     if liq_tight:
-        add("Consumer Staples", 3, "유동성 흡수 → 방어/필수소비 선호")
-        add("Health Care", 3, "유동성 흡수 → 현금흐름 안정 섹터 선호")
-        add("Technology", -3, "유동성 흡수 → 고베타 부담")
-        add("Real Estate", -2, "유동성 흡수 → 레버리지 부담")
-        add("Consumer Discretionary", -2, "유동성 흡수 → 소비 압박")
+        add_score("Consumer Staples", 3, "유동성 긴축 → 방어적 필수소비 선호")
+        add_score("Health Care", 3, "유동성 긴축 → 안정적 현금흐름 선호")
+        add_score("Technology", -3, "유동성 긴축 → 고밸류에이션 부담")
+        add_score("Real Estate", -2, "유동성 긴축 → 조달비용 상승 부담")
 
-    # B) Yield Curve / VIX Overlay 로직 (t10y2y, vix 변수 사용)
-    if t10y2y < 0: # 장단기 금리차 역전 시
-        add("Financials", -2, f"수익률 곡선 역전({t10y2y:.2f}) → 예대마진 압박")
-    
-    if vix > 25: # 공포 지수 급등 시
-        add("Utilities", 2, f"VIX 패닉({vix:.2f}) → 극강의 방어주 선호")
-        add("Technology", -2, f"VIX 패닉({vix:.2f}) → 리스크 오프")
+    # B) 수익률 곡선 (Yield Curve - T10Y2Y)
+    if t10y2y < 0:
+        add_score("Financials", -3, f"장단기 금리차 역전({t10y2y:.2f}) → 은행 수익성 악화")
+        add_score("Utilities", 2, "경기 침체 우려 → 고배당 방어주 메리트")
+    elif t10y2y > 0.5:
+        add_score("Financials", 2, f"수익률 곡선 가파름({t10y2y:.2f}) → 예대마진 개선")
 
-    # (이후 기존의 OW/UW 리포트 생성 로직이 이어짐...)
+    # C) 공포 지수 (Volatility - VIX)
+    if vix > 25:
+        add_score("Utilities", 3, f"시장 공포 확산(VIX {vix:.1f}) → 최우선 피난처")
+        add_score("Consumer Staples", 2, f"VIX {vix:.1f} → 경기 비탄력적 섹터 선호")
+        add_score("Technology", -3, f"VIX {vix:.1f} → 위험자산 회피")
+    elif vix < 15:
+        add_score("Technology", 2, f"시장 안도(VIX {vix:.1f}) → 성장주 베팅 유효")
+
+    # D) 신용 스프레드 (Credit)
+    if not credit_calm:
+        add_score("Financials", -2, "크레딧 리스크 감지 → 금융주 변동성 확대")
+        add_score("Real Estate", -3, "크레딧 리스크 감지 → 부동산 금융 위축")
+
+    # ---------------------------------------------------------
+    # 4. 리포트 텍스트 생성 (Assembly)
+    # ---------------------------------------------------------
+    ow = [s for s in sectors if score[s] > 0]
+    uw = [s for s in sectors if score[s] < 0]
     
-    # 리포트 헤더 생성
-    header = [
-        "### 🏭 18) Sector Allocation Engine (v2)",
-        "",
-        f"**Context:** phase={phase} / T10Y2Y={t10y2y:.2f} / VIX={vix:.2f} / credit={credit_calm}",
-        ""
-    ]
+    # 점수가 높은 순으로 정렬하여 가독성 향상
+    ow_sorted = sorted(ow, key=lambda x: score[x], reverse=True)
+    uw_sorted = sorted(uw, key=lambda x: score[x])
+
+    lines = []
+    lines.append("### 🏭 18) Sector Allocation Engine (v2)")
+    lines.append("")
+    lines.append(f"**Context:** phase={phase} / T10Y2Y={t10y2y:.2f} / VIX={vix:.2f} / credit={credit_calm}")
+    lines.append("")
+    lines.append(f"**Overweight:** {', '.join(ow_sorted) if ow_sorted else 'None'}")
+    lines.append(f"**Underweight:** {', '.join(uw_sorted) if uw_sorted else 'None'}")
+    lines.append("")
+    lines.append("**Rationale (top drivers):**")
     
-    # 나머지 리스트 생성 및 리턴 (생략된 기존 출력부 결합)
-    # ... (생략) ...
+    # 주요 근거 출력 (중요도 순)
+    all_reasons = []
+    for s in sectors:
+        for r in reasons[s]:
+            all_reasons.append(f"OW {s}: {r}" if score[s] > 0 else f"UW {s}: {r}")
     
-    return "\n".join(header) # 실제로는 전체 리포트 텍스트 리턴
+    # 상위 6개 근거만 노출 (너무 길어지지 않게)
+    for r_line in all_reasons[:6]:
+        lines.append(f"- {r_line}")
+
+    return "\n".join(lines)
 
 
 # filters/execution_layer.py
