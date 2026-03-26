@@ -80,6 +80,11 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_sovereign_spreads.py --days 400
+             
+      - name: Download and process FRED data
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/fred_data_fetcher.py
 
       # ✅ macro_data.csv schema 정리 (ragged 방지)
       - name: Repair macro_data.csv schema (prevent ragged CSV)
