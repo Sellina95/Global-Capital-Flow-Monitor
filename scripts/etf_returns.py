@@ -29,7 +29,10 @@ def calculate_returns(etf_symbols):
 
     for symbol in etf_symbols:
         file_path = os.path.join(data_directory, f"{symbol}_data.csv")  # 경로 수정
-        
+            print(f"Data for {symbol} loaded successfully.")
+            
+            # 데이터의 컬럼 확인 (디버깅 용)
+            print(f"Columns in {symbol}: {data.columns}")
         # 파일이 존재하는지 확인
         if os.path.exists(file_path):
             data = pd.read_csv(file_path, index_col="Date", parse_dates=True)  # 파일 읽기
