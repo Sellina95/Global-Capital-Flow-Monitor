@@ -953,23 +953,6 @@ def generate_daily_report() -> None:
     # 4) FINAL_STATE 이후 overlay / RAROC 먼저 반영
     # -------------------------
     market_data = apply_geo_overlay_to_final_state(market_data) or market_data
-
-    # TODO: 아래 두 값은 임시 예시값
-    # 나중에 실제 portfolio return / capital(or RWA) 로 교체
-    risk_adjusted_return = 0.05
-    capital = 1000
-
-    market_data["risk_adjusted_return"] = risk_adjusted_return
-    market_data["capital"] = capital
-    market_data["RAROC"] = calculate_raroc(risk_adjusted_return, capital)
-
-    print("[DEBUG] market_data (after adding RAROC):", market_data)
-    
-    print(f"[DEBUG] market_data before build_strategist_commentary: {market_data}")
-    portfolio_return = calculate_portfolio_return()
-
-    # 포트폴리오 수익률을 리포트에 출력
-    print(f"Portfolio Return (with random weights): {portfolio_return:.2f}%")
     
     # 이전 코드...
     commentary_block = build_strategist_commentary(market_data)
