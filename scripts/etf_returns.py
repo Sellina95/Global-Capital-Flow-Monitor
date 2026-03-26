@@ -22,7 +22,6 @@ etf_symbols = {
 }
 
 def calculate_returns(etf_symbols):
-    # 수익률 계산을 위한 데이터 가져오기
     etf_data = {}  # ETF별 수익률 데이터를 담을 dictionary
 
     for symbol, name in etf_symbols.items():
@@ -36,9 +35,9 @@ def calculate_returns(etf_symbols):
     return etf_data
 
 def save_to_csv(etf_data):
-    # 계산된 수익률을 CSV로 저장
+    # 계산된 수익률을 CSV로 저장 (덮어쓰기 모드)
     df = pd.DataFrame.from_dict(etf_data, orient='index', columns=['Mean Return'])
-    df.to_csv("data/etf_returns.csv")
+    df.to_csv("data/etf_returns.csv", mode='w', index=False)
     print("ETF 수익률이 'data/etf_returns.csv'에 저장되었습니다.")
 
 if __name__ == "__main__":
