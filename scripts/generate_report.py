@@ -987,7 +987,11 @@ def generate_daily_report() -> None:
     # 4) FINAL_STATE 이후 overlay / RAROC 먼저 반영
     # -------------------------
     market_data = apply_geo_overlay_to_final_state(market_data) or market_data
-    
+
+
+    # 이전 코드...
+    commentary_block = build_strategist_commentary(market_data)
+    # -------------------------
     df_fred_extra = load_fred_data_from_csv() # 우리가 ffill() 추가한 그 함수
     if not df_fred_extra.empty:
         latest_fred = df_fred_extra.iloc[-1]
@@ -1000,10 +1004,6 @@ def generate_daily_report() -> None:
         market_data["FINAL_STATE"]["VIX"] = latest_fred.get("VIX", 20.0)
         
         print(f"[DEBUG] Fred Extra Injected: T10Y2Y={market_data['FINAL_STATE']['T10Y2Y']}, VIX={market_data['FINAL_STATE']['VIX']}")
-
-    # 이전 코드...
-    commentary_block = build_strategist_commentary(market_data)
-    # -------------------------
     # 5) Top layers
     # -------------------------
     exec_block = executive_summary_filter(market_data)
