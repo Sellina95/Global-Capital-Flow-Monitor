@@ -43,6 +43,9 @@ def save_to_csv(etf_data):
     # 계산된 수익률을 CSV로 저장
     df = pd.DataFrame.from_dict(etf_data, orient='index', columns=['Mean Return'])
     df.to_csv("data/etf_returns.csv")
+    
+    # 파일 내용 확인 (첫 5줄 출력)
+    print(df.head())
     print("ETF 수익률이 'data/etf_returns.csv'에 저장되었습니다.")
 
 if __name__ == "__main__":
