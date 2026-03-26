@@ -30,8 +30,14 @@ def calculate_returns(etf_symbols):
     for symbol in etf_symbols:
         file_path = os.path.join(data_directory, f"{symbol}_data.csv")  # 각 ETF에 대한 데이터 파일 경로
         if os.path.exists(file_path):
-            # header=0으로 수정하여 첫 번째 데이터 행을 읽도록
             print(f"Loading data for {symbol} from {file_path}")
+            # 파일 경로와 파일의 첫 5줄을 출력하여 경로와 파일을 확인
+            with open(file_path, 'r') as f:
+                lines = f.readlines()
+                print(f"First few lines of {file_path}:")
+                print("".join(lines[:5]))  # 첫 5줄만 출력
+
+            # header=0으로 수정하여 첫 번째 데이터 행을 읽도록
             data = pd.read_csv(file_path, index_col="Date", header=0, parse_dates=True)  # 날짜별 데이터 로드
             
             # 데이터의 컬럼명 확인
