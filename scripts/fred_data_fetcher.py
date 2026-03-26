@@ -1,38 +1,55 @@
 import pandas as pd
-from fredapi import Fred
+from datetime import datetime
 
-# FRED API 키 설정
-API_KEY = 'your_fred_api_key'  # FRED에서 API 키를 발급받아 입력하세요
-fred = Fred(api_key=API_KEY)
+# 날짜 범위 설정
+START_DATE = "2022-01-01"
+END_DATE = datetime.today().strftime("%Y-%m-%d")
 
-# FRED에서 필요한 데이터 가져오기
-def get_fred_data():
-    # T10Y2Y: 10년물과 2년물 금리 차이 (Yield Curve)
-    t10y2y = fred.get_series('T10Y2Y')
+# FRED CSV 다운로드 URL
+FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
 
-    # T10YIE: 10년 기대 인플레이션 (10-year breakeven inflation rate)
-    t10yie = fred.get_series('T10YIE')
+# FRED 시리즈 코드들 (사용할 시리즈)
+FRED_SERIES = {
+    "T10Y2Y": "T10Y2Y",  # 10Y - 2Y Yield Curve Spread
+    "T10YIE": "T10YIE",  # 10Y Breakeven Inflation Rate
+    "VIX": "VIXCLS"      # VIX (Volatility Index)
+}
 
-    # VIXCLS: VIX 지수 (Volatility Index)
-    vix = fred.get_series('VIXCLS')
+# FRED 시리즈 CSV 파일 다운로드 함수
+def download_fred_csv_series(series_code: str) -> pd.DataFrame:
+    url = FRED_CSV + series_code
+    df = pd.read_csv(url)
 
-    # 데이터 병합
-    data = pd.DataFrame({
-        'T10Y2Y': t10y2y,
-        'T10YIE': t10yie,
-        'VIX': vix
-    })
+    df.columns = ["date", series_code]
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"])
+    df[series_code] = pd.to_numeric(df[series_code], errors="coerce")
 
-    # 데이터 확인 (마지막 5행 출력)
-    print(data.tail())
+    return df
 
-    return data
+# 날짜 인덱스 생성 (2022년 1월 1일부터 오늘까지)
+full_index = pd.date_range(start=START_DATE, end=END_DATE, freq="D")
 
-# FRED 데이터를 가져오고 CSV로 저장
-def save_fred_data_to_csv():
-    data = get_fred_data()
-    data.to_csv('data/fred_data.csv', index=True)  # 저장 경로 지정
-    print("FRED 데이터가 'data/fred_data.csv'에 저장되었습니다.")
+# 최종 데이터 프레임 생성
+out_df = pd.DataFrame(index=full_index)
 
-if __name__ == "__main__":
-    save_fred_data_to_csv()
+# 각 FRED 시리즈에 대해 데이터를 다운로드하고, 데이터 프레임에 병합
+for col, fred_code in FRED_SERIES.items():
+    try:
+        # FRED 시리즈 다운로드
+        df = download_fred_csv_series(fred_code)
+        df = df[(df["date"] >= START_DATE) & (df["date"] <= END_DATE)]  # 날짜 범위 필터링
+        df = df.set_index("date")
+        out_df[col] = df[fred_code].reindex(full_index)  # 날짜 인덱스에 맞춰 재정렬
+        print(f"[OK] FRED - {col}")
+    except Exception as e:
+        out_df[col] = pd.NA  # 에러 발생 시 NA로 처리
+        print(f"[ERROR] FRED - {col}: {e}")
+
+# 데이터 프레임을 'date' 컬럼을 포함한 CSV로 저장
+out_df = out_df.reset_index().rename(columns={"index": "date"})
+out_df["date"] = out_df["date"].dt.strftime("%Y-%m-%d")  # 날짜 형식 변환
+
+# CSV 파일로 저장
+out_df.to_csv("data/fred_macro_sctorallo.csv", index=False, encoding="utf-8-sig")
+print("Saved: data/fred_macro_sctorallo.csv")
