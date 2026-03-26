@@ -27,7 +27,7 @@ def calculate_returns(etf_symbols):
 
     for symbol, name in etf_symbols.items():
         # 각 ETF에 대해 데이터 가져오기 (Yahoo Finance에서 다운로드)
-        data = yf.download(symbol, start="2021-01-01", end="2022-01-01")  # 원하는 기간 설정
+        data = yf.download(symbol, start="2024-01-01", end="2024-12-01")  # 원하는 기간 설정
         data['pct_change'] = data['Adj Close'].pct_change()  # 조정 종가 수익률 계산
         
         # 계산된 수익률을 저장
