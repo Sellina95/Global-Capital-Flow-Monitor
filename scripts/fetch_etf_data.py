@@ -1,8 +1,9 @@
+# 기존 코드 예시
 import yfinance as yf
-import os
 import pandas as pd
+import os
 
-# ETF 목록 및 기호
+# etf_symbols 딕셔너리 추가
 etf_symbols = {
     "BND": "Vanguard Total Bond Market ETF",
     "EEM": "iShares MSCI Emerging Markets ETF",
@@ -22,17 +23,27 @@ etf_symbols = {
     "MTUM": "iShares MSCI USA Momentum Factor ETF"
 }
 
-def download_etf_data(symbols: dict, start_date="2010-01-01", end_date="2026-01-01"):
-    data = {}
-    for ticker, name in symbols.items():
-        print(f"[INFO] Downloading {name} data...")
-        etf_data = yf.download(ticker, start=start_date, end=end_date)
-        data[ticker] = etf_data
-        # 저장 경로 설정
-        file_path = f"data/{ticker}_data.csv"
-        etf_data.to_csv(file_path)
-        print(f"[INFO] {ticker} data saved to {file_path}")
-    return data
+# 티커에 대한 데이터를 Yahoo Finance에서 다운로드하여 CSV로 저장
+def fetch_etf_data():
+    etf_data = {}
+    
+    for ticker, name in etf_symbols.items():
+        print(f"Downloading data for {name} ({ticker})...")
+        data = yf.download(ticker, period="1y", progress=False)
+        data['Ticker'] = ticker  # 티커 정보 추가
+        etf_data[ticker] = data
 
+    return etf_data
+
+def save_etf_data_to_csv(etf_data):
+    # 데이터를 data/etf_data.csv로 저장
+    if not os.path.exists("data"):
+        os.makedirs("data")
+    
+    for ticker, data in etf_data.items():
+        data.to_csv(f"data/{ticker}_data.csv")  # 각 ETF를 개별 CSV로 저장
+
+# 메인 함수 실행
 if __name__ == "__main__":
-    download_etf_data(etf_symbols)
+    etf_data = fetch_etf_data()  # ETF 데이터 다운로드
+    save_etf_data_to_csv(etf_data)  # 데이터 저장
