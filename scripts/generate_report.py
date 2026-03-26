@@ -949,7 +949,37 @@ def generate_daily_report() -> None:
     market_data["_STALE"] = stale
         # -----------------------------
    
-    
+        # -------------------------
+    # 2.5) 추가 매크로 데이터 주입 (T10Y2Y, VIX ffill 버전)
+    # -------------------------
+        # -------------------------
+    # 2.5) 추가 매크로 데이터 주입 (T10Y2Y, VIX ffill 버전)
+    # -------------------------
+    df_fred_extra = load_fred_data_from_csv() # 우리가 ffill() 추가한 그 함수
+    if not df_fred_extra.empty:
+        latest_fred = df_fred_extra.iloc[-1]
+        
+        # market_data 내의 FINAL_STATE 바구니를 찾아서 직접 꽂아줍니다.
+        if "FINAL_STATE" not in market_data:
+            market_data["FINAL_STATE"] = {}
+            
+        market_data["FINAL_STATE"]["T10Y2Y"] = latest_fred.get("T10Y2Y", 0.0)
+        market_data["FINAL_STATE"]["VIX"] = latest_fred.get("VIX", 20.0)
+        
+        print(f"[DEBUG] Fred Extra Injected: T10Y2Y={market_data['FINAL_STATE']['T10Y2Y']}, VIX={market_data['FINAL_STATE']['VIX']}")
+
+    # -------------------------
+    # 3) Attach layers (기존 코드 시작)
+    # -------------------------
+    market_data = attach_liquidity_layer(market_data) or market_data
+    # ... (이하 기존 코드 동일)
+
+    # -------------------------
+    # 3) Attach layers (기존 코드 시작)
+    # -------------------------
+    market_data = attach_liquidity_layer(market_data) or market_data
+    # ... (이하 기존 코드 동일)
+
     # -------------------------
     # 3) Attach layers
     # -------------------------
