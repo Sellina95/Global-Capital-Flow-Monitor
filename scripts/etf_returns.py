@@ -24,29 +24,26 @@ etf_symbols = {
 def calculate_returns(etf_symbols):
     etf_data = {}  # ETF별 수익률 데이터를 담을 dictionary
 
-    # 데이터 폴더 경로 설정 (data 폴더 안에 파일들이 있다는 가정)
-    data_directory = 'data/'  # 수정된 경로: data 폴더 안에 있는 각 ETF 파일들
+    # 파일 경로 (기존에 다운로드 받은 ETF 파일들이 이 경로에 있어야 한다고 가정)
+    data_directory = 'data/etf_data_files/'  # 기존 데이터가 저장된 폴더
 
     for symbol in etf_symbols:
-        file_path = os.path.join(data_directory, f"{symbol}_data.csv")  # 경로 수정
-            print(f"Data for {symbol} loaded successfully.")
-            
-            # 데이터의 컬럼 확인 (디버깅 용)
-            print(f"Columns in {symbol}: {data.columns}")
-        # 파일이 존재하는지 확인
+        file_path = os.path.join(data_directory, f"{symbol}_data.csv")  # 각 ETF에 대한 데이터 파일 경로
         if os.path.exists(file_path):
-            data = pd.read_csv(file_path, index_col="Date", parse_dates=True)  # 파일 읽기
-            data['pct_change'] = data['Adj Close'].pct_change()  # 수익률 계산
-            etf_data[symbol] = data['pct_change'].mean()  # 평균 수익률 기록
+            # header=1로 두 번째 줄을 헤더로 사용
+            data = pd.read_csv(file_path, index_col="Date", header=1, parse_dates=True)  # 날짜별 데이터 로드
+            data['pct_change'] = data['Close'].pct_change()  # Close 가격을 기준으로 수익률 계산
+            etf_data[symbol] = data['pct_change'].mean()  # 평균 수익률을 기록
+
         else:
-            print(f"Warning: {file_path} not found.")  # 파일이 없을 경우 경고 메시지
+            print(f"Warning: {file_path} not found.")
     
     return etf_data
 
 def save_to_csv(etf_data):
     # 계산된 수익률을 CSV로 저장
     df = pd.DataFrame.from_dict(etf_data, orient='index', columns=['Mean Return'])
-    df.to_csv("data/etf_returns.csv")  # 수정된 경로로 저장
+    df.to_csv("data/etf_returns.csv")
     
     # 파일 내용 확인 (첫 5줄 출력)
     print(df.head())
