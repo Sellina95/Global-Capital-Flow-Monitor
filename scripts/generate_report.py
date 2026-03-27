@@ -976,14 +976,22 @@ def generate_daily_report() -> None:
         # -------------------------
     # 4.5) Inject FRED sector-allocation extras
     # -------------------------
+    # -------------------------
+    # 4.5) Inject FRED sector-allocation extras
+    # -------------------------
     df_fred_extra = load_fred_data_from_csv()
-        # FINAL_STATE에도 넣기
+
+    if not df_fred_extra.empty:
+        latest_fred = df_fred_extra.iloc[-1]
+
+        # FINAL_STATE 바구니 없으면 생성
         if "FINAL_STATE" not in market_data:
             market_data["FINAL_STATE"] = {}
 
+        # 18번 필터용 매크로 지표 주입
         market_data["FINAL_STATE"]["T10Y2Y"] = latest_fred.get("T10Y2Y", 0.0)
         market_data["FINAL_STATE"]["T10YIE"] = latest_fred.get("T10YIE", 0.0)
-        market_data["FINAL_STATE"]["VIX"] = latest_fred.get("VIX", market_data.get("VIX", 20.0))
+        market_data["FINAL_STATE"]["VIX"] = latest_fred.get("VIX", 20.0)
 
         print(
             "[DEBUG] Fred Extra Injected:",
