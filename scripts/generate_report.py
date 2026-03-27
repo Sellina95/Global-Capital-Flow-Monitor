@@ -983,7 +983,7 @@ def generate_daily_report() -> None:
     # -------------------------
     # 4) FINAL_STATE 이후 overlay / RAROC 먼저 반영
     # -------------------------
-        market_data = apply_geo_overlay_to_final_state(market_data) or market_data
+    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
 
     # -------------------------
     # 4.5) Inject FRED sector-allocation extras
