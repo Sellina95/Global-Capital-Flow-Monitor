@@ -2971,28 +2971,31 @@ def factor_layer_filter(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)    
 
 from typing import Dict, Any, List, Tuple, Optional
+
 def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     """
     [최종 완결판] 매크로 주입 데이터(T10Y2Y, VIX)와 섹터 배분 로직 통합본
     """
     # 1. 데이터 추출 (FINAL_STATE 우선, 없으면 상위 노드 탐색)
-    print("[DEBUG][18] FINAL_STATE:", state)
-    print("[DEBUG][18] fetched:", f"T10Y2Y={t10y2y}, VIX={vix}, credit_calm={credit_calm}")
     state = market_data.get("FINAL_STATE", {}) or {}
-    
+
     def fetch_val(key, default):
-        # 1순위: 우리가 주입한 대문자 KEY
+        # 1순위: FINAL_STATE의 대문자 KEY
         val = state.get(key.upper())
-        # 2순위: 혹시 모를 소문자 KEY
-        if val is None: val = state.get(key.lower())
-        # 3순위: market_data 최상위 노드의 'today' 값 (기본 매크로 DF용)
+
+        # 2순위: FINAL_STATE의 소문자 KEY
+        if val is None:
+            val = state.get(key.lower())
+
+        # 3순위: market_data 최상위 노드 dict의 today 값
         if val is None:
             node = market_data.get(key.upper(), {})
-            if isinstance(node, dict): val = node.get("today")
-        
+            if isinstance(node, dict):
+                val = node.get("today")
+
         try:
             return float(val) if val is not None else default
-        except:
+        except Exception:
             return default
 
     # 핵심 변수 확정
@@ -3002,6 +3005,10 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
     liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
     credit_calm = state.get("credit_calm", True)
+
+    # DEBUG는 여기서 찍어야 함
+    print("[DEBUG][18] FINAL_STATE:", state)
+    print("[DEBUG][18] fetched:", f"T10Y2Y={t10y2y}, VIX={vix}, credit_calm={credit_calm}")
 
     # 2. 섹터 리스트 및 스코어링 초기화
     sectors = [
