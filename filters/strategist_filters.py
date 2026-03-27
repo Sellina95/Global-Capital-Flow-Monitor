@@ -2976,6 +2976,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     [최종 완결판] 매크로 주입 데이터(T10Y2Y, VIX)와 섹터 배분 로직 통합본
     """
     # 1. 데이터 추출 (FINAL_STATE 우선, 없으면 상위 노드 탐색)
+    print("[DEBUG][18] FINAL_STATE:", state)
+    print("[DEBUG][18] fetched:", f"T10Y2Y={t10y2y}, VIX={vix}, credit_calm={credit_calm}")
     state = market_data.get("FINAL_STATE", {}) or {}
     
     def fetch_val(key, default):
