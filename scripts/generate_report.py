@@ -983,8 +983,7 @@ def generate_daily_report() -> None:
     # -------------------------
     # 4) FINAL_STATE 이후 overlay / RAROC 먼저 반영
     # -------------------------
-    
-    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
+        market_data = apply_geo_overlay_to_final_state(market_data) or market_data
 
     # -------------------------
     # 4.5) Inject FRED sector-allocation extras
@@ -994,29 +993,22 @@ def generate_daily_report() -> None:
     if not df_fred_extra.empty:
         latest_fred = df_fred_extra.iloc[-1]
 
-        if "FINAL_STATE" not in market_data:
-            market_data["FINAL_STATE"] = {}
+        market_data["_FRED_EXTRA"] = {
+            "T10Y2Y": float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0,
+            "T10YIE": float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0,
+            "VIX": float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else 20.0,
+        }
 
-        market_data["FINAL_STATE"]["T10Y2Y"] = float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0
-        market_data["FINAL_STATE"]["T10YIE"] = float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0
-        market_data["FINAL_STATE"]["VIX"] = float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else 20.0
-
-        print(
-            "[DEBUG] Fred Extra Injected:",
-            f"T10Y2Y={market_data['FINAL_STATE']['T10Y2Y']},",
-            f"T10YIE={market_data['FINAL_STATE']['T10YIE']},",
-            f"VIX={market_data['FINAL_STATE']['VIX']}"
-        )
+        print("[DEBUG] Fred Extra Saved:", market_data["_FRED_EXTRA"])
+        print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
     else:
-        print("[DEBUG] Fred Extra Injected: skipped (empty fred df)")
-    
+        print("[DEBUG] Fred Extra Saved: skipped (empty fred df)")
     
     print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
     commentary_block = build_strategist_commentary(market_data)
     # -------------------------
     # 6) Fred Data Loading and Injection
     # -------------------------
-    
 
     # 5) Top layers
     exec_block = executive_summary_filter(market_data)
