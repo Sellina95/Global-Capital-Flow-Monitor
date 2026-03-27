@@ -972,25 +972,43 @@ def generate_daily_report() -> None:
     # 4) FINAL_STATE 이후 overlay / RAROC 먼저 반영
     # -------------------------
     market_data = apply_geo_overlay_to_final_state(market_data) or market_data
+    
+        # -------------------------
+    # 4.5) Inject FRED sector-allocation extras
+    # -------------------------
+    df_fred_extra = load_fred_data_from_csv()
 
+    if not df_fred_extra.empty:
+        latest_fred = df_fred_extra.iloc[-1]
+
+        # market_data top-level에도 넣기
+        market_data["T10Y2Y"] = latest_fred.get("T10Y2Y", 0.0)
+        market_data["T10YIE"] = latest_fred.get("T10YIE", 0.0)
+        market_data["VIX"] = latest_fred.get("VIX", market_data.get("VIX", 20.0))
+
+        # FINAL_STATE에도 넣기
+        if "FINAL_STATE" not in market_data:
+            market_data["FINAL_STATE"] = {}
+
+        market_data["FINAL_STATE"]["T10Y2Y"] = latest_fred.get("T10Y2Y", 0.0)
+        market_data["FINAL_STATE"]["T10YIE"] = latest_fred.get("T10YIE", 0.0)
+        market_data["FINAL_STATE"]["VIX"] = latest_fred.get("VIX", market_data.get("VIX", 20.0))
+
+        print(
+            "[DEBUG] Fred Extra Injected:",
+            f"T10Y2Y={market_data['FINAL_STATE']['T10Y2Y']},",
+            f"T10YIE={market_data['FINAL_STATE']['T10YIE']},",
+            f"VIX={market_data['FINAL_STATE']['VIX']}"
+        )
+    else:
+        print("[DEBUG] Fred Extra Injected: skipped (empty fred df)")
     # 5) Commentary
     commentary_block = build_strategist_commentary(market_data)
 
     # -------------------------
     # 6) Fred Data Loading and Injection
     # -------------------------
-    df_fred_extra = load_fred_data_from_csv()  # 우리가 ffill() 추가한 그 함수
-    if not df_fred_extra.empty:
-        latest_fred = df_fred_extra.iloc[-1]
-        
-        # market_data 내의 FINAL_STATE 바구니를 찾아서 직접 꽂아줍니다.
-        if "FINAL_STATE" not in market_data:
-            market_data["FINAL_STATE"] = {}
-            
-        market_data["FINAL_STATE"]["T10Y2Y"] = latest_fred.get("T10Y2Y", 0.0)
-        market_data["FINAL_STATE"]["VIX"] = latest_fred.get("VIX", 20.0)
-        
-        print(f"[DEBUG] Fred Extra Injected: T10Y2Y={market_data['FINAL_STATE']['T10Y2Y']}, VIX={market_data['FINAL_STATE']['VIX']}")
+    
 
     # 5) Top layers
     exec_block = executive_summary_filter(market_data)
