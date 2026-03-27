@@ -1011,8 +1011,7 @@ def generate_daily_report() -> None:
         print("[DEBUG] Fred Extra Injected: skipped (empty fred df)")
     
     
-    print("[DEBUG] fred columns:", df_fred_extra.columns.tolist())
-    print("[DEBUG] latest fred row:", latest_fred.to_dict())
+    print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
     commentary_block = build_strategist_commentary(market_data)
     # -------------------------
     # 6) Fred Data Loading and Injection
