@@ -3273,7 +3273,6 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
 
     return market_data
     
-
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
     sections.append("Some commentary here")
@@ -3293,7 +3292,6 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(high_yield_spread_filter(market_data))
     sections.append("")
-    # ✅ 새 필터 끼워넣기 (Fed Plumbing 다음, Legacy 이전이 제일 자연스러움)
     sections.append(credit_stress_filter(market_data))
     sections.append("")
     sections.append(legacy_directional_filters(market_data))
@@ -3302,7 +3300,7 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(correlation_break_filter(market_data))
     sections.append("")
-    sections.append(sector_correlation_break_filter(market_data)) # ✅ 6.6 추가
+    sections.append(sector_correlation_break_filter(market_data))
     sections.append("")
     sections.append(risk_exposure_filter(market_data))
     sections.append("")
@@ -3328,11 +3326,30 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(style_tilt_filter(market_data))   
     sections.append("")    
     sections.append(factor_layer_filter(market_data))   
-    sections.append("") 
+    sections.append("")
+
+    # -------------------------
+    # ✅ 18번 필터 직전에 Fred 값 다시 주입
+    # -------------------------
+    if "_FRED_EXTRA" in market_data:
+        fred_extra = market_data["_FRED_EXTRA"]
+
+        if "FINAL_STATE" not in market_data:
+            market_data["FINAL_STATE"] = {}
+
+        market_data["FINAL_STATE"]["T10Y2Y"] = fred_extra.get("T10Y2Y", 0.0)
+        market_data["FINAL_STATE"]["T10YIE"] = fred_extra.get("T10YIE", 0.0)
+        market_data["FINAL_STATE"]["VIX"] = fred_extra.get(
+            "VIX",
+            market_data["FINAL_STATE"].get("VIX", 20.0)
+        )
+
+        print("[DEBUG][COMMENTARY] FINAL_STATE re-injected with FRED:", market_data["FINAL_STATE"])
+
     print(f"DEBUG - FINAL_STATE 내용: {market_data.get('FINAL_STATE')}")
     sections.append(sector_allocation_filter(market_data))  
     sections.append("")
-    #sections.append(execution_layer_filter(market_data))
-    #sections.append("")
+    # sections.append(execution_layer_filter(market_data))
+    # sections.append("")
     
     return "\n".join(sections)
