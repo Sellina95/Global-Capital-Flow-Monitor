@@ -310,25 +310,37 @@ def load_credit_spread_df() -> pd.DataFrame:
 
 def load_fred_data_from_csv() -> pd.DataFrame:
     csv_path = "data/fred_macro_sctorallo.csv"
-    if not os.path.exists(csv_path): return pd.DataFrame()
+    if not os.path.exists(csv_path):
+        return pd.DataFrame(columns=["date", "T10Y2Y", "T10YIE", "VIX"])
 
     try:
+        if os.path.getsize(csv_path) == 0:
+            return pd.DataFrame(columns=["date", "T10Y2Y", "T10YIE", "VIX"])
+
         df = pd.read_csv(csv_path)
-        # 🔥 핵심 1: 헤더의 대소문자가 다를 수 있으니 공백 제거 및 확인
-        df.columns = [c.strip() for c in df.columns] 
-        
-        # 🔥 핵심 2: 세연 님 CSV 헤더인 'Date' (대문자)로 변경
-        date_col = "Date" if "Date" in df.columns else "date"
-        
-        df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-        df = df.dropna(subset=[date_col]).sort_values(date_col).reset_index(drop=True)
-        
-        # 🔥 핵심 3: 빈칸 채우기
-        df = df.ffill()
-        return df
     except Exception as e:
-        print(f"Error: {e}")
-        return pd.DataFrame()
+        print(f"[ERROR] load_fred_data_from_csv: {e}")
+        return pd.DataFrame(columns=["date", "T10Y2Y", "T10YIE", "VIX"])
+
+    df.columns = [str(c).strip() for c in df.columns]
+
+    date_col = "date" if "date" in df.columns else "Date" if "Date" in df.columns else None
+    if date_col is None:
+        print("[ERROR] no date column in fred csv")
+        return pd.DataFrame(columns=["date", "T10Y2Y", "T10YIE", "VIX"])
+
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    df = df.dropna(subset=[date_col]).sort_values(date_col).reset_index(drop=True)
+    df = df.rename(columns={date_col: "date"})
+
+    for col in ["T10Y2Y", "T10YIE", "VIX"]:
+        if col not in df.columns:
+            df[col] = pd.NA
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    df[["T10Y2Y", "T10YIE", "VIX"]] = df[["T10Y2Y", "T10YIE", "VIX"]].ffill()
+
+    return df[["date", "T10Y2Y", "T10YIE", "VIX"]]
 
 
 
@@ -971,11 +983,9 @@ def generate_daily_report() -> None:
     # -------------------------
     # 4) FINAL_STATE 이후 overlay / RAROC 먼저 반영
     # -------------------------
-    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
     
-        # -------------------------
-    # 4.5) Inject FRED sector-allocation extras
-    # -------------------------
+    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
+
     # -------------------------
     # 4.5) Inject FRED sector-allocation extras
     # -------------------------
@@ -984,14 +994,12 @@ def generate_daily_report() -> None:
     if not df_fred_extra.empty:
         latest_fred = df_fred_extra.iloc[-1]
 
-        # FINAL_STATE 바구니 없으면 생성
         if "FINAL_STATE" not in market_data:
             market_data["FINAL_STATE"] = {}
 
-        # 18번 필터용 매크로 지표 주입
-        market_data["FINAL_STATE"]["T10Y2Y"] = latest_fred.get("T10Y2Y", 0.0)
-        market_data["FINAL_STATE"]["T10YIE"] = latest_fred.get("T10YIE", 0.0)
-        market_data["FINAL_STATE"]["VIX"] = latest_fred.get("VIX", 20.0)
+        market_data["FINAL_STATE"]["T10Y2Y"] = float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0
+        market_data["FINAL_STATE"]["T10YIE"] = float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0
+        market_data["FINAL_STATE"]["VIX"] = float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else 20.0
 
         print(
             "[DEBUG] Fred Extra Injected:",
@@ -1001,9 +1009,11 @@ def generate_daily_report() -> None:
         )
     else:
         print("[DEBUG] Fred Extra Injected: skipped (empty fred df)")
-    # 5) Commentary
+    
+    
+    print("[DEBUG] fred columns:", df_fred_extra.columns.tolist())
+    print("[DEBUG] latest fred row:", latest_fred.to_dict())
     commentary_block = build_strategist_commentary(market_data)
-
     # -------------------------
     # 6) Fred Data Loading and Injection
     # -------------------------
