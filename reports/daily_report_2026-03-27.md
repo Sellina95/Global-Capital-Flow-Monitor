@@ -4,19 +4,19 @@
 
 ## 📊 Daily Macro Signals
 
-- **미국 10년물 금리**: 4.464  (+1.09% vs 4.416)
-- **달러 인덱스**: 100.072  (+0.17% vs 99.900)
-- **WTI 유가**: 97.160  (+2.84% vs 94.480)
-- **변동성 지수 (VIX)**: 29.870  (+8.86% vs 27.440)
-- **원/달러 환율**: 1510.180  (+0.61% vs 1500.970)
+- **미국 10년물 금리**: 4.464  (+0.00% vs 4.464)
+- **달러 인덱스**: 99.996  (+0.00% vs 99.993)
+- **WTI 유가**: 97.340  (+0.01% vs 97.330)
+- **변동성 지수 (VIX)**: 30.080  (+0.00% vs 30.080)
+- **원/달러 환율**: 1509.990  (+0.00% vs 1509.990)
 
 ---
 
 ## 🚨 Regime Change Monitor (always-on)
-- **Status:** ❎ NOT DETECTED
-- **Current Regime:** RISK-OFF (긴축/불안·리스크 회피)
-- **File:** not created
-- **Email:** not sent
+- **Status:** ✅ DETECTED
+- **Prev → Current:** RISK-OFF (긴축/불안·리스크 회피) → EVENT-WATCHING (이벤트 관망)
+- **File:** `insights/risk_alerts.txt` ✅ created
+- **Email:** ❌ not sent (RESEND env missing (RESEND_API_KEY/RESEND_FROM/RESEND_TO))
 
 ---
 
@@ -27,32 +27,32 @@ Some commentary here
 - **정의:** 지금 어떤 장(場)인지 판단하는 *시장 국면 필터*
 - **추가 이유:** 같은 지표도 ‘국면’에 따라 의미가 완전히 달라지기 때문
 
-- **VIX 레벨:** 29.87 → **High (Risk-off bias)**
-- **핵심 조합(전일 대비 방향):** US10Y(↑) / DXY(↑) / VIX(↑)
-- **판정:** **RISK-OFF (긴축/불안·리스크 회피)**
-- **근거:** 금리↑ + 달러↑ + VIX↑ → 안전자산/현금 선호 강화
+- **VIX 레벨:** 30.08 → **High (Risk-off bias)**
+- **핵심 조합(전일 대비 방향):** US10Y(→) / DXY(↑) / VIX(→)
+- **판정:** **EVENT-WATCHING (이벤트 관망)**
+- **근거:** 변동성은 눌려있지만 금리/달러가 움직임 → 데이터/이벤트 대기
 
 ### 💧 2) Liquidity Filter (Enhanced)
 - **질문:** 시장에 새 돈이 들어오는가, 말라가는가?
 - **추가 이유:** US10Y/DXY/VIX는 ‘시장의 기대’를 보여주고, FCI는 ‘현실의 압박’을, Real Rates는 ‘위험을 감수할 유인’을 보여준다.
 
-- **기대(가격) 신호:** US10Y(↑) / DXY(↑) / VIX(↑)
+- **기대(가격) 신호:** US10Y(→) / DXY(↑) / VIX(→)
 - **현실(FCI):** level=EASY (완화) / dir(↑) | as of: 2026-03-20 (FRED last available)
 - **유인(Real Rates):** level=RESTRICTIVE (유인↓) / dir(↑) | as of: 2026-03-25 (FRED last available)
-- **판정:** **LIQUIDITY TIGHTENING (유동성 축소)**
-- **근거:** 금리↑+달러↑ + (FCI 압박 또는 실질금리 유인↓) → 리스크자산에 불리
+- **판정:** **LIQUIDITY MIXED / FRAGILE (혼조·취약)**
+- **근거:** 기대(가격)와 현실(FCI)/유인(실질금리) 정렬이 불완전
 - **Note:** FCI/Real Rates는 매일 갱신되지 않을 수 있어, ‘최근 available 값’을 반영함
 
 ### 🏛️ 3) Policy Filter (with Expectations)
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
-- **가격(현재) 신호:** US10Y(↑) / DXY(↑) / VIX(↑)
-- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ -0.040 / FCIΔ +0.039 / DXYΔ +0.172 / US10YΔ +0.048**
+- **가격(현재) 신호:** US10Y(→) / DXY(↑) / VIX(→)
+- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ -0.040 / FCIΔ +0.039 / DXYΔ +0.003 / US10YΔ +0.000**
 - **Expectations: dict received.**
 
-- **판정:** **POLICY TIGHTENING (긴축)**
-- **근거:** 금리↑ + 달러↑ → 긴축 압력
-- **한줄요약 ~~** 구조=TIGHTENING (긴축)(MODERATE)는 참고, 가격=POLICY TIGHTENING (긴축) 중심 → 최종 POLICY TIGHTENING (긴축)
+- **판정:** **POLICY MIXED (정책 신호 혼조)**
+- **근거:** 금리/달러/변동성 신호가 완전히 정렬되지 않음
+- **한줄요약 ~~** 구조=TIGHTENING (긴축)(MODERATE)는 참고, 가격=POLICY MIXED (정책 신호 혼조) 중심 → 최종 POLICY MIXED (정책 신호 혼조)
 
 ### 🧰 4) Fed Plumbing Filter (TGA/RRP/Net Liquidity)
 - **질문:** 시장의 ‘달러 체력’은 늘고 있나, 줄고 있나?
@@ -79,27 +79,27 @@ Some commentary here
 ### 🧾 4.5) Credit Stress Filter (HYG vs LQD)
 - **질문:** 크레딧 시장이 먼저 ‘리스크오프’를 말하고 있는가?
 - **추가 이유:** HYG가 LQD보다 약해지면, 시장이 ‘위험을 감수할 이유가 없다’고 판단하기 시작했을 가능성
-- **방향(전일 대비):** HYG(→) / LQD(→)
-- **HYG:** today 78.920 / prev 78.920 / pct 0.00%
-- **LQD:** today 107.880 / prev 107.880 / pct 0.00%
+- **방향(전일 대비):** HYG(↑) / LQD(↑)
+- **HYG:** today 78.775 / prev 78.765 / pct 0.01%
+- **LQD:** today 107.500 / prev 107.485 / pct 0.01%
 - **판정:** **CREDIT NEUTRAL**
 - **근거:** HYG/LQD 방향성이 뚜렷하지 않음
 
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
-- 미국 금리(US10Y) **(Strong, +1.09%)** → 완화 기대 약화/금리 부담
-- DXY **(Clear, +0.17%)** → 달러 강세/신흥국 부담
-- WTI **(Strong, +2.84%)** → 인플레 재자극 가능성
-- VIX **(Strong, +8.86%)** → 심리 악화/리스크오프
-- 원/달러(USDKRW) **(Strong, +0.61%)** → 원화 약세/수급 부담
-- HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
-- LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
+- 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
+- DXY **(Noise, +0.00%)** → 달러 강세/신흥국 부담
+- WTI **(Noise, +0.01%)** → 인플레 재자극 가능성
+- VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
+- 원/달러(USDKRW) **(Noise, +0.00%)** → 환율 보합(수급 압력 제한)
+- HYG (High Yield ETF) **(Noise, +0.01%)** → 크레딧 위험선호↑
+- LQD (IG Bond ETF) **(Noise, +0.01%)** → 우량채 강세(리스크오프 성향)
 
 ### 🧩 6) Cross-Asset Filter (연쇄효과 분석)
 - **추가 이유:** 한 지표의 변화가 다른 자산군에 어떻게 전파되는지 파악하기 위함
 
-- **금리 상승(US10Y↑)** → 달러 강세(DXY↑) / 위험자산 할인율 부담 / 성장주 변동성↑ 경향
-- **변동성 상승(VIX↑)** → 위험회피 강화 / 달러 선호↑ / 원자재·주식 부담 가능
+- **금리 보합(US10Y→)** → 할인율 변수 제한
+- **변동성 보합(VIX→)** → 심리 변화 제한
 - **유가 상승(WTI↑)** → 인플레 재자극 가능성 / 금리 상방 압력
 
 ### ⚠ 6.5) Correlation Break Monitor
@@ -107,146 +107,144 @@ Some commentary here
 No significant correlation break detected.
 
 ### ⚠ 6.6) Sector Correlation Break Monitor
-- DEBUG: pct XLK=0.0, XLF=0.0, XLE=0.0, XLRE=0.0
+- DEBUG: pct XLK=-0.003783314426402675, XLF=0.02042108031526793, XLE=0.03211377353191812, XLRE=0.0
 No significant sector-level correlation break detected.
 
 ### 🧩 7) Risk Exposure Filter (숨은 리스크 분석)
 - **추가 이유:** 숫자는 괜찮아 보여도 그 뒤에 숨은 리스크를 식별하기 위함
 
-- **VIX 상승(VIX↑)** → 변동성 확대: 포지션 축소/헤지 수요 증가 가능
-- **금리 상승(US10Y↑)** → 할인율 부담/유동성 압박 가능
+- **VIX 보합(VIX→)** → 심리 변화 제한
+- **금리 보합(US10Y→)** → 금리 변수 제한
 - **달러 강세(DXY↑)** → 신흥국·원자재·원화 등 위험자산에 부담
 - **유가 상승(WTI↑)** → 인플레 압력/실질소득 부담 가능
 
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
-- **Geo Stress Score (z-composite):** **+0.31**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.26**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
-- **3D Avg Score:** +0.18
-- **Geo Momentum:** +0.12 *(Status: FLAT)*
+- **3D Avg Score:** +0.33
+- **Geo Momentum:** -0.07 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.502
+- **Cosine Similarity Score:** 0.557
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.502
-  - Ukraine_2022: 0.445
-  - Israel_2023: 0.379
+  - Taiwan_Tension: 0.557
+  - Ukraine_2022: 0.451
+  - Israel_2023: 0.362
 - **Top Drivers:**
-  - USDCNH: z_used=+1.28 (z1d=+1.27, z5d=+1.29, raw_w=0.18, norm_w=0.14) → contrib=+0.18
-  - VIX: z_used=+0.68 (z1d=+0.84, z5d=+0.45, raw_w=0.18, norm_w=0.14) → contrib=+0.09
-  - USDMXN: z_used=+1.86 (z1d=+2.14, z5d=+1.44, raw_w=0.05, norm_w=0.04) → contrib=+0.07
+  - USDCNH: z_used=+1.14 (z1d=+0.68, z5d=+1.83, raw_w=0.18, norm_w=0.14) → contrib=+0.16
   - KR10Y_SPREAD: z_used=-1.00 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
+  - DE10Y_SPREAD: z_used=+1.00 (mode=level, raw_w=0.06, norm_w=0.05) → contrib=+0.05
+  - EEM: z_used=+0.46 (z1d=-0.04, z5d=-1.08, raw_w=0.10, norm_w=0.08) → contrib=+0.04
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
 
 **Trade Information:**
 - 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
 - 역사적 위기 패턴 유사도는 낮습니다. 현재는 **Taiwan_Tension** 유형과 가장 가깝지만, 전면적 지정학 쇼크보다는 제한적·국지적 리스크 모니터링 구간으로 해석됩니다.
-- **Country ETF Crash?** Yes (EEM, EIS, FXI, VXX)
-- **Extreme Country Risk:** EEM, EIS, FXI, VXX
+- **Country ETF Crash?** Yes (EIS, VXX)
+- **Extreme Country Risk:** EIS, VXX
 
 ### 💸 8) Incentive Filter
 - **질문:** 누가 이득을 보고 있는가?
-- **핵심 신호:** US10Y(↑) / DXY(↑) / WTI(↑)
+- **핵심 신호:** US10Y(→) / DXY(↑) / WTI(↑)
 - **이득을 보는 주체:**
-  - Banks/Financials (higher rates)
   - USD holders / US importers
   - Energy producers
 - **손해를 보는 주체:**
-  - Long-duration growth (discount-rate pressure)
   - EM assets / USD debtors
   - Energy consumers
 
 ### 🔍 9) Cause Filter
 - **질문:** 무엇이 이 움직임을 만들었는가?
-- **핵심 신호:** US10Y(↑) / DXY(↑) / WTI(↑) / VIX(↑)
-- **판정:** **금리 상승(US10Y↑) + 달러 강세(DXY↑) + 유가 상승(WTI↑) + 변동성 확대(VIX↑)**
+- **핵심 신호:** US10Y(→) / DXY(↑) / WTI(↑) / VIX(→)
+- **판정:** **달러 강세(DXY↑) + 유가 상승(WTI↑)**
 
 ### 🔄 10) Direction Filter
 - **질문:** 오늘 움직임은 ‘노이즈’인가 ‘의미 있는 변화’인가?
-- **강도:** US10Y(Strong) / DXY(Clear) / WTI(Strong) / VIX(Strong)
-- **판정:** **SIGNIFICANT MOVE (의미 있는 변화)**
+- **강도:** US10Y(Noise) / DXY(Noise) / WTI(Noise) / VIX(Noise)
+- **판정:** **MOSTLY NOISE (대부분 노이즈)**
 
 ### ⏳ 11) Timing Filter
 - **질문:** 이 신호는 단기/중기/장기 중 어디에 더 중요하게 작용하는가?
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.464), DXY(100.072), VIX(29.87)
+- **Today snapshot:** US10Y(4.464), DXY(99.996), VIX(30.08)
 
 ### 🏗️ 12) Structural Filter
 - **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
-- **핵심 신호:** US10Y(↑) / DXY(↑) / VIX(↑) / WTI(↑)
-- **판정:** **GLOBAL FINANCIAL TIGHTENING (글로벌 긴축 구조)**
-- **근거:** 금리↑ + 달러↑ 조합은 글로벌 자금조달 비용을 올려 신흥국/리스크자산에 부담
+- **핵심 신호:** US10Y(→) / DXY(↑) / VIX(→) / WTI(↑)
+- **판정:** **NEUTRAL**
+- **근거:** 패권/구조 신호가 뚜렷하지 않음
 
 ### 🧠 13) Narrative Engine (v2 + Risk Budget)
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ -0.040 / FCIΔ +0.039 / DXYΔ +0.172 / US10YΔ +0.048
-- **Sentiment (Fear&Greed):** 25.193842449654923 (FEAR)
+- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ -0.040 / FCIΔ +0.039 / DXYΔ +0.003 / US10YΔ +0.000
+- **Sentiment (Fear&Greed):** 25.91899489718124 (FEAR)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=DOWN / level=MID
-- **Phase:** RISK-OFF (긴축/불안·리스크 회피)
+- **Phase:** EVENT-WATCHING (이벤트 관망)
 
 - **🎯 Final Risk Action:** **REDUCE**
 - **Risk Budget (0~100):** **25**
-- **Narrative:** 구조=TIGHTENING / 심리=FEAR / 유동성=감소/중간 / 크레딧=안정 → Phase=RISK-OFF (긴축/불안·리스크 회피)
+- **Narrative:** 구조=TIGHTENING / 심리=FEAR / 유동성=감소/중간 / 크레딧=안정 → Phase=EVENT-WATCHING (이벤트 관망)
 
 ### ⚠ 14) Divergence Monitor
 - **정의:** 구조(정책)와 가격(시장 국면)의 충돌 여부 감지
 - **추가 이유:** 구조-가격 충돌은 국면 전환의 초기 신호가 될 수 있음
 
 - **Structure:** TIGHTENING
-- **Price Regime:** RISK-OFF
-- **Status:** **ALIGNED**
-- **해석:** 구조와 가격 신호가 대체로 정렬
+- **Price Regime:** MIXED
+- **Status:** **DELAYED RESPONSE**
+- **해석:** 구조는 긴축이나 가격은 아직 명확히 반응하지 않음
 
 ### 🎯 15) Volatility-Controlled Exposure (v2)
 - **정의:** Risk Budget을 실제 익스포저로 변환 (Pro Version)
 - **추가 이유:** 변동성·스트레스·국면을 모두 반영한 실전형 리스크 제어
 
 - **Risk Budget:** 25
-- **Phase Cap:** 35
-- **VIX Level:** 29.87 (HIGH)
-- **VIX Change (%):** +8.86%
-- **Final Multiplier:** 0.68x
+- **Phase Cap:** 100
+- **VIX Level:** 30.08 (EXTREME)
+- **VIX Change (%):** +0.00%
+- **Final Multiplier:** 0.60x
 
-- **📊 Recommended Exposure:** **23%**
+- **📊 Recommended Exposure:** **22%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
 - **추가 이유:** 같은 Risk-On이라도 어떤 유형의 자산이 유리한지 구분
 
 - **Growth vs Value:** **VALUE TILT**
-- **Duration Tilt:** **SHORT DURATION FAVORED**
-- **Cyclical vs Defensive:** **CYCLICAL (ENERGY) BIAS**
+- **Duration Tilt:** **NEUTRAL**
+- **Cyclical vs Defensive:** **DEFENSIVE FAVORED**
 
 ### 🧩 17) Factor Layer (v1)
 - **정의:** 시장을 움직이는 핵심 위험 요인 판별
 - **추가 이유:** 자금이 무엇에 민감하게 반응하는지 파악
 
-- **Duration Factor:** SHORT DURATION FAVORED
-- **Inflation Factor:** INFLATION PRESSURE
+- **Duration Factor:** NEUTRAL
+- **Inflation Factor:** NEUTRAL
 - **USD Factor:** NEUTRAL
 - **Credit Factor:** CREDIT SUPPORTIVE
 
 ### 🏭 18) Sector Allocation Engine (v2)
 
-**Context:** phase=RISK-OFF (긴축/불안·리스크 회피) / T10Y2Y=0.00 / VIX=29.87 / credit=True
+**Context:** phase=EVENT-WATCHING (이벤트 관망) / T10Y2Y=0.00 / VIX=30.08 / credit=True
 
 **Overweight:** Consumer Staples, Health Care, Utilities
 **Underweight:** Technology, Real Estate
 
 **Rationale (top drivers):**
 - UW Technology: -3: 유동성 긴축 → 고밸류에이션 부담
-- UW Technology: -3: VIX 29.9 → 위험자산 회피
+- UW Technology: -3: VIX 30.1 → 위험자산 회피
 - OW Consumer Staples: +3: 유동성 긴축 → 방어적 필수소비 선호
-- OW Consumer Staples: +2: VIX 29.9 → 경기 비탄력적 섹터 선호
+- OW Consumer Staples: +2: VIX 30.1 → 경기 비탄력적 섹터 선호
 - OW Health Care: +3: 유동성 긴축 → 안정적 현금흐름 선호
-- OW Utilities: +3: 시장 공포 확산(VIX 29.9) → 최우선 피난처
+- OW Utilities: +3: 시장 공포 확산(VIX 30.1) → 최우선 피난처
 
 
 ---
@@ -270,7 +268,7 @@ No significant sector-level correlation break detected.
 
 ## 🧭 So What? (Decision Layer)
 - **Risk Stance:** **REDUCE** *(target exposure: 25%)*
-- **Context:** phase=RISK-OFF (긴축/불안·리스크 회피) / liquidity=DOWN-MID / credit_calm=True / geo=NORMAL
+- **Context:** phase=EVENT-WATCHING (이벤트 관망) / liquidity=DOWN-MID / credit_calm=True / geo=NORMAL
 
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
@@ -305,53 +303,53 @@ No significant sector-level correlation break detected.
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -2.272447062398424
-- **Z-Score (5d):** -1.8413675794468776
+- **Z-Score (1d):** -0.39500176151548505
+- **Z-Score (5d):** -0.3271969393301904
 
 ### EEM
-- **Crash?** True
-- **Risk Level:** EXTREME
-- **Z-Score (1d):** -2.1611014101367605
-- **Z-Score (5d):** -1.3357550218209582
+- **Crash?** False
+- **Risk Level:** NORMAL
+- **Z-Score (1d):** 0.08124685333088608
+- **Z-Score (5d):** -0.15300815637194065
 
 ### EIS
 - **Crash?** True
 - **Risk Level:** EXTREME
-- **Z-Score (1d):** -1.2948193374984127
-- **Z-Score (5d):** -1.4651557527491885
+- **Z-Score (1d):** -2.22660872868024
+- **Z-Score (5d):** -1.6768431332595315
 
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -2.369794171704943
-- **Z-Score (5d):** -1.5319378209182837
+- **Z-Score (1d):** -0.7766364451632073
+- **Z-Score (5d):** 0.18739539058990518
 
 ### EWJ
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.6424703047035605
-- **Z-Score (5d):** -0.595191418246228
+- **Z-Score (1d):** -0.3255912060419716
+- **Z-Score (5d):** 0.3508877695522118
 
 ### FXI
-- **Crash?** True
-- **Risk Level:** EXTREME
-- **Z-Score (1d):** -2.034518565464422
-- **Z-Score (5d):** -1.0541600342222224
+- **Crash?** False
+- **Risk Level:** NORMAL
+- **Z-Score (1d):** 0.3287896819070558
+- **Z-Score (5d):** 0.1323153894610473
 
 ### GLD
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.482688386416877
-- **Z-Score (5d):** -1.1057196830542604
+- **Z-Score (1d):** 0.6546948209474014
+- **Z-Score (5d):** -0.27141855853395913
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -2.1340592175403987
-- **Z-Score (5d):** -1.356325886729923
+- **Z-Score (1d):** -0.44140386933284476
+- **Z-Score (5d):** -0.47937254639876714
 
 ### VXX
 - **Crash?** True
 - **Risk Level:** EXTREME
-- **Z-Score (1d):** 1.4145717043117143
-- **Z-Score (5d):** 1.100598525219013
+- **Z-Score (1d):** 0.4962569416528738
+- **Z-Score (5d):** 0.4118480766075817
