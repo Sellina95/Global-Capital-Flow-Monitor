@@ -977,15 +977,6 @@ def generate_daily_report() -> None:
     # 4.5) Inject FRED sector-allocation extras
     # -------------------------
     df_fred_extra = load_fred_data_from_csv()
-
-    if not df_fred_extra.empty:
-        latest_fred = df_fred_extra.iloc[-1]
-
-        # market_data top-level에도 넣기
-        market_data["T10Y2Y"] = latest_fred.get("T10Y2Y", 0.0)
-        market_data["T10YIE"] = latest_fred.get("T10YIE", 0.0)
-        market_data["VIX"] = latest_fred.get("VIX", market_data.get("VIX", 20.0))
-
         # FINAL_STATE에도 넣기
         if "FINAL_STATE" not in market_data:
             market_data["FINAL_STATE"] = {}
