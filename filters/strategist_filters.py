@@ -3279,42 +3279,59 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
     
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
+    sections.append("Some commentary here")
     
-    # VIX 동적 임계값 반영
-    vix_score = dynamic_vix_threshold(market_data)  # 동적 VIX 임계값 계산
-    
-    # 섹터 배분 필터 호출
-    sector_allocation = sector_allocation_filter(market_data)  # 섹터 배분 정보
+    # 예시로 market_data에 있는 데이터가 포함될 수도 있습니다
+    if market_data.get("some_key"):
+        sections.append({"key": "value"})
+        
+    sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
+    sections.append(market_regime_filter(market_data))
+    sections.append("")
+    sections.append(liquidity_filter(market_data))
+    sections.append("")
+    sections.append(policy_filter_with_expectations(market_data))
+    sections.append("")
+    sections.append(fed_plumbing_filter(market_data))
+    sections.append("")
+    sections.append(high_yield_spread_filter(market_data))
+    sections.append("")
+    sections.append(credit_stress_filter(market_data))
+    sections.append("")
+    sections.append(legacy_directional_filters(market_data))
+    sections.append("")
+    sections.append(cross_asset_filter(market_data))
+    sections.append("")
+    sections.append(correlation_break_filter(market_data))
+    sections.append("")
+    sections.append(sector_correlation_break_filter(market_data))
+    sections.append("")
+    sections.append(risk_exposure_filter(market_data))
+    sections.append("")
+    print("DEBUG _STALE:", market_data.get("_STALE"))
+    sections.append(geopolitical_early_warning_filter(market_data))
+    sections.append("")
+    sections.append(incentive_filter(market_data))
+    sections.append("")
+    sections.append(cause_filter(market_data))
+    sections.append("")
+    sections.append(direction_filter(market_data))
+    sections.append("")
+    sections.append(timing_filter(market_data))
+    sections.append("")
+    sections.append(structural_filter(market_data))
+    sections.append("")
+    sections.append(narrative_engine_filter(market_data))
+    sections.append("")
+    sections.append(divergence_monitor_filter(market_data))    
+    sections.append("")
+    sections.append(volatility_controlled_exposure_filter(market_data))
+    sections.append("")    
+    sections.append(style_tilt_filter(market_data))   
+    sections.append("")    
+    sections.append(factor_layer_filter(market_data))   
+    sections.append("")
 
-    # 섹터 배분 필터 반영
-    sections.append("## 🧭 Strategist Commentary\n")
-    sections.append(f"### VIX Score (Dynamic Threshold): {vix_score}")  # VIX 스코어 추가
-    sections.append(sector_allocation)  # 섹터 배분 정보 포함
-    
-    # 추가 필터 호출
-    sections.append(market_regime_filter(market_data))  # 시장 국면 필터 추가
-    sections.append(liquidity_filter(market_data))  # 유동성 필터 추가
-    sections.append(policy_filter_with_expectations(market_data))  # 정책 필터 추가
-    sections.append(fed_plumbing_filter(market_data))  # 연준 필터 추가
-    sections.append(high_yield_spread_filter(market_data))  # 고수익 스프레드 필터 추가
-    sections.append(credit_stress_filter(market_data))  # 신용 스트레스 필터 추가
-    sections.append(legacy_directional_filters(market_data))  # 레거시 필터 추가
-    sections.append(cross_asset_filter(market_data))  # 자산 간 상관 관계 필터 추가
-    sections.append(correlation_break_filter(market_data))  # 상관 관계 차단 필터 추가
-    sections.append(sector_correlation_break_filter(market_data))  # 섹터 상관 관계 차단 필터 추가
-    sections.append(risk_exposure_filter(market_data))  # 리스크 노출 필터 추가
-    sections.append(geopolitical_early_warning_filter(market_data))  # 지정학적 경고 필터 추가
-    sections.append(incentive_filter(market_data))  # 인센티브 필터 추가
-    sections.append(cause_filter(market_data))  # 원인 분석 필터 추가
-    sections.append(direction_filter(market_data))  # 방향성 필터 추가
-    sections.append(timing_filter(market_data))  # 타이밍 필터 추가
-    sections.append(structural_filter(market_data))  # 구조적 필터 추가
-    sections.append(narrative_engine_filter(market_data))  # 내러티브 엔진 필터 추가
-    sections.append(divergence_monitor_filter(market_data))  # 발산 모니터링 필터 추가
-    sections.append(volatility_controlled_exposure_filter(market_data))  # 변동성 제어된 노출 필터 추가
-    sections.append(style_tilt_filter(market_data))  # 스타일 기울기 필터 추가
-    sections.append(factor_layer_filter(market_data))  # 팩터 레이어 필터 추가
-    
     # -------------------------
     # ✅ 18번 필터 직전에 Fred 값 다시 주입
     # -------------------------
@@ -3333,10 +3350,14 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
 
         print("[DEBUG][COMMENTARY] FINAL_STATE re-injected with FRED:", market_data["FINAL_STATE"])
 
+    # 동적 VIX 임계값 계산
+    vix_score = dynamic_vix_threshold(market_data)  # VIX 임계값 계산
+    sections.append(f"Dynamic VIX Threshold Score: {vix_score}\n")  # VIX 임계값 정보 추가
+    
+    # 섹터 배분 필터 호출
+    sector_allocation = sector_allocation_filter(market_data)
+    sections.append(sector_allocation)  # 섹터 배분 정보 포함
+
     print(f"DEBUG - FINAL_STATE 내용: {market_data.get('FINAL_STATE')}")
-    sections.append(sector_allocation_filter(market_data))  
-    sections.append("")
-    # sections.append(execution_layer_filter(market_data))
-    # sections.append("")
     
     return "\n".join(sections)
