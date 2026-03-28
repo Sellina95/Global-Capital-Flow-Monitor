@@ -238,15 +238,18 @@ No significant sector-level correlation break detected.
 
 ### 🏭 18) Sector Allocation Engine (v2)
 
-**Context:** phase=N/A / T10Y2Y=0.00 / VIX=31.05
+**Context:** phase=WAITING / RANGE (대기·박스권) / T10Y2Y=0.56 / VIX=27.44
 
-**Overweight:** Utilities, Consumer Staples
-**Underweight:** Technology
+**Overweight:** Consumer Staples, Health Care, Utilities, Financials
+**Underweight:** Technology, Real Estate
 
 **Rationale (top drivers):**
-- UW Technology: -3: VIX 31.0 → 위험자산 회피
-- OW Consumer Staples: +2: VIX 31.0 → 경기 비탄력적 섹터 선호
-- OW Utilities: +3: 시장 공포 확산(VIX 31.0) → 최우선 피난처
+- UW Technology: -3: 유동성 긴축 → 고밸류에이션 부담
+- UW Technology: -3: VIX 27.4 → 위험자산 회피
+- OW Financials: +2: 수익률 곡선 가파름(0.56) → 예대마진 개선
+- OW Consumer Staples: +3: 유동성 긴축 → 방어적 필수소비 선호
+- OW Consumer Staples: +2: VIX 27.4 → 경기 비탄력적 섹터 선호
+- OW Health Care: +3: 유동성 긴축 → 안정적 현금흐름 선호
 
 
 ---
@@ -323,8 +326,8 @@ No significant sector-level correlation break detected.
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.1832055057134947
-- **Z-Score (5d):** -0.062083676756529184
+- **Z-Score (1d):** -1.1832064530902695
+- **Z-Score (5d):** -0.062083725331717826
 
 ### EWJ
 - **Crash?** False
