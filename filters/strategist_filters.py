@@ -3286,9 +3286,54 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
         sections.append({"key": "value"})
         
     sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
+    sections.append(market_regime_filter(market_data))
+    sections.append("")
+    sections.append(liquidity_filter(market_data))
+    sections.append("")
+    sections.append(policy_filter_with_expectations(market_data))
+    sections.append("")
+    sections.append(fed_plumbing_filter(market_data))
+    sections.append("")
+    sections.append(high_yield_spread_filter(market_data))
+    sections.append("")
+    sections.append(credit_stress_filter(market_data))
+    sections.append("")
+    sections.append(legacy_directional_filters(market_data))
+    sections.append("")
+    sections.append(cross_asset_filter(market_data))
+    sections.append("")
+    sections.append(correlation_break_filter(market_data))
+    sections.append("")
+    sections.append(sector_correlation_break_filter(market_data))
+    sections.append("")
+    sections.append(risk_exposure_filter(market_data))
+    sections.append("")
+    print("DEBUG _STALE:", market_data.get("_STALE"))
+    sections.append(geopolitical_early_warning_filter(market_data))
+    sections.append("")
+    sections.append(incentive_filter(market_data))
+    sections.append("")
+    sections.append(cause_filter(market_data))
+    sections.append("")
+    sections.append(direction_filter(market_data))
+    sections.append("")
+    sections.append(timing_filter(market_data))
+    sections.append("")
+    sections.append(structural_filter(market_data))
+    sections.append("")
+    sections.append(narrative_engine_filter(market_data))
+    sections.append("")
+    sections.append(divergence_monitor_filter(market_data))    
+    sections.append("")
+    sections.append(volatility_controlled_exposure_filter(market_data))
+    sections.append("")    
+    sections.append(style_tilt_filter(market_data))   
+    sections.append("")    
+    sections.append(factor_layer_filter(market_data))   
+    sections.append("")
 
     # -------------------------
-    # ✅ 18번 필터 직전에 FRED 값 주입 + 동적 VIX 임계값 계산
+    # ✅ 18번 필터 직전에 Fred 값 다시 주입
     # -------------------------
     if "_FRED_EXTRA" in market_data:
         fred_extra = market_data["_FRED_EXTRA"]
@@ -3296,45 +3341,19 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
         if "FINAL_STATE" not in market_data:
             market_data["FINAL_STATE"] = {}
 
-        # FRED 값 주입 (업데이트된 데이터 사용)
-        market_data["FINAL_STATE"]["T10Y2Y"] = fred_extra.get("T10Y2Y", 0.56)  # 최신 값 반영
-        market_data["FINAL_STATE"]["T10YIE"] = fred_extra.get("T10YIE", 2.31)  # 최신 값 반영
-        market_data["FINAL_STATE"]["VIX"] = fred_extra.get("VIX", 27.44)  # 최신 값 반영
+        market_data["FINAL_STATE"]["T10Y2Y"] = fred_extra.get("T10Y2Y", 0.0)
+        market_data["FINAL_STATE"]["T10YIE"] = fred_extra.get("T10YIE", 0.0)
+        market_data["FINAL_STATE"]["VIX"] = fred_extra.get(
+            "VIX",
+            market_data["FINAL_STATE"].get("VIX", 20.0)
+        )
 
         print("[DEBUG][COMMENTARY] FINAL_STATE re-injected with FRED:", market_data["FINAL_STATE"])
 
     print(f"DEBUG - FINAL_STATE 내용: {market_data.get('FINAL_STATE')}")
-
-    # 동적 VIX 임계값 반영
-    vix_score = dynamic_vix_threshold(market_data)
-    sections.append(f"Dynamic VIX Threshold Score: {vix_score}\n")  # VIX 임계값 정보 추가
-
-    # 섹터 배분 필터 호출
-    sector_allocation = sector_allocation_filter(market_data)
-    sections.append(sector_allocation)  # 섹터 배분 정보 포함
+    sections.append(sector_allocation_filter(market_data))  
+    sections.append("")
+    # sections.append(execution_layer_filter(market_data))
+    # sections.append("")
     
-    # 추가 필터 호출
-    sections.append(market_regime_filter(market_data))
-    sections.append(liquidity_filter(market_data))
-    sections.append(policy_filter_with_expectations(market_data))
-    sections.append(fed_plumbing_filter(market_data))
-    sections.append(high_yield_spread_filter(market_data))
-    sections.append(credit_stress_filter(market_data))
-    sections.append(legacy_directional_filters(market_data))
-    sections.append(cross_asset_filter(market_data))
-    sections.append(correlation_break_filter(market_data))
-    sections.append(sector_correlation_break_filter(market_data))
-    sections.append(risk_exposure_filter(market_data))
-    sections.append(geopolitical_early_warning_filter(market_data))
-    sections.append(incentive_filter(market_data))
-    sections.append(cause_filter(market_data))
-    sections.append(direction_filter(market_data))
-    sections.append(timing_filter(market_data))
-    sections.append(structural_filter(market_data))
-    sections.append(narrative_engine_filter(market_data))
-    sections.append(divergence_monitor_filter(market_data))
-    sections.append(volatility_controlled_exposure_filter(market_data))
-    sections.append(style_tilt_filter(market_data))
-    sections.append(factor_layer_filter(market_data))
-
     return "\n".join(sections)
