@@ -3006,6 +3006,10 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     VIX 동적 임계값을 기반으로 섹터에 점수를 부여하는 로직을 포함합니다.
     """
     # VIX 동적 임계값 계산
+    vix_data = market_data.get("VIX", {})
+    vix_value = vix_data.get("today", 0) if isinstance(vix_data, dict) else vix_data
+
+    # VIX 동적 임계값 계산
     vix_score = dynamic_vix_threshold(market_data)
 
     # 섹터 배분 및 점수 부여 로직
@@ -3050,13 +3054,12 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Financials", 2, f"수익률 곡선 가파름({t10y2y:.2f}) → 예대마진 개선")
 
     # 공포 지수 (Volatility - VIX) 추가
-    vix = market_data.get("VIX", 20.0)
-    if vix > 25:
-        add_score("Utilities", 3, f"시장 공포 확산(VIX {vix:.1f}) → 최우선 피난처")
-        add_score("Consumer Staples", 2, f"VIX {vix:.1f} → 경기 비탄력적 섹터 선호")
-        add_score("Technology", -3, f"VIX {vix:.1f} → 위험자산 회피")
-    elif vix < 15:
-        add_score("Technology", 2, f"시장 안도(VIX {vix:.1f}) → 성장주 베팅 유효")
+    if vix_value > 25:
+        add_score("Utilities", 3, f"시장 공포 확산(VIX {vix_value:.1f}) → 최우선 피난처")
+        add_score("Consumer Staples", 2, f"VIX {vix_value:.1f} → 경기 비탄력적 섹터 선호")
+        add_score("Technology", -3, f"VIX {vix_value:.1f} → 위험자산 회피")
+    elif vix_value < 15:
+        add_score("Technology", 2, f"시장 안도(VIX {vix_value:.1f}) → 성장주 베팅 유효")
 
     # 결과 출력
     ow = [s for s in sectors if score[s] > 0]
@@ -3069,7 +3072,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines = []
     lines.append("### 🏭 18) Sector Allocation Engine (v2)")
     lines.append("")
-    lines.append(f"**Context:** phase={market_data.get('phase', 'N/A')} / T10Y2Y={t10y2y:.2f} / VIX={vix:.2f}")
+    lines.append(f"**Context:** phase={market_data.get('phase', 'N/A')} / T10Y2Y={t10y2y:.2f} / VIX={vix_value:.2f}")
     lines.append("")
     lines.append(f"**Overweight:** {', '.join(ow_sorted) if ow_sorted else 'None'}")
     lines.append(f"**Underweight:** {', '.join(uw_sorted) if uw_sorted else 'None'}")
