@@ -1005,7 +1005,19 @@ def generate_daily_report() -> None:
         print("[DEBUG] Fred Extra Saved: skipped (empty fred df)")
     
     print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
+    
+    # FRED 데이터를 FINAL_STATE에 반영 후 
+    market_data["FINAL_STATE"]["T10Y2Y"] = market_data["_FRED_EXTRA"].get("T10Y2Y", 0.0)
+    market_data["FINAL_STATE"]["T10YIE"] = market_data["_FRED_EXTRA"].get("T10YIE", 0.0)
+    market_data["FINAL_STATE"]["VIX"] = market_data["_FRED_EXTRA"].get("VIX", 20.0)
+
+    print(f"[DEBUG][COMMENTARY] FINAL_STATE re-injected with FRED: {market_data['FINAL_STATE']}")
+
+    # -------------------------
+    # Build Commentary Block
+    # -------------------------
     commentary_block = build_strategist_commentary(market_data)
+    
     # -------------------------
     # 6) Fred Data Loading and Injection
     # -------------------------
