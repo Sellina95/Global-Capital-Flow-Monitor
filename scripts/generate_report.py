@@ -959,7 +959,25 @@ def generate_daily_report() -> None:
     market_data["_STALE"] = stale
 
     # -----------------------------
-    # 3) Attach layers (기존 코드 시작)
+    # 3) FRED 데이터 주입 (T10Y2Y, T10YIE, VIX)
+    # -----------------------------
+    df_fred_extra = load_fred_data_from_csv()
+
+    if not df_fred_extra.empty:
+        latest_fred = df_fred_extra.iloc[-1]
+
+        market_data["_FRED_EXTRA"] = {
+            "T10Y2Y": float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0,
+            "T10YIE": float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0,
+            "VIX": float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else 20.0,
+        }
+
+        print("[DEBUG] Fred Extra Saved:", market_data["_FRED_EXTRA"])
+    else:
+        print("[DEBUG] Fred Extra Saved: skipped (empty fred df)")
+
+    # -----------------------------
+    # 4) Attach layers (기존 코드 시작)
     # -----------------------------
     market_data = attach_liquidity_layer(market_data) or market_data
     market_data = attach_credit_spread_layer(market_data) or market_data
@@ -981,55 +999,25 @@ def generate_daily_report() -> None:
     regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
 
     # -------------------------
-    # 4) FINAL_STATE 이후 overlay / RAROC 먼저 반영
+    # 5) FINAL_STATE 이후 overlay / RAROC 반영
     # -------------------------
     market_data = apply_geo_overlay_to_final_state(market_data) or market_data
 
     # -------------------------
-    # 4.5) Inject FRED sector-allocation extras
-    # -------------------------
-    df_fred_extra = load_fred_data_from_csv()
-
-    if not df_fred_extra.empty:
-        latest_fred = df_fred_extra.iloc[-1]
-
-        market_data["_FRED_EXTRA"] = {
-            "T10Y2Y": float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0,
-            "T10YIE": float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0,
-            "VIX": float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else 20.0,
-        }
-
-        print("[DEBUG] Fred Extra Saved:", market_data["_FRED_EXTRA"])
-        print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
-    else:
-        print("[DEBUG] Fred Extra Saved: skipped (empty fred df)")
-    
-    print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
-    
-    # FRED 데이터를 FINAL_STATE에 반영 후 
-    market_data["FINAL_STATE"]["T10Y2Y"] = market_data["_FRED_EXTRA"].get("T10Y2Y", 0.0)
-    market_data["FINAL_STATE"]["T10YIE"] = market_data["_FRED_EXTRA"].get("T10YIE", 0.0)
-    market_data["FINAL_STATE"]["VIX"] = market_data["_FRED_EXTRA"].get("VIX", 20.0)
-
-    print(f"[DEBUG][COMMENTARY] FINAL_STATE re-injected with FRED: {market_data['FINAL_STATE']}")
-
-    # -------------------------
-    # Build Commentary Block
-    # -------------------------
-    commentary_block = build_strategist_commentary(market_data)
-    
-    # -------------------------
     # 6) Fred Data Loading and Injection
     # -------------------------
+    commentary_block = build_strategist_commentary(market_data)
 
-    # 5) Top layers
+    # -------------------------
+    # 7) Additional blocks and final report assembly
+    # -------------------------
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
     scenario_block = scenario_generator_filter(market_data)
     transmission_block = transmission_layer_filter(market_data)
 
     # -------------------------
-    # 6) Country ETF risk block
+    # 8) Country ETF risk block
     # -------------------------
     country_risk_keys = sorted([k for k in market_data.keys() if k.startswith("COUNTRY_RISK_")])
 
@@ -1168,8 +1156,6 @@ def generate_daily_report() -> None:
     lines.append("---")
     lines.append("")
 
-  
-
     # Optional country block append
     if country_risk_lines:
         lines.append("")
@@ -1180,7 +1166,3 @@ def generate_daily_report() -> None:
     report_path = REPORTS_DIR / f"daily_report_{report_date}.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Report written: {report_path}")
-
-
-if __name__ == "__main__":
-    generate_daily_report()
