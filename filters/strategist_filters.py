@@ -2970,39 +2970,45 @@ def factor_layer_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)    
 
+def dynamic_vix_threshold(market_data: Dict[str, Any]) -> int:
+    """
+    VIX의 현재 값과 20일 평균 VIX를 비교하여 점수를 반환합니다.
+    """
+    vix_data = market_data.get("VIX", [])
+    
+    # VIX 값이 부족하면 점수 부여를 하지 않음
+    if len(vix_data) < 20:
+        return 0
+    
+    # 최근 20일 VIX 평균 계산
+    vix_20_day_avg = sum(vix_data[-20:]) / 20
+    current_vix = vix_data[-1]  # 현재 VIX 값
+    
+    # VIX의 현재 값과 20일 평균 차이 비율 계산
+    vix_diff_percentage = (current_vix - vix_20_day_avg) / vix_20_day_avg * 100
+    
+    # 점수 부여
+    if vix_diff_percentage > 10:
+        return 3
+    elif vix_diff_percentage > 5:
+        return 2
+    elif vix_diff_percentage < -5:
+        return -2
+    else:
+        return 0
+        
+        
 from typing import Dict, Any, List, Tuple, Optional
 
 def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     """
-    [최종 완결판] 매크로 주입 데이터(T10Y2Y, VIX)와 섹터 배분 로직 통합본
+    섹터 배분 필터
+    VIX 동적 임계값을 기반으로 섹터에 점수를 부여하는 로직을 포함합니다.
     """
-    # 1. 데이터 추출 (FINAL_STATE 우선, 없으면 상위 노드 탐색)
-    state = market_data.get("FINAL_STATE", {}) or {}
+    # VIX 동적 임계값 계산
+    vix_score = dynamic_vix_threshold(market_data)
 
-    def fetch_val(key, default):
-        # 1순위: 우리가 주입한 대문자 KEY
-        val = state.get(key.upper())
-        # 2순위: 혹시 모를 소문자 KEY
-        if val is None: val = state.get(key.lower())
-        # 3순위: market_data 최상위 노드의 'today' 값 (기본 매크로 DF용)
-        if val is None:
-            node = market_data.get(key.upper(), {})
-            if isinstance(node, dict): val = node.get("today")
-
-        try:
-            return float(val) if val is not None else default
-        except:
-            return default
-
-    # 핵심 변수 확정
-    t10y2y = fetch_val("T10Y2Y", 0.0)
-    vix = fetch_val("VIX", 20.0)
-    phase = str(state.get("phase", "N/A")).upper()
-    liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
-    liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
-    credit_calm = state.get("credit_calm", True)
-
-    # 2. 섹터 리스트 및 스코어링 초기화
+    # 섹터 배분 및 점수 부여 로직
     sectors = [
         "Technology", "Financials", "Energy", "Industrials", "Materials",
         "Consumer Discretionary", "Consumer Staples", "Health Care",
@@ -3016,11 +3022,18 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             score[s] += pts
             reasons[s].append(f"{'+' if pts > 0 else ''}{pts}: {why}")
 
-    # ---------------------------------------------------------
-    # 3. 계산 로직 (Logic Core)
-    # ---------------------------------------------------------
-    
-    # A) 유동성 환경 (Liquidity)
+    # VIX 동적 임계값에 따라 섹터 배분 점수 업데이트
+    if vix_score == 3:
+        add_score("Utilities", 3, "VIX 상승 → 시장 공포 확산")
+    elif vix_score == 2:
+        add_score("Consumer Staples", 2, "VIX 상승 → 경기 비탄력적 섹터 선호")
+    elif vix_score == -2:
+        add_score("Technology", -2, "VIX 하락 → 위험자산 회피")
+
+    # 유동성 환경 (Liquidity) 추가
+    liq_dir = str(market_data.get("liquidity_dir", "N/A")).upper()
+    liq_lvl = str(market_data.get("liquidity_level_bucket", "N/A")).upper()
+
     liq_tight = (liq_dir == "DOWN") or (liq_lvl == "LOW")
     if liq_tight:
         add_score("Consumer Staples", 3, "유동성 긴축 → 방어적 필수소비 선호")
@@ -3028,14 +3041,16 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Technology", -3, "유동성 긴축 → 고밸류에이션 부담")
         add_score("Real Estate", -2, "유동성 긴축 → 조달비용 상승 부담")
 
-    # B) 수익률 곡선 (Yield Curve - T10Y2Y)
+    # 수익률 곡선 (Yield Curve - T10Y2Y) 추가
+    t10y2y = market_data.get("T10Y2Y", 0.0)
     if t10y2y < 0:
         add_score("Financials", -3, f"장단기 금리차 역전({t10y2y:.2f}) → 은행 수익성 악화")
         add_score("Utilities", 2, "경기 침체 우려 → 고배당 방어주 메리트")
     elif t10y2y > 0.5:
         add_score("Financials", 2, f"수익률 곡선 가파름({t10y2y:.2f}) → 예대마진 개선")
 
-    # C) 공포 지수 (Volatility - VIX)
+    # 공포 지수 (Volatility - VIX) 추가
+    vix = market_data.get("VIX", 20.0)
     if vix > 25:
         add_score("Utilities", 3, f"시장 공포 확산(VIX {vix:.1f}) → 최우선 피난처")
         add_score("Consumer Staples", 2, f"VIX {vix:.1f} → 경기 비탄력적 섹터 선호")
@@ -3043,14 +3058,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     elif vix < 15:
         add_score("Technology", 2, f"시장 안도(VIX {vix:.1f}) → 성장주 베팅 유효")
 
-    # D) 신용 스프레드 (Credit)
-    if not credit_calm:
-        add_score("Financials", -2, "크레딧 리스크 감지 → 금융주 변동성 확대")
-        add_score("Real Estate", -3, "크레딧 리스크 감지 → 부동산 금융 위축")
-
-    # ---------------------------------------------------------
-    # 4. 리포트 텍스트 생성 (Assembly)
-    # ---------------------------------------------------------
+    # 결과 출력
     ow = [s for s in sectors if score[s] > 0]
     uw = [s for s in sectors if score[s] < 0]
     
@@ -3061,7 +3069,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines = []
     lines.append("### 🏭 18) Sector Allocation Engine (v2)")
     lines.append("")
-    lines.append(f"**Context:** phase={phase} / T10Y2Y={t10y2y:.2f} / VIX={vix:.2f}")
+    lines.append(f"**Context:** phase={market_data.get('phase', 'N/A')} / T10Y2Y={t10y2y:.2f} / VIX={vix:.2f}")
     lines.append("")
     lines.append(f"**Overweight:** {', '.join(ow_sorted) if ow_sorted else 'None'}")
     lines.append(f"**Underweight:** {', '.join(uw_sorted) if uw_sorted else 'None'}")
@@ -3079,7 +3087,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         lines.append(f"- {r_line}")
 
     return "\n".join(lines)
-
+    
+    
 
 # filters/execution_layer.py
 from typing import Dict, Any, List
