@@ -2980,22 +2980,18 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     state = market_data.get("FINAL_STATE", {}) or {}
 
     def fetch_val(key, default):
-        # 1순위: FINAL_STATE의 대문자 KEY
+        # 1순위: 우리가 주입한 대문자 KEY
         val = state.get(key.upper())
-
-        # 2순위: FINAL_STATE의 소문자 KEY
-        if val is None:
-            val = state.get(key.lower())
-
-        # 3순위: market_data 최상위 노드 dict의 today 값
+        # 2순위: 혹시 모를 소문자 KEY
+        if val is None: val = state.get(key.lower())
+        # 3순위: market_data 최상위 노드의 'today' 값 (기본 매크로 DF용)
         if val is None:
             node = market_data.get(key.upper(), {})
-            if isinstance(node, dict):
-                val = node.get("today")
+            if isinstance(node, dict): val = node.get("today")
 
         try:
             return float(val) if val is not None else default
-        except Exception:
+        except:
             return default
 
     # 핵심 변수 확정
@@ -3005,10 +3001,6 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
     liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
     credit_calm = state.get("credit_calm", True)
-
-    # DEBUG는 여기서 찍어야 함
-    print("[DEBUG][18] FINAL_STATE:", state)
-    print("[DEBUG][18] fetched:", f"T10Y2Y={t10y2y}, VIX={vix}, credit_calm={credit_calm}")
 
     # 2. 섹터 리스트 및 스코어링 초기화
     sectors = [
@@ -3069,7 +3061,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines = []
     lines.append("### 🏭 18) Sector Allocation Engine (v2)")
     lines.append("")
-    lines.append(f"**Context:** phase={phase} / T10Y2Y={t10y2y:.2f} / VIX={vix:.2f} / credit={credit_calm}")
+    lines.append(f"**Context:** phase={phase} / T10Y2Y={t10y2y:.2f} / VIX={vix:.2f}")
     lines.append("")
     lines.append(f"**Overweight:** {', '.join(ow_sorted) if ow_sorted else 'None'}")
     lines.append(f"**Underweight:** {', '.join(uw_sorted) if uw_sorted else 'None'}")
