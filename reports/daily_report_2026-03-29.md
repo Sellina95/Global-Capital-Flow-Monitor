@@ -126,24 +126,24 @@ No significant sector-level correlation break detected.
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
 ⚠ Market Closed / Stale Data → Price-based geo signals muted.
 
-- **Geo Stress Score (z-composite):** **+0.18**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.29**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
-- **3D Avg Score:** +0.29
+- **3D Avg Score:** +0.40
 - **Geo Momentum:** -0.11 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.467
+- **Cosine Similarity Score:** 0.499
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.467
-  - Ukraine_2022: 0.402
-  - Israel_2023: 0.335
+  - Taiwan_Tension: 0.499
+  - Ukraine_2022: 0.457
+  - Israel_2023: 0.372
 - **Top Drivers:**
-  - USDCNH: z_used=+0.78 (z1d=+0.08, z5d=+1.83, raw_w=0.18, norm_w=0.14) → contrib=+0.11
+  - USDCNH: z_used=+0.72 (z1d=+0.08, z5d=+1.68, raw_w=0.18, norm_w=0.14) → contrib=+0.10
   - KR10Y_SPREAD: z_used=-1.00 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
+  - USDMXN: z_used=+1.44 (z1d=+1.77, z5d=+0.94, raw_w=0.05, norm_w=0.04) → contrib=+0.06
   - DE10Y_SPREAD: z_used=+1.00 (mode=level, raw_w=0.06, norm_w=0.05) → contrib=+0.05
-  - SEA: z_used=+0.80 (z1d=-0.20, z5d=-1.72, raw_w=0.05, norm_w=0.04) → contrib=+0.03
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
 
@@ -178,18 +178,18 @@ No significant sector-level correlation break detected.
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
 - **Today snapshot:** US10Y(4.440), DXY(100.150), VIX(31.05)
 
-### 🏗️ 12) Structural Filter
-- **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?
-- **핵심 신호:** US10Y(→) / DXY(→) / VIX(→) / WTI(→)
+### 🏗️ 12) Structural Filter (v2)
+- **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
+- **핵심 신호:** US10Y(→) / DXY(→) / GOLD(→) / VIX(→) / WTI(→)
 - **판정:** **NEUTRAL**
-- **근거:** 패권/구조 신호가 뚜렷하지 않음
+- **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
 
 ### 🧠 13) Narrative Engine (v2 + Risk Budget)
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+2.0) | REAL_RATEΔ +0.060 / FCIΔ +0.039 / DXYΔ +0.000 / US10YΔ +0.000
-- **Sentiment (Fear&Greed):** 24.679858362292823 (FEAR)
+- **Sentiment (Fear&Greed):** 23.525678574596 (FEAR)
 - **Credit Calm (HY OAS<4):** True
 - **Liquidity (NET_LIQ):** dir=DOWN / level=MID
 - **Phase:** WAITING / RANGE (대기·박스권)
@@ -308,8 +308,8 @@ No significant sector-level correlation break detected.
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.0613358922528901
-- **Z-Score (5d):** -0.07580859251889403
+- **Z-Score (1d):** 0.061336324160422735
+- **Z-Score (5d):** -0.07580858704598166
 
 ### EEM
 - **Crash?** False
