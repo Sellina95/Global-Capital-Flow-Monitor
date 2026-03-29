@@ -2305,34 +2305,68 @@ def timing_filter(market_data: Dict[str, Any]) -> str:
 # 12) Structural Filter
 # =========================
 def structural_filter(market_data: Dict[str, Any]) -> str:
+    # 1. 데이터 추출 (기존 항목 + GOLD 추가)
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
     vix = _get_series(market_data, "VIX")
     wti = _get_series(market_data, "WTI")
+    gold = _get_series(market_data, "GOLD") # 금 데이터 추가
 
     us10y_dir = _sign_from(us10y)
     dxy_dir = _sign_from(dxy)
     vix_dir = _sign_from(vix)
     wti_dir = _sign_from(wti)
+    gold_dir = _sign_from(gold) # 금 방향성
 
+    # 2. 상태 초기화
     state = "NEUTRAL"
-    rationale = "패권/구조 신호가 뚜렷하지 않음"
+    rationale = "글로벌 매크로 구조의 특이 신호가 감지되지 않음"
 
-    if us10y_dir == 1 and dxy_dir == 1:
+    # ---------------------------------------------------------
+    # [핵심 업그레이드 로직]
+    # ---------------------------------------------------------
+    
+    # A) 시스템적 헤지 구조 (달러와 금의 동반 상승)
+    # 일반적인 역상관 관계를 깨고 둘 다 오른다면 '화폐 시스템 불안'을 의미
+    if dxy_dir == 1 and gold_dir == 1:
+        state = "SYSTEMIC HEDGE (시스템적 위험 회피)"
+        rationale = "달러와 금의 동반 상승은 법정 화폐 가치 전반에 대한 의구심과 구조적 불확실성을 시사함"
+
+    # B) 글로벌 긴축 구조 (금리↑ + 달러↑) - 기존 로직 유지하되 우선순위 조정
+    elif us10y_dir == 1 and dxy_dir == 1:
         state = "GLOBAL FINANCIAL TIGHTENING (글로벌 긴축 구조)"
-        rationale = "금리↑ + 달러↑ 조합은 글로벌 자금조달 비용을 올려 신흥국/리스크자산에 부담"
-    elif wti_dir == -1 and vix_dir == 1:
-        state = "WEAK DEMAND + RISK-OFF (수요 둔화 + 위험회피)"
-        rationale = "유가↓ + VIX↑는 성장 둔화 우려와 위험회피 심리 강화로 연결될 수 있음"
+        rationale = "금리↑ + 달러↑ 조합은 글로벌 자본 조달 비용을 높여 신흥국 및 리스크 자산에 구조적 압박"
 
+    # C) 스태그플레이션 구조 (유가↑ + 금리↓/보합) 
+    # 경기는 안 좋은데 에너지만 비싸지는 구조적 비용 압박
+    elif wti_dir == 1 and us10y_dir <= 0:
+        state = "COST-PUSH STRUCTURE (비용 주도 구조)"
+        rationale = "경기 지지(금리 하락)가 필요한 상황에서 유가 상승은 실물 경제의 구조적 비용 부담을 가중시킴"
+
+    # D) 수요 둔화 (기존 로직 유지)
+    elif wti_dir == -1 and vix_dir == 1:
+        state = "WEAK DEMAND + RISK-OFF (수요 둔화)"
+        rationale = "유가 하락과 변동성 상승은 성장의 구조적 둔화 우려를 반영"
+
+    # ---------------------------------------------------------
+    # 3. 리포트 조립
+    # ---------------------------------------------------------
     lines = []
-    lines.append("### 🏗️ 12) Structural Filter")
-    lines.append("- **질문:** 이 변화가 글로벌 구조(달러 패권/성장/에너지)에 어떤 힌트를 주는가?")
-    lines.append(
-        f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)}) / WTI({_dir_str(wti_dir)})"
-    )
+    lines.append("### 🏗️ 12) Structural Filter (v2)")
+    lines.append("- **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?")
+    
+    # 신호 표시줄에 금(GOLD) 추가
+    signals = [
+        f"US10Y({_dir_str(us10y_dir)})",
+        f"DXY({_dir_str(dxy_dir)})",
+        f"GOLD({_dir_str(gold_dir)})", # 금 추가!
+        f"VIX({_dir_str(vix_dir)})",
+        f"WTI({_dir_str(wti_dir)})"
+    ]
+    lines.append(f"- **핵심 신호:** {' / '.join(signals)}")
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
+    
     return "\n".join(lines)
 
 
