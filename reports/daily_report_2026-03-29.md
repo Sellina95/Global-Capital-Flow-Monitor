@@ -8,7 +8,7 @@
 - **달러 인덱스**: 100.150  (+0.00% vs 100.150)
 - **WTI 유가**: 99.640  (+0.00% vs 99.640)
 - **변동성 지수 (VIX)**: 31.050  (+0.00% vs 31.050)
-- **원/달러 환율**: 1508.360  (+0.00% vs 1508.360)
+- **원/달러 환율**: 1508.060  (-0.02% vs 1508.360)
 
 ---
 
@@ -91,7 +91,7 @@ Some commentary here
 - DXY **(Noise, +0.00%)** → 달러 보합(방향성 약함)
 - WTI **(Noise, +0.00%)** → 유가 보합(물가 변수 제한)
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
-- 원/달러(USDKRW) **(Noise, +0.00%)** → 환율 보합(수급 압력 제한)
+- 원/달러(USDKRW) **(Noise, -0.02%)** → 원화 강세/수급 개선
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -126,24 +126,24 @@ No significant sector-level correlation break detected.
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
 ⚠ Market Closed / Stale Data → Price-based geo signals muted.
 
-- **Geo Stress Score (z-composite):** **+0.29**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.28**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
 - **3D Avg Score:** +0.40
-- **Geo Momentum:** -0.10 *(Status: FLAT)*
+- **Geo Momentum:** -0.12 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.497
+- **Cosine Similarity Score:** 0.498
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.497
-  - Ukraine_2022: 0.454
-  - Israel_2023: 0.369
+  - Taiwan_Tension: 0.498
+  - Ukraine_2022: 0.456
+  - Israel_2023: 0.371
 - **Top Drivers:**
   - USDCNH: z_used=+0.72 (z1d=+0.08, z5d=+1.68, raw_w=0.18, norm_w=0.14) → contrib=+0.10
   - KR10Y_SPREAD: z_used=-1.00 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
-  - USDMXN: z_used=+1.44 (z1d=+1.77, z5d=+0.94, raw_w=0.05, norm_w=0.04) → contrib=+0.06
   - DE10Y_SPREAD: z_used=+1.00 (mode=level, raw_w=0.06, norm_w=0.05) → contrib=+0.05
+  - USDMXN: z_used=+1.14 (z1d=+1.41, z5d=+0.73, raw_w=0.05, norm_w=0.04) → contrib=+0.04
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
 
@@ -188,15 +188,16 @@ No significant sector-level correlation break detected.
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+2.0) | REAL_RATEΔ +0.060 / FCIΔ +0.039 / DXYΔ +0.000 / US10YΔ +0.000
+- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+2.0) | REAL_RATEΔ +0.060 / FCIΔ +0.039 / DXYΔ +0.000 / US10YΔ +0.000 (스태그플레이션)
 - **Sentiment (Fear&Greed):** 23.525678574596 (FEAR)
-- **Credit Calm (HY OAS<4):** True
-- **Liquidity (NET_LIQ):** dir=DOWN / level=MID
-- **Phase:** WAITING / RANGE (대기·박스권)
+- **Credit Calm:** True
+- **Liquidity (NET_LIQ):** DOWN (MID)
+- **Phase:** WAITING / RANGE (대기·박스권) (Cap: 30)
+- **[SPECIAL ALERT]**: **⚠️ 에너지 비용 전이** (Structural Cap: 40)
 
-- **🎯 Final Risk Action:** **REDUCE**
-- **Risk Budget (0~100):** **25**
-- **Narrative:** 구조=TIGHTENING / 심리=FEAR / 유동성=감소/중간 / 크레딧=안정 → Phase=WAITING / RANGE (대기·박스권)
+- **🎯 Final Risk Action:** **STRONG REDUCE**
+- **Risk Budget (0~100):** **10**
+- **Narrative:** 구조=TIGHTENING(스태그플레이션) / 심리=FEAR / 유동성=감소/중간 / 크레딧=안정 → Phase=WAITING / RANGE (대기·박스권)
 
 ### ⚠ 14) Divergence Monitor
 - **정의:** 구조(정책)와 가격(시장 국면)의 충돌 여부 감지
@@ -211,13 +212,13 @@ No significant sector-level correlation break detected.
 - **정의:** Risk Budget을 실제 익스포저로 변환 (Pro Version)
 - **추가 이유:** 변동성·스트레스·국면을 모두 반영한 실전형 리스크 제어
 
-- **Risk Budget:** 25
+- **Risk Budget:** 10
 - **Phase Cap:** 60
 - **VIX Level:** 31.05 (EXTREME)
 - **VIX Change (%):** +0.00%
 - **Final Multiplier:** 0.60x
 
-- **📊 Recommended Exposure:** **22%**
+- **📊 Recommended Exposure:** **9%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
@@ -272,14 +273,14 @@ No significant sector-level correlation break detected.
 - Rate-sensitive long-duration equities
 
 ## 🧭 So What? (Decision Layer)
-- **Risk Stance:** **REDUCE** *(target exposure: 25%)*
+- **Risk Stance:** **STRONG REDUCE** *(target exposure: 10%)*
 - **Context:** phase=WAITING / RANGE (대기·박스권) / liquidity=DOWN-MID / credit_calm=True / geo=NORMAL
 
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
 ### 🔹 Base Case
 - 조건: 유동성 혼조 + 크레딧 안정 유지 / 변동성 급등 없이 박스권 장세 지속
-- 전략: 노출 25% 유지, 퀄리티 중심 선별적 접근
+- 전략: 노출 10% 유지, 퀄리티 중심 선별적 접근
 
 ### 🔼 Bull Case
 - 조건: NET_LIQ 회복 (dir=UP & level=MID 이상) / 크레딧 스프레드 추가 축소
@@ -308,8 +309,8 @@ No significant sector-level correlation break detected.
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.061336324160422735
-- **Z-Score (5d):** -0.07580858704598166
+- **Z-Score (1d):** 0.0613358922528901
+- **Z-Score (5d):** -0.07580859251889403
 
 ### EEM
 - **Crash?** False
@@ -326,8 +327,8 @@ No significant sector-level correlation break detected.
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.1832055057134947
-- **Z-Score (5d):** -0.062083676756529184
+- **Z-Score (1d):** -1.1832064530902695
+- **Z-Score (5d):** -0.062083725331717826
 
 ### EWJ
 - **Crash?** False
