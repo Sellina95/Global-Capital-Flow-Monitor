@@ -16,7 +16,7 @@
 - **Status:** ✅ DETECTED
 - **Prev → Current:** RISK-OFF (긴축/불안·리스크 회피) → WAITING / RANGE (대기·박스권)
 - **File:** `insights/risk_alerts.txt` ✅ created
-- **Email:** ❌ not sent (RESEND env missing (RESEND_API_KEY/RESEND_FROM/RESEND_TO))
+- **Email:** ✅ sent (sent)
 
 ---
 
