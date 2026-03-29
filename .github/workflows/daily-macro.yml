@@ -125,14 +125,19 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/etf_returns.py
 
-      # ✅ 3) 리포트 생성
+      # ✅ 3) 리포트 생성 (이메일 발송 환경 변수 추가)
       - name: Run report generator
+        env:
+          # GitHub Secrets에서 가져온 값을 환경 변수로 주입
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
+          RESEND_TO: ${{ secrets.RESEND_TO }}
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/generate_report.py
           echo "== macro_data tail =="
           tail -n 2 data/macro_data.csv || true
-
+          
       # ✅ (디버그) 최신 리포트 상단 확인
       - name: Debug report head (latest)
         run: |
