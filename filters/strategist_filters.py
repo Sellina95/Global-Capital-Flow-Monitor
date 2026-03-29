@@ -2373,6 +2373,9 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **핵심 신호:** {' / '.join(signals)}")
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
+
+    # structural_filter 함수 마지막 return 직전에 추가
+    market_data["STRUCT_V2_STATE"] = state
     
     return "\n".join(lines)
 
@@ -2430,7 +2433,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     # --------------------------------------------------
     # 1️⃣ Pull Signals
     # --------------------------------------------------
-
+    struct_v2 = str(market_data.get("STRUCT_V2_STATE", "NEUTRAL")).upper()
     policy_bias_line = str(market_data.get("POLICY_BIAS_LINE", "") or "")
 
     sentiment = market_data.get("SENTIMENT", {}) or {}
@@ -2503,6 +2506,26 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     elif liq_level_bucket == "LOW":
         budget -= 5
 
+    # ⚡ [NEW] Structural v2 Penalty (구조적 위기 반영)
+    # --------------------------------------------------
+    # ⚡ [NEW] 12번 필터(v2) 기반 추가 Tilt 및 Penalty
+    # 구조적 위기 상황일 때 예산을 추가로 깎습니다.
+    # ⚡ [NEW] 12번 필터(v2) 기반 추가 Tilt 및 Penalty
+    struct_v2_kr = "정상"
+    struct_alert = ""  # <--- 이 줄을 추가해서 에러를 방지하세요!
+    v2_cap = 100
+    
+    if "SYSTEMIC" in struct_v2:
+        budget -= 20
+        struct_v2_kr = "시스템위기"
+        struct_alert = "🚨 시스템 불신 감지" # <--- 리포트 출력을 위해 추가
+        v2_cap = 30
+    elif "STAGFLATION" in struct_v2:
+        budget -= 15
+        struct_v2_kr = "스태그플레이션"
+        struct_alert = "⚠️ 에너지 비용 전이" # <--- 리포트 출력을 위해 추가
+        v2_cap = 40
+
     # --------------------------------------------------
     # 3️⃣ Phase Cap (핵심 업그레이드)
     # --------------------------------------------------
@@ -2517,23 +2540,27 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     elif phase_upper.startswith("RISK-OFF"):
         cap = 35
 
-    budget = min(int(round(budget)), cap)
-    budget = _clamp(budget, 0, 100)
+    # 시스템 위기나 스태그 상황에선 시장 국면(Phase)과 상관없이 리스크 상한을 강제 축소
+    if "SYSTEMIC" in struct_v2 or "STAGFLATION" in struct_v2:
+        cap = min(cap, 30) # 구조적 위기에선 무조건 보수적 접근
 
-    # store for downstream filters (e.g., Volatility-Controlled Exposure)
+    # 원본 phase_cap과 12번 구조적 상한선(v2_cap) 중 더 낮은 것을 선택
+    final_cap = min(cap, v2_cap)
+    budget = min(int(round(budget)), final_cap)
+    budget = _clamp(budget, 0, 100)
     market_data["RISK_BUDGET"] = budget
 
     # --------------------------------------------------
-    # 4️⃣ Final Action
+    # 4️⃣ Final Action (액션 판정 강화)
     # --------------------------------------------------
-
     if budget >= 70:
         action = "INCREASE"
-    elif budget <= 35:
+    elif budget <= 20: # 더 강화된 REDUCE
+        action = "STRONG REDUCE"
+    elif budget <= 40:
         action = "REDUCE"
     else:
         action = "HOLD"
-
     # --------------------------------------------------
     # 5️⃣ Narrative Line
     # --------------------------------------------------
@@ -2546,15 +2573,16 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         elif tightening and not easing:
             struct_tag = "TIGHTENING"
 
-    credit_tag = "안정" if credit_calm is True else ("불안" if credit_calm is False else "N/A")
+    # Narrative에 12번의 구조적 상태를 괄호로 추가
+    struct_tag_final = f"{struct_tag}({struct_v2_kr})" if struct_v2_kr != "정상" else struct_tag
 
-    # More Wall-Street-ish liquidity tag (two-axis)
+    credit_tag = "안정" if credit_calm is True else ("불안" if credit_calm is False else "N/A")
     liq_dir_kr = {"UP": "증가", "DOWN": "감소", "FLAT": "보합", "N/A": "N/A"}[liq_dir_tag]
     liq_lvl_kr = {"HIGH": "높음", "MID": "중간", "LOW": "낮음", "N/A": "N/A"}.get(liq_level_bucket, "N/A")
     liq_tag = f"{liq_dir_kr}/{liq_lvl_kr}"
 
     narrative = (
-        f"구조={struct_tag} / 심리={sent_state} / 유동성={liq_tag} / "
+        f"구조={struct_tag_final} / 심리={sent_state} / 유동성={liq_tag} / " # <--- struct_tag 대신 struct_tag_final 사용!
         f"크레딧={credit_tag} → Phase={phase}"
     )
 
@@ -2595,11 +2623,15 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append("- **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정")
     lines.append("- **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문")
     lines.append("")
-    lines.append(f"- **Structure Bias:** {policy_bias_line}")
+    lines.append(f"- **Structure Bias:** {policy_bias_line} ({struct_v2_kr})")
     lines.append(f"- **Sentiment (Fear&Greed):** {fear if fear is not None else 'N/A'} ({sent_state})")
-    lines.append(f"- **Credit Calm (HY OAS<4):** {credit_calm}")
-    lines.append(f"- **Liquidity (NET_LIQ):** dir={liq_dir_tag} / level={liq_level_bucket}")
-    lines.append(f"- **Phase:** {phase}")
+    lines.append(f"- **Credit Calm:** {credit_calm}")
+    lines.append(f"- **Liquidity (NET_LIQ):** {liq_dir_tag} ({liq_level_bucket})")
+    lines.append(f"- **Phase:** {phase} (Cap: {phase_cap})") 
+
+    if struct_alert:
+        lines.append(f"- **[SPECIAL ALERT]**: **{struct_alert}** (Structural Cap: {v2_cap})")
+    
     lines.append("")
     lines.append(f"- **🎯 Final Risk Action:** **{action}**")
     lines.append(f"- **Risk Budget (0~100):** **{budget}**")
