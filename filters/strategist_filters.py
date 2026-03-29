@@ -2311,44 +2311,47 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
     vix = _get_series(market_data, "VIX")
     wti = _get_series(market_data, "WTI")
     gold = _get_series(market_data, "GOLD")
-    real_rate = _get_series(market_data, "REAL_RATE")
+    rr = _get_series(market_data, "REAL_RATE")
 
     us10y_dir = _sign_from(us10y)
     dxy_dir = _sign_from(dxy)
     vix_dir = _sign_from(vix)
     wti_dir = _sign_from(wti)
     gold_dir = _sign_from(gold)
-    real_rate_lvl = _get_level(real_rate)
+
+    # 실질금리 값 추출 (float 변환)
+    rr_val = _to_float(rr.get("today")) if rr else 0.0
+    wti_val = _to_float(wti.get("today")) if wti else 0.0
 
     # 2. 상태 초기화
     state = "NEUTRAL"
     rationale = "글로벌 매크로 구조의 특이 신호가 감지되지 않음"
 
     # ---------------------------------------------------------
-    # [12번 필터 통합 로직 - 우선순위대로 판정]
+    # [12번 필터 통합 로직 - 우선순위 판정]
     # ---------------------------------------------------------
     
-    # 1순위: 시스템적 헤지 (화폐 시스템 불신)
+    # A) 시스템적 헤지 (달러 & 금 동반 상승)
     if dxy_dir == 1 and gold_dir == 1:
         state = "SYSTEMIC HEDGE (시스템적 위험 회피)"
         rationale = "달러와 금의 동반 상승은 법정 화폐 가치 전반에 대한 의구심과 구조적 불확실성을 시사함"
 
-    # 2순위: 에너지 주도 스태그플레이션 (공급망/패권 이슈)
-    elif float(market_data.get("WTI", 0)) > 90 and real_rate_lvl == "RESTRICTIVE":
+    # B) 에너지 주도 스태그플레이션 (실질금리 2.0 기준 적용)
+    elif wti_val > 90 and rr_val >= 2.0:
         state = "ENERGY-DRIVEN STAGFLATION (에너지 주도 스태그)"
-        rationale = "긴축적인 실질금리 환경에서도 고유가가 유지됨. 이는 수요 억제로 해결되지 않는 에너지 공급망의 구조적 압박을 의미"
+        rationale = f"긴축적인 실질금리({rr_val}%) 환경에서도 고유가가 유지됨. 이는 공급망의 구조적 압박을 의미"
 
-    # 3순위: 글로벌 긴축 구조 (자금 조달 비용 상승)
+    # C) 글로벌 긴축 구조 (금리 & 달러 동반 상승)
     elif us10y_dir == 1 and dxy_dir == 1:
         state = "GLOBAL FINANCIAL TIGHTENING (글로벌 긴축 구조)"
-        rationale = "금리↑ + 달러↑ 조합은 글로벌 자금 조달 비용을 높여 신흥국 및 리스크 자산에 구조적 압박"
+        rationale = "금리↑ + 달러↑ 조합은 글로벌 자본 조달 비용을 높여 리스크 자산에 구조적 압박"
 
-    # 4순위: 비용 주도 구조 (경기 둔화 중 유가 상승)
+    # D) 비용 주도 구조 (경기 우려 속 유가 상승)
     elif wti_dir == 1 and us10y_dir <= 0:
         state = "COST-PUSH STRUCTURE (비용 주도 구조)"
         rationale = "경기 지지(금리 하락)가 필요한 상황에서 유가 상승은 실물 경제의 구조적 비용 부담을 가중시킴"
 
-    # 5순위: 수요 둔화 우려
+    # E) 수요 둔화 우려
     elif wti_dir == -1 and vix_dir == 1:
         state = "WEAK DEMAND + RISK-OFF (수요 둔화)"
         rationale = "유가 하락과 변동성 상승은 성장의 구조적 둔화 우려를 반영"
