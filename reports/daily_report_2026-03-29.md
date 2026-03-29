@@ -129,16 +129,16 @@ No significant sector-level correlation break detected.
 - **Geo Stress Score (z-composite):** **+0.29**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
 - **3D Avg Score:** +0.40
-- **Geo Momentum:** -0.11 *(Status: FLAT)*
+- **Geo Momentum:** -0.10 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.499
+- **Cosine Similarity Score:** 0.497
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.499
-  - Ukraine_2022: 0.457
-  - Israel_2023: 0.372
+  - Taiwan_Tension: 0.497
+  - Ukraine_2022: 0.454
+  - Israel_2023: 0.369
 - **Top Drivers:**
   - USDCNH: z_used=+0.72 (z1d=+0.08, z5d=+1.68, raw_w=0.18, norm_w=0.14) → contrib=+0.10
   - KR10Y_SPREAD: z_used=-1.00 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
@@ -181,8 +181,8 @@ No significant sector-level correlation break detected.
 ### 🏗️ 12) Structural Filter (v2)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
 - **핵심 신호:** US10Y(→) / DXY(→) / GOLD(→) / VIX(→) / WTI(→)
-- **판정:** **NEUTRAL**
-- **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
+- **판정:** **ENERGY-DRIVEN STAGFLATION (에너지 주도 스태그)**
+- **근거:** 긴축적인 실질금리(2.08%) 환경에서도 고유가가 유지됨. 이는 공급망의 구조적 압박을 의미
 
 ### 🧠 13) Narrative Engine (v2 + Risk Budget)
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
