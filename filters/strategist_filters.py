@@ -3111,6 +3111,74 @@ def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
     else:
         return (0, "VOLATILITY NORMAL", f"absolute mode: VIX {current_vix:.1f}")
 
+from typing import Dict, Any, List, Tuple, Optional
+
+
+def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
+    """
+    VIX 동적 임계값 판단
+    반환:
+      (score, label, detail)
+    """
+
+    state = market_data.get("FINAL_STATE", {}) or {}
+
+    def fetch_val(key: str, default: float) -> float:
+        val = state.get(key.upper())
+        if val is None:
+            val = state.get(key.lower())
+        if val is None:
+            node = market_data.get(key.upper(), {})
+            if isinstance(node, dict):
+                val = node.get("today")
+        try:
+            return float(val) if val is not None else default
+        except Exception:
+            return default
+
+    current_vix = fetch_val("VIX", 20.0)
+
+    history = (
+        market_data.get("_VIX_HISTORY")
+        or market_data.get("VIX_HISTORY")
+        or market_data.get("vix_history")
+    )
+
+    if isinstance(history, (list, tuple)):
+        clean_hist = []
+        for x in history:
+            try:
+                if x is not None:
+                    clean_hist.append(float(x))
+            except Exception:
+                pass
+
+        if len(clean_hist) >= 20:
+            recent20 = clean_hist[-20:]
+            avg20 = sum(recent20) / len(recent20)
+
+            if avg20 > 0:
+                ratio = current_vix / avg20
+
+                if ratio >= 1.25:
+                    return (3, "VOLATILITY SHOCK", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                elif ratio >= 1.10:
+                    return (2, "VOLATILITY ELEVATED", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                elif ratio <= 0.85:
+                    return (-2, "VOLATILITY CALM", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                else:
+                    return (0, "VOLATILITY NORMAL", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+
+    # fallback absolute mode
+    if current_vix >= 30:
+        return (3, "VOLATILITY SHOCK", f"absolute mode: VIX {current_vix:.1f}")
+    elif current_vix >= 25:
+        return (2, "VOLATILITY ELEVATED", f"absolute mode: VIX {current_vix:.1f}")
+    elif current_vix <= 15:
+        return (-2, "VOLATILITY CALM", f"absolute mode: VIX {current_vix:.1f}")
+    else:
+        return (0, "VOLATILITY NORMAL", f"absolute mode: VIX {current_vix:.1f}")
+
 
 def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     """
