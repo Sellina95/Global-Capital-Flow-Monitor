@@ -3049,8 +3049,6 @@ from typing import Dict, Any, List, Tuple, Optional
 def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
     """
     VIX 동적 임계값 판단
-    - 가능하면 최근 VIX 히스토리(20개) 기준
-    - 없으면 절대 레벨 fallback
     반환:
       (score, label, detail)
     """
@@ -3072,14 +3070,12 @@ def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
 
     current_vix = fetch_val("VIX", 20.0)
 
-    # 히스토리 후보들
     history = (
         market_data.get("_VIX_HISTORY")
         or market_data.get("VIX_HISTORY")
         or market_data.get("vix_history")
     )
 
-    # history가 list/tuple 형태면 20일 평균 비교
     if isinstance(history, (list, tuple)):
         clean_hist = []
         for x in history:
@@ -3097,43 +3093,43 @@ def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
                 ratio = current_vix / avg20
 
                 if ratio >= 1.25:
-                    return (3, "VOLATILITY SHOCK", f"VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                    return (3, "VOLATILITY SHOCK", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
                 elif ratio >= 1.10:
-                    return (2, "VOLATILITY ELEVATED", f"VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                    return (2, "VOLATILITY ELEVATED", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
                 elif ratio <= 0.85:
-                    return (-2, "VOLATILITY CALM", f"VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                    return (-2, "VOLATILITY CALM", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
                 else:
-                    return (0, "VOLATILITY NORMAL", f"VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                    return (0, "VOLATILITY NORMAL", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
 
-    # fallback: 절대 레벨 기준
+    # fallback absolute mode
     if current_vix >= 30:
-        return (3, "VOLATILITY SHOCK", f"fallback absolute threshold: VIX {current_vix:.1f}")
+        return (3, "VOLATILITY SHOCK", f"absolute mode: VIX {current_vix:.1f}")
     elif current_vix >= 25:
-        return (2, "VOLATILITY ELEVATED", f"fallback absolute threshold: VIX {current_vix:.1f}")
+        return (2, "VOLATILITY ELEVATED", f"absolute mode: VIX {current_vix:.1f}")
     elif current_vix <= 15:
-        return (-2, "VOLATILITY CALM", f"fallback absolute threshold: VIX {current_vix:.1f}")
+        return (-2, "VOLATILITY CALM", f"absolute mode: VIX {current_vix:.1f}")
     else:
-        return (0, "VOLATILITY NORMAL", f"fallback absolute threshold: VIX {current_vix:.1f}")
+        return (0, "VOLATILITY NORMAL", f"absolute mode: VIX {current_vix:.1f}")
 
 
 def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     """
-    18) Sector Allocation Engine (v3)
+    18) Sector Allocation Engine (v3.1)
     반영:
     1) Curve 구간 세분화
     2) Signal priority hierarchy
     3) Score 기반 정렬
+    4) Financials cap
+    5) rationale 중복 완화
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
 
     def fetch_val(key: str, default: float) -> float:
-        # 1순위: FINAL_STATE
         val = state.get(key.upper())
         if val is None:
             val = state.get(key.lower())
 
-        # 2순위: market_data top-level dict의 today
         if val is None:
             node = market_data.get(key.upper(), {})
             if isinstance(node, dict):
@@ -3163,7 +3159,6 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     liq_lvl = fetch_state_str("liquidity_level_bucket", "N/A")
     credit_calm = bool(state.get("credit_calm", True))
 
-    # 동적 VIX
     vix_score, vix_label, vix_detail = dynamic_vix_threshold(market_data)
 
     # -------------------------
@@ -3179,8 +3174,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         curve_segment = "STEEP / REFLATION"
 
     # -------------------------
-    # 3) 우선순위 hierarchy
-    #    VOL > LIQ > CURVE > CREDIT > PHASE
+    # 3) 우선순위
     # -------------------------
     PRIORITY = {
         "VOL": 5,
@@ -3219,7 +3213,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         })
 
     # -------------------------
-    # A) VOLATILITY (최우선)
+    # A) VOLATILITY
     # -------------------------
     if vix_score >= 3:
         add_score("Utilities", 4, f"{vix_label} → 최우선 피난처 ({vix_detail})", "VOL")
@@ -3237,7 +3231,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Utilities", -1, f"{vix_label} → 방어주 상대매력 둔화 ({vix_detail})", "VOL")
 
     # -------------------------
-    # B) LIQUIDITY (2순위)
+    # B) LIQUIDITY
     # -------------------------
     liq_tight = (liq_dir == "DOWN") or (liq_lvl == "LOW")
     liq_easy = (liq_dir == "UP") and (liq_lvl in ("MID", "HIGH"))
@@ -3257,7 +3251,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Utilities", -1, "유동성 완화 → 방어주 상대매력 저하", "LIQ")
 
     # -------------------------
-    # C) CURVE (3순위)
+    # C) CURVE
     # -------------------------
     if curve_segment == "INVERTED":
         add_score("Financials", -3, f"수익률 곡선 역전({t10y2y:.2f}) → 은행 수익성 악화", "CURVE")
@@ -3278,7 +3272,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Materials", 1, f"가파른 스티프닝({t10y2y:.2f}) → 경기재개/실물 민감", "CURVE")
 
     # -------------------------
-    # D) CREDIT (4순위)
+    # D) CREDIT
     # -------------------------
     if not credit_calm:
         add_score("Financials", -2, "크레딧 리스크 감지 → 금융주 변동성 확대", "CREDIT")
@@ -3287,7 +3281,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Health Care", 1, "크레딧 리스크 감지 → 퀄리티 선호", "CREDIT")
 
     # -------------------------
-    # E) PHASE (5순위, 미세조정)
+    # E) PHASE
     # -------------------------
     if "RISK-OFF" in phase:
         add_score("Consumer Staples", 1, "RISK-OFF → 방어주 미세 가점", "PHASE")
@@ -3305,7 +3299,6 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # 4) Conflict Resolver
     # -------------------------
-    # VOL/LIQ 우선. 변동성 높고 유동성 긴축이면 성장/레버리지 긍정 신호를 약화.
     if vix >= 28 and liq_tight:
         if score["Technology"] > 0:
             score["Technology"] = 0
@@ -3319,11 +3312,22 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         if score["Real Estate"] > -1:
             add_score("Real Estate", -1, "Conflict Resolver → VIX 고점 + 유동성 긴축으로 RE 추가 감점", "VOL")
 
-    # 금융주는 커브가 좋아도 신용이 안 좋으면 완화
+    # Financials cap
+    if score["Financials"] > 0 and vix >= 30 and liq_tight:
+        # 강한 스트레스 환경에서는 금융주 가점 상한 제한
+        original = score["Financials"]
+        score["Financials"] = min(score["Financials"], 1)
+        if score["Financials"] != original:
+            drivers["Financials"].append({
+                "pts": score["Financials"] - original,
+                "why": "Financials Cap → VIX 고점 + 유동성 긴축으로 금융주 상단 제한",
+                "bucket": "VOL",
+                "priority": PRIORITY["VOL"],
+            })
+
     if score["Financials"] > 0 and (not credit_calm):
         add_score("Financials", -1, "Conflict Resolver → 커브 우호보다 크레딧 리스크 우선", "CREDIT")
 
-    # EVENT-WATCHING이면 극단적 cyclicals 긍정 조금 완화
     if ("EVENT-WATCHING" in phase or "WAITING" in phase):
         if score["Industrials"] > 0:
             add_score("Industrials", -1, "Conflict Resolver → 이벤트 관망으로 경기민감 가점 일부 축소", "PHASE")
@@ -3333,40 +3337,41 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # 5) Score 기반 정렬
     # -------------------------
-    ow_sorted = sorted(
-        [s for s in sectors if score[s] > 0],
-        key=lambda x: (-score[x], x)
-    )
-    uw_sorted = sorted(
-        [s for s in sectors if score[s] < 0],
-        key=lambda x: (score[x], x)
-    )
+    ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
+    uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
 
-    # 각 섹터의 driver도 priority, 절대점수 기준 정렬
     for s in sectors:
         drivers[s] = sorted(
             drivers[s],
             key=lambda d: (-d["priority"], -abs(d["pts"]), d["why"])
         )
 
-    # Top rationale 생성
-    rationale_pool: List[Tuple[int, int, str]] = []
-    for s in ow_sorted[:4] + uw_sorted[:4]:
-        for d in drivers[s][:2]:
-            label = "OW" if score[s] > 0 else "UW"
-            rationale_pool.append((
-                d["priority"],
-                abs(d["pts"]),
-                f"{label} {s}: {d['pts']:+d}: {d['why']}"
-            ))
+    # rationale 중복 완화:
+    # - 섹터당 최대 2개
+    # - 같은 섹터/같은 bucket 중복 최소화
+    top_rationales: List[str] = []
+    seen_text = set()
 
-    rationale_pool = sorted(rationale_pool, key=lambda x: (-x[0], -x[1], x[2]))
-    top_rationales = []
-    seen = set()
-    for _, __, txt in rationale_pool:
-        if txt not in seen:
-            seen.add(txt)
-            top_rationales.append(txt)
+    for s in ow_sorted[:4] + uw_sorted[:4]:
+        label = "OW" if score[s] > 0 else "UW"
+        used_bucket = set()
+        local_count = 0
+
+        for d in drivers[s]:
+            if d["bucket"] in used_bucket:
+                continue
+            text = f"{label} {s}: {d['pts']:+d}: {d['why']}"
+            if text in seen_text:
+                continue
+
+            seen_text.add(text)
+            used_bucket.add(d["bucket"])
+            top_rationales.append(text)
+            local_count += 1
+
+            if local_count >= 2:
+                break
+
         if len(top_rationales) >= 8:
             break
 
@@ -3374,7 +3379,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # 6) 출력
     # -------------------------
     lines: List[str] = []
-    lines.append("### 🏭 18) Sector Allocation Engine (v3)")
+    lines.append("### 🏭 18) Sector Allocation Engine (v3.1)")
     lines.append("")
     lines.append(
         f"**Context:** phase={phase} / "
@@ -3387,6 +3392,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines.append("**Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE")
     lines.append("")
     lines.append(f"**Overweight:** {', '.join(ow_sorted) if ow_sorted else 'None'}")
+    lines.append("")
     lines.append(f"**Underweight:** {', '.join(uw_sorted) if uw_sorted else 'None'}")
     lines.append("")
     lines.append("**Scoreboard:**")
@@ -3399,7 +3405,10 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         lines.append(f"- {r}")
 
     return "\n".join(lines)
-
+    
+    
+    
+    
 
 # filters/execution_layer.py
 from typing import Dict, Any, List
