@@ -3114,13 +3114,14 @@ def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
 
 def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     """
-    18) Sector Allocation Engine (v3.1)
+    18) Sector Allocation Engine (v3.2)
     반영:
     1) Curve 구간 세분화
     2) Signal priority hierarchy
     3) Score 기반 정렬
     4) Financials cap
     5) rationale 중복 완화
+    6) sector별 score breakdown 추가
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
@@ -3312,9 +3313,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         if score["Real Estate"] > -1:
             add_score("Real Estate", -1, "Conflict Resolver → VIX 고점 + 유동성 긴축으로 RE 추가 감점", "VOL")
 
-    # Financials cap
     if score["Financials"] > 0 and vix >= 30 and liq_tight:
-        # 강한 스트레스 환경에서는 금융주 가점 상한 제한
         original = score["Financials"]
         score["Financials"] = min(score["Financials"], 1)
         if score["Financials"] != original:
@@ -3340,15 +3339,33 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
     uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
 
+    # sector 내부 rationale는 +기여 먼저, 그다음 -기여
     for s in sectors:
-        drivers[s] = sorted(
-            drivers[s],
-            key=lambda d: (-d["priority"], -abs(d["pts"]), d["why"])
-        )
+        positive = [d for d in drivers[s] if d["pts"] > 0]
+        negative = [d for d in drivers[s] if d["pts"] < 0]
+        zeroish = [d for d in drivers[s] if d["pts"] == 0]
 
-    # rationale 중복 완화:
-    # - 섹터당 최대 2개
-    # - 같은 섹터/같은 bucket 중복 최소화
+        positive = sorted(positive, key=lambda d: (-d["priority"], -abs(d["pts"]), d["why"]))
+        negative = sorted(negative, key=lambda d: (-d["priority"], -abs(d["pts"]), d["why"]))
+        zeroish = sorted(zeroish, key=lambda d: (-d["priority"], d["why"]))
+
+        drivers[s] = positive + negative + zeroish
+
+    # score breakdown
+    def sector_breakdown(sector: str) -> str:
+        bucket_sum = {}
+        for d in drivers[sector]:
+            bucket_sum[d["bucket"]] = bucket_sum.get(d["bucket"], 0) + d["pts"]
+
+        ordered_buckets = ["VOL", "LIQ", "CURVE", "CREDIT", "PHASE"]
+        parts = []
+        for b in ordered_buckets:
+            if b in bucket_sum and bucket_sum[b] != 0:
+                parts.append(f"{bucket_sum[b]:+d} {b}")
+        parts.append(f"= {score[sector]:+d}")
+        return ", ".join(parts)
+
+    # rationale 중복 완화
     top_rationales: List[str] = []
     seen_text = set()
 
@@ -3360,6 +3377,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         for d in drivers[s]:
             if d["bucket"] in used_bucket:
                 continue
+
             text = f"{label} {s}: {d['pts']:+d}: {d['why']}"
             if text in seen_text:
                 continue
@@ -3379,7 +3397,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # 6) 출력
     # -------------------------
     lines: List[str] = []
-    lines.append("### 🏭 18) Sector Allocation Engine (v3.1)")
+    lines.append("### 🏭 18) Sector Allocation Engine (v3.2)")
     lines.append("")
     lines.append(
         f"**Context:** phase={phase} / "
@@ -3398,16 +3416,14 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines.append("**Scoreboard:**")
     for s in sorted(sectors, key=lambda x: (-score[x], x)):
         if score[s] != 0:
-            lines.append(f"- {s}: {score[s]:+d}")
+            lines.append(f"- {s}: {score[s]:+d}  ({sector_breakdown(s)})")
     lines.append("")
     lines.append("**Rationale (top drivers):**")
     for r in top_rationales:
         lines.append(f"- {r}")
 
     return "\n".join(lines)
-    
-    
-    
+
     
 
 # filters/execution_layer.py
