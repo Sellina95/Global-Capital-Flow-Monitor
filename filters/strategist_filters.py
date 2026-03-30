@@ -3045,111 +3045,358 @@ def factor_layer_filter(market_data: Dict[str, Any]) -> str:
 
 from typing import Dict, Any, List, Tuple, Optional
 
-def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
+
+def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
     """
-    [최종 완결판] 매크로 주입 데이터(T10Y2Y, VIX)와 섹터 배분 로직 통합본
+    VIX 동적 임계값 판단
+    - 가능하면 최근 VIX 히스토리(20개) 기준
+    - 없으면 절대 레벨 fallback
+    반환:
+      (score, label, detail)
     """
-    # 1. 데이터 추출 (FINAL_STATE 우선, 없으면 상위 노드 탐색)
+
     state = market_data.get("FINAL_STATE", {}) or {}
 
-    def fetch_val(key, default):
-        # 1순위: 우리가 주입한 대문자 KEY
+    def fetch_val(key: str, default: float) -> float:
         val = state.get(key.upper())
-        # 2순위: 혹시 모를 소문자 KEY
-        if val is None: val = state.get(key.lower())
-        # 3순위: market_data 최상위 노드의 'today' 값 (기본 매크로 DF용)
+        if val is None:
+            val = state.get(key.lower())
         if val is None:
             node = market_data.get(key.upper(), {})
-            if isinstance(node, dict): val = node.get("today")
+            if isinstance(node, dict):
+                val = node.get("today")
+        try:
+            return float(val) if val is not None else default
+        except Exception:
+            return default
+
+    current_vix = fetch_val("VIX", 20.0)
+
+    # 히스토리 후보들
+    history = (
+        market_data.get("_VIX_HISTORY")
+        or market_data.get("VIX_HISTORY")
+        or market_data.get("vix_history")
+    )
+
+    # history가 list/tuple 형태면 20일 평균 비교
+    if isinstance(history, (list, tuple)):
+        clean_hist = []
+        for x in history:
+            try:
+                if x is not None:
+                    clean_hist.append(float(x))
+            except Exception:
+                pass
+
+        if len(clean_hist) >= 20:
+            recent20 = clean_hist[-20:]
+            avg20 = sum(recent20) / len(recent20)
+
+            if avg20 > 0:
+                ratio = current_vix / avg20
+
+                if ratio >= 1.25:
+                    return (3, "VOLATILITY SHOCK", f"VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                elif ratio >= 1.10:
+                    return (2, "VOLATILITY ELEVATED", f"VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                elif ratio <= 0.85:
+                    return (-2, "VOLATILITY CALM", f"VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                else:
+                    return (0, "VOLATILITY NORMAL", f"VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+
+    # fallback: 절대 레벨 기준
+    if current_vix >= 30:
+        return (3, "VOLATILITY SHOCK", f"fallback absolute threshold: VIX {current_vix:.1f}")
+    elif current_vix >= 25:
+        return (2, "VOLATILITY ELEVATED", f"fallback absolute threshold: VIX {current_vix:.1f}")
+    elif current_vix <= 15:
+        return (-2, "VOLATILITY CALM", f"fallback absolute threshold: VIX {current_vix:.1f}")
+    else:
+        return (0, "VOLATILITY NORMAL", f"fallback absolute threshold: VIX {current_vix:.1f}")
+
+
+def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
+    """
+    18) Sector Allocation Engine (v3)
+    반영:
+    1) Curve 구간 세분화
+    2) Signal priority hierarchy
+    3) Score 기반 정렬
+    """
+
+    state = market_data.get("FINAL_STATE", {}) or {}
+
+    def fetch_val(key: str, default: float) -> float:
+        # 1순위: FINAL_STATE
+        val = state.get(key.upper())
+        if val is None:
+            val = state.get(key.lower())
+
+        # 2순위: market_data top-level dict의 today
+        if val is None:
+            node = market_data.get(key.upper(), {})
+            if isinstance(node, dict):
+                val = node.get("today")
 
         try:
             return float(val) if val is not None else default
-        except:
+        except Exception:
             return default
 
-    # 핵심 변수 확정
+    def fetch_state_str(key: str, default: str) -> str:
+        val = state.get(key)
+        if val is None:
+            val = state.get(key.upper())
+        if val is None:
+            val = state.get(key.lower())
+        return str(val if val is not None else default).upper()
+
+    # -------------------------
+    # 1) 핵심 변수
+    # -------------------------
     t10y2y = fetch_val("T10Y2Y", 0.0)
     vix = fetch_val("VIX", 20.0)
-    phase = str(state.get("phase", "N/A")).upper()
-    liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
-    liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
-    credit_calm = state.get("credit_calm", True)
 
-    # 2. 섹터 리스트 및 스코어링 초기화
-    sectors = [
-        "Technology", "Financials", "Energy", "Industrials", "Materials",
-        "Consumer Discretionary", "Consumer Staples", "Health Care",
-        "Utilities", "Real Estate", "Communication Services"
-    ]
-    score = {s: 0 for s in sectors}
-    reasons = {s: [] for s in sectors}
+    phase = fetch_state_str("phase", "N/A")
+    liq_dir = fetch_state_str("liquidity_dir", "N/A")
+    liq_lvl = fetch_state_str("liquidity_level_bucket", "N/A")
+    credit_calm = bool(state.get("credit_calm", True))
 
-    def add_score(s: str, pts: int, why: str):
-        if s in score:
-            score[s] += pts
-            reasons[s].append(f"{'+' if pts > 0 else ''}{pts}: {why}")
+    # 동적 VIX
+    vix_score, vix_label, vix_detail = dynamic_vix_threshold(market_data)
 
-    # ---------------------------------------------------------
-    # 3. 계산 로직 (Logic Core)
-    # ---------------------------------------------------------
-    
-    # A) 유동성 환경 (Liquidity)
-    liq_tight = (liq_dir == "DOWN") or (liq_lvl == "LOW")
-    if liq_tight:
-        add_score("Consumer Staples", 3, "유동성 긴축 → 방어적 필수소비 선호")
-        add_score("Health Care", 3, "유동성 긴축 → 안정적 현금흐름 선호")
-        add_score("Technology", -3, "유동성 긴축 → 고밸류에이션 부담")
-        add_score("Real Estate", -2, "유동성 긴축 → 조달비용 상승 부담")
-
-    # B) 수익률 곡선 (Yield Curve - T10Y2Y)
+    # -------------------------
+    # 2) Curve 구간 세분화
+    # -------------------------
     if t10y2y < 0:
-        add_score("Financials", -3, f"장단기 금리차 역전({t10y2y:.2f}) → 은행 수익성 악화")
-        add_score("Utilities", 2, "경기 침체 우려 → 고배당 방어주 메리트")
-    elif t10y2y > 0.5:
-        add_score("Financials", 2, f"수익률 곡선 가파름({t10y2y:.2f}) → 예대마진 개선")
+        curve_segment = "INVERTED"
+    elif t10y2y < 0.25:
+        curve_segment = "FLAT / FRAGILE"
+    elif t10y2y < 0.75:
+        curve_segment = "MODERATE STEEP"
+    else:
+        curve_segment = "STEEP / REFLATION"
 
-    # C) 공포 지수 (Volatility - VIX)
-    if vix > 25:
-        add_score("Utilities", 3, f"시장 공포 확산(VIX {vix:.1f}) → 최우선 피난처")
-        add_score("Consumer Staples", 2, f"VIX {vix:.1f} → 경기 비탄력적 섹터 선호")
-        add_score("Technology", -3, f"VIX {vix:.1f} → 위험자산 회피")
-    elif vix < 15:
-        add_score("Technology", 2, f"시장 안도(VIX {vix:.1f}) → 성장주 베팅 유효")
+    # -------------------------
+    # 3) 우선순위 hierarchy
+    #    VOL > LIQ > CURVE > CREDIT > PHASE
+    # -------------------------
+    PRIORITY = {
+        "VOL": 5,
+        "LIQ": 4,
+        "CURVE": 3,
+        "CREDIT": 2,
+        "PHASE": 1,
+    }
 
-    # D) 신용 스프레드 (Credit)
+    sectors = [
+        "Technology",
+        "Financials",
+        "Energy",
+        "Industrials",
+        "Materials",
+        "Consumer Discretionary",
+        "Consumer Staples",
+        "Health Care",
+        "Utilities",
+        "Real Estate",
+        "Communication Services",
+    ]
+
+    score = {s: 0 for s in sectors}
+    drivers = {s: [] for s in sectors}
+
+    def add_score(sector: str, pts: int, why: str, bucket: str):
+        if sector not in score:
+            return
+        score[sector] += pts
+        drivers[sector].append({
+            "pts": pts,
+            "why": why,
+            "bucket": bucket,
+            "priority": PRIORITY[bucket],
+        })
+
+    # -------------------------
+    # A) VOLATILITY (최우선)
+    # -------------------------
+    if vix_score >= 3:
+        add_score("Utilities", 4, f"{vix_label} → 최우선 피난처 ({vix_detail})", "VOL")
+        add_score("Consumer Staples", 3, f"{vix_label} → 경기 비탄력적 섹터 선호 ({vix_detail})", "VOL")
+        add_score("Health Care", 2, f"{vix_label} → 방어/현금흐름 선호 ({vix_detail})", "VOL")
+        add_score("Technology", -4, f"{vix_label} → 고베타/멀티플 압박 ({vix_detail})", "VOL")
+        add_score("Consumer Discretionary", -2, f"{vix_label} → 경기민감 소비 부담 ({vix_detail})", "VOL")
+    elif vix_score == 2:
+        add_score("Utilities", 3, f"{vix_label} → 방어주 우위 ({vix_detail})", "VOL")
+        add_score("Consumer Staples", 2, f"{vix_label} → 필수소비 선호 ({vix_detail})", "VOL")
+        add_score("Technology", -3, f"{vix_label} → 위험자산 회피 ({vix_detail})", "VOL")
+    elif vix_score == -2:
+        add_score("Technology", 2, f"{vix_label} → 성장주 베팅 유효 ({vix_detail})", "VOL")
+        add_score("Consumer Discretionary", 1, f"{vix_label} → 경기민감 소비 회복 ({vix_detail})", "VOL")
+        add_score("Utilities", -1, f"{vix_label} → 방어주 상대매력 둔화 ({vix_detail})", "VOL")
+
+    # -------------------------
+    # B) LIQUIDITY (2순위)
+    # -------------------------
+    liq_tight = (liq_dir == "DOWN") or (liq_lvl == "LOW")
+    liq_easy = (liq_dir == "UP") and (liq_lvl in ("MID", "HIGH"))
+
+    if liq_tight:
+        add_score("Consumer Staples", 3, "유동성 긴축 → 방어적 필수소비 선호", "LIQ")
+        add_score("Health Care", 3, "유동성 긴축 → 안정적 현금흐름 선호", "LIQ")
+        add_score("Utilities", 1, "유동성 긴축 → 방어주 버퍼", "LIQ")
+        add_score("Technology", -3, "유동성 긴축 → 고밸류에이션 부담", "LIQ")
+        add_score("Real Estate", -2, "유동성 긴축 → 조달비용 상승 부담", "LIQ")
+        add_score("Consumer Discretionary", -1, "유동성 긴축 → 경기민감 소비 부담", "LIQ")
+    elif liq_easy:
+        add_score("Technology", 2, "유동성 완화 → 성장주/베타 우호", "LIQ")
+        add_score("Industrials", 2, "유동성 완화 → 경기민감 회복", "LIQ")
+        add_score("Consumer Discretionary", 2, "유동성 완화 → 소비 민감주 우호", "LIQ")
+        add_score("Financials", 1, "유동성 완화 → 위험선호 회복", "LIQ")
+        add_score("Utilities", -1, "유동성 완화 → 방어주 상대매력 저하", "LIQ")
+
+    # -------------------------
+    # C) CURVE (3순위)
+    # -------------------------
+    if curve_segment == "INVERTED":
+        add_score("Financials", -3, f"수익률 곡선 역전({t10y2y:.2f}) → 은행 수익성 악화", "CURVE")
+        add_score("Utilities", 2, "역전 커브 → 침체 방어주 선호", "CURVE")
+        add_score("Consumer Staples", 1, "역전 커브 → 경기 방어 필요", "CURVE")
+
+    elif curve_segment == "FLAT / FRAGILE":
+        add_score("Health Care", 1, f"플랫 커브({t10y2y:.2f}) → 방어/퀄리티 선호", "CURVE")
+        add_score("Consumer Staples", 1, f"플랫 커브({t10y2y:.2f}) → 경기 민감도 낮은 섹터 선호", "CURVE")
+
+    elif curve_segment == "MODERATE STEEP":
+        add_score("Financials", 2, f"완만한 스티프닝({t10y2y:.2f}) → 예대마진 개선", "CURVE")
+        add_score("Industrials", 1, f"완만한 스티프닝({t10y2y:.2f}) → 성장 기대 반영", "CURVE")
+
+    elif curve_segment == "STEEP / REFLATION":
+        add_score("Financials", 3, f"가파른 스티프닝({t10y2y:.2f}) → 금융주 우호", "CURVE")
+        add_score("Energy", 1, f"가파른 스티프닝({t10y2y:.2f}) → 리플레이션 민감 섹터", "CURVE")
+        add_score("Materials", 1, f"가파른 스티프닝({t10y2y:.2f}) → 경기재개/실물 민감", "CURVE")
+
+    # -------------------------
+    # D) CREDIT (4순위)
+    # -------------------------
     if not credit_calm:
-        add_score("Financials", -2, "크레딧 리스크 감지 → 금융주 변동성 확대")
-        add_score("Real Estate", -3, "크레딧 리스크 감지 → 부동산 금융 위축")
+        add_score("Financials", -2, "크레딧 리스크 감지 → 금융주 변동성 확대", "CREDIT")
+        add_score("Real Estate", -3, "크레딧 리스크 감지 → 부동산 금융 위축", "CREDIT")
+        add_score("Consumer Staples", 1, "크레딧 리스크 감지 → 방어주 선호", "CREDIT")
+        add_score("Health Care", 1, "크레딧 리스크 감지 → 퀄리티 선호", "CREDIT")
 
-    # ---------------------------------------------------------
-    # 4. 리포트 텍스트 생성 (Assembly)
-    # ---------------------------------------------------------
-    ow = [s for s in sectors if score[s] > 0]
-    uw = [s for s in sectors if score[s] < 0]
-    
-    # 점수가 높은 순으로 정렬하여 가독성 향상
-    ow_sorted = sorted(ow, key=lambda x: score[x], reverse=True)
-    uw_sorted = sorted(uw, key=lambda x: score[x])
+    # -------------------------
+    # E) PHASE (5순위, 미세조정)
+    # -------------------------
+    if "RISK-OFF" in phase:
+        add_score("Consumer Staples", 1, "RISK-OFF → 방어주 미세 가점", "PHASE")
+        add_score("Health Care", 1, "RISK-OFF → 퀄리티 미세 가점", "PHASE")
+        add_score("Technology", -1, "RISK-OFF → 성장주 미세 감점", "PHASE")
 
-    lines = []
-    lines.append("### 🏭 18) Sector Allocation Engine (v2)")
+    elif "RISK-ON" in phase:
+        add_score("Industrials", 1, "RISK-ON → 경기민감 미세 가점", "PHASE")
+        add_score("Technology", 1, "RISK-ON → 성장주 미세 가점", "PHASE")
+
+    elif "EVENT-WATCHING" in phase or "WAITING" in phase:
+        add_score("Health Care", 1, f"{phase} → 관망 구간 방어/퀄리티 선호", "PHASE")
+        add_score("Consumer Staples", 1, f"{phase} → 관망 구간 필수소비 선호", "PHASE")
+
+    # -------------------------
+    # 4) Conflict Resolver
+    # -------------------------
+    # VOL/LIQ 우선. 변동성 높고 유동성 긴축이면 성장/레버리지 긍정 신호를 약화.
+    if vix >= 28 and liq_tight:
+        if score["Technology"] > 0:
+            score["Technology"] = 0
+            drivers["Technology"].append({
+                "pts": 0,
+                "why": "Conflict Resolver → VIX 고점 + 유동성 긴축으로 성장주 긍정점수 제거",
+                "bucket": "VOL",
+                "priority": PRIORITY["VOL"],
+            })
+
+        if score["Real Estate"] > -1:
+            add_score("Real Estate", -1, "Conflict Resolver → VIX 고점 + 유동성 긴축으로 RE 추가 감점", "VOL")
+
+    # 금융주는 커브가 좋아도 신용이 안 좋으면 완화
+    if score["Financials"] > 0 and (not credit_calm):
+        add_score("Financials", -1, "Conflict Resolver → 커브 우호보다 크레딧 리스크 우선", "CREDIT")
+
+    # EVENT-WATCHING이면 극단적 cyclicals 긍정 조금 완화
+    if ("EVENT-WATCHING" in phase or "WAITING" in phase):
+        if score["Industrials"] > 0:
+            add_score("Industrials", -1, "Conflict Resolver → 이벤트 관망으로 경기민감 가점 일부 축소", "PHASE")
+        if score["Energy"] > 0:
+            add_score("Energy", -1, "Conflict Resolver → 이벤트 관망으로 리플레이션 베팅 일부 축소", "PHASE")
+
+    # -------------------------
+    # 5) Score 기반 정렬
+    # -------------------------
+    ow_sorted = sorted(
+        [s for s in sectors if score[s] > 0],
+        key=lambda x: (-score[x], x)
+    )
+    uw_sorted = sorted(
+        [s for s in sectors if score[s] < 0],
+        key=lambda x: (score[x], x)
+    )
+
+    # 각 섹터의 driver도 priority, 절대점수 기준 정렬
+    for s in sectors:
+        drivers[s] = sorted(
+            drivers[s],
+            key=lambda d: (-d["priority"], -abs(d["pts"]), d["why"])
+        )
+
+    # Top rationale 생성
+    rationale_pool: List[Tuple[int, int, str]] = []
+    for s in ow_sorted[:4] + uw_sorted[:4]:
+        for d in drivers[s][:2]:
+            label = "OW" if score[s] > 0 else "UW"
+            rationale_pool.append((
+                d["priority"],
+                abs(d["pts"]),
+                f"{label} {s}: {d['pts']:+d}: {d['why']}"
+            ))
+
+    rationale_pool = sorted(rationale_pool, key=lambda x: (-x[0], -x[1], x[2]))
+    top_rationales = []
+    seen = set()
+    for _, __, txt in rationale_pool:
+        if txt not in seen:
+            seen.add(txt)
+            top_rationales.append(txt)
+        if len(top_rationales) >= 8:
+            break
+
+    # -------------------------
+    # 6) 출력
+    # -------------------------
+    lines: List[str] = []
+    lines.append("### 🏭 18) Sector Allocation Engine (v3)")
     lines.append("")
-    lines.append(f"**Context:** phase={phase} / T10Y2Y={t10y2y:.2f} / VIX={vix:.2f}")
+    lines.append(
+        f"**Context:** phase={phase} / "
+        f"T10Y2Y={t10y2y:.2f} ({curve_segment}) / "
+        f"VIX={vix:.2f} ({vix_label}) / "
+        f"liquidity={liq_dir}-{liq_lvl} / "
+        f"credit={credit_calm}"
+    )
+    lines.append("")
+    lines.append("**Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE")
     lines.append("")
     lines.append(f"**Overweight:** {', '.join(ow_sorted) if ow_sorted else 'None'}")
     lines.append(f"**Underweight:** {', '.join(uw_sorted) if uw_sorted else 'None'}")
     lines.append("")
+    lines.append("**Scoreboard:**")
+    for s in sorted(sectors, key=lambda x: (-score[x], x)):
+        if score[s] != 0:
+            lines.append(f"- {s}: {score[s]:+d}")
+    lines.append("")
     lines.append("**Rationale (top drivers):**")
-    
-    # 주요 근거 출력 (중요도 순)
-    all_reasons = []
-    for s in sectors:
-        for r in reasons[s]:
-            all_reasons.append(f"OW {s}: {r}" if score[s] > 0 else f"UW {s}: {r}")
-    
-    # 상위 6개 근거만 노출 (너무 길어지지 않게)
-    for r_line in all_reasons[:6]:
-        lines.append(f"- {r_line}")
+    for r in top_rationales:
+        lines.append(f"- {r}")
 
     return "\n".join(lines)
 
