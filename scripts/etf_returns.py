@@ -83,6 +83,18 @@ def score_etfs(style_tags, etf_map):
         scores[etf] = score
 
     return scores
+    
+def get_style_tags(regime):
+    if regime == "RISK_ON":
+        return ["high_beta", "growth", "beta"]
+
+    elif regime == "RISK_OFF":
+        return ["defensive", "low_beta", "quality", "hedge"]
+
+    elif regime == "NEUTRAL":
+        return ["quality", "cashflow_strength", "balance_sheet_strength"]
+
+    return []
 
 
 def normalize_weights(scores):
@@ -134,6 +146,32 @@ def normalize_weights(scores):
 
     return weights.to_dict()
 
+def detect_regime(market_data):
+    state = market_data.get("FINAL_STATE", {}) or {}
+
+    vix = state.get("VIX", 25)
+    liquidity = state.get("liquidity_dir", "DOWN")
+    structure = state.get("structure_tag", "TIGHTENING")
+    credit = state.get("credit_calm", True)
+
+    if vix >= 28 or liquidity == "DOWN" or credit is False:
+        return "RISK_OFF"
+
+    if vix <= 18 and liquidity == "UP" and structure != "TIGHTENING":
+        return "RISK_ON"
+
+    return "NEUTRAL"
+    
+    
+def build_regime_portfolio(market_data):
+    regime = detect_regime(market_data)
+    style_tags = get_style_tags(regime)
+
+    scores = score_etfs(style_tags, ETF_STYLE_MAP)
+    weights = normalize_weights(scores)
+
+    return weights, scores, regime, style_tags
+
 
 def calculate_returns(weights_dict):
     """
@@ -172,6 +210,8 @@ def calculate_returns(weights_dict):
         return combined
 
     return None
+    
+
 
 
 def build_portfolio_returns(combined_df, weights_dict, portfolio_name="Portfolio"):
@@ -361,18 +401,18 @@ if __name__ == "__main__":
         # =========================
         # C. 19번 필터 기반 자동 가중치 생성
         # =========================
-        filtered_weights, scores, filter_result = build_filtered_portfolio(CURRENT_MARKET_DATA)
+        filtered_weights, scores, regime, style_tags = build_regime_portfolio(CURRENT_MARKET_DATA)
 
         if filtered_weights is None:
             raise ValueError("❌ 필터 기반 가중치 생성 실패: 모든 ETF 점수가 0 이하입니다.")
 
         print("-" * 60)
-        print("🧬 19번 필터 리포트")
-        print(filter_result["report"])
+        print("📊 Regime")
+        print(regime)
 
         print("-" * 60)
         print("📊 Style Tags")
-        print(filter_result["style_tags"])
+        print(style_tags)
 
         print("-" * 60)
         print("📊 ETF Scores")
