@@ -1246,6 +1246,7 @@ def generate_final_state_history():
 
 if __name__ == "__main__":
     #백테스트
+    
     generate_final_state_history()
     # 기존 리포트 실행
     real_market_data = generate_daily_report()
