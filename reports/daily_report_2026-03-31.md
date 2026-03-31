@@ -5,10 +5,10 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.342  (+0.00% vs 4.342)
-- **달러 인덱스**: 100.452  (-0.06% vs 100.510)
-- **WTI 유가**: 103.180  (+0.29% vs 102.880)
+- **달러 인덱스**: 100.447  (-0.06% vs 100.510)
+- **WTI 유가**: 103.040  (+0.16% vs 102.880)
 - **변동성 지수 (VIX)**: 30.610  (+0.00% vs 30.610)
-- **원/달러 환율**: 1535.880  (+1.92% vs 1507.020)
+- **원/달러 환율**: 1507.020  (+0.00% vs 1507.020)
 
 ---
 
@@ -47,7 +47,7 @@ Some commentary here
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(→) / DXY(↓) / VIX(→)
-- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ -0.058 / US10YΔ +0.000**
+- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ -0.063 / US10YΔ +0.000**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY MIXED (정책 신호 혼조)**
@@ -89,9 +89,9 @@ Some commentary here
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
 - DXY **(Mild, -0.06%)** → 달러 약세/리스크 선호
-- WTI **(Mild, +0.29%)** → 인플레 재자극 가능성
+- WTI **(Mild, +0.16%)** → 인플레 재자극 가능성
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
-- 원/달러(USDKRW) **(Strong, +1.92%)** → 원화 약세/수급 부담
+- 원/달러(USDKRW) **(Noise, +0.00%)** → 환율 보합(수급 압력 제한)
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -119,23 +119,23 @@ No significant sector-level correlation break detected.
 - **유가 상승(WTI↑)** → 인플레 압력/실질소득 부담 가능
 
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
-- **Geo Stress Score (z-composite):** **+0.22**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.25**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
-- **3D Avg Score:** +0.29
-- **Geo Momentum:** -0.07 *(Status: FLAT)*
+- **3D Avg Score:** +0.30
+- **Geo Momentum:** -0.05 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.447
+- **Cosine Similarity Score:** 0.446
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.447
-  - Ukraine_2022: 0.415
-  - Israel_2023: 0.349
+  - Taiwan_Tension: 0.446
+  - Ukraine_2022: 0.417
+  - Israel_2023: 0.352
 - **Top Drivers:**
-  - USDCNH: z_used=+0.83 (z1d=+0.24, z5d=+1.71, raw_w=0.18, norm_w=0.14) → contrib=+0.11
+  - USDCNH: z_used=+0.74 (z1d=+0.14, z5d=+1.65, raw_w=0.18, norm_w=0.14) → contrib=+0.10
+  - GOLD: z_used=+0.68 (z1d=+0.60, z5d=+0.79, raw_w=0.12, norm_w=0.09) → contrib=+0.06
   - KR10Y_SPREAD: z_used=-1.00 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
-  - GOLD: z_used=+0.58 (z1d=+0.48, z5d=+0.73, raw_w=0.12, norm_w=0.09) → contrib=+0.05
   - DE10Y_SPREAD: z_used=+1.00 (mode=level, raw_w=0.06, norm_w=0.05) → contrib=+0.05
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
@@ -171,7 +171,7 @@ No significant sector-level correlation break detected.
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.342), DXY(100.452), VIX(30.61)
+- **Today snapshot:** US10Y(4.342), DXY(100.447), VIX(30.61)
 
 ### 🏗️ 12) Structural Filter (v2)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
@@ -183,7 +183,7 @@ No significant sector-level correlation break detected.
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ -0.058 / US10YΔ +0.000 (스태그플레이션)
+- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ -0.063 / US10YΔ +0.000 (스태그플레이션)
 - **Sentiment (Fear&Greed):** 21.89869323779329 (FEAR)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** DOWN (MID)
