@@ -1140,4 +1140,66 @@ def generate_daily_report() -> None:
 
 
 if __name__ == "__main__":
+
+    # 기존 리포트 실행
     generate_daily_report()
+
+    # =========================
+    # 🔥 ETF BACKTEST DEBUG BLOCK
+    # =========================
+    print("\n" + "="*60)
+    print("🚀 ETF BACKTEST DEBUG START")
+
+    try:
+        from etf_returns import (
+            build_filtered_portfolio,
+            build_portfolio_returns,
+            calculate_returns,
+            compare_portfolios,
+            base_weights
+        )
+
+        # ETF 데이터 로드
+        combined_df = calculate_returns(base_weights)
+
+        if combined_df is not None:
+            combined_df = combined_df.sort_index()
+
+            # Base 포트폴리오
+            base_returns = build_portfolio_returns(
+                combined_df,
+                base_weights,
+                "Base"
+            )
+
+            # Filtered 포트폴리오
+            filtered_weights, scores, result = build_filtered_portfolio(market_data)
+
+            print("\n📊 Style Tags")
+            print(result["style_tags"])
+
+            print("\n📊 ETF Scores")
+            print(scores)
+
+            print("\n📊 Auto Generated ETF Weights")
+            print(filtered_weights)
+
+            filtered_returns = build_portfolio_returns(
+                combined_df,
+                filtered_weights,
+                "Filtered"
+            )
+
+            comparison = compare_portfolios(base_returns, filtered_returns)
+
+            print("\n📊 Base vs Filtered Portfolio Comparison")
+            print(comparison.round(4))
+
+        else:
+            print("❌ ETF 데이터 없음")
+
+    except Exception as e:
+        print(f"❌ ETF BACKTEST ERROR: {e}")
+
+    print("🚀 ETF BACKTEST DEBUG END")
+    print("="*60)
