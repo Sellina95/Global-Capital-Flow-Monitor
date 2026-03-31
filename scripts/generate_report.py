@@ -1148,6 +1148,21 @@ def generate_final_state_history():
     df = merge_sovereign_spreads_into_macro_df(df)
 
     rows = []
+    start_idx = max(0, len(df) - 30)
+
+    for idx in range(start_idx, len(df)):
+
+        if idx % 5 == 0:
+            print(f"[BACKTEST] processing {idx}/{len(df)}")
+
+        try:
+            market_data = build_market_data(df, idx)
+    start_idx = max(0, len(df) - 30)
+
+    for idx in range(start_idx, len(df)):
+
+        if idx % 5 == 0:
+            print(f"[BACKTEST] processing {idx}/{len(df)}")
 
     for idx in range(len(df)):
         try:
