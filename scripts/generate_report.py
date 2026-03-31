@@ -1143,7 +1143,6 @@ if __name__ == "__main__":
 
     # 기존 리포트 실행
     generate_daily_report()
-
     # =========================
     # 🔥 ETF BACKTEST DEBUG BLOCK
     # =========================
@@ -1171,6 +1170,22 @@ if __name__ == "__main__":
                 base_weights,
                 "Base"
             )
+
+            # =========================
+            # 🔥 market_data 구성 (핵심)
+            # =========================
+            if "final_state" in locals():
+                _final_state_for_etf = final_state
+            elif "FINAL_STATE" in locals():
+                _final_state_for_etf = FINAL_STATE
+            else:
+                _final_state_for_etf = {}
+
+            market_data = {
+                "FINAL_STATE": _final_state_for_etf,
+                "SECTOR_OW": ["Consumer Staples", "Utilities", "Health Care"],
+                "SECTOR_UW": ["Technology", "Consumer Discretionary", "Real Estate"],
+            }
 
             # Filtered 포트폴리오
             filtered_weights, scores, result = build_filtered_portfolio(market_data)
@@ -1203,3 +1218,4 @@ if __name__ == "__main__":
 
     print("🚀 ETF BACKTEST DEBUG END")
     print("="*60)
+    
