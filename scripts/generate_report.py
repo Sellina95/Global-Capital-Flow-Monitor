@@ -1174,19 +1174,22 @@ if __name__ == "__main__":
             # =========================
             # 🔥 market_data 구성 (핵심)
             # =========================
-            if "final_state" in locals():
-                _final_state_for_etf = final_state
-            elif "FINAL_STATE" in locals():
-                _final_state_for_etf = FINAL_STATE
-            else:
-                _final_state_for_etf = {}
-
+                        # =========================
+            # 🔥 market_data 구성 (임시 고정 버전)
+            # =========================
             market_data = {
-                "FINAL_STATE": _final_state_for_etf,
+                "FINAL_STATE": {
+                    "phase": "EVENT-WATCHING (이벤트 관망)",
+                    "risk_action": "STRONG REDUCE",
+                    "risk_budget": 10,
+                    "structure_tag": "TIGHTENING",
+                    "credit_calm": True,
+                    "liquidity_dir": "DOWN",
+                    "liquidity_level_bucket": "MID",
+                },
                 "SECTOR_OW": ["Consumer Staples", "Utilities", "Health Care"],
                 "SECTOR_UW": ["Technology", "Consumer Discretionary", "Real Estate"],
             }
-
             # Filtered 포트폴리오
             filtered_weights, scores, result = build_filtered_portfolio(market_data)
 
