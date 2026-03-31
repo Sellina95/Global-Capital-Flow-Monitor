@@ -22,16 +22,6 @@ def execution_layer_filter(market_data: Dict[str, Any], debug: bool = False) -> 
     - 1~18번 필터에서 정리된 시장 상태를 바탕으로
       '실행 가능한 스타일 / 기업 타입 / ETF 해석용 태그'를 생성
     - 리포트용 텍스트 + 후속 로직용 구조화 데이터 동시 반환
-
-    반환:
-    {
-        "report": str,
-        "preferred_traits": List[str],
-        "avoid_traits": List[str],
-        "sector_ow": List[str],
-        "sector_uw": List[str],
-        "style_tags": List[str]
-    }
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
@@ -41,7 +31,6 @@ def execution_layer_filter(market_data: Dict[str, Any], debug: bool = False) -> 
     liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
     credit_calm = state.get("credit_calm", None)
 
-    # 18번 필터 결과가 있으면 연결
     sector_ow = market_data.get("SECTOR_OW", []) or []
     sector_uw = market_data.get("SECTOR_UW", []) or []
 
@@ -56,9 +45,7 @@ def execution_layer_filter(market_data: Dict[str, Any], debug: bool = False) -> 
             f"credit_calm={credit_calm}"
         )
 
-    # -----------------------------
     # Priority 1: Liquidity
-    # -----------------------------
     if liq_dir == "DOWN" or liq_lvl == "LOW":
         preferred += [
             "High Free Cash Flow generators",
@@ -81,12 +68,7 @@ def execution_layer_filter(market_data: Dict[str, Any], debug: bool = False) -> 
             "raroc_friendly",
         ]
 
-        if debug:
-            print("[DEBUG] Liquidity condition applied.")
-
-    # -----------------------------
     # Priority 2: Structure
-    # -----------------------------
     if structure == "TIGHTENING":
         preferred.append("Cash flow visibility and earnings stability")
         avoid.append("Rate-sensitive long-duration equities")
@@ -95,12 +77,7 @@ def execution_layer_filter(market_data: Dict[str, Any], debug: bool = False) -> 
             "duration_aware",
         ]
 
-        if debug:
-            print("[DEBUG] Structure condition applied.")
-
-    # -----------------------------
     # Priority 3: Credit
-    # -----------------------------
     if credit_calm is False:
         preferred.append("Strong liquidity buffers and defensive balance sheets")
         avoid.append("Highly levered capital structures")
@@ -109,12 +86,7 @@ def execution_layer_filter(market_data: Dict[str, Any], debug: bool = False) -> 
             "liquidity_buffer",
         ]
 
-        if debug:
-            print("[DEBUG] Credit condition applied.")
-
-    # -----------------------------
-    # Fallback (완전 비는 경우 방지)
-    # -----------------------------
+    # fallback
     if not preferred:
         preferred = [
             "Balanced quality exposure",
