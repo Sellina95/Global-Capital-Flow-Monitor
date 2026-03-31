@@ -5,10 +5,10 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.342  (+0.00% vs 4.342)
-- **달러 인덱스**: 100.288  (-0.22% vs 100.510)
-- **WTI 유가**: 103.390  (+0.50% vs 102.880)
-- **변동성 지수 (VIX)**: 28.590  (-6.60% vs 30.610)
-- **원/달러 환율**: 1524.680  (+1.17% vs 1507.020)
+- **달러 인덱스**: 100.249  (-0.26% vs 100.510)
+- **WTI 유가**: 103.030  (+0.15% vs 102.880)
+- **변동성 지수 (VIX)**: 28.700  (-6.24% vs 30.610)
+- **원/달러 환율**: 1525.380  (+1.22% vs 1507.020)
 
 ---
 
@@ -27,7 +27,7 @@ Some commentary here
 - **정의:** 지금 어떤 장(場)인지 판단하는 *시장 국면 필터*
 - **추가 이유:** 같은 지표도 ‘국면’에 따라 의미가 완전히 달라지기 때문
 
-- **VIX 레벨:** 28.59 → **High (Risk-off bias)**
+- **VIX 레벨:** 28.70 → **High (Risk-off bias)**
 - **핵심 조합(전일 대비 방향):** US10Y(→) / DXY(↓) / VIX(↓)
 - **판정:** **RISK-ON (부분 정렬)**
 - **근거:** VIX↓ + (금리↓ 또는 달러↓) → 리스크 선호가 서서히 강화
@@ -47,7 +47,7 @@ Some commentary here
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(→) / DXY(↓) / VIX(↓)
-- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ -0.222 / US10YΔ +0.000**
+- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ -0.261 / US10YΔ +0.000**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY MIXED (정책 신호 혼조)**
@@ -88,10 +88,10 @@ Some commentary here
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
-- DXY **(Clear, -0.22%)** → 달러 약세/리스크 선호
-- WTI **(Mild, +0.50%)** → 인플레 재자극 가능성
-- VIX **(Strong, -6.60%)** → 심리 개선/리스크온
-- 원/달러(USDKRW) **(Strong, +1.17%)** → 원화 약세/수급 부담
+- DXY **(Clear, -0.26%)** → 달러 약세/리스크 선호
+- WTI **(Noise, +0.15%)** → 인플레 재자극 가능성
+- VIX **(Strong, -6.24%)** → 심리 개선/리스크온
+- 원/달러(USDKRW) **(Strong, +1.22%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -124,22 +124,22 @@ No significant sector-level correlation break detected.
 - **유가 상승(WTI↑)** → 인플레 압력/실질소득 부담 가능
 
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
-- **Geo Stress Score (z-composite):** **+0.08**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.06**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
 - **3D Avg Score:** +0.24
-- **Geo Momentum:** -0.16 *(Status: FLAT)*
+- **Geo Momentum:** -0.18 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.394
+- **Cosine Similarity Score:** 0.384
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.394
-  - Ukraine_2022: 0.373
-  - Israel_2023: 0.321
+  - Taiwan_Tension: 0.384
+  - Ukraine_2022: 0.366
+  - Israel_2023: 0.316
 - **Top Drivers:**
-  - VIX: z_used=-0.57 (z1d=-0.92, z5d=-0.04, raw_w=0.18, norm_w=0.14) → contrib=-0.08
-  - GOLD: z_used=+0.75 (z1d=+0.70, z5d=+0.84, raw_w=0.12, norm_w=0.09) → contrib=+0.07
+  - VIX: z_used=-0.53 (z1d=-0.88, z5d=-0.00, raw_w=0.18, norm_w=0.14) → contrib=-0.07
+  - GOLD: z_used=+0.70 (z1d=+0.63, z5d=+0.81, raw_w=0.12, norm_w=0.09) → contrib=+0.06
   - KR10Y_SPREAD: z_used=-1.00 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
   - DE10Y_SPREAD: z_used=+1.00 (mode=level, raw_w=0.06, norm_w=0.05) → contrib=+0.05
 - **Missing/Skipped:** None
@@ -168,7 +168,7 @@ No significant sector-level correlation break detected.
 
 ### 🔄 10) Direction Filter
 - **질문:** 오늘 움직임은 ‘노이즈’인가 ‘의미 있는 변화’인가?
-- **강도:** US10Y(Noise) / DXY(Clear) / WTI(Mild) / VIX(Strong)
+- **강도:** US10Y(Noise) / DXY(Clear) / WTI(Noise) / VIX(Strong)
 - **판정:** **SIGNIFICANT MOVE (의미 있는 변화)**
 
 ### ⏳ 11) Timing Filter
@@ -176,7 +176,7 @@ No significant sector-level correlation break detected.
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.342), DXY(100.288), VIX(28.59)
+- **Today snapshot:** US10Y(4.342), DXY(100.249), VIX(28.70)
 
 ### 🏗️ 12) Structural Filter (v2)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
@@ -188,8 +188,8 @@ No significant sector-level correlation break detected.
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ -0.222 / US10YΔ +0.000 (스태그플레이션)
-- **Sentiment (Fear&Greed):** 26.7269619719898 (FEAR)
+- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.0) | REAL_RATEΔ +0.050 / FCIΔ +0.039 / DXYΔ -0.261 / US10YΔ +0.000 (스태그플레이션)
+- **Sentiment (Fear&Greed):** 26.464130771347477 (FEAR)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** DOWN (MID)
 - **Phase:** RISK-ON (부분 정렬) (Cap: 30)
@@ -214,8 +214,8 @@ No significant sector-level correlation break detected.
 
 - **Risk Budget:** 10
 - **Phase Cap:** 85
-- **VIX Level:** 28.59 (HIGH)
-- **VIX Change (%):** -6.60%
+- **VIX Level:** 28.70 (HIGH)
+- **VIX Change (%):** -6.24%
 - **Final Multiplier:** 0.84x
 
 - **📊 Recommended Exposure:** **10%**
