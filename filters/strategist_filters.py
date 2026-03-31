@@ -3495,112 +3495,22 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     
 
 # filters/execution_layer.py
-from typing import Dict, Any, List
-
-def _uniq_keep_order(items: List[str]) -> List[str]:
-    seen = set()
-    out = []
-    for x in items:
-        if not x:
-            continue
-        if x in seen:
-            continue
-        seen.add(x)
-        out.append(x)
-    return out
+from typing import Dict, Any
+from execution_layer import execution_layer_filter
 
 
-def execution_layer_filter(market_data: Dict[str, Any]) -> Dict[str, Any]:
+def executive_summary_filter(market_data: Dict[str, Any], debug: bool = False) -> str:
     """
-    Execution / Style Translation Layer (v1.2)
+    Executive Summary Wrapper
 
-    목적:
-    - 섹터(18) + FINAL_STATE(13) 기반으로 구현용 기업 타입 체크리스트 생성
-    - 리포트용 text + 후속 로직용 structured data 동시 반환
+    역할:
+    - execution_layer_filter()의 결과를 받아
+      리포트용 summary text만 반환
+    - 판단 로직은 execution_layer.py에만 존재해야 함
     """
-
-    state = market_data.get("FINAL_STATE", {}) or {}
-
-    structure = str(state.get("structure_tag", "MIXED")).upper()
-    liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
-    liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
-    credit_calm = state.get("credit_calm", None)
-
-    sector_ow = market_data.get("SECTOR_OW", []) or []
-    sector_uw = market_data.get("SECTOR_UW", []) or []
-
-    preferred: List[str] = []
-    avoid: List[str] = []
-    style_tags: List[str] = []
-
-    print(f"[DEBUG] liquidity_dir: {liq_dir}, liquidity_level: {liq_lvl}, structure: {structure}, credit_calm: {credit_calm}")
-
-    # Priority 1: Liquidity
-    if liq_dir == "DOWN" or liq_lvl == "LOW":
-        preferred += [
-            "High Free Cash Flow generators",
-            "Net cash or low leverage balance sheets",
-            "Stable margins / pricing power",
-            "Low to mid beta exposure",
-            "High RAROC Focus",
-        ]
-        avoid += [
-            "Negative FCF / cash-burn models",
-            "High leverage / refinancing-dependent names",
-            "Long-duration, high-multiple growth",
-        ]
-        style_tags += ["defensive", "quality", "low_beta", "high_raroc"]
-        print("[DEBUG] Liquidity conditions met. Preferred & Avoid updated.")
-
-    # Priority 2: Structure
-    if structure == "TIGHTENING":
-        preferred.append("Cash flow visibility and earnings stability")
-        avoid.append("Rate-sensitive long-duration equities")
-        style_tags += ["earnings_stability", "duration_aware"]
-        print("[DEBUG] Structure conditions met. Preferred & Avoid updated.")
-
-    # Priority 3: Credit
-    if credit_calm is False:
-        preferred.append("Strong liquidity buffers and defensive balance sheets")
-        avoid.append("Highly levered capital structures")
-        style_tags += ["balance_sheet_defense"]
-        print("[DEBUG] Credit conditions met. Preferred & Avoid updated.")
-
-    preferred = _uniq_keep_order(preferred)
-    avoid = _uniq_keep_order(avoid)
-    style_tags = _uniq_keep_order(style_tags)
-
-    lines = []
-    lines.append("### 🧬 19) Execution / Style Translation Layer")
-    lines.append("- **Implementation Focus:** Environment-Aware Stock Types")
-    lines.append("")
-
-    if sector_ow or sector_uw:
-        if sector_ow:
-            lines.append(f"- **Apply to Overweight Sectors:** {', '.join(sector_ow)}")
-        if sector_uw:
-            lines.append(f"- **Apply to Underweight Sectors:** {', '.join(sector_uw)}")
-        lines.append("")
-
-    lines.append("**Preferred Company Traits:**")
-    for p in preferred:
-        lines.append(f"- {p}")
-
-    lines.append("")
-    lines.append("**Risk Control / Avoid:**")
-    for a in avoid:
-        lines.append(f"- {a}")
-
-    report_text = "\n".join(lines)
-
-    return {
-        "report": report_text,
-        "preferred_traits": preferred,
-        "avoid_traits": avoid,
-        "sector_ow": sector_ow,
-        "sector_uw": sector_uw,
-        "style_tags": style_tags,
-    }
+    result = execution_layer_filter(market_data, debug=debug)
+    return result["report"]
+    
 
 def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
