@@ -1159,17 +1159,16 @@ def generate_final_state_history():
             market_data = build_market_data(df, idx)
             market_data["_STALE"] = False
 
-
-        # 기존 리포트 파이프라인과 최대한 같은 순서 유지
-        market_data = attach_liquidity_layer(market_data) or market_data
-        market_data = attach_credit_spread_layer(market_data) or market_data
-        market_data = attach_fred_extras_layer(market_data) or market_data
-        market_data = attach_sovereign_spread_layer(market_data) or market_data
-        market_data = attach_expectation_layer(market_data) or market_data
-        market_data = attach_geopolitical_ew_layer(market_data, df, idx) or market_data
-        market_data = attach_country_risk_layer(market_data, df, idx) or market_data
-        market_data = attach_geo_similarity_layer(market_data) or market_data
-        market_data = attach_sentiment_proxy_layer(market_data) or market_data
+            # 기존 리포트 파이프라인과 최대한 같은 순서 유지
+            market_data = attach_liquidity_layer(market_data) or market_data
+            market_data = attach_credit_spread_layer(market_data) or market_data
+            market_data = attach_fred_extras_layer(market_data) or market_data
+            market_data = attach_sovereign_spread_layer(market_data) or market_data
+            market_data = attach_expectation_layer(market_data) or market_data
+            market_data = attach_geopolitical_ew_layer(market_data, df, idx) or market_data
+            market_data = attach_country_risk_layer(market_data, df, idx) or market_data
+            market_data = attach_geo_similarity_layer(market_data) or market_data
+            market_data = attach_sentiment_proxy_layer(market_data) or market_data
 
             # 1번 필터: MARKET_REGIME 저장
             market_regime_filter(market_data)
@@ -1192,9 +1191,17 @@ def generate_final_state_history():
                     if "FINAL_STATE" not in market_data:
                         market_data["FINAL_STATE"] = {}
 
-                    market_data["FINAL_STATE"]["T10Y2Y"] = float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0
-                    market_data["FINAL_STATE"]["T10YIE"] = float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0
-                    market_data["FINAL_STATE"]["VIX"] = float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else market_data["FINAL_STATE"].get("VIX", 20.0)
+                    market_data["FINAL_STATE"]["T10Y2Y"] = (
+                        float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0
+                    )
+                    market_data["FINAL_STATE"]["T10YIE"] = (
+                        float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0
+                    )
+                    market_data["FINAL_STATE"]["VIX"] = (
+                        float(latest_fred["VIX"])
+                        if pd.notna(latest_fred["VIX"])
+                        else market_data["FINAL_STATE"].get("VIX", 20.0)
+                    )
 
             final_state = market_data.get("FINAL_STATE", {}) or {}
 
@@ -1249,7 +1256,10 @@ def generate_final_state_history():
     print(out_df.tail(5).to_string(index=False))
 
     return out_df
-
+        
+            
+          
+    
 if __name__ == "__main__":
     #백테스트
     
