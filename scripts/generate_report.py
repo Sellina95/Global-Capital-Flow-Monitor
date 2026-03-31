@@ -27,6 +27,8 @@ from scripts.fetch_sentiment import fetch_cnn_fear_greed
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 REPORTS_DIR = BASE_DIR / "reports"
+BACKTEST_DATA_DIR = DATA_DIR / "backtests"
+BACKTEST_REPORTS_DIR = REPORTS_DIR / "backtests"
 
 # macro_data.csv에 들어있는 키들 (여기서 추가된 지표는 자동으로 읽히지만,
 # 필수 daily macro 라인은 이 KEYS를 기준으로 출력)
@@ -1138,9 +1140,113 @@ def generate_daily_report() -> None:
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Report written: {report_path}")
     return market_data
+    
+def generate_final_state_history():
+    BACKTEST_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    df = load_macro_df()
+    df = merge_sovereign_spreads_into_macro_df(df)
+
+    rows = []
+
+    for idx in range(len(df)):
+        try:
+            market_data = build_market_data(df, idx)
+            market_data["_STALE"] = False
+
+            # 기존 리포트 파이프라인과 최대한 같은 순서 유지
+            market_data = attach_liquidity_layer(market_data) or market_data
+            market_data = attach_credit_spread_layer(market_data) or market_data
+            market_data = attach_fred_extras_layer(market_data) or market_data
+            market_data = attach_sovereign_spread_layer(market_data) or market_data
+            market_data = attach_expectation_layer(market_data) or market_data
+            market_data = attach_geopolitical_ew_layer(market_data, df, idx) or market_data
+            market_data = attach_country_risk_layer(market_data, df, idx) or market_data
+            market_data = attach_geo_similarity_layer(market_data) or market_data
+            market_data = attach_sentiment_proxy_layer(market_data) or market_data
+
+            # 1번 필터: MARKET_REGIME 저장
+            market_regime_filter(market_data)
+
+            # Narrative Engine이 FINAL_STATE 생성
+            narrative_engine_filter(market_data)
+
+            # Geo overlay 반영
+            market_data = apply_geo_overlay_to_final_state(market_data) or market_data
+
+            # FINAL_STATE에 FRED extra 주입
+            df_fred_extra = load_fred_data_from_csv()
+            if not df_fred_extra.empty:
+                current_date = pd.to_datetime(df.iloc[idx]["date"])
+                fred_subset = df_fred_extra[df_fred_extra["date"] <= current_date]
+
+                if not fred_subset.empty:
+                    latest_fred = fred_subset.iloc[-1]
+
+                    if "FINAL_STATE" not in market_data:
+                        market_data["FINAL_STATE"] = {}
+
+                    market_data["FINAL_STATE"]["T10Y2Y"] = float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0
+                    market_data["FINAL_STATE"]["T10YIE"] = float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0
+                    market_data["FINAL_STATE"]["VIX"] = float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else market_data["FINAL_STATE"].get("VIX", 20.0)
+
+            final_state = market_data.get("FINAL_STATE", {}) or {}
+
+            rows.append({
+                "date": pd.to_datetime(df.iloc[idx]["date"]).strftime("%Y-%m-%d"),
+                "market_regime": market_data.get("MARKET_REGIME"),
+                "phase": final_state.get("phase"),
+                "phase_cap": final_state.get("phase_cap"),
+                "risk_action": final_state.get("risk_action"),
+                "risk_budget": final_state.get("risk_budget"),
+                "structure_tag": final_state.get("structure_tag"),
+                "sentiment_state": final_state.get("sentiment_state"),
+                "sentiment_fear_greed": final_state.get("sentiment_fear_greed"),
+                "credit_calm": final_state.get("credit_calm"),
+                "hy_oas_today": final_state.get("hy_oas_today"),
+                "liquidity_dir": final_state.get("liquidity_dir"),
+                "liquidity_level_bucket": final_state.get("liquidity_level_bucket"),
+                "net_liq_pct_change": final_state.get("net_liq_pct_change"),
+                "T10Y2Y": final_state.get("T10Y2Y"),
+                "T10YIE": final_state.get("T10YIE"),
+                "VIX": final_state.get("VIX"),
+                "narrative_line": final_state.get("narrative_line"),
+            })
+
+        except Exception as e:
+            rows.append({
+                "date": pd.to_datetime(df.iloc[idx]["date"]).strftime("%Y-%m-%d"),
+                "market_regime": None,
+                "phase": None,
+                "phase_cap": None,
+                "risk_action": None,
+                "risk_budget": None,
+                "structure_tag": None,
+                "sentiment_state": None,
+                "sentiment_fear_greed": None,
+                "credit_calm": None,
+                "hy_oas_today": None,
+                "liquidity_dir": None,
+                "liquidity_level_bucket": None,
+                "net_liq_pct_change": None,
+                "T10Y2Y": None,
+                "T10YIE": None,
+                "VIX": None,
+                "narrative_line": f"ERROR: {type(e).__name__}: {e}",
+            })
+
+    out_df = pd.DataFrame(rows)
+    output_path = BACKTEST_DATA_DIR / "final_state_history.csv"
+    out_df.to_csv(output_path, index=False, encoding="utf-8-sig")
+
+    print(f"[OK] Final state history written: {output_path}")
+    print(out_df.tail(5).to_string(index=False))
+
+    return out_df
 
 if __name__ == "__main__":
-
+    #백테스트
+    generate_final_state_history()
     # 기존 리포트 실행
     real_market_data = generate_daily_report()
 
