@@ -85,30 +85,51 @@ def score_etfs(style_tags, etf_map):
     return scores
 
 
-def normalize_weights(scores, max_weight=0.25):
-    """
-    ETF 점수를 weight로 변환
-    - 음수 점수는 제거
-    - 최대 비중 제한 적용
-    - 최종적으로 다시 1로 정규화
-    """
-    scores_series = pd.Series(scores, dtype=float)
+def normalize_weights(scores):
+    import pandas as pd
 
-    # 음수 제거
-    scores_series = scores_series.clip(lower=0)
+    scores_series = pd.Series(scores)
 
-    if scores_series.sum() == 0:
-        return None
+    # ---------------------------
+    # 1. Soft penalty 적용
+    # ---------------------------
+    # 기존: 음수 → 0
+    # 개선: 음수도 완전 제거 안하고 약하게 반영
+    adjusted = scores_series.copy()
 
-    weights = scores_series / scores_series.sum()
+    # negative penalty 완화
+    adjusted = adjusted.apply(lambda x: x if x > 0 else x * 0.3)
 
-    # 최대 비중 제한
-    weights = weights.clip(upper=max_weight)
+    # ---------------------------
+    # 2. 최소 비중 floor 설정
+    # ---------------------------
+    MIN_WEIGHT = 0.02  # 2% 최소 비중
+
+    # score scaling (shift)
+    adjusted = adjusted - adjusted.min() + 0.1
+
+    # ---------------------------
+    # 3. core / satellite 구분
+    # ---------------------------
+    CORE_ETF = ["BND", "XLV", "XLP", "QUAL", "COWZ"]
+
+    core_boost = 1.3
+    adjusted = adjusted * [
+        core_boost if etf in CORE_ETF else 1.0
+        for etf in adjusted.index
+    ]
+
+    # ---------------------------
+    # 4. 정규화
+    # ---------------------------
+    weights = adjusted / adjusted.sum()
+
+    # ---------------------------
+    # 5. floor 적용
+    # ---------------------------
+    weights = weights.apply(lambda x: max(x, MIN_WEIGHT))
 
     # 다시 정규화
-    if weights.sum() == 0:
-        return None
-
     weights = weights / weights.sum()
 
     return weights.to_dict()
