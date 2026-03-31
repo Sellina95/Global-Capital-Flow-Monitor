@@ -194,6 +194,25 @@ def build_portfolio_returns(combined_df, weights_dict, portfolio_name="Portfolio
 
     return portfolio_returns
 
+def build_single_benchmark_returns(combined_df, symbol, benchmark_name=None):
+    """
+    단일 ETF benchmark 수익률 생성
+    예: SPY
+    """
+    if symbol not in combined_df.columns:
+        raise ValueError(f"Benchmark symbol {symbol} not found in combined_df")
+
+    benchmark_returns = combined_df[symbol].fillna(0).copy()
+    benchmark_returns.name = benchmark_name or f"{symbol}_Return"
+    return benchmark_returns
+
+
+def build_6040_benchmark_returns(combined_df):
+    """
+    60/40 benchmark 생성 (SPY 60%, BND 40%)
+    """
+    benchmark_weights = {"SPY": 0.6, "BND": 0.4}
+    return build_portfolio_returns(combined_df, benchmark_weights, portfolio_name="Benchmark_60_40")
 
 def build_filtered_portfolio(market_data):
     """
