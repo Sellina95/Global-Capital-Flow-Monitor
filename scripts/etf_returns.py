@@ -149,20 +149,25 @@ def normalize_weights(scores):
 
 def detect_regime(market_data):
     state = market_data.get("FINAL_STATE", {}) or {}
+    phase = str(state.get("phase", "")).upper()
 
-    vix = state.get("VIX", 25)
-    liquidity = state.get("liquidity_dir", "DOWN")
-    structure = state.get("structure_tag", "TIGHTENING")
-    credit = state.get("credit_calm", True)
-
-    if vix >= 28 or liquidity == "DOWN" or credit is False:
-        return "RISK_OFF"
-
-    if vix <= 18 and liquidity == "UP" and structure != "TIGHTENING":
+    if "RISK-ON" in phase:
         return "RISK_ON"
+    elif "RISK-OFF" in phase:
+        return "RISK_OFF"
+    elif "EVENT-WATCHING" in phase:
+        return "NEUTRAL"
+    else:
+        # fallback only
+        vix = state.get("VIX", 25)
+        liquidity = state.get("liquidity_dir", "DOWN")
+        credit = state.get("credit_calm", True)
 
-    return "NEUTRAL"
-    
+        if vix >= 28 or liquidity == "DOWN" or credit is False:
+            return "RISK_OFF"
+        if vix <= 18 and liquidity == "UP":
+            return "RISK_ON"
+        return "NEUTRAL"
     
 def build_regime_portfolio(market_data):
     regime = detect_regime(market_data)
