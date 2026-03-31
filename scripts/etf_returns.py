@@ -406,7 +406,6 @@ if __name__ == "__main__":
         output_path = "data/etf_portfolio_comparison.csv"
         result_df.to_csv(output_path)
 
-        # 자동 생성 weight도 저장
         weights_output_path = "data/etf_filtered_weights.csv"
         pd.Series(filtered_weights, name="Weight").to_csv(weights_output_path)
 
@@ -414,11 +413,15 @@ if __name__ == "__main__":
         pd.Series(scores, name="Score").to_csv(scores_output_path)
 
         # =========================
-        # G. 비교표 출력
+        # G. Base vs Filtered 비교
         # =========================
-        comparison = compare_portfolios(base_portfolio_returns, filtered_portfolio_returns)
-                # =========================
-        # H. SPY benchmark
+        comparison = compare_portfolios(
+            base_portfolio_returns,
+            filtered_portfolio_returns
+        )
+
+        # =========================
+        # H. SPY benchmark 비교
         # =========================
         spy_returns = build_single_benchmark_returns(
             combined_df,
@@ -433,7 +436,7 @@ if __name__ == "__main__":
         )
 
         # =========================
-        # I. 60/40 benchmark
+        # I. 60/40 benchmark 비교
         # =========================
         benchmark_6040_returns = build_6040_benchmark_returns(combined_df)
 
@@ -443,6 +446,9 @@ if __name__ == "__main__":
             benchmark_label="60_40"
         )
 
+        # =========================
+        # J. 출력
+        # =========================
         print("-" * 60)
         print("📊 Base vs Filtered Portfolio Comparison")
         print(comparison.round(4))
@@ -454,10 +460,6 @@ if __name__ == "__main__":
         print("-" * 60)
         print("📊 Filtered Portfolio vs 60/40")
         print(benchmark_6040_comparison.round(4))
-
-        print("-" * 60)
-        print("📊 Base vs Filtered Portfolio Comparison")
-        print(comparison.round(4))
 
         print("-" * 60)
         print(f"✅ 비교 결과 저장 완료: {output_path}")
