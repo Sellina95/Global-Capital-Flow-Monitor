@@ -1138,15 +1138,15 @@ def generate_daily_report() -> None:
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Report written: {report_path}")
 
-
 if __name__ == "__main__":
 
     # 기존 리포트 실행
     generate_daily_report()
+
     # =========================
     # 🔥 ETF BACKTEST DEBUG BLOCK
     # =========================
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🚀 ETF BACKTEST DEBUG START")
 
     try:
@@ -1155,7 +1155,10 @@ if __name__ == "__main__":
             build_portfolio_returns,
             calculate_returns,
             compare_portfolios,
-            base_weights
+            compare_against_benchmark,
+            build_single_benchmark_returns,
+            build_6040_benchmark_returns,
+            base_weights,
         )
 
         # ETF 데이터 로드
@@ -1172,9 +1175,6 @@ if __name__ == "__main__":
             )
 
             # =========================
-            # 🔥 market_data 구성 (핵심)
-            # =========================
-                        # =========================
             # 🔥 market_data 구성 (임시 고정 버전)
             # =========================
             market_data = {
@@ -1190,6 +1190,7 @@ if __name__ == "__main__":
                 "SECTOR_OW": ["Consumer Staples", "Utilities", "Health Care"],
                 "SECTOR_UW": ["Technology", "Consumer Discretionary", "Real Estate"],
             }
+
             # Filtered 포트폴리오
             filtered_weights, scores, result = build_filtered_portfolio(market_data)
 
@@ -1213,6 +1214,38 @@ if __name__ == "__main__":
             print("\n📊 Base vs Filtered Portfolio Comparison")
             print(comparison.round(4))
 
+            # =========================
+            # SPY benchmark 비교
+            # =========================
+            spy_returns = build_single_benchmark_returns(
+                combined_df,
+                symbol="SPY",
+                benchmark_name="SPY_Return"
+            )
+
+            spy_comparison = compare_against_benchmark(
+                filtered_returns,
+                spy_returns,
+                benchmark_label="SPY"
+            )
+
+            print("\n📊 Filtered Portfolio vs SPY")
+            print(spy_comparison.round(4))
+
+            # =========================
+            # 60/40 benchmark 비교
+            # =========================
+            benchmark_6040_returns = build_6040_benchmark_returns(combined_df)
+
+            benchmark_6040_comparison = compare_against_benchmark(
+                filtered_returns,
+                benchmark_6040_returns,
+                benchmark_label="60_40"
+            )
+
+            print("\n📊 Filtered Portfolio vs 60/40")
+            print(benchmark_6040_comparison.round(4))
+
         else:
             print("❌ ETF 데이터 없음")
 
@@ -1220,5 +1253,5 @@ if __name__ == "__main__":
         print(f"❌ ETF BACKTEST ERROR: {e}")
 
     print("🚀 ETF BACKTEST DEBUG END")
-    print("="*60)
+    print("=" * 60)
     
