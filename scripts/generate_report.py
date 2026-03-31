@@ -862,28 +862,6 @@ def _find_effective_market_idx(
     return len(df) - 1
     
     
-# ETF 가중치 설정
-weights = {
-    "BND": 0.15,
-    "EEM": 0.10,
-    "EIS": 0.05,
-    "EMB": 0.10,
-    "EWJ": 0.05,
-    "FXI": 0.10,
-    "GLD": 0.05,
-    "SPY": 0.10,
-    "VXX": 0.05,
-    "XLK": 0.05,
-    "XLV": 0.05,
-    "XLP": 0.05,
-    "XLF": 0.05,
-    "QUAL": 0.05,
-    "COWZ": 0.05,
-    "MTUM": 0.05
-}
-
-# 포트폴리오 수익률 계산 함수
-
     
 def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
