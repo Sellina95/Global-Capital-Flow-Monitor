@@ -16,7 +16,7 @@ from filters.strategist_filters import geopolitical_early_warning_filter
 from filters.strategist_filters import attach_country_risk_layer
 from filters.strategist_filters import attach_geo_similarity_layer
 from filters.executive_layer import executive_summary_filter
-from filters.executive_layer import calculate_raroc
+#from filters.executive_layer import calculate_raroc
 from filters.scenario_layer import scenario_generator_filter
 from filters.strategist_filters import apply_geo_overlay_to_final_state
 from scripts.risk_alerts import check_regime_change_and_alert
@@ -883,17 +883,7 @@ weights = {
 }
 
 # 포트폴리오 수익률 계산 함수
-def calculate_portfolio_return():
-    # CSV에서 ETF 수익률 데이터 가져오기
-    etf_returns = pd.read_csv("data/etf_returns.csv", index_col=0)
-    
-    # 포트폴리오 수익률 계산
-    portfolio_return = sum(
-        weights[symbol] * etf_returns.loc[symbol, 'Mean Return']  # 각 ETF별 수익률 * 가중치
-        for symbol in weights
-    )
-    
-    return portfolio_return
+
     
 def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
