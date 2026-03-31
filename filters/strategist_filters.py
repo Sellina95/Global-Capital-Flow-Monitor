@@ -3498,16 +3498,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
 from typing import Dict, Any
 from filters.executive_layer import execution_layer_filter
 
-
 def executive_summary_filter(market_data: Dict[str, Any], debug: bool = False) -> str:
-    """
-    Executive Summary Wrapper
-
-    역할:
-    - execution_layer_filter()의 결과를 받아
-      리포트용 summary text만 반환
-    - 판단 로직은 execution_layer.py에만 존재해야 함
-    """
     result = execution_layer_filter(market_data, debug=debug)
     return result["report"]
     
