@@ -1137,11 +1137,12 @@ def generate_daily_report() -> None:
     report_path = REPORTS_DIR / f"daily_report_{report_date}.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Report written: {report_path}")
+    return market_data
 
 if __name__ == "__main__":
 
     # 기존 리포트 실행
-    generate_daily_report()
+    real_market_data = generate_daily_report()
 
     # =========================
     # 🔥 ETF BACKTEST DEBUG BLOCK
@@ -1174,21 +1175,10 @@ if __name__ == "__main__":
                 "Base"
             )
 
-            # market_data 구성 (임시 고정 버전)
-            market_data = {
-                "FINAL_STATE": {
-                    "phase": "EVENT-WATCHING (이벤트 관망)",
-                    "risk_action": "STRONG REDUCE",
-                    "risk_budget": 10,
-                    "structure_tag": "TIGHTENING",
-                    "credit_calm": True,
-                    "liquidity_dir": "DOWN",
-                    "liquidity_level_bucket": "MID",
-                    "VIX": 31.05,
-                },
-                "SECTOR_OW": ["Consumer Staples", "Utilities", "Health Care"],
-                "SECTOR_UW": ["Technology", "Consumer Discretionary", "Real Estate"],
-            }
+            market_data = real_market_data or {}
+
+            market_data.setdefault("SECTOR_OW", ["Consumer Staples", "Utilities", "Health Care"])
+            market_data.setdefault("SECTOR_UW", ["Technology", "Consumer Discretionary", "Real Estate"])
 
             # Regime 포트폴리오
             filtered_weights, scores, regime, style_tags = build_regime_portfolio(market_data)
