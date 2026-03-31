@@ -1150,8 +1150,8 @@ if __name__ == "__main__":
     print("🚀 ETF BACKTEST DEBUG START")
 
     try:
-        from etf_returns import (
-            build_filtered_portfolio,
+       from etf_returns import (
+            build_regime_portfolio,
             build_portfolio_returns,
             calculate_returns,
             compare_portfolios,
@@ -1159,8 +1159,8 @@ if __name__ == "__main__":
             build_single_benchmark_returns,
             build_6040_benchmark_returns,
             base_weights,
-        )
-
+       )
+      
         # ETF 데이터 로드
         combined_df = calculate_returns(base_weights)
 
