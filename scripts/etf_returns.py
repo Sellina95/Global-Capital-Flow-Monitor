@@ -194,25 +194,6 @@ def build_portfolio_returns(combined_df, weights_dict, portfolio_name="Portfolio
 
     return portfolio_returns
 
-def build_single_benchmark_returns(combined_df, symbol, benchmark_name=None):
-    """
-    단일 ETF benchmark 수익률 생성
-    예: SPY
-    """
-    if symbol not in combined_df.columns:
-        raise ValueError(f"Benchmark symbol {symbol} not found in combined_df")
-
-    benchmark_returns = combined_df[symbol].fillna(0).copy()
-    benchmark_returns.name = benchmark_name or f"{symbol}_Return"
-    return benchmark_returns
-
-
-def build_6040_benchmark_returns(combined_df):
-    """
-    60/40 benchmark 생성 (SPY 60%, BND 40%)
-    """
-    benchmark_weights = {"SPY": 0.6, "BND": 0.4}
-    return build_portfolio_returns(combined_df, benchmark_weights, portfolio_name="Benchmark_60_40")
 
 def build_filtered_portfolio(market_data):
     """
@@ -226,10 +207,9 @@ def build_filtered_portfolio(market_data):
 
     return weights, scores, result
 
-
 def calculate_performance_metrics(portfolio_returns, risk_free_rate_annual=0.03):
     """
-    성과지표 계산
+    포트폴리오 성과지표 계산
     """
     portfolio_returns = portfolio_returns.dropna()
 
@@ -267,9 +247,43 @@ def calculate_performance_metrics(portfolio_returns, risk_free_rate_annual=0.03)
     }
 
 
+def calculate_active_metrics(portfolio_returns, benchmark_returns):
+    """
+    Active Return / Tracking Error / Information Ratio 계산
+    """
+    df = pd.concat([portfolio_returns, benchmark_returns], axis=1).dropna()
+
+    if df.empty:
+        return None
+
+    port = df.iloc[:, 0]
+    bench = df.iloc[:, 1]
+
+    active_returns = port - bench
+
+    cumulative_port = (1 + port).prod() - 1
+    cumulative_bench = (1 + bench).prod() - 1
+    active_return = cumulative_port - cumulative_bench
+
+    tracking_error = active_returns.std() * np.sqrt(TRADING_DAYS)
+
+    if tracking_error != 0:
+        information_ratio = (active_returns.mean() * TRADING_DAYS) / tracking_error
+    else:
+        information_ratio = np.nan
+
+    return {
+        "Portfolio Cumulative Return": cumulative_port,
+        "Benchmark Cumulative Return": cumulative_bench,
+        "Active Return": active_return,
+        "Tracking Error": tracking_error,
+        "Information Ratio": information_ratio,
+    }
+
+
 def compare_portfolios(base_returns, filtered_returns):
     """
-    적용 전/후 성과 비교표
+    Base 포트폴리오 vs Filtered 포트폴리오 비교표
     """
     base_metrics = calculate_performance_metrics(base_returns, RISK_FREE_RATE_ANNUAL)
     filtered_metrics = calculate_performance_metrics(filtered_returns, RISK_FREE_RATE_ANNUAL)
@@ -284,6 +298,46 @@ def compare_portfolios(base_returns, filtered_returns):
     )
 
     return comparison
+
+
+def compare_against_benchmark(portfolio_returns, benchmark_returns, benchmark_label="Benchmark"):
+    """
+    포트폴리오 vs 벤치마크 비교표
+    """
+    portfolio_metrics = calculate_performance_metrics(portfolio_returns, RISK_FREE_RATE_ANNUAL)
+    benchmark_metrics = calculate_performance_metrics(benchmark_returns, RISK_FREE_RATE_ANNUAL)
+    active_metrics = calculate_active_metrics(portfolio_returns, benchmark_returns)
+
+    comparison = pd.DataFrame({
+        "Portfolio": portfolio_metrics,
+        benchmark_label: benchmark_metrics
+    })
+
+    if active_metrics is not None:
+        for k, v in active_metrics.items():
+            comparison.loc[k, "Active vs Benchmark"] = v
+
+    return comparison
+    
+def build_single_benchmark_returns(combined_df, symbol, benchmark_name=None):
+    """
+    단일 ETF benchmark 수익률 생성
+    예: SPY
+    """
+    if symbol not in combined_df.columns:
+        raise ValueError(f"Benchmark symbol {symbol} not found in combined_df")
+
+    benchmark_returns = combined_df[symbol].fillna(0).copy()
+    benchmark_returns.name = benchmark_name or f"{symbol}_Return"
+    return benchmark_returns
+
+
+def build_6040_benchmark_returns(combined_df):
+    """
+    60/40 benchmark 생성 (SPY 60%, BND 40%)
+    """
+    benchmark_weights = {"SPY": 0.6, "BND": 0.4}
+    return build_portfolio_returns(combined_df, benchmark_weights, portfolio_name="Benchmark_60_40")
 
 
 if __name__ == "__main__":
@@ -363,6 +417,43 @@ if __name__ == "__main__":
         # G. 비교표 출력
         # =========================
         comparison = compare_portfolios(base_portfolio_returns, filtered_portfolio_returns)
+                # =========================
+        # H. SPY benchmark
+        # =========================
+        spy_returns = build_single_benchmark_returns(
+            combined_df,
+            symbol="SPY",
+            benchmark_name="SPY_Return"
+        )
+
+        spy_comparison = compare_against_benchmark(
+            filtered_portfolio_returns,
+            spy_returns,
+            benchmark_label="SPY"
+        )
+
+        # =========================
+        # I. 60/40 benchmark
+        # =========================
+        benchmark_6040_returns = build_6040_benchmark_returns(combined_df)
+
+        benchmark_6040_comparison = compare_against_benchmark(
+            filtered_portfolio_returns,
+            benchmark_6040_returns,
+            benchmark_label="60_40"
+        )
+
+        print("-" * 60)
+        print("📊 Base vs Filtered Portfolio Comparison")
+        print(comparison.round(4))
+
+        print("-" * 60)
+        print("📊 Filtered Portfolio vs SPY")
+        print(spy_comparison.round(4))
+
+        print("-" * 60)
+        print("📊 Filtered Portfolio vs 60/40")
+        print(benchmark_6040_comparison.round(4))
 
         print("-" * 60)
         print("📊 Base vs Filtered Portfolio Comparison")
