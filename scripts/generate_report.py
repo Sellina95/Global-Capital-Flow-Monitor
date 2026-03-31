@@ -1192,11 +1192,13 @@ if __name__ == "__main__":
             }
 
             # Filtered 포트폴리오
-            filtered_weights, scores, result = build_filtered_portfolio(market_data)
+            filtered_weights, scores, regime, style_tags = build_regime_portfolio(market_data)
+
+            print("\n📊 Regime")
+            print(regime)
 
             print("\n📊 Style Tags")
-            print(result["style_tags"])
-
+            print(style_tags)
             print("\n📊 ETF Scores")
             print(scores)
 
