@@ -42,10 +42,11 @@ ETF_STYLE_MAP = {
 # =========================
 CURRENT_MARKET_DATA = {
     "FINAL_STATE": {
-        "structure_tag": "TIGHTENING",          # 또는 EVENT-WATCHING이면 바꿔도 됨
+        "structure_tag": "TIGHTENING",
         "liquidity_dir": "DOWN",
         "liquidity_level_bucket": "MID",
-        "credit_calm": True
+        "credit_calm": True,
+        "VIX": 31.05
     },
     "SECTOR_OW": ["Consumer Staples", "Utilities", "Health Care"],
     "SECTOR_UW": ["Technology", "Consumer Discretionary", "Real Estate"]
