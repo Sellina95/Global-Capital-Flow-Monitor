@@ -1148,37 +1148,28 @@ def generate_final_state_history():
     df = merge_sovereign_spreads_into_macro_df(df)
 
     rows = []
-    start_idx = max(0, len(df) - 30)
+    start_idx = max(0, len(df) - 30)  # 테스트용: 최근 30일만
 
     for idx in range(start_idx, len(df)):
 
         if idx % 5 == 0:
             print(f"[BACKTEST] processing {idx}/{len(df)}")
 
-        try:
-            market_data = build_market_data(df, idx)
-    start_idx = max(0, len(df) - 30)
-
-    for idx in range(start_idx, len(df)):
-
-        if idx % 5 == 0:
-            print(f"[BACKTEST] processing {idx}/{len(df)}")
-
-    for idx in range(len(df)):
         try:
             market_data = build_market_data(df, idx)
             market_data["_STALE"] = False
 
-            # 기존 리포트 파이프라인과 최대한 같은 순서 유지
-            market_data = attach_liquidity_layer(market_data) or market_data
-            market_data = attach_credit_spread_layer(market_data) or market_data
-            market_data = attach_fred_extras_layer(market_data) or market_data
-            market_data = attach_sovereign_spread_layer(market_data) or market_data
-            market_data = attach_expectation_layer(market_data) or market_data
-            market_data = attach_geopolitical_ew_layer(market_data, df, idx) or market_data
-            market_data = attach_country_risk_layer(market_data, df, idx) or market_data
-            market_data = attach_geo_similarity_layer(market_data) or market_data
-            market_data = attach_sentiment_proxy_layer(market_data) or market_data
+
+        # 기존 리포트 파이프라인과 최대한 같은 순서 유지
+        market_data = attach_liquidity_layer(market_data) or market_data
+        market_data = attach_credit_spread_layer(market_data) or market_data
+        market_data = attach_fred_extras_layer(market_data) or market_data
+        market_data = attach_sovereign_spread_layer(market_data) or market_data
+        market_data = attach_expectation_layer(market_data) or market_data
+        market_data = attach_geopolitical_ew_layer(market_data, df, idx) or market_data
+        market_data = attach_country_risk_layer(market_data, df, idx) or market_data
+        market_data = attach_geo_similarity_layer(market_data) or market_data
+        market_data = attach_sentiment_proxy_layer(market_data) or market_data
 
             # 1번 필터: MARKET_REGIME 저장
             market_regime_filter(market_data)
