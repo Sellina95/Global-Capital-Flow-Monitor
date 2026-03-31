@@ -3496,7 +3496,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
 
 # filters/execution_layer.py
 from typing import Dict, Any
-from execution_layer import execution_layer_filter
+from filters.execution_layer import execution_layer_filter
 
 
 def executive_summary_filter(market_data: Dict[str, Any], debug: bool = False) -> str:
