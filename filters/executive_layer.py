@@ -20,7 +20,7 @@ def execution_layer_filter(market_data: Dict[str, Any], debug: bool = False) -> 
 
     목적:
     - 1~18번 필터에서 정리된 시장 상태를 바탕으로
-      '실행 가능한 스타일 / 기업 타입 / ETF 해석용 태그'를 생성
+      실행 가능한 스타일 / 기업 타입 / ETF 해석용 태그를 생성
     - 리포트용 텍스트 + 후속 로직용 구조화 데이터 동시 반환
     """
 
@@ -133,3 +133,13 @@ def execution_layer_filter(market_data: Dict[str, Any], debug: bool = False) -> 
         "sector_uw": sector_uw,
         "style_tags": style_tags,
     }
+
+
+def executive_summary_filter(market_data: Dict[str, Any], debug: bool = False) -> str:
+    """
+    Wrapper:
+    - generate_report.py 등 기존 코드와 호환되도록
+      summary text만 반환
+    """
+    result = execution_layer_filter(market_data, debug=debug)
+    return result["report"]
