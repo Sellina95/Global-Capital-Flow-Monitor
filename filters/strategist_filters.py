@@ -764,35 +764,42 @@ def cross_asset_filter(market_data: Dict[str, Any]) -> str:
     vix = _get_series(market_data, "VIX")
 
     us10y_dir = _sign_from(us10y)
-    dxy_dir = _sign_from(dxy)
+    # dxy_dir = _sign_from(dxy) # 필요시 사용
     wti_dir = _sign_from(wti)
     vix_dir = _sign_from(vix)
 
     lines = []
-    lines.append("### 🧩 6) Cross-Asset Filter (연쇄효과 분석)")
-    lines.append("- **추가 이유:** 한 지표의 변화가 다른 자산군에 어떻게 전파되는지 파악하기 위함")
+    lines.append("### 🧩 6) Cross-Asset Filter (자산군 연쇄 반응 분석)")
+    lines.append("- **추가 이유:** 단일 지표의 노이즈를 제거하고, 매크로 충격이 자산군 전반으로 확산되는 **전이 경로(Transmission Path)**를 파악하기 위함")
     lines.append("")
 
+    # 1. 금리-통화 연쇄 반응
     if us10y_dir == 1:
-        lines.append("- **금리 상승(US10Y↑)** → 달러 강세(DXY↑) / 위험자산 할인율 부담 / 성장주 변동성↑ 경향")
+        lines.append("- **금리 상승(US10Y↑)** → 실질 금리 압박 → 달러 강세(DXY↑) 유도: **신흥국 자본 유출 및 고밸류 성장주 할인율 부담 증가**")
     elif us10y_dir == -1:
-        lines.append("- **금리 하락(US10Y↓)** → 달러 약세(DXY↓) / 할인율 부담 완화 / 위험자산 선호↑ 경향")
+        lines.append("- **금리 하락(US10Y↓)** → 할인율 압박 완화 → 달러 약세(DXY↓) 유도: **위험자산(Growth/EM) 선호 심리 강화 및 유동성 환경 개선**")
     else:
-        lines.append("- **금리 보합(US10Y→)** → 할인율 변수 제한")
+        lines.append("- **금리 보합(US10Y→)** → 할인율 변수 제한: 시장은 정책 경로 재확인을 위한 대기 국면")
 
+    # 2. 심리-수요 연쇄 반응
     if vix_dir == 1:
-        lines.append("- **변동성 상승(VIX↑)** → 위험회피 강화 / 달러 선호↑ / 원자재·주식 부담 가능")
+        lines.append("- **변동성 상승(VIX↑)** → 위험회피(Risk-Off) 강화: **안전 자산(Cash/USD) 선호도 급증 및 하이일드 스프레드 확대 압력**")
     elif vix_dir == -1:
-        lines.append("- **변동성 하락(VIX↓)** → 심리 개선 / 위험자산 수요 회복 가능")
+        lines.append("- **변동성 하락(VIX↓)** → 심리 개선(Risk-On): **자산군 전반의 위험 수용 여력(Risk Appetite) 회복 및 랠리 지속 가능성**")
     else:
-        lines.append("- **변동성 보합(VIX→)** → 심리 변화 제한")
+        lines.append("- **변동성 보합(VIX→)** → 심리 변화 제한: 현재의 추세가 관성적으로 유지되는 구간")
 
+    # 3. 에너지-인플레 연쇄 반응
     if wti_dir == 1:
-        lines.append("- **유가 상승(WTI↑)** → 인플레 재자극 가능성 / 금리 상방 압력")
+        lines.append("- **유가 상승(WTI↑)** → 기대 인플레이션 자극: **제조/운송업 비용 부담 가중 및 중앙은행의 긴축 유지 명분 강화**")
     elif wti_dir == -1:
-        lines.append("- **유가 하락(WTI↓)** → 물가 부담 완화 / 긴축 압력 완화 가능")
+        lines.append("- **유가 하락(WTI↓)** → 물가 부담 완화: **실질 구매력 회복 및 긴축 압력 완화(Dovish Tilt) 가능성 시사**")
     else:
-        lines.append("- **유가 보합(WTI→)** → 물가 변수 제한")
+        lines.append("- **유가 보합(WTI→)** → 물가 변수 제한: 에너지발 매크로 충격은 제한적인 국면")
+
+    # 4. 연결 고리 (Check Point)
+    lines.append("")
+    lines.append("> **[Strategic Note]:** 위 연쇄 반응이 역사적 상관관계에서 벗어날 경우, **6.5) Correlation Break Monitor**를 통해 국면 전환 여부를 정밀 판별함")
 
     return "\n".join(lines)
 
