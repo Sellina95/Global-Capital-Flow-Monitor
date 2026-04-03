@@ -1768,6 +1768,39 @@ GEO_EVENT_TEMPLATES = {
         "country_crash_count": 0.0,
         "country_high_count": 1.0,
     },
+    "China_Trade_2018": {
+        "geo_score": 1.7,
+        "geo_momentum": 0.5,
+        "VIX": 1.2,
+        "WTI": 0.6,
+        "GOLD": 0.9,
+        "USDCNH": 2.2,       # 위안화 변동성 극대화 (핵심 변수)
+        "EEM": 1.8,          # 신흥국 자산 타격
+        "EMB": 1.4,          # 신흥국 채권 스트레스
+        "BDRY": 1.5,         # 글로벌 물동량 우려 (해운지수)
+        "ITA": 0.4,
+        "KR10Y_SPREAD": 1.2, # 한국 금리 스프레드 민감도 높음
+        "IL10Y_SPREAD": 0.1,
+        "country_crash_count": 1.0,
+        "country_high_count": 2.0,
+    },
+    "Iran_Crisis_2020": {
+        "geo_score": 2.1,
+        "geo_momentum": 0.9,
+        "VIX": 1.8,
+        "WTI": 2.5,          # 유가 급등 (핵심 변수)
+        "GOLD": 1.9,         # 안전자산 선호
+        "USDCNH": 0.5,
+        "EEM": 0.8,
+        "EMB": 0.7,
+        "BDRY": 0.3,
+        "ITA": 1.5,          # 방산 섹터 반응
+        "KR10Y_SPREAD": 0.3,
+        "IL10Y_SPREAD": 0.2,
+        "country_crash_count": 0.0,
+        "country_high_count": 1.0,
+    },
+
         
 }
 
