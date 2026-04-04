@@ -1272,7 +1272,7 @@ if __name__ == "__main__":
     # =========================
     print("\n" + "=" * 60)
     print("🚀 ETF BACKTEST DEBUG START")
-    print(combined_df.index[0], combined_df.index[-1])
+    #print(combined_df.index[0], combined_df.index[-1])
 
     try:
         from etf_returns import (
