@@ -2201,47 +2201,48 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 # 8) Incentive Filter
 # =========================
 def incentive_filter(market_data: Dict[str, Any]) -> str:
-    us10y = _get_series(market_data, "US10Y")
+    # 데이터 로드 (시리즈 코드를 그대로 키값으로 사용)
+    t10y2y = _get_series(market_data, "T10Y2Y")
+    real_rate = _get_series(market_data, "DFII10") # 실질금리
+    vix = _get_series(market_data, "VIX")
     dxy = _get_series(market_data, "DXY")
-    wti = _get_series(market_data, "WTI")
-
-    us10y_dir = _sign_from(us10y)
+    
+    # 방향성 확인
+    t10y2y_dir = _sign_from(t10y2y)
+    real_dir = _sign_from(real_rate)
     dxy_dir = _sign_from(dxy)
-    wti_dir = _sign_from(wti)
+    vix_val = vix.get('today', 20)
 
     winners = []
     losers = []
 
-    if us10y_dir == 1:
-        winners.append("Banks/Financials (higher rates)")
-        losers.append("Long-duration growth (discount-rate pressure)")
-    elif us10y_dir == -1:
-        winners.append("Long-duration growth (discount-rate relief)")
+    # 1. 장단기 금리차 (Steepening 인센티브)
+    if t10y2y_dir == 1:
+        winners.append("Financials (XLF) - Steepening 이익 구조")
+    elif t10y2y.get('today', 0) < 0:
+        losers.append("Cyclicals - 경기 침체(Inversion) 우려")
 
-    if dxy_dir == 1:
-        winners.append("USD holders / US importers")
-        losers.append("EM assets / USD debtors")
-    elif dxy_dir == -1:
-        winners.append("EM assets / risk trades")
-        losers.append("USD strength trades")
+    # 2. 실질 금리 (성장주 밸류에이션 인센티브)
+    if real_dir == 1:
+        losers.append("Growth Tech (XLK) - 실질 금리 상승 부담")
+        winners.append("Value/Cash - 상대적 방어력")
+    else:
+        winners.append("Growth/Quality (QUAL) - 유동성 환경 우호")
 
-    if wti_dir == 1:
-        winners.append("Energy producers")
-        losers.append("Energy consumers")
-    elif wti_dir == -1:
-        winners.append("Energy consumers")
-        losers.append("Energy producers")
+    # 3. 달러 및 변동성 (자금 흐름)
+    if dxy_dir == 1 and vix_val < 20:
+        winners.append("US Large Cap - 글로벌 안전자산/캐리 유입")
 
     lines = []
-    lines.append("### 💸 8) Incentive Filter")
-    lines.append("- **질문:** 누가 이득을 보고 있는가?")
-    lines.append(f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / WTI({_dir_str(wti_dir)})")
+    lines.append("### 💸 8) Incentive Filter (Wall St. Edition)")
+    lines.append("**추가 이유:** 실질 금리와 장단기 금리차를 활용해 자본의 '진짜 의도'를 파악함")
+    lines.append(f"- **핵심 신호:** 장단기차({t10y2y['today']:.2f}) / 실질금리({real_rate['today']:.2f}) / DXY({dxy['today']:.1f})")
     lines.append("- **이득을 보는 주체:**")
     lines.extend([f"  - {w}" for w in winners] if winners else ["  - None"])
     lines.append("- **손해를 보는 주체:**")
     lines.extend([f"  - {l}" for l in losers] if losers else ["  - None"])
+    
     return "\n".join(lines)
-
 
 # =========================
 # 9) Cause Filter
