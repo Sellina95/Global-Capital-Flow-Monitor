@@ -2202,92 +2202,62 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 # =========================
 def incentive_filter(market_data: Dict[str, Any]) -> str:
     """
-    8) Incentive Filter (System Integration Edition)
-    실질 금리와 장단기 금리차를 활용해 자본의 '진짜 의도'를 파악합니다.
+    8) Incentive Filter (Wall St. Logic)
+    실질 금리와 장단기 금리차를 활용해 자본의 '진짜 의도'를 파악
     """
-    
     state = market_data.get("FINAL_STATE", {}) or {}
 
-    # 시스템 규격에 맞춘 데이터 추출 함수 (Local version)
+    # --- 여기서부터 들여쓰기 주의! ---
     def fetch_val(key: str, default: float) -> float:
-    # 1. FINAL_STATE에서 먼저 시도
-    val = state.get(key.upper()) or state.get(key.lower())
-    
-    # [추가된 로직] 값이 이미 숫자라면 바로 반환!
-    if isinstance(val, (int, float)):
-        return float(val)
-    
-    # [기존 로직] 값이 딕셔너리라면 'today'를 찾음
-    if isinstance(val, dict):
-        val = val.get("today")
-    
-    # 2. market_data 루트에서 다시 시도 (fallback)
-    if val is None:
-        node = market_data.get(key.upper()) or market_data.get(key.lower())
-        if isinstance(node, (int, float)):
-            return float(node)
-        if isinstance(node, dict):
-            val = node.get("today")
+        # 1. FINAL_STATE에서 먼저 확인
+        val = state.get(key.upper()) or state.get(key.lower())
+        
+        # 값이 숫자(float, int)면 바로 반환
+        if isinstance(val, (int, float)):
+            return float(val)
+        
+        # 값이 딕셔너리라면 'today' 키 확인
+        if isinstance(val, dict):
+            val = val.get("today")
 
-    try:
-        return float(val) if val is not None else default
-    except Exception:
-        return default
+        # 2. market_data 루트에서 다시 확인 (fallback)
+        if val is None:
+            node = market_data.get(key.upper()) or market_data.get(key.lower())
+            if isinstance(node, (int, float)):
+                return float(node)
+            if isinstance(node, dict):
+                val = node.get("today")
 
+        try:
+            return float(val) if val is not None else default
+        except Exception:
+            return default
+    # --- 여기까지 함수 내부 로직 ---
 
-    # 1. 데이터 가져오기 (CSV의 컬럼명과 일치해야 함)
-    curr_t10y2y = fetch_val("T10Y2Y", 0.0)
-    curr_real = fetch_val("DFII10", 0.0)  # 실질금리
-    curr_vix = fetch_val("VIX", 20.0)
-    curr_dxy = fetch_val("DXY", 100.0)
-    
-    # 이전값 비교를 위한 간단한 로직 (prev 데이터가 마땅치 않을 때를 대비)
-    # 시스템에 'prev' 데이터 구조가 있다면 fetch_val을 수정해서 가져올 수 있습니다.
-    
-    winners = []
-    losers = []
+    # 변수 로드 (안전하게 default값 설정)
+    t10y2y = fetch_val("T10Y2Y", 0.0)
+    rr_val = fetch_val("DFII10", 0.0)
+    dxy_val = fetch_val("DXY", 100.0)
+    wti_val = fetch_val("WTI", 75.0) # WTI 예시
 
-    # ---------------------------------------------------------
-    # [Logic] Wall Street 자본 배치 로직
-    # ---------------------------------------------------------
-    
-    # 장단기 금리차
-    if curr_t10y2y > 0.5: # 스티프닝 구간
-        winners.append("Financials (XLF) - 예대마진 개선 기대")
-    elif curr_t10y2y < 0: # 역전 구간
-        losers.append("Cyclicals/Broad Equity - 경기 침체 우려")
-
-    # 실질 금리 (DFII10)
-    if curr_real > 1.5: # 실질금리 임계값 (예시: 1.5% 상회 시 긴축적)
-        losers.append("High-Growth Tech (XLK) - 밸류에이션 압박")
-        winners.append("Value/Cash - 자산 방어력 우위")
-    else:
-        winners.append("Growth/Quality (QUAL) - 유동성 환경 우호")
-
-    # 달러 인덱스 (DXY)
-    if curr_dxy > 105:
-        winners.append("US Large Cap - 달러 패권 및 안전자산 선호")
-    elif curr_dxy < 100:
-        winners.append("Emerging Markets (EEM) - 환차익 및 위험선호")
-
-    # 3. 리포트 조립
+    # -------------------------
+    # 리포트 문구 작성
+    # -------------------------
     lines = []
-    lines.append("### 💸 8) Incentive Filter (Wall St. Logic)")
-    lines.append("**추가 이유:** 실질 금리와 장단기 금리차를 활용해 자본의 '진짜 의도'를 파악함")
-    lines.append(f"- **핵심 신호:** 장단기차({curr_t10y2y:.2f}bp) | 실질금리({curr_real:.2f}%) | DXY({curr_dxy:.2f})")
+    lines.append("### 8) Incentive Filter (Wall St. Logic)")
     lines.append("")
-    
-    lines.append("- **✅ 자본이 쏠리는 곳 (Long Incentive):**")
-    if winners:
-        lines.extend([f"  - {w}" for w in set(winners)]) # 중복 제거
-    else:
-        lines.append("  - 특이 신호 없음")
+    lines.append(f"**핵심 신호:** 장단기차({t10y2y:.2f}bp) | 실질금리({rr_val:.2f}%) | DXY({dxy_val:.2f})")
+    lines.append("")
 
-    lines.append("- **❌ 자본이 탈출하는 곳 (Short Incentive):**")
-    if losers:
-        lines.extend([f"  - {l}" for l in set(losers)])
+    # 로직 조건문 (rr_val이 None이 아니므로 안전하게 비교 가능)
+    if rr_val < 1.0:
+        incentive_text = "✅ 자본이 쏠리는 곳 (Long Incentive):\nGrowth/Quality (QUAL) - 유동성 환경 우호"
+    elif rr_val >= 2.0:
+        incentive_text = "❌ 자본이 탈출하는 곳 (Short Incentive):\n고금리 부담으로 인한 밸류에이션 압박"
     else:
-        lines.append("  - 특이 신호 없음")
+        incentive_text = "Neutral - 자본의 방향성이 탐색 구간에 있음"
+
+    lines.append(incentive_text)
     
     return "\n".join(lines)
 
