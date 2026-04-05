@@ -2210,20 +2210,30 @@ def incentive_filter(market_data: Dict[str, Any]) -> str:
 
     # 시스템 규격에 맞춘 데이터 추출 함수 (Local version)
     def fetch_val(key: str, default: float) -> float:
-        # 1. FINAL_STATE에서 대문자로 찾기
-        val = state.get(key.upper())
-        # 2. FINAL_STATE에서 소문자로 찾기
-        if val is None: val = state.get(key.lower())
-        # 3. market_data 루트에서 찾기 (딕셔너리 구조 대응)
-        if val is None:
-            node = market_data.get(key.upper(), {})
-            if isinstance(node, dict):
-                val = node.get("today")
-        
-        try:
-            return float(val) if val is not None else default
-        except Exception:
-            return default
+    # 1. FINAL_STATE에서 먼저 시도
+    val = state.get(key.upper()) or state.get(key.lower())
+    
+    # [추가된 로직] 값이 이미 숫자라면 바로 반환!
+    if isinstance(val, (int, float)):
+        return float(val)
+    
+    # [기존 로직] 값이 딕셔너리라면 'today'를 찾음
+    if isinstance(val, dict):
+        val = val.get("today")
+    
+    # 2. market_data 루트에서 다시 시도 (fallback)
+    if val is None:
+        node = market_data.get(key.upper()) or market_data.get(key.lower())
+        if isinstance(node, (int, float)):
+            return float(node)
+        if isinstance(node, dict):
+            val = node.get("today")
+
+    try:
+        return float(val) if val is not None else default
+    except Exception:
+        return default
+
 
     # 1. 데이터 가져오기 (CSV의 컬럼명과 일치해야 함)
     curr_t10y2y = fetch_val("T10Y2Y", 0.0)
