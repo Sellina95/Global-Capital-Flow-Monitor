@@ -2416,7 +2416,8 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
         rationale = "달러와 금의 동반 상승은 법정 화폐 가치 전반에 대한 의구심과 구조적 불확실성을 시사함"
 
     # B) 에너지 주도 스태그플레이션 (실질금리 2.0 기준 적용)
-    elif wti_val > 90 and rr_val >= 2.0:
+    # 수정 후
+    elif wti_val is not None and rr_val is not None and wti_val > 90 and rr_val >= 2.0:
         state = "ENERGY-DRIVEN STAGFLATION (에너지 주도 스태그)"
         rationale = f"긴축적인 실질금리({rr_val}%) 환경에서도 고유가가 유지됨. 이는 공급망의 구조적 압박을 의미"
 
