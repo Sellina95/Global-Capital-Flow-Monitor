@@ -159,7 +159,7 @@ No significant sector-level correlation break detected.
 
 **핵심 신호:** 장단기차(0.00bp) | 실질금리(1.97%) | DXY(120.89)
 
-Neutral - 자본의 방향성이 탐색 구간에 있음
+Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화 과정)
 
 ### 🔍 9) Cause Filter
 - **질문:** 무엇이 이 움직임을 만들었는가?
@@ -333,8 +333,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.30760362674085273
-- **Z-Score (5d):** 1.6420550170380124
+- **Z-Score (1d):** 0.3076039785146895
+- **Z-Score (5d):** 1.642055263486481
 
 ### EWJ
 - **Crash?** False
