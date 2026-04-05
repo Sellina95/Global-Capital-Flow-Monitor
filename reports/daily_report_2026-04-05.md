@@ -160,7 +160,7 @@ No significant sector-level correlation break detected.
 - **핵심 신호:** 장단기차(0.00bp) | 실질금리(0.00%) | DXY(100.03)
 
 - **✅ 자본이 쏠리는 곳 (Long Incentive):**
-  - Quality Growth (QUAL) - 우호적인 실질 유동성 환경
+  - Growth/Quality (QUAL) - 유동성 환경 우호
 - **❌ 자본이 탈출하는 곳 (Short Incentive):**
   - 특이 신호 없음
 
@@ -318,8 +318,8 @@ No significant sector-level correlation break detected.
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.8308372251327548
-- **Z-Score (5d):** 2.093149935883298
+- **Z-Score (1d):** 0.8308387868892532
+- **Z-Score (5d):** 2.0931504834288237
 
 ### EEM
 - **Crash?** False
@@ -336,8 +336,8 @@ No significant sector-level correlation break detected.
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.30760369897314405
-- **Z-Score (5d):** 1.6420535029145231
+- **Z-Score (1d):** 0.30760353806883134
+- **Z-Score (5d):** 1.6420535799607192
 
 ### EWJ
 - **Crash?** False
