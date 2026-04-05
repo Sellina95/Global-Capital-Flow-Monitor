@@ -155,15 +155,11 @@ No significant sector-level correlation break detected.
 - **Country ETF Crash?** Yes (GLD)
 - **Extreme Country Risk:** GLD
 
-### 💸 8) Incentive Filter (Wall St. Logic)
-**추가 이유:** 실질 금리와 장단기 금리차를 활용해 자본의 '진짜 의도'를 파악함
-- **핵심 신호:** 장단기차(0.00bp) | 실질금리(1.97%) | DXY(120.89)
+### 8) Incentive Filter (Wall St. Logic)
 
-- **✅ 자본이 쏠리는 곳 (Long Incentive):**
-  - Value/Cash - 자산 방어력 우위
-  - US Large Cap - 달러 패권 및 안전자산 선호
-- **❌ 자본이 탈출하는 곳 (Short Incentive):**
-  - High-Growth Tech (XLK) - 밸류에이션 압박
+**핵심 신호:** 장단기차(0.00bp) | 실질금리(1.97%) | DXY(120.89)
+
+Neutral - 자본의 방향성이 탐색 구간에 있음
 
 ### 🔍 9) Cause Filter
 - **질문:** 무엇이 이 움직임을 만들었는가?
@@ -319,8 +315,8 @@ No significant sector-level correlation break detected.
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.8308387940854439
-- **Z-Score (5d):** 2.0931495810806022
+- **Z-Score (1d):** 0.8308411581771605
+- **Z-Score (5d):** 2.093152295009902
 
 ### EEM
 - **Crash?** False
@@ -337,8 +333,8 @@ No significant sector-level correlation break detected.
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3076039785146895
-- **Z-Score (5d):** 1.642055263486481
+- **Z-Score (1d):** 0.30760362674085273
+- **Z-Score (5d):** 1.6420550170380124
 
 ### EWJ
 - **Crash?** False
