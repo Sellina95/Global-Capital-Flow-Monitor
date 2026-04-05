@@ -155,13 +155,14 @@ No significant sector-level correlation break detected.
 - **Country ETF Crash?** Yes (GLD)
 - **Extreme Country Risk:** GLD
 
-### 💸 8) Incentive Filter
-- **질문:** 누가 이득을 보고 있는가?
-- **핵심 신호:** US10Y(→) / DXY(→) / WTI(→)
-- **이득을 보는 주체:**
-  - None
-- **손해를 보는 주체:**
-  - None
+### 💸 8) Incentive Filter (Wall St. Logic)
+**추가 이유:** 실질 금리와 장단기 금리차를 활용해 자본의 '진짜 의도'를 파악함
+- **핵심 신호:** 장단기차(0.00bp) | 실질금리(0.00%) | DXY(100.03)
+
+- **✅ 자본이 쏠리는 곳 (Long Incentive):**
+  - Quality Growth (QUAL) - 우호적인 실질 유동성 환경
+- **❌ 자본이 탈출하는 곳 (Short Incentive):**
+  - 특이 신호 없음
 
 ### 🔍 9) Cause Filter
 - **질문:** 무엇이 이 움직임을 만들었는가?
@@ -317,8 +318,8 @@ No significant sector-level correlation break detected.
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.8308387868892532
-- **Z-Score (5d):** 2.0931504834288237
+- **Z-Score (1d):** 0.8308372251327548
+- **Z-Score (5d):** 2.093149935883298
 
 ### EEM
 - **Crash?** False
@@ -335,8 +336,8 @@ No significant sector-level correlation break detected.
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3076039785146895
-- **Z-Score (5d):** 1.642055263486481
+- **Z-Score (1d):** 0.30760369897314405
+- **Z-Score (5d):** 1.6420535029145231
 
 ### EWJ
 - **Crash?** False
