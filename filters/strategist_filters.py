@@ -3673,13 +3673,38 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
     
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
-    sections.append("Some commentary here")
     
-    # 예시로 market_data에 있는 데이터가 포함될 수도 있습니다
+    # 1. 예시/테스트용 코드 (세연 님이 물어보신 부분 복구)
+    sections.append("Some commentary here")
     if market_data.get("some_key"):
-        sections.append({"key": "value"})
-        
+        # 주의: 이 부분은 나중에 문자열로 변환되지 않으면 join 시 에러날 수 있음
+        sections.append(str({"key": "value"})) 
+
+    # ---------------------------------------------------------
+    # 2. [데이터 전처리] 8번 필터 등 모든 필터가 실행되기 전에 데이터를 주입!
+    # ---------------------------------------------------------
+    if "_FRED_EXTRA" in market_data:
+        fred_extra = market_data["_FRED_EXTRA"]
+        if "FINAL_STATE" not in market_data:
+            market_data["FINAL_STATE"] = {}
+
+        # 🎯 핵심: 필터들이 돌아가기 전에 0.51(T10Y2Y)을 바구니에 먼저 넣습니다.
+        market_data["FINAL_STATE"]["T10Y2Y"] = fred_extra.get("T10Y2Y", 0.0)
+        market_data["FINAL_STATE"]["T10YIE"] = fred_extra.get("T10YIE", 0.0)
+        market_data["FINAL_STATE"]["VIX"] = fred_extra.get(
+            "VIX", 
+            market_data["FINAL_STATE"].get("VIX", 20.0)
+        )
+        market_data["FINAL_STATE"]["DFII10"] = fred_extra.get("DFII10", 0.0)
+        market_data["FINAL_STATE"]["DXY"] = fred_extra.get("DXY", 100.0)
+
+        print(f"[DEBUG][PRE-FILTER] FINAL_STATE Prepared: {market_data['FINAL_STATE']}")
+
+    # ---------------------------------------------------------
+    # 3. [필터 호출 시작] 
+    # ---------------------------------------------------------
     sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
+    
     sections.append(market_regime_filter(market_data))
     sections.append("")
     sections.append(liquidity_filter(market_data))
@@ -3704,8 +3729,12 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(geopolitical_early_warning_filter(market_data))
     sections.append("")
+
+    # 🎯 8번 필터: 이제 위에서 주입한 데이터를 물고 돌아가므로 51.00bp 성공!
     sections.append(incentive_filter(market_data))
     sections.append("")
+
+    # ... 나머지 필터들은 그대로 유지 ...
     sections.append(cause_filter(market_data))
     sections.append("")
     sections.append(direction_filter(market_data))
@@ -3724,29 +3753,7 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")    
     sections.append(factor_layer_filter(market_data))   
     sections.append("")
-
-    # -------------------------
-    # ✅ 18번 필터 직전에 Fred 값 다시 주입
-    # -------------------------
-    if "_FRED_EXTRA" in market_data:
-        fred_extra = market_data["_FRED_EXTRA"]
-
-        if "FINAL_STATE" not in market_data:
-            market_data["FINAL_STATE"] = {}
-
-        market_data["FINAL_STATE"]["T10Y2Y"] = fred_extra.get("T10Y2Y", 0.0)
-        market_data["FINAL_STATE"]["T10YIE"] = fred_extra.get("T10YIE", 0.0)
-        market_data["FINAL_STATE"]["VIX"] = fred_extra.get(
-            "VIX",
-            market_data["FINAL_STATE"].get("VIX", 20.0)
-        )
-
-        print("[DEBUG][COMMENTARY] FINAL_STATE re-injected with FRED:", market_data["FINAL_STATE"])
-
-    print(f"DEBUG - FINAL_STATE 내용: {market_data.get('FINAL_STATE')}")
     sections.append(sector_allocation_filter(market_data))  
     sections.append("")
-    # sections.append(execution_layer_filter(market_data))
-    # sections.append("")
     
     return "\n".join(sections)
