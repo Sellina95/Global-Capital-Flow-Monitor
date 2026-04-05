@@ -1189,11 +1189,6 @@ def generate_final_state_history():
             # 1번 필터: MARKET_REGIME 저장
             market_regime_filter(market_data)
 
-            # Narrative Engine이 FINAL_STATE 생성
-            narrative_engine_filter(market_data)
-
-            # Geo overlay 반영
-            market_data = apply_geo_overlay_to_final_state(market_data) or market_data
 
             # FINAL_STATE에 FRED extra 주입
             df_fred_extra = load_fred_data_from_csv()
@@ -1228,7 +1223,11 @@ def generate_final_state_history():
                     market_data["FINAL_STATE"]["DGS2"] = (
                         float(latest_fred["DGS2"]) if pd.notna(latest_fred["DGS2"]) else 0.0
                     )    
+             # Narrative Engine이 FINAL_STATE 생성
+            narrative_engine_filter(market_data)
 
+            # Geo overlay 반영
+            market_data = apply_geo_overlay_to_final_state(market_data) or market_data
             final_state = market_data.get("FINAL_STATE", {}) or {}
 
             rows.append({
