@@ -2211,14 +2211,10 @@ def incentive_filter(market_data: Dict[str, Any]) -> str:
     state = market_data.get("FINAL_STATE", {}) or {}
 
     def fetch_val(key: str, default: float) -> float:
-        # 1. FINAL_STATE에서 먼저 확인 (우선순위 1)
+        # 1. FINAL_STATE에서 먼저 확인
         val = state.get(key.upper()) or state.get(key.lower())
-        
-        # 값이 숫자(float, int)면 바로 반환
         if isinstance(val, (int, float)):
             return float(val)
-        
-        # 값이 딕셔너리라면 'today' 키 확인
         if isinstance(val, dict):
             val = val.get("today")
 
@@ -2238,39 +2234,50 @@ def incentive_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # 1) 데이터 로드 및 단위 보정
     # -------------------------
-    # T10Y2Y가 0.51(%)로 들어오면 100을 곱해 51.00(bp)로 표시
     raw_t10y2y = state.get("T10Y2Y") 
     if not isinstance(raw_t10y2y, (int, float)):
         raw_t10y2y = fetch_val("T10Y2Y", 0.0)
 
+    # bp 단위 보정
     t10y2y_bp = raw_t10y2y * 100 if abs(raw_t10y2y) < 5 else raw_t10y2y
     
     rr_val = fetch_val("DFII10", 0.0)
     dxy_val = fetch_val("DXY", 100.0)
 
+    # 2번 필터 스타일의 날짜 정보 가져오기 (추가된 부분)
+    rr_asof = market_data.get("_DFII10_ASOF")
+    dxy_asof = market_data.get("_DXY_ASOF")
+
     # -------------------------
     # 2) 리포트 문구 생성
     # -------------------------
     lines = []
-    lines.append("### 8) Incentive Filter (Wall St. Logic)")
+    lines.append("### 🎯 8) Incentive Filter (Wall St. Logic)")
     lines.append("")
-    # f-string 포맷팅으로 소수점 2자리 고정
     lines.append(f"**핵심 신호:** 장단기차({t10y2y_bp:.2f}bp) | 실질금리({rr_val:.2f}%) | DXY({dxy_val:.2f})")
+    
+    # 💡 [추가] 날짜 정보가 있으면 한 줄 넣어주기 (2번 필터와 통일감)
+    as_of_list = []
+    if rr_asof: as_of_list.append(f"RealRate: {rr_asof}")
+    if dxy_asof: as_of_list.append(f"DXY: {dxy_asof}")
+    if as_of_list:
+        lines.append(f"*(as of: {', '.join(as_of_list)} / FRED last available)*")
+    
     lines.append("")
 
     # -------------------------
     # 3) 자본 흐름 로직 (Wall St. Insight)
     # -------------------------
-    # 실질금리(rr_val) 기준 판단
     if rr_val < 1.0:
         incentive_text = "✅ **자본이 쏠리는 곳 (Long Incentive):**\nGrowth/Quality (QUAL) - 유동성 환경 우호 및 저금리 수혜"
     elif rr_val >= 2.0:
         incentive_text = "❌ **자본이 탈출하는 곳 (Short Incentive):**\n고금리(실질금리 2% 상회) 부담으로 인한 리스크 오프 신호"
     else:
-        # 현재 세연 님의 데이터(1.97%)는 이 구간에 해당할 확률이 높아요!
         incentive_text = "Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화 과정)"
 
     lines.append(incentive_text)
+    lines.append("")
+    lines.append("- **Note:** 실질금리와 달러는 자본의 '기회비용'을 결정하는 핵심 유인책입니다.")
     
     return "\n".join(lines)
 
