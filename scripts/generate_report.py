@@ -313,38 +313,43 @@ def load_credit_spread_df() -> pd.DataFrame:
 
 def load_fred_data_from_csv() -> pd.DataFrame:
     csv_path = "data/fred_macro_sctorallo.csv"
+    # 1. 대상 컬럼 리스트 정의 (기존 3개 + 신규 3개)
+    target_cols = ["T10Y2Y", "T10YIE", "VIX", "DFII10", "DGS2", "DXY"]
+    all_cols = ["date"] + target_cols
+
     if not os.path.exists(csv_path):
-        return pd.DataFrame(columns=["date", "T10Y2Y", "T10YIE", "VIX"])
+        return pd.DataFrame(columns=all_cols)
 
     try:
         if os.path.getsize(csv_path) == 0:
-            return pd.DataFrame(columns=["date", "T10Y2Y", "T10YIE", "VIX"])
-
+            return pd.DataFrame(columns=all_cols)
         df = pd.read_csv(csv_path)
     except Exception as e:
         print(f"[ERROR] load_fred_data_from_csv: {e}")
-        return pd.DataFrame(columns=["date", "T10Y2Y", "T10YIE", "VIX"])
+        return pd.DataFrame(columns=all_cols)
 
     df.columns = [str(c).strip() for c in df.columns]
 
     date_col = "date" if "date" in df.columns else "Date" if "Date" in df.columns else None
     if date_col is None:
         print("[ERROR] no date column in fred csv")
-        return pd.DataFrame(columns=["date", "T10Y2Y", "T10YIE", "VIX"])
+        return pd.DataFrame(columns=all_cols)
 
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
     df = df.dropna(subset=[date_col]).sort_values(date_col).reset_index(drop=True)
     df = df.rename(columns={date_col: "date"})
 
-    for col in ["T10Y2Y", "T10YIE", "VIX"]:
+    # 2. 모든 타겟 컬럼에 대해 누락 확인 및 숫자 변환
+    for col in target_cols:
         if col not in df.columns:
             df[col] = pd.NA
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    df[["T10Y2Y", "T10YIE", "VIX"]] = df[["T10Y2Y", "T10YIE", "VIX"]].ffill()
+    # 3. 데이터 무결성을 위한 ffill (비어있는 값 채우기)
+    df[target_cols] = df[target_cols].ffill()
 
-    return df[["date", "T10Y2Y", "T10YIE", "VIX"]]
-
+    # 4. 최종적으로 모든 컬럼을 포함해서 반환! (여기가 핵심 수정 포인트)
+    return df[all_cols]
 
 
 # -------------------------
@@ -1202,6 +1207,16 @@ def generate_final_state_history():
                         if pd.notna(latest_fred["VIX"])
                         else market_data["FINAL_STATE"].get("VIX", 20.0)
                     )
+                    # 🔥 [필수 추가] 신규 지표들을 FINAL_STATE 바구니에 담기
+                    market_data["FINAL_STATE"]["DFII10"] = (
+                        float(latest_fred["DFII10"]) if pd.notna(latest_fred["DFII10"]) else 0.0
+                    )
+                    market_data["FINAL_STATE"]["DXY"] = (
+                        float(latest_fred["DXY"]) if pd.notna(latest_fred["DXY"]) else 100.0
+                    )
+                    market_data["FINAL_STATE"]["DGS2"] = (
+                        float(latest_fred["DGS2"]) if pd.notna(latest_fred["DGS2"]) else 0.0
+                    )    
 
             final_state = market_data.get("FINAL_STATE", {}) or {}
 
@@ -1224,6 +1239,8 @@ def generate_final_state_history():
                 "T10YIE": final_state.get("T10YIE"),
                 "VIX": final_state.get("VIX"),
                 "narrative_line": final_state.get("narrative_line"),
+                "DFII10": final_state.get("DFII10"), # 추가
+                "DXY": final_state.get("DXY"),       # 추가
             })
 
         except Exception as e:
