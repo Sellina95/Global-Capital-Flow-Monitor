@@ -2201,48 +2201,83 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 # 8) Incentive Filter
 # =========================
 def incentive_filter(market_data: Dict[str, Any]) -> str:
-    # 데이터 로드 (시리즈 코드를 그대로 키값으로 사용)
-    t10y2y = _get_series(market_data, "T10Y2Y")
-    real_rate = _get_series(market_data, "DFII10") # 실질금리
-    vix = _get_series(market_data, "VIX")
-    dxy = _get_series(market_data, "DXY")
+    """
+    8) Incentive Filter (Wall St. Logic Upgrade)
+    실질 금리와 장단기 금리차를 활용해 자본의 '진짜 의도'를 파악합니다.
+    """
     
-    # 방향성 확인
-    t10y2y_dir = _sign_from(t10y2y)
-    real_dir = _sign_from(real_rate)
-    dxy_dir = _sign_from(dxy)
-    vix_val = vix.get('today', 20)
+    # 1. 데이터 안전하게 추출 (데이터가 없으면 빈 딕셔너리 반환)
+    t10y2y_data = _get_series(market_data, "T10Y2Y") or {}
+    real_rate_data = _get_series(market_data, "DFII10") or {}
+    vix_data = _get_series(market_data, "VIX") or {}
+    dxy_data = _get_series(market_data, "DXY") or {}
+
+    # 2. 값 추출 및 숫자 보장 (None 방어 로직)
+    def safe_float(val, default=0.0):
+        try:
+            return float(val) if val is not None else default
+        except (ValueError, TypeError):
+            return default
+
+    curr_t10y2y = safe_float(t10y2y_data.get('today'))
+    prev_t10y2y = safe_float(t10y2y_data.get('prev'))
+    
+    curr_real = safe_float(real_rate_data.get('today'))
+    prev_real = safe_float(real_rate_data.get('prev'))
+    
+    curr_vix = safe_float(vix_data.get('today'), 20.0)
+    curr_dxy = safe_float(dxy_data.get('today'), 100.0)
+    prev_dxy = safe_float(dxy_data.get('prev'), 100.0)
 
     winners = []
     losers = []
 
-    # 1. 장단기 금리차 (Steepening 인센티브)
-    if t10y2y_dir == 1:
-        winners.append("Financials (XLF) - Steepening 이익 구조")
-    elif t10y2y.get('today', 0) < 0:
-        losers.append("Cyclicals - 경기 침체(Inversion) 우려")
+    # ---------------------------------------------------------
+    # [Logic 1] 장단기 금리차 (Yield Curve Steepening/Flattening)
+    # ---------------------------------------------------------
+    if curr_t10y2y > prev_t10y2y:
+        winners.append("Financials (XLF) - 예대마진 개선 기대 (Steepening)")
+    elif curr_t10y2y < 0:
+        losers.append("Cyclicals/Broad Equity - 경기 침체(Inversion) 우려")
 
-    # 2. 실질 금리 (성장주 밸류에이션 인센티브)
-    if real_dir == 1:
-        losers.append("Growth Tech (XLK) - 실질 금리 상승 부담")
-        winners.append("Value/Cash - 상대적 방어력")
+    # ---------------------------------------------------------
+    # [Logic 2] 실질 금리 (Real Interest Rates & Valuation)
+    # ---------------------------------------------------------
+    # 실질 금리가 상승하면 성장주의 미래 가치 할인율이 높아져 불리함
+    if curr_real > prev_real:
+        losers.append("High-Growth Tech (XLK) - 실질 조달 비용 상승 및 밸류에이션 하락")
+        winners.append("Value Stocks / Cash - 상대적 자산 방어력 우위")
     else:
-        winners.append("Growth/Quality (QUAL) - 유동성 환경 우호")
+        winners.append("Quality Growth (QUAL) - 우호적인 실질 유동성 환경")
 
-    # 3. 달러 및 변동성 (자금 흐름)
-    if dxy_dir == 1 and vix_val < 20:
-        winners.append("US Large Cap - 글로벌 안전자산/캐리 유입")
+    # ---------------------------------------------------------
+    # [Logic 3] 달러 강세 및 변동성 (Global Capital Flow)
+    # ---------------------------------------------------------
+    if curr_dxy > prev_dxy and curr_vix < 25:
+        winners.append("US Large Cap - 글로벌 안전자산 선호 및 달러 캐리 유입")
+    elif curr_dxy < prev_dxy:
+        winners.append("Emerging Markets (EEM) - 달러 약세에 따른 신흥국 자산 매력도 상승")
 
-    lines = []
-    lines.append("### 💸 8) Incentive Filter (Wall St. Edition)")
-    lines.append("**추가 이유:** 실질 금리와 장단기 금리차를 활용해 자본의 '진짜 의도'를 파악함")
-    lines.append(f"- **핵심 신호:** 장단기차({t10y2y['today']:.2f}) / 실질금리({real_rate['today']:.2f}) / DXY({dxy['today']:.1f})")
-    lines.append("- **이득을 보는 주체:**")
-    lines.extend([f"  - {w}" for w in winners] if winners else ["  - None"])
-    lines.append("- **손해를 보는 주체:**")
-    lines.extend([f"  - {l}" for l in losers] if losers else ["  - None"])
+    # 3. 리포트 텍스트 조립
+    report = []
+    report.append("### 💸 8) Incentive Filter (Wall St. Logic)")
+    report.append("**추가 이유:** 실질 금리와 장단기 금리차를 활용해 자본의 '진짜 의도'를 파악함")
+    report.append(f"- **핵심 신호:** 장단기차({curr_t10y2y:.2f}bp) | 실질금리({curr_real:.2f}%) | DXY({curr_dxy:.2f})")
+    report.append("")
     
-    return "\n".join(lines)
+    report.append("- **✅ 자본이 쏠리는 곳 (Long Incentive):**")
+    if winners:
+        report.extend([f"  - {w}" for w in winners])
+    else:
+        report.append("  - 특이 신호 없음")
+
+    report.append("- **❌ 자본이 탈출하는 곳 (Short Incentive):**")
+    if losers:
+        report.extend([f"  - {l}" for l in losers])
+    else:
+        report.append("  - 특이 신호 없음")
+    
+    return "\n".join(report)
 
 # =========================
 # 9) Cause Filter
