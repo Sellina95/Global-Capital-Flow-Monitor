@@ -204,52 +204,47 @@ def merge_sovereign_spreads_into_macro_df(df_macro: pd.DataFrame) -> pd.DataFram
 
 def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Attach FCI, REAL_RATE and New Indicators (DFII10, DXY, DGS2) 
-    using FRED 'last available valid' values.
+    세연 님의 원본 로직을 유지하며 8번 필터용 지표들을 추가합니다.
+    FCI, REAL_RATE 외에 T10Y2Y, T10YIE, VIX, DFII10, DXY, DGS2를 동일 구조로 주입합니다.
     """
     if market_data is None:
         market_data = {}
 
-   
-    df = load_fred_data_from_csv() 
+    # CSV 로드 (세연 님 원본 함수명 확인 필요)
+    df = load_fred_extras_df() 
     if df is None or df.empty:
         market_data["_FCI_ASOF"] = None
         market_data["_REAL_ASOF"] = None
         return market_data
 
     df = df.copy()
-
     if "date" not in df.columns:
-        market_data["_FCI_ASOF"] = None
-        market_data["_REAL_ASOF"] = None
         return market_data
 
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
-    # 처리할 모든 컬럼 정의 (기존 2개 + 신규 3개)
-    target_columns = ["FCI", "REAL_RATE", "DFII10", "DXY", "DGS2"]
-
-    for col in target_columns:
+    # 1. 대상 컬럼 확장 (기존 2개 + 8번 필터용 6개)
+    target_cols = ["FCI", "REAL_RATE", "T10Y2Y", "T10YIE", "VIX", "DFII10", "DXY", "DGS2"]
+    
+    for col in target_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
         else:
             df[col] = pd.NA
 
-    def _attach_one(key: str, asof_key: Optional[str] = None):
+    # 2. 세연 님 원본 내부 함수 그대로 사용
+    def _attach_one(key: str, asof_key: str):
         valid_df = df.dropna(subset=[key]).copy()
-
         if valid_df.empty:
-            if asof_key: market_data[asof_key] = None
+            market_data[asof_key] = None
             return
 
         today_row = valid_df.iloc[-1]
         prev_row = valid_df.iloc[-2] if len(valid_df) >= 2 else None
 
-        # ASOF 날짜 기록 (FCI, REAL_RATE용 메타데이터 유지)
-        if asof_key:
-            asof = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
-            market_data[asof_key] = asof
+        asof = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
+        market_data[asof_key] = asof
 
         today_val = pd.to_numeric(today_row.get(key), errors="coerce")
         if pd.isna(today_val):
@@ -267,19 +262,17 @@ def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
             return
 
         prev_val_f = float(prev_val)
+        # pct_change 계산 로직 (원본 유지)
         pct = 0.0 if prev_val_f == 0 else ((today_val_f - prev_val_f) / prev_val_f) * 100.0
-        
-        # market_data['DFII10'] = {'today': ..., 'prev': ..., 'pct_change': ...} 형태로 저장
         market_data[key] = {"today": today_val_f, "prev": prev_val_f, "pct_change": pct}
 
-    # 1. 기존 메타데이터가 필요한 지표 실행
+    # 3. 모든 지표 실행 (ASOF 메타데이터는 기존 핵심 지표 위주로 유지)
     _attach_one("FCI", "_FCI_ASOF")
     _attach_one("REAL_RATE", "_REAL_ASOF")
-
-    # 2. 신규 지표 실행 (메타데이터 없이 값만 주입)
-    _attach_one("DFII10")
-    _attach_one("DXY")
-    _attach_one("DGS2")
+    
+    # 8번 필터용 지표들도 동일한 '세트 메뉴' 구조로 주입
+    for extra_key in ["T10Y2Y", "T10YIE", "VIX", "DFII10", "DXY", "DGS2"]:
+        _attach_one(extra_key, f"_{extra_key}_ASOF")
 
     return market_data
     
