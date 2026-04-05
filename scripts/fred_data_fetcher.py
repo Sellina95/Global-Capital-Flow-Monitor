@@ -8,11 +8,14 @@ END_DATE = datetime.today().strftime("%Y-%m-%d")
 # FRED CSV 다운로드 URL
 FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
 
-# FRED 시리즈 코드들
+# [원본 유지] FRED 시리즈 코드들 + 3가지 추가
 FRED_SERIES = {
     "T10Y2Y": "T10Y2Y",   # 10Y - 2Y Yield Curve Spread
     "T10YIE": "T10YIE",   # 10Y Breakeven Inflation Rate
-    "VIX": "VIXCLS"       # VIX (Volatility Index)
+    "VIX": "VIXCLS",      # VIX (Volatility Index)
+    "DFII10": "DFII10",   # [추가] 10Y Real Interest Rate (실질금리)
+    "DGS2": "DGS2",       # [추가] 2Y Treasury Rate (2년물 국채금리)
+    "DXY": "DTWEXBGS"     # [추가] Dollar Index (달러 인덱스)
 }
 
 def download_fred_csv_series(series_code: str) -> pd.DataFrame:
