@@ -5,7 +5,7 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.313  (+0.00% vs 4.313)
-- **달러 인덱스**: 120.885  (+0.00% vs 120.885)
+- **달러 인덱스**: 100.030  (+0.00% vs 100.030)
 - **WTI 유가**: 112.060  (+0.00% vs 112.060)
 - **변동성 지수 (VIX)**: 23.870  (+0.00% vs 23.870)
 - **원/달러 환율**: 1510.540  (-0.10% vs 1512.090)
@@ -37,8 +37,8 @@ Some commentary here
 - **추가 이유:** US10Y/DXY/VIX는 ‘시장의 기대’를 보여주고, FCI는 ‘현실의 압박’을, Real Rates는 ‘위험을 감수할 유인’을 보여준다.
 
 - **기대(가격) 신호:** US10Y(→) / DXY(→) / VIX(→)
-- **현실(FCI):** N/A (not available)
-- **유인(Real Rates):** N/A (not available)
+- **현실(FCI):** level=EASY (완화) / dir(↑) | as of: 2026-03-27 (FRED last available)
+- **유인(Real Rates):** level=NEUTRAL (중립) / dir(↑) | as of: 2026-04-02 (FRED last available)
 - **판정:** **LIQUIDITY MIXED / FRAGILE (혼조·취약)**
 - **근거:** 기대(가격)와 현실(FCI)/유인(실질금리) 정렬이 불완전
 - **Note:** FCI/Real Rates는 매일 갱신되지 않을 수 있어, ‘최근 available 값’을 반영함
@@ -47,7 +47,7 @@ Some commentary here
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(→) / DXY(→) / VIX(→)
-- **Policy Bias: MIXED (혼조) (WEAK, score=+0.0) | REAL_RATEΔ N/A / FCIΔ N/A / DXYΔ +0.000 / US10YΔ +0.000**
+- **Policy Bias: MIXED (혼조) (WEAK, score=+0.0) | REAL_RATEΔ -0.050 / FCIΔ +0.020 / DXYΔ +0.000 / US10YΔ +0.000**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY MIXED (정책 신호 혼조)**
@@ -157,9 +157,10 @@ No significant sector-level correlation break detected.
 
 ### 8) Incentive Filter (Wall St. Logic)
 
-**핵심 신호:** 장단기차(51.00bp) | 실질금리(1.97%) | DXY(100.00)
+**핵심 신호:** 장단기차(51.00bp) | 실질금리(0.00%) | DXY(100.00)
 
-Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화 과정)
+✅ **자본이 쏠리는 곳 (Long Incentive):**
+Growth/Quality (QUAL) - 유동성 환경 우호 및 저금리 수혜
 
 ### 🔍 9) Cause Filter
 - **질문:** 무엇이 이 움직임을 만들었는가?
@@ -176,7 +177,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.313), DXY(120.885), VIX(23.87)
+- **Today snapshot:** US10Y(4.313), DXY(100.030), VIX(23.87)
 
 ### 🏗️ 12) Structural Filter (v2)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
@@ -188,7 +189,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: MIXED (혼조) (WEAK, score=+0.0) | REAL_RATEΔ N/A / FCIΔ N/A / DXYΔ +0.000 / US10YΔ +0.000 (정상)
+- **Structure Bias:** Policy Bias: MIXED (혼조) (WEAK, score=+0.0) | REAL_RATEΔ -0.050 / FCIΔ +0.020 / DXYΔ +0.000 / US10YΔ +0.000 (정상)
 - **Sentiment (Fear&Greed):** 39.97886443423696 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
@@ -315,8 +316,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.8308411581771605
-- **Z-Score (5d):** 2.093152295009902
+- **Z-Score (1d):** 0.8308387940854439
+- **Z-Score (5d):** 2.0931495810806022
 
 ### EEM
 - **Crash?** False
@@ -333,8 +334,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3076033969891561
-- **Z-Score (5d):** 1.642053660810852
+- **Z-Score (1d):** 0.30760353806883134
+- **Z-Score (5d):** 1.6420535799607192
 
 ### EWJ
 - **Crash?** False
