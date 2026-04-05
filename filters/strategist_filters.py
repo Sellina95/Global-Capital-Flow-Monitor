@@ -2682,88 +2682,86 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     
 def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
     """
-    Divergence Monitor
-    Structure (Policy Bias) vs Price Regime (Market Regime)
+    14) Divergence Monitor (Upgraded)
+    
+    [차이점 명시]
+    - 3번 필터: "지금 경제 지표상 정책 환경(금리/달러/FCI)이 어떠한가?" (Fact Check)
+    - 14번 필터: "정책은 이런데, 왜 주가는 반대로 가지?" (Anomaly Detection)
+    
+    [추가 이유]
+    - 시장 가격과 중앙은행 정책 사이의 괴리는 국면 전환의 '초기 신호'가 될 수 있음.
     """
 
-    policy_bias = str(market_data.get("POLICY_BIAS_LINE", ""))
-    phase = str(market_data.get("MARKET_REGIME", "N/A"))
+    # 1️⃣ 데이터 로드 (3번 필터의 결과물과 현재 시장 국면 활용)
+    policy_bias_line = str(market_data.get("POLICY_BIAS_LINE", ""))
+    market_regime = str(market_data.get("MARKET_REGIME", "N/A")).upper()
+    
+    # VIX 데이터 가져오기 (market_data 내 구조에 맞춰 추출)
+    vix_series = _get_series(market_data, "VIX") or {}
+    vix_value = float(vix_series.get("today", 20)) 
 
-    policy_upper = policy_bias.upper()
-    phase_upper = phase.upper()
-
-    # ---------------------------
-    # 1️⃣ Structure 판별
-    # ---------------------------
-
-    if "EASING" in policy_upper:
+    # 2️⃣ Structure(정책) & Price(시장) 판별
+    # 3번 필터에서 저장한 POLICY_BIAS_LINE에서 키워드 추출
+    if "EASING" in policy_bias_line.upper():
         structure = "EASING"
-    elif "TIGHTENING" in policy_upper:
-        mixed = "MIXED" in policy_upper
+    elif "TIGHTENING" in policy_bias_line.upper():
         structure = "TIGHTENING"
     else:
         structure = "MIXED"
 
-    # ---------------------------
-    # 2️⃣ Price Regime 판별
-    # ---------------------------
-
-    if phase_upper.startswith("RISK-ON"):
+    # 현재 시장의 가격 국면(Price Regime) 판별
+    if "RISK-ON" in market_regime:
         price = "RISK-ON"
-    elif phase_upper.startswith("RISK-OFF"):
+    elif "RISK-OFF" in market_regime:
         price = "RISK-OFF"
-    elif phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
-        price = "WAITING"
-    elif phase_upper.startswith("TRANSITION"):
-        price = "TRANSITION"
-    elif phase_upper.startswith("EVENT"):
-        price = "MIXED"
     else:
         price = "MIXED"
 
-    # ---------------------------
-    # 3️⃣ Divergence 판단
-    # ---------------------------
-
+    # 3️⃣ Divergence 심화 판단 로직 (VIX 및 Trap 로직 반영)
     status = "ALIGNED"
-    explanation = "구조와 가격 신호가 대체로 정렬"
+    explanation = "구조(정책)와 가격 신호가 조화를 이루며 추세 유지 중"
+    action_signal = "STAY (포지션 유지)"
 
+    # CASE 1: 완화 정책(EASING) vs 시장 하락(RISK-OFF)
     if structure == "EASING" and price == "RISK-OFF":
-        status = "DIVERGENCE"
-        explanation = "구조는 완화인데 가격은 리스크오프 → 전환 가능성 탐지"
+        if vix_value > 30:
+            status = "STRUCTURAL BREAK"
+            explanation = "완화 정책에도 가격 붕괴. 정책 약발이 안 먹히는 시스템 리스크 구간"
+            action_signal = "DEFENSIVE (방어 강화)"
+        else:
+            status = "BEAR TRAP / DISCOUNT"
+            explanation = "유동성 구조는 우호적이나 일시적 가격 눌림. '가짜 하락' 혹은 저가 매수 기회"
+            action_signal = "ACCUMULATE (분할 매수)"
 
+    # CASE 2: 긴축 정책(TIGHTENING) vs 시장 상승(RISK-ON)
     elif structure == "TIGHTENING" and price == "RISK-ON":
-        status = "DIVERGENCE"
-        explanation = "구조는 긴축인데 가격은 리스크온 → 과열/되돌림 가능성"
+        status = "BULL TRAP / OVERHEATED"
+        explanation = "긴축 구조 속에서 가격만 상승. '가짜 반등' 혹은 막바지 과열 국면"
+        action_signal = "REDUCE RISK (익절 및 비중 축소)"
 
-    elif structure == "EASING" and price == "MIXED":
+    # CASE 3: 구조와 가격의 반응 시차 (Delayed Response)
+    elif structure != "MIXED" and price == "MIXED":
         status = "DELAYED RESPONSE"
-        explanation = "구조는 완화이나 가격은 아직 명확히 반응하지 않음"
+        explanation = "정책 구조는 변화했으나 시장 가격이 아직 방향을 잡지 못한 관망 구간"
+        action_signal = "WATCH (변곡점 확인 대기)"
 
-    elif structure == "TIGHTENING" and price == "MIXED":
-        status = "DELAYED RESPONSE"
-        explanation = "구조는 긴축이나 가격은 아직 명확히 반응하지 않음"
+    # CASE 4: 괴리가 해소되며 정렬되는 순간 (Convergence)
+    elif structure == price and status == "ALIGNED":
+        status = "TREND REINFORCED"
+        explanation = "정책과 가격이 한 방향으로 정렬됨. 추세의 신뢰도가 매우 높음"
+        action_signal = "AGGRESSIVE (추세 추종)"
 
-    elif price in ("WAITING", "TRANSITION"):
-        status = "TRANSITION ZONE"
-        explanation = "시장 방향 탐색 구간"
-
-    # ---------------------------
-    # 4️⃣ Output
-    # ---------------------------
-
+    # 4️⃣ Output 구성
     lines = []
-    lines.append("### ⚠ 14) Divergence Monitor")
-    lines.append("- **정의:** 구조(정책)와 가격(시장 국면)의 충돌 여부 감지")
-    lines.append("- **추가 이유:** 구조-가격 충돌은 국면 전환의 초기 신호가 될 수 있음")
+    lines.append("### ⚠ 14) Divergence Monitor (Macro vs Price)")
+    lines.append("- **정의:** 중앙은행 정책(Structure)과 시장 가격(Regime) 사이의 괴리 및 전환 신호 감지")
+    lines.append(f"- **Structure(3번 결과):** {structure} | **Price(현재 국면):** {price} | **VIX:** {vix_value}")
     lines.append("")
-    lines.append(f"- **Structure:** {structure}")
-    lines.append(f"- **Price Regime:** {price}")
     lines.append(f"- **Status:** **{status}**")
+    lines.append(f"- **Action Signal:** 🚨 **{action_signal}**")
     lines.append(f"- **해석:** {explanation}")
 
     return "\n".join(lines)
-    
     #Build
 
 def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
