@@ -155,12 +155,14 @@ No significant sector-level correlation break detected.
 - **Country ETF Crash?** Yes (GLD)
 - **Extreme Country Risk:** GLD
 
-### 8) Incentive Filter (Wall St. Logic)
+### 🎯 8) Incentive Filter (Wall St. Logic)
 
 **핵심 신호:** 장단기차(51.00bp) | 실질금리(0.00%) | DXY(100.00)
 
 ✅ **자본이 쏠리는 곳 (Long Incentive):**
 Growth/Quality (QUAL) - 유동성 환경 우호 및 저금리 수혜
+
+- **Note:** 실질금리와 달러는 자본의 '기회비용'을 결정하는 핵심 유인책입니다.
 
 ### 🔍 9) Cause Filter
 - **질문:** 무엇이 이 움직임을 만들었는가?
@@ -334,8 +336,8 @@ Growth/Quality (QUAL) - 유동성 환경 우호 및 저금리 수혜
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.30760353806883134
-- **Z-Score (5d):** 1.6420535799607192
+- **Z-Score (1d):** 0.3076042933078594
+- **Z-Score (5d):** 1.642054531728688
 
 ### EWJ
 - **Crash?** False
