@@ -2239,7 +2239,10 @@ def incentive_filter(market_data: Dict[str, Any]) -> str:
     # 1) 데이터 로드 및 단위 보정
     # -------------------------
     # T10Y2Y가 0.51(%)로 들어오면 100을 곱해 51.00(bp)로 표시
-    raw_t10y2y = fetch_val("T10Y2Y", 0.0)
+    raw_t10y2y = state.get("T10Y2Y") 
+    if not isinstance(raw_t10y2y, (int, float)):
+        raw_t10y2y = fetch_val("T10Y2Y", 0.0)
+
     t10y2y_bp = raw_t10y2y * 100 if abs(raw_t10y2y) < 5 else raw_t10y2y
     
     rr_val = fetch_val("DFII10", 0.0)
@@ -3699,7 +3702,6 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(risk_exposure_filter(market_data))
     sections.append("")
-    print("DEBUG _STALE:", market_data.get("_STALE"))
     sections.append(geopolitical_early_warning_filter(market_data))
     sections.append("")
     sections.append(incentive_filter(market_data))
