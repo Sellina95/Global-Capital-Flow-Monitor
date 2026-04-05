@@ -2752,11 +2752,18 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
         action_signal = "AGGRESSIVE (추세 추종)"
 
     # 4️⃣ Output 구성
+
     lines = []
     lines.append("### ⚠ 14) Divergence Monitor (Macro vs Price)")
     lines.append("- **정의:** 중앙은행 정책(Structure)과 시장 가격(Regime) 사이의 괴리 및 전환 신호 감지")
-    lines.append(f"- **Structure(3번 결과):** {structure} | **Price(현재 국면):** {price} | **VIX:** {vix_value}")
+    
+   
+    lines.append("  - *추가 이유:* 시장 가격과 정책 사이의 괴리는 국면 전환의 **'초기 신호'**가 될 수 있음")
+    lines.append("  - *핵심 질문:* 3번이 '현재 정책 환경(Fact)'을 묻는다면, 14번은 **'정책은 이런데 왜 주가는 반대로 가지?(Anomaly)'**를 분석함")
     lines.append("")
+    
+    # 실제 분석 결과 데이터
+    lines.append(f"- **Structure(3번 결과):** `{structure}` | **Price(현재 국면):** `{price}` | **VIX:** `{vix_value:.2f}`")
     lines.append(f"- **Status:** **{status}**")
     lines.append(f"- **Action Signal:** 🚨 **{action_signal}**")
     lines.append(f"- **해석:** {explanation}")
