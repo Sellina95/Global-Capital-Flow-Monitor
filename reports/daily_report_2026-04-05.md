@@ -157,7 +157,7 @@ No significant sector-level correlation break detected.
 
 ### 8) Incentive Filter (Wall St. Logic)
 
-**핵심 신호:** 장단기차(0.00bp) | 실질금리(1.97%) | DXY(120.89)
+**핵심 신호:** 장단기차(51.00bp) | 실질금리(1.97%) | DXY(100.00)
 
 Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화 과정)
 
@@ -239,29 +239,29 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 ### 🏭 18) Sector Allocation Engine (v3.2)
 
-**Context:** phase=WAITING / RANGE (대기·박스권) / T10Y2Y=0.51 (MODERATE STEEP) / VIX=24.54 (VOLATILITY NORMAL) / liquidity=UP-MID / credit=True
+**Context:** phase=WAITING / RANGE (대기·박스권) / T10Y2Y=0.00 (FLAT / FRAGILE) / VIX=23.87 (VOLATILITY NORMAL) / liquidity=UP-MID / credit=True
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE
 
-**Overweight:** Financials, Consumer Discretionary, Industrials, Technology, Consumer Staples, Health Care
+**Overweight:** Consumer Discretionary, Consumer Staples, Health Care, Technology, Financials, Industrials
 
 **Underweight:** Utilities
 
 **Scoreboard:**
-- Financials: +3  (+1 LIQ, +2 CURVE, = +3)
 - Consumer Discretionary: +2  (+2 LIQ, = +2)
-- Industrials: +2  (+2 LIQ, +1 CURVE, -1 PHASE, = +2)
+- Consumer Staples: +2  (+1 CURVE, +1 PHASE, = +2)
+- Health Care: +2  (+1 CURVE, +1 PHASE, = +2)
 - Technology: +2  (+2 LIQ, = +2)
-- Consumer Staples: +1  (+1 PHASE, = +1)
-- Health Care: +1  (+1 PHASE, = +1)
+- Financials: +1  (+1 LIQ, = +1)
+- Industrials: +1  (+2 LIQ, -1 PHASE, = +1)
 - Utilities: -1  (-1 LIQ, = -1)
 
 **Rationale (top drivers):**
-- OW Financials: +1: 유동성 완화 → 위험선호 회복
-- OW Financials: +2: 완만한 스티프닝(0.51) → 예대마진 개선
 - OW Consumer Discretionary: +2: 유동성 완화 → 소비 민감주 우호
-- OW Industrials: +2: 유동성 완화 → 경기민감 회복
-- OW Industrials: +1: 완만한 스티프닝(0.51) → 성장 기대 반영
+- OW Consumer Staples: +1: 플랫 커브(0.00) → 경기 민감도 낮은 섹터 선호
+- OW Consumer Staples: +1: WAITING / RANGE (대기·박스권) → 관망 구간 필수소비 선호
+- OW Health Care: +1: 플랫 커브(0.00) → 방어/퀄리티 선호
+- OW Health Care: +1: WAITING / RANGE (대기·박스권) → 관망 구간 방어/퀄리티 선호
 - OW Technology: +2: 유동성 완화 → 성장주/베타 우호
 - UW Utilities: -1: 유동성 완화 → 방어주 상대매력 저하
 
@@ -315,8 +315,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.8308374874307112
-- **Z-Score (5d):** 2.093151930315854
+- **Z-Score (1d):** 0.8308411581771605
+- **Z-Score (5d):** 2.093152295009902
 
 ### EEM
 - **Crash?** False
@@ -333,8 +333,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.30760362674085273
-- **Z-Score (5d):** 1.6420550170380124
+- **Z-Score (1d):** 0.3076033969891561
+- **Z-Score (5d):** 1.642053660810852
 
 ### EWJ
 - **Crash?** False
