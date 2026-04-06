@@ -138,13 +138,18 @@ def load_macro_df() -> pd.DataFrame:
     return df
     
 def load_fred_extras_df() -> pd.DataFrame:
-    csv_path = DATA_DIR / "fred_macro_extras.csv"
+    csv_path = DATA_DIR / "fred_macro_sctorallo.csv"
+    expected_cols = [
+        "date", "FCI", "REAL_RATE",
+        "T10Y2Y", "T10YIE", "VIX", "DFII10", "DGS2", "DXY"
+    ]
+
     if not csv_path.exists():
-        return pd.DataFrame(columns=["date", "FCI", "REAL_RATE"])
+        return pd.DataFrame(columns=expected_cols)
 
     df = pd.read_csv(csv_path)
     if df.empty:
-        return pd.DataFrame(columns=["date", "FCI", "REAL_RATE"])
+        return pd.DataFrame(columns=expected_cols)
 
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
