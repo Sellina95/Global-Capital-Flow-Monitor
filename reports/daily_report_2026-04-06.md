@@ -4,11 +4,11 @@
 
 ## 📊 Daily Macro Signals
 
-- **미국 10년물 금리**: 4.341  (+0.00% vs 4.341)
+- **미국 10년물 금리**: 4.345  (+0.00% vs 4.345)
 - **달러 인덱스**: 120.885  (+0.00% vs 120.885)
-- **WTI 유가**: 112.090  (+0.01% vs 112.080)
+- **WTI 유가**: 111.200  (-0.03% vs 111.230)
 - **변동성 지수 (VIX)**: 23.870  (+0.00% vs 23.870)
-- **원/달러 환율**: 1503.160  (+0.01% vs 1503.070)
+- **원/달러 환율**: 1504.050  (+0.01% vs 1503.970)
 
 ---
 
@@ -79,28 +79,28 @@ Some commentary here
 ### 🧾 4.5) Credit Stress Filter (HYG vs LQD)
 - **질문:** 크레딧 시장이 먼저 ‘리스크오프’를 말하고 있는가?
 - **추가 이유:** HYG가 LQD보다 약해지면, 시장이 ‘위험을 감수할 이유가 없다’고 판단하기 시작했을 가능성
-- **방향(전일 대비):** HYG(↑) / LQD(→)
-- **HYG:** today 79.565 / prev 79.560 / pct 0.01%
-- **LQD:** today 109.045 / prev 109.045 / pct 0.00%
-- **판정:** **CREDIT RISK-ON (risk appetite improving)**
-- **근거:** 하이일드 강세(HYG↑) + 우량채 약세/보합(LQD→/↓) → 위험선호 회복 가능
+- **방향(전일 대비):** HYG(↓) / LQD(↓)
+- **HYG:** today 79.620 / prev 79.635 / pct -0.02%
+- **LQD:** today 109.205 / prev 109.225 / pct -0.02%
+- **판정:** **CREDIT NEUTRAL**
+- **근거:** HYG/LQD 방향성이 뚜렷하지 않음
 
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Noise, +0.00%)** → 보합(관망)
 - DXY **(Noise, +0.00%)** → 달러 보합(방향성 약함)
-- WTI **(Noise, +0.01%)** → 인플레 재자극 가능성
+- WTI **(Noise, -0.03%)** → 물가 부담 완화
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
 - 원/달러(USDKRW) **(Noise, +0.01%)** → 원화 약세/수급 부담
-- HYG (High Yield ETF) **(Noise, +0.01%)** → 크레딧 위험선호↑
-- LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
+- HYG (High Yield ETF) **(Noise, -0.02%)** → 크레딧 스트레스↑
+- LQD (IG Bond ETF) **(Noise, -0.02%)** → 우량채 약세(리스크온 성향)
 
 ### 🧩 6) Cross-Asset Filter (자산군 연쇄 반응 분석)
 - **추가 이유:** 단일 지표의 노이즈를 제거하고, 매크로 충격이 자산군 전반으로 확산되는 **전이 경로(Transmission Path)**를 파악하기 위함
 
 - **금리 보합(US10Y→)** → 할인율 변수 제한: 시장은 정책 경로 재확인을 위한 대기 국면
 - **변동성 보합(VIX→)** → 심리 변화 제한: 현재의 추세가 관성적으로 유지되는 구간
-- **유가 상승(WTI↑)** → 기대 인플레이션 자극: **제조/운송업 비용 부담 가중 및 중앙은행의 긴축 유지 명분 강화**
+- **유가 하락(WTI↓)** → 물가 부담 완화: **실질 구매력 회복 및 긴축 압력 완화(Dovish Tilt) 가능성 시사**
 
 > **[Strategic Note]:** 위 연쇄 반응이 역사적 상관관계에서 벗어날 경우, **6.5) Correlation Break Monitor**를 통해 국면 전환 여부를 정밀 판별함
 
@@ -109,13 +109,8 @@ Some commentary here
 No significant correlation break detected.
 
 ### ⚠ 6.6) Sector Correlation Break Monitor
-- DEBUG: pct XLK=0.029337796349800556, XLF=0.010032630556483497, XLE=-0.00838683217449831, XLRE=0.0
-Correlation Break Detected:
-- WTI ↑ but XLE ↓ (Energy)
-
-So What?
-- 유가 상승에도 에너지 약세 → 수요 둔화/정책 리스크가 더 큼 (에너지 비중 과신 금지)
-- 결론: **섹터 ‘공식’이 깨진 구간** → 방향 베팅보다 **사이징 축소 + 리더 중심**
+- DEBUG: pct XLK=-0.07315689938888925, XLF=-0.010011145895155277, XLE=0.0, XLRE=-0.011961415811933333
+No significant sector-level correlation break detected.
 
 ### 🧩 7) Risk Exposure Filter (숨은 리스크 분석)
 - **추가 이유:** 숫자는 괜찮아 보여도 그 뒤에 숨은 리스크를 식별하기 위함
@@ -123,27 +118,27 @@ So What?
 - **VIX 보합(VIX→)** → 심리 변화 제한
 - **금리 보합(US10Y→)** → 금리 변수 제한
 - **달러 보합(DXY→)** → 달러 변수 제한
-- **유가 상승(WTI↑)** → 인플레 압력/실질소득 부담 가능
+- **유가 하락(WTI↓)** → 물가 부담 완화 가능
 
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
-- **Geo Stress Score (z-composite):** **-0.24**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **-0.27**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
-- **3D Avg Score:** -0.21
-- **Geo Momentum:** -0.03 *(Status: FLAT)*
+- **3D Avg Score:** -0.26
+- **Geo Momentum:** -0.01 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Israel_2023
-- **Cosine Similarity Score:** 0.145
+- **Cosine Similarity Score:** 0.120
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Israel_2023: 0.145
-  - Red_Sea: 0.005
-  - Ukraine_2022: 0.004
+  - Israel_2023: 0.120
+  - Red_Sea: -0.009
+  - Ukraine_2022: -0.027
 - **Top Drivers:**
-  - VIX: z_used=-0.79 (z1d=-0.13, z5d=-1.78, raw_w=0.18, norm_w=0.14) → contrib=-0.11
+  - VIX: z_used=-0.84 (z1d=-0.11, z5d=-1.94, raw_w=0.18, norm_w=0.14) → contrib=-0.12
   - KR10Y_SPREAD: z_used=-1.00 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
-  - EMB: z_used=-0.55 (z1d=+0.08, z5d=+1.26, raw_w=0.12, norm_w=0.09) → contrib=-0.05
-  - DE10Y_SPREAD: z_used=+1.00 (mode=level, raw_w=0.06, norm_w=0.05) → contrib=+0.05
+  - EMB: z_used=-0.63 (z1d=+0.08, z5d=+1.45, raw_w=0.12, norm_w=0.09) → contrib=-0.06
+  - USDCNH: z_used=-0.40 (z1d=+0.13, z5d=-1.19, raw_w=0.18, norm_w=0.14) → contrib=-0.06
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
 
@@ -155,7 +150,7 @@ So What?
 
 ### 🎯 8) Incentive Filter (Wall St. Logic)
 
-**핵심 신호:** 장단기차(51.00bp) | 실질금리(1.97%) | DXY(100.00)
+**핵심 신호:** 장단기차(51.00bp) | 실질금리(1.97%) | DXY(120.89)
 *(as of: RealRate: 2026-04-06, DXY: 2026-04-06 / FRED last available)*
 
 Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화 과정)
@@ -164,8 +159,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 ### 🔍 9) Cause Filter
 - **질문:** 무엇이 이 움직임을 만들었는가?
-- **핵심 신호:** US10Y(→) / DXY(→) / WTI(↑) / VIX(→)
-- **판정:** **유가 상승(WTI↑)**
+- **핵심 신호:** US10Y(→) / DXY(→) / WTI(↓) / VIX(→)
+- **판정:** **유가 하락(WTI↓)**
 
 ### 🔄 10) Direction Filter
 - **질문:** 오늘 움직임은 ‘노이즈’인가 ‘의미 있는 변화’인가?
@@ -177,20 +172,20 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.341), DXY(120.885), VIX(23.87)
+- **Today snapshot:** US10Y(4.345), DXY(120.885), VIX(23.87)
 
 ### 🏗️ 12) Structural Filter (v2)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
-- **핵심 신호:** US10Y(→) / DXY(→) / GOLD(↓) / VIX(→) / WTI(↑)
-- **판정:** **COST-PUSH STRUCTURE (비용 주도 구조)**
-- **근거:** 경기 지지(금리 하락)가 필요한 상황에서 유가 상승은 실물 경제의 구조적 비용 부담을 가중시킴
+- **핵심 신호:** US10Y(→) / DXY(→) / GOLD(→) / VIX(→) / WTI(↓)
+- **판정:** **NEUTRAL**
+- **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
 
 ### 🧠 13) Narrative Engine (v2 + Risk Budget)
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: MIXED (혼조) (WEAK, score=+0.0) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.000 / US10YΔ +0.000 (정상)
-- **Sentiment (Fear&Greed):** 37.50684251143333 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 38.76801668557263 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** WAITING / RANGE (대기·박스권) (Cap: 60)
@@ -316,53 +311,53 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.6236692434119027
-- **Z-Score (5d):** 1.6776637421801208
+- **Z-Score (1d):** -0.23752860341894966
+- **Z-Score (5d):** 1.8728392518404275
 
 ### EEM
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.6585579071041385
-- **Z-Score (5d):** 1.1899728839596941
+- **Z-Score (1d):** 0.6744510570946651
+- **Z-Score (5d):** 1.1986470236035558
 
 ### EIS
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.3754373559874648
-- **Z-Score (5d):** -0.2718252716628387
+- **Z-Score (1d):** 0.483544037452704
+- **Z-Score (5d):** 1.3575904898958833
 
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.28572659323833594
-- **Z-Score (5d):** 2.08382545498012
+- **Z-Score (1d):** 0.07025201316422673
+- **Z-Score (5d):** 2.2775115120607654
 
 ### EWJ
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.07026113781607908
-- **Z-Score (5d):** 1.3519819630746421
+- **Z-Score (1d):** 0.03513871038874036
+- **Z-Score (5d):** 1.4040474630358237
 
 ### FXI
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.2672004073812206
-- **Z-Score (5d):** 1.2114325808668533
+- **Z-Score (1d):** 0.19350305396971373
+- **Z-Score (5d):** 1.1734151137644893
 
 ### GLD
 - **Crash?** True
 - **Risk Level:** EXTREME
-- **Z-Score (1d):** -0.039069316663899956
-- **Z-Score (5d):** 0.5186944061563489
+- **Z-Score (1d):** 0.036026089447418086
+- **Z-Score (5d):** 0.554770714013337
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.21562770827778446
-- **Z-Score (5d):** 2.9690005236983725
+- **Z-Score (1d):** 0.5104622729249669
+- **Z-Score (5d):** 3.1404414555273847
 
 ### VXX
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.1590774413717874
-- **Z-Score (5d):** -2.4986784936592072
+- **Z-Score (1d):** -0.6959334777067361
+- **Z-Score (5d):** -2.8257979188610314
