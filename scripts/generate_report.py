@@ -1187,7 +1187,6 @@ def generate_final_state_history():
             # 1번 필터: MARKET_REGIME 저장
             market_regime_filter(market_data)
 
-
             # FINAL_STATE에 FRED extra 주입
             df_fred_extra = load_fred_data_from_csv()
             if not df_fred_extra.empty:
@@ -1197,31 +1196,35 @@ def generate_final_state_history():
                 if not fred_subset.empty:
                     latest_fred = fred_subset.iloc[-1]
 
-                    if "FINAL_STATE" not in market_data:
+                    if "FINAL_STATE" not in market_data or market_data["FINAL_STATE"] is None:
                         market_data["FINAL_STATE"] = {}
 
                     market_data["FINAL_STATE"]["T10Y2Y"] = (
-                        float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0
+                        float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else None
                     )
                     market_data["FINAL_STATE"]["T10YIE"] = (
-                        float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0
+                        float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else None
                     )
                     market_data["FINAL_STATE"]["VIX"] = (
-                        float(latest_fred["VIX"])
-                        if pd.notna(latest_fred["VIX"])
-                        else market_data["FINAL_STATE"].get("VIX", 20.0)
+                        float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else market_data["FINAL_STATE"].get("VIX")
                     )
-                    # 🔥 [필수 추가] 신규 지표들을 FINAL_STATE 바구니에 담기
                     market_data["FINAL_STATE"]["DFII10"] = (
-                        float(latest_fred["DFII10"]) if pd.notna(latest_fred["DFII10"]) else 0.0
+                        float(latest_fred["DFII10"]) if pd.notna(latest_fred["DFII10"]) else None
                     )
                     market_data["FINAL_STATE"]["DXY"] = (
-                        float(latest_fred["DXY"]) if pd.notna(latest_fred["DXY"]) else 100.0
+                        float(latest_fred["DXY"]) if pd.notna(latest_fred["DXY"]) else None
                     )
                     market_data["FINAL_STATE"]["DGS2"] = (
-                        float(latest_fred["DGS2"]) if pd.notna(latest_fred["DGS2"]) else 0.0
-                    )    
-             # Narrative Engine이 FINAL_STATE 생성
+                        float(latest_fred["DGS2"]) if pd.notna(latest_fred["DGS2"]) else None
+                    )
+                    market_data["FINAL_STATE"]["FCI"] = (
+                        float(latest_fred["FCI"]) if "FCI" in latest_fred and pd.notna(latest_fred["FCI"]) else None
+                    )
+                    market_data["FINAL_STATE"]["REAL_RATE"] = (
+                        float(latest_fred["REAL_RATE"]) if "REAL_RATE" in latest_fred and pd.notna(latest_fred["REAL_RATE"]) else None
+                    )
+
+            # Narrative Engine이 FINAL_STATE 생성
             narrative_engine_filter(market_data)
 
             # Geo overlay 반영
@@ -1246,9 +1249,12 @@ def generate_final_state_history():
                 "T10Y2Y": final_state.get("T10Y2Y"),
                 "T10YIE": final_state.get("T10YIE"),
                 "VIX": final_state.get("VIX"),
+                "DFII10": final_state.get("DFII10"),
+                "DXY": final_state.get("DXY"),
+                "DGS2": final_state.get("DGS2"),
+                "FCI": final_state.get("FCI"),
+                "REAL_RATE": final_state.get("REAL_RATE"),
                 "narrative_line": final_state.get("narrative_line"),
-                "DFII10": final_state.get("DFII10"), # 추가
-                "DXY": final_state.get("DXY"),       # 추가
             })
 
         except Exception as e:
@@ -1270,6 +1276,11 @@ def generate_final_state_history():
                 "T10Y2Y": None,
                 "T10YIE": None,
                 "VIX": None,
+                "DFII10": None,
+                "DXY": None,
+                "DGS2": None,
+                "FCI": None,
+                "REAL_RATE": None,
                 "narrative_line": f"ERROR: {type(e).__name__}: {e}",
             })
 
