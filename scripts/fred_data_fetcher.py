@@ -8,14 +8,16 @@ END_DATE = datetime.today().strftime("%Y-%m-%d")
 # FRED CSV 다운로드 URL
 FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
 
-# [원본 유지] FRED 시리즈 코드들 + 3가지 추가
+# 통합 FRED 시리즈
 FRED_SERIES = {
-    "T10Y2Y": "T10Y2Y",   # 10Y - 2Y Yield Curve Spread
-    "T10YIE": "T10YIE",   # 10Y Breakeven Inflation Rate
-    "VIX": "VIXCLS",      # VIX (Volatility Index)
-    "DFII10": "DFII10",   # [추가] 10Y Real Interest Rate (실질금리)
-    "DGS2": "DGS2",       # [추가] 2Y Treasury Rate (2년물 국채금리)
-    "DXY": "DTWEXBGS"     # [추가] Dollar Index (달러 인덱스)
+    "FCI": "NFCI",         # Chicago Fed National Financial Conditions Index
+    "REAL_RATE": "DFII10", # 기존 2번 필터 호환용
+    "T10Y2Y": "T10Y2Y",    # 10Y - 2Y Yield Curve Spread
+    "T10YIE": "T10YIE",    # 10Y Breakeven Inflation Rate
+    "VIX": "VIXCLS",       # VIX
+    "DFII10": "DFII10",    # 10Y Real Interest Rate
+    "DGS2": "DGS2",        # 2Y Treasury Rate
+    "DXY": "DTWEXBGS"      # Dollar Index
 }
 
 def download_fred_csv_series(series_code: str) -> pd.DataFrame:
@@ -29,7 +31,7 @@ def download_fred_csv_series(series_code: str) -> pd.DataFrame:
 
     return df
 
-# 날짜 인덱스 생성 (2022-01-01 ~ 오늘)
+# 날짜 인덱스 생성
 full_index = pd.date_range(start=START_DATE, end=END_DATE, freq="D")
 
 # 최종 데이터프레임
@@ -47,14 +49,14 @@ for col, fred_code in FRED_SERIES.items():
         out_df[col] = pd.NA
         print(f"[ERROR] FRED - {col}: {e}")
 
-# 🔥 핵심: 최신 유효값으로 forward fill
+# 최신 유효값 forward fill
 out_df = out_df.ffill()
 
 # date 컬럼 복원
 out_df = out_df.reset_index().rename(columns={"index": "date"})
 out_df["date"] = out_df["date"].dt.strftime("%Y-%m-%d")
 
-# CSV 저장
+# 저장
 out_df.to_csv("data/fred_macro_sctorallo.csv", index=False, encoding="utf-8-sig")
 print("Saved: data/fred_macro_sctorallo.csv")
 print(out_df.tail(10).to_string(index=False))
