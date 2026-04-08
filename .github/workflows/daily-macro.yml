@@ -124,7 +124,13 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/etf_returns.py
-
+          
+      # 🔥 [신규 추가] 포지셔닝 데이터 수집 (14번 필터용)
+      - name: Fetch Positioning Data (CFTC/Gamma/CTA)
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/fetch_positioning_data.py
+          
       # ✅ 3) 리포트 생성 및 디버깅 (전체 교체)
       - name: Run report generator
         env:
