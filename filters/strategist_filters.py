@@ -2630,6 +2630,8 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     budget = _clamp(budget, 0, 100)
     market_data["RISK_BUDGET"] = budget
 
+    pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
+
     # --------------------------------------------------
     # 4️⃣ Final Action (액션 판정 강화)
     # --------------------------------------------------
@@ -2641,6 +2643,15 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         action = "REDUCE"
     else:
         action = "HOLD"
+
+   # 🔥 [SYSTEM UPGRADE] 포지셔닝 과열 시 제동 로직
+    pos_alert = ""
+    if pos_z >= 2.0:
+        if action == "INCREASE":
+            action = "HOLD (POS_OVERHEATED)"
+        elif action == "HOLD":
+            action = "REDUCE (POS_OVERHEATED)"
+        pos_alert = " ⚠️ 수급 과열 감지"
     # --------------------------------------------------
     # 5️⃣ Narrative Line
     # --------------------------------------------------
@@ -2661,9 +2672,10 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     liq_lvl_kr = {"HIGH": "높음", "MID": "중간", "LOW": "낮음", "N/A": "N/A"}.get(liq_level_bucket, "N/A")
     liq_tag = f"{liq_dir_kr}/{liq_lvl_kr}"
 
+    # Narrative 라인 수정
     narrative = (
-        f"구조={struct_tag_final} / 심리={sent_state} / 유동성={liq_tag} / " # <--- struct_tag 대신 struct_tag_final 사용!
-        f"크레딧={credit_tag} → Phase={phase}"
+        f"구조={struct_tag_final} / 심리={sent_state} / 유동성={liq_tag} / "
+        f"크레딧={credit_tag} / 수급={pos_z:.2f}{pos_alert} → Phase={phase}"
     )
 
     # --------------------------------------------------
@@ -2808,13 +2820,13 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
 
 def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     """
-    🎯 15) Volatility-Controlled Exposure (v2 - Pro)
+    🎯 15) Volatility-Controlled Exposure (v2.5 - Positioning Integrated)
 
     Risk Budget → 실제 익스포저 변환
     업그레이드:
     - VIX 레벨 + 변화율 반영
-    - Phase cap 재적용
-    - Exposure smoothing
+    - [NEW] Positioning Data (Gamma, CTA) 연동 가중치 적용
+    - Phase cap 재적용 및 Exposure smoothing
     - Guardrail (리스크 자동 브레이크)
     """
 
@@ -2847,6 +2859,10 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     vix_today = _to_float(vix_series.get("today"))
     vix_pct = _to_float(vix_series.get("pct_change"))
 
+    # 14번 포지셔닝 데이터 추가 추출
+    gamma = _to_float(market_data.get("DEALER_GAMMA_BIAS", 1.0))
+    cta = _to_float(market_data.get("CTA_MOMENTUM_SCORE", 1.0))
+
     prev_exposure = _to_float(market_data.get("PREV_EXPOSURE"))
     if prev_exposure is None:
         prev_exposure = risk_budget
@@ -2867,7 +2883,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     exposure = min(risk_budget, cap)
 
     # ---------------------------
-    # 2️⃣ VIX Level Adjustment
+    # 2️⃣ Multiplier: Volatility (VIX)
     # ---------------------------
     vol_state = "N/A"
     multiplier = 1.0
@@ -2885,14 +2901,30 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
             vol_state = "EXTREME"
             multiplier *= 0.60
 
-    # ---------------------------
-    # 3️⃣ VIX Momentum Adjustment
-    # ---------------------------
+    # VIX Momentum
     if vix_pct is not None:
         if vix_pct > 5:
             multiplier *= 0.85  # 급등 시 추가 감산
         elif vix_pct < -5:
             multiplier *= 1.05  # 급락 시 소폭 가산
+
+    # ---------------------------
+    # 3️⃣ [NEW] Multiplier: Positioning (Gamma/CTA)
+    # ---------------------------
+    pos_multiplier = 1.0
+    pos_notes = []
+
+    # 감마(에어백) 체크: 0.5 미만 시 에어백 부재로 인한 추가 리스크 반영
+    if gamma < 0.5:
+        pos_multiplier *= 0.85
+        pos_notes.append(f"Low Gamma({gamma:.2f})")
+    
+    # CTA(기계 수급) 체크: 0 이하 시 추세 반전 및 투매 위험 반영
+    if cta <= 0:
+        pos_multiplier *= 0.90
+        pos_notes.append(f"Bearish CTA({cta:.1f})")
+
+    multiplier *= pos_multiplier
 
     exposure *= multiplier
 
@@ -2906,7 +2938,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         exposure *= 0.75  # 크레딧 스트레스 발생 시 감산
 
     # ---------------------------
-    # 5️⃣ Smoothing (급변 방지)
+    # 5️⃣ Smoothing & Final Cap
     # ---------------------------
     if prev_exposure is not None:
         exposure = 0.7 * prev_exposure + 0.3 * exposure
@@ -2914,32 +2946,28 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     exposure = min(exposure, cap)
     exposure = _clamp(exposure)
 
-    # 저장 (다음날 smoothing용)
+    # 저장 (다음날용)
     market_data["PREV_EXPOSURE"] = exposure
 
     # ---------------------------
-    # Output (기존 필터 스타일)
+    # Output 구성
     # ---------------------------
-    if vix_today is not None:
-        vix_display = f"{vix_today:.2f}"
-    else:
-        vix_display = "N/A"
-
-    if vix_pct is not None:
-        vix_pct_display = f"{vix_pct:+.2f}%"
-    else:
-        vix_pct_display = "N/A"
+    vix_display = f"{vix_today:.2f}" if vix_today is not None else "N/A"
+    vix_pct_display = f"{vix_pct:+.2f}%" if vix_pct is not None else "N/A"
+    pos_warning = f" | ⚠️ {', '.join(pos_notes)}" if pos_notes else ""
 
     lines = []
-    lines.append("### 🎯 15) Volatility-Controlled Exposure (v2)")
+    lines.append("### 🎯 15) Volatility-Controlled Exposure (v2.5)")
     lines.append("- **정의:** Risk Budget을 실제 익스포저로 변환 (Pro Version)")
-    lines.append("- **추가 이유:** 변동성·스트레스·국면을 모두 반영한 실전형 리스크 제어")
+    lines.append("- **추가 이유:** 변동성(VIX) 뿐만 아니라 포지셔닝(Gamma, CTA)의 취약성을 동시에 반영")
     lines.append("")
     lines.append(f"- **Risk Budget:** {risk_budget:.0f}")
     lines.append(f"- **Phase Cap:** {cap}")
     lines.append(f"- **VIX Level:** {vix_display} ({vol_state})")
     lines.append(f"- **VIX Change (%):** {vix_pct_display}")
-    lines.append(f"- **Final Multiplier:** {multiplier:.2f}x")
+    lines.append(f"- **Final Multiplier:** {multiplier:.2f}x (Vol x Pos)")
+    if pos_notes:
+        lines.append(f"- **Positioning Brake:** 적용됨{pos_warning}")
     lines.append("")
     lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
 
