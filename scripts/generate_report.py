@@ -141,7 +141,7 @@ def load_fred_extras_df() -> pd.DataFrame:
     csv_path = DATA_DIR / "fred_macro_sctorallo.csv"
     expected_cols = [
         "date", "FCI", "REAL_RATE",
-        "T10Y2Y", "T10YIE", "VIX", "DFII10", "DGS2", "DXY"
+        "T10Y2Y", "T10YIE", "VIX", "DFII10", "DGS2"
     ]
 
     if not csv_path.exists():
@@ -230,7 +230,7 @@ def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
     # 1. 대상 컬럼 확장 (기존 2개 + 8번 필터용 6개)
-    target_cols = ["FCI", "REAL_RATE", "T10Y2Y", "T10YIE", "VIX", "DFII10", "DXY", "DGS2"]
+    target_cols = ["FCI", "REAL_RATE", "T10Y2Y", "T10YIE", "DFII10", "DGS2"]
     
     for col in target_cols:
         if col in df.columns:
@@ -276,7 +276,7 @@ def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     _attach_one("REAL_RATE", "_REAL_ASOF")
     
     # 8번 필터용 지표들도 동일한 '세트 메뉴' 구조로 주입
-    for extra_key in ["T10Y2Y", "T10YIE", "VIX", "DFII10", "DXY", "DGS2"]:
+    for extra_key in ["T10Y2Y", "T10YIE", "DFII10", "DGS2"]:
         _attach_one(extra_key, f"_{extra_key}_ASOF")
 
     return market_data
