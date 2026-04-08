@@ -322,16 +322,15 @@ def load_credit_spread_df() -> pd.DataFrame:
 
 def load_fred_data_from_csv() -> pd.DataFrame:
     csv_path = "data/fred_macro_sctorallo.csv"
-    # 1. 대상 컬럼 리스트 정의 (기존 3개 + 신규 3개)
-    target_cols = ["T10Y2Y", "T10YIE", "VIX", "DFII10", "DGS2", "DXY"]
+    
+    # 🚨 DXY, VIX를 아예 삭제했습니다. 이제 FRED에서는 얘네 안 찾아요!
+    target_cols = ["T10Y2Y", "T10YIE", "DFII10", "DGS2"]
     all_cols = ["date"] + target_cols
 
     if not os.path.exists(csv_path):
         return pd.DataFrame(columns=all_cols)
 
     try:
-        if os.path.getsize(csv_path) == 0:
-            return pd.DataFrame(columns=all_cols)
         df = pd.read_csv(csv_path)
     except Exception as e:
         print(f"[ERROR] load_fred_data_from_csv: {e}")
@@ -339,26 +338,20 @@ def load_fred_data_from_csv() -> pd.DataFrame:
 
     df.columns = [str(c).strip() for c in df.columns]
 
+    # 날짜 처리
     date_col = "date" if "date" in df.columns else "Date" if "Date" in df.columns else None
-    if date_col is None:
-        print("[ERROR] no date column in fred csv")
-        return pd.DataFrame(columns=all_cols)
+    if date_col:
+        df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+        df = df.dropna(subset=[date_col]).sort_values(date_col).reset_index(drop=True)
+        df = df.rename(columns={date_col: "date"})
 
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-    df = df.dropna(subset=[date_col]).sort_values(date_col).reset_index(drop=True)
-    df = df.rename(columns={date_col: "date"})
-
-    # 2. 모든 타겟 컬럼에 대해 누락 확인 및 숫자 변환
+    # 🚨 존재하는 컬럼만 읽어오고, 나머지는 빈 칸 처리
     for col in target_cols:
         if col not in df.columns:
             df[col] = pd.NA
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    # 3. 데이터 무결성을 위한 ffill (비어있는 값 채우기)
-    df[target_cols] = df[target_cols].ffill()
-
-    # 4. 최종적으로 모든 컬럼을 포함해서 반환! (여기가 핵심 수정 포인트)
-    return df[all_cols]
+    return df[["date"] + target_cols].ffill()
 
 
 # -------------------------
@@ -988,8 +981,11 @@ def generate_daily_report() -> None:
         market_data["_FRED_EXTRA"] = {
             "T10Y2Y": float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0,
             "T10YIE": float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0,
-            "VIX": float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else 20.0,
-        }
+            "DFII10": float(latest_fred["DFII10"]) if pd.notna(latest_fred.get("DFII10")) else 0.0,
+            
+            # 🚨 보정: FRED의 120 대신, 앞서 build_market_data에서 가져온 98.xx를 씁니다.
+            "VIX": market_data["VIX"].get("today") if "VIX" in market_data else 20.0,
+            "DXY": market_data["DXY"].get("today") if "DXY" in market_data else 100.0,
 
         print("[DEBUG] Fred Extra Saved:", market_data["_FRED_EXTRA"])
         print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
@@ -1212,14 +1208,16 @@ def generate_final_state_history():
                     market_data["FINAL_STATE"]["T10YIE"] = (
                         float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else None
                     )
-                    market_data["FINAL_STATE"]["VIX"] = (
-                        float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else market_data["FINAL_STATE"].get("VIX")
+                   market_data["FINAL_STATE"]["VIX"] = (
+                        float(market_data["VIX"]["today"]) if "VIX" in market_data and market_data["VIX"] is not None 
+                        else (float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else market_data["FINAL_STATE"].get("VIX"))
                     )
                     market_data["FINAL_STATE"]["DFII10"] = (
                         float(latest_fred["DFII10"]) if pd.notna(latest_fred["DFII10"]) else None
                     )
                     market_data["FINAL_STATE"]["DXY"] = (
-                        float(latest_fred["DXY"]) if pd.notna(latest_fred["DXY"]) else None
+                        float(market_data["DXY"]["today"]) if "DXY" in market_data and market_data["DXY"] is not None 
+                        else (float(latest_fred["DXY"]) if pd.notna(latest_fred["DXY"]) else None)
                     )
                     market_data["FINAL_STATE"]["DGS2"] = (
                         float(latest_fred["DGS2"]) if pd.notna(latest_fred["DGS2"]) else None
