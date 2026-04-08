@@ -1304,7 +1304,7 @@ def generate_final_state_history():
 if __name__ == "__main__":
     #백테스트
     
-    generate_final_state_history()
+    """generate_final_state_history()
     # 기존 리포트 실행
     real_market_data = generate_daily_report()
 
@@ -1406,6 +1406,6 @@ if __name__ == "__main__":
         print(f"❌ ETF BACKTEST ERROR: {e}")
 
     print("🚀 ETF BACKTEST DEBUG END")
-    print("=" * 60)
+    print("=" * 60)"""
 
     
