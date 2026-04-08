@@ -323,7 +323,7 @@ def load_credit_spread_df() -> pd.DataFrame:
 def load_fred_data_from_csv() -> pd.DataFrame:
     csv_path = "data/fred_macro_sctorallo.csv"
     
-    # 🚨 DXY, VIX를 아예 삭제했습니다. 이제 FRED에서는 얘네 안 찾아요!
+  
     target_cols = ["T10Y2Y", "T10YIE", "DFII10", "DGS2"]
     all_cols = ["date"] + target_cols
 
@@ -352,6 +352,31 @@ def load_fred_data_from_csv() -> pd.DataFrame:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
     return df[["date"] + target_cols].ffill()
+
+def load_positioning_df() -> pd.DataFrame:
+    """
+    Positioning Data (CFTC, Gamma, CTA) CSV를 로드합니다.
+    """
+    csv_path = DATA_DIR / "positioning_data.csv"
+    cols = ["date", "SP500_POS_Z", "US10Y_POS_Z", "DXY_POS_Z", "DEALER_GAMMA_BIAS", "CTA_MOMENTUM_SCORE"]
+    
+    if not csv_path.exists():
+        return pd.DataFrame(columns=cols)
+
+    try:
+        if csv_path.stat().st_size == 0:
+            return pd.DataFrame(columns=cols)
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return pd.DataFrame(columns=cols)
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame(columns=cols)
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
 
 
 # -------------------------
@@ -677,6 +702,45 @@ def attach_expectation_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     market_data["_EXP_ASOF"] = None
     return market_data
 
+def attach_positioning_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    market_data에 SP500_POS_Z, DEALER_GAMMA_BIAS, CTA_MOMENTUM_SCORE를 주입합니다.
+    """
+    if market_data is None:
+        market_data = {}
+
+    pos_df = load_positioning_df()
+    
+    # 기본값 설정 (데이터가 없을 경우 대비)
+    defaults = {
+        "SP500_POS_Z": 0.0,
+        "US10Y_POS_Z": 0.0,
+        "DXY_POS_Z": 0.0,
+        "DEALER_GAMMA_BIAS": 1.0,
+        "CTA_MOMENTUM_SCORE": 0.0,
+        "_POS_ASOF": None
+    }
+
+    if pos_df.empty:
+        market_data.update(defaults)
+        return market_data
+
+    # 최신 데이터 추출
+    latest = pos_df.iloc[-1]
+    
+    # market_data에 주입
+    market_data["_POS_ASOF"] = pd.to_datetime(latest["date"]).strftime("%Y-%m-%d")
+    
+    # 숫자형 데이터로 변환하며 안전하게 주입
+    for col in ["SP500_POS_Z", "US10Y_POS_Z", "DXY_POS_Z", "DEALER_GAMMA_BIAS", "CTA_MOMENTUM_SCORE"]:
+        val = latest.get(col)
+        try:
+            market_data[col] = float(val) if pd.notna(val) else defaults[col]
+        except:
+            market_data[col] = defaults[col]
+
+    return market_data
+
 # -------------------------
 # Sentiment Proxy Layer (NO CNN)
 # -------------------------
@@ -947,6 +1011,7 @@ def generate_daily_report() -> None:
     # 3) Attach layers (기존 코드 시작)
     # -----------------------------
     market_data = attach_liquidity_layer(market_data) or market_data
+    market_data = attach_positioning_layer(market_data) or market_data
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_sovereign_spread_layer(market_data) or market_data
