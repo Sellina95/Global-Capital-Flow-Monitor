@@ -986,7 +986,7 @@ def generate_daily_report() -> None:
             # 🚨 보정: FRED의 120 대신, 앞서 build_market_data에서 가져온 98.xx를 씁니다.
             "VIX": market_data["VIX"].get("today") if "VIX" in market_data else 20.0,
             "DXY": market_data["DXY"].get("today") if "DXY" in market_data else 100.0,
-
+        }
         print("[DEBUG] Fred Extra Saved:", market_data["_FRED_EXTRA"])
         print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
     else:
