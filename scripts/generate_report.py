@@ -1208,7 +1208,7 @@ def generate_final_state_history():
                     market_data["FINAL_STATE"]["T10YIE"] = (
                         float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else None
                     )
-                   market_data["FINAL_STATE"]["VIX"] = (
+                    market_data["FINAL_STATE"]["VIX"] = (
                         float(market_data["VIX"]["today"]) if "VIX" in market_data and market_data["VIX"] is not None 
                         else (float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else market_data["FINAL_STATE"].get("VIX"))
                     )
