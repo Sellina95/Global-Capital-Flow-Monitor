@@ -1049,6 +1049,7 @@ def generate_daily_report() -> None:
         )
 
     if "DXY" in market_data and market_data["DXY"].get("today") is not None:
+        print(f"DEBUG_CHECK: DXY TODAY VALUE IS {market_data['DXY']['today']}")
         prev = market_data["DXY"].get("prev")
         pct = market_data["DXY"].get("pct_change")
         lines.append(
