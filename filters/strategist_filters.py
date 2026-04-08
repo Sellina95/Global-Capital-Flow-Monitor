@@ -2780,16 +2780,29 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
         explanation = f"추세와 정책은 일치하나 포지션이 역대급(Z:{pos_z})으로 쏠려 '에너지 고갈' 상태"
         action_signal = "MONITOR REVERSAL (반전 대기)"
 
-    # 5️⃣ Output 구성
-    lines = [
-        "### ⚠ 14) Divergence Monitor (Macro vs Positioning)",
-        f"- **Structure(3번):** `{structure}` | **Price(Regime):** `{price}` | **VIX:** `{vix_value:.2f}`",
-        f"- **Positioning Data:** `Z-Score: {pos_z:.2f}` | `Gamma: {gamma:.2f}` | `CTA: {cta:.1f}`",
-        f"- **Status:** **{status}**",
-        f"- **Action Signal:** 🚨 **{action_signal}**",
-        f"- **해석:** {explanation}"
-    ]
+
+    lines = []
+    lines.append("### ⚠ 14) Divergence Monitor (Macro vs Positioning)")
+    lines.append("- **추가이유:** 시장 가격과 정책 사이의 괴리 파악")
+    lines.append("- **핵심질문:** 3번이 '현재 정책 환경(Fact)'을 묻는다면, 14번은 매크로+포지셔닝 데이터 바탕으로 누가 어디에 배팅해 있는가를 파악. **'정책은 이런데 왜 주가는 반대로 가지?(Anomaly)'**를 분석")
+    lines.append("")
     
+    # 3번 필터(Structure)와 현재 시장(Price) 데이터
+    lines.append(f"- **Structure(3번):** `{structure}` | **Price(Regime):** `{price}` | **VIX:** `{vix_value:.2f}`")
+    
+    # 포지셔닝 데이터 + 세연 님의 Run 가이드라인
+    pos_line = (
+        f"- **Positioning Data:** "
+        f"Z-Score: `{pos_z:.2f}`(2.0을 뚫으면 Run 액션준비) | "
+        f"Gamma: `{gamma:.2f}`(딜러들이 받쳐줄지, 던질지 확인 0.5 미만이면 Run 액션준비) | "
+        f"CTA: `{cta:.1f}`(기계들이 밀어주고 있는지 추세확인 0이하 뚫으면 Run 액션준비)"
+    )
+    lines.append(pos_line)
+    
+    # 상태 및 액션 시그널
+    lines.append(f"- **Status:** **{status}** -> **해석:** {explanation}")
+    lines.append(f"- **Action Signal:** 🚨 **{action_signal}**")
+
     return "\n".join(lines)
     #Build
 
