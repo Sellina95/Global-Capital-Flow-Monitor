@@ -6,9 +6,9 @@
 
 - **미국 10년물 금리**: 4.343  (+0.18% vs 4.335)
 - **달러 인덱스**: 120.656  (+0.00% vs 120.656)
-- **WTI 유가**: 112.950  (+0.48% vs 112.410)
+- **WTI 유가**: 96.260  (-14.37% vs 112.410)
 - **변동성 지수 (VIX)**: 24.170  (+0.00% vs 24.170)
-- **원/달러 환율**: 1474.280  (-2.32% vs 1509.260)
+- **원/달러 환율**: 1507.850  (-0.09% vs 1509.260)
 
 ---
 
@@ -89,9 +89,9 @@ Some commentary here
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Strong, +0.18%)** → 완화 기대 약화/금리 부담
 - DXY **(Noise, +0.00%)** → 달러 보합(방향성 약함)
-- WTI **(Mild, +0.48%)** → 인플레 재자극 가능성
+- WTI **(Strong, -14.37%)** → 물가 부담 완화
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
-- 원/달러(USDKRW) **(Strong, -2.32%)** → 원화 강세/수급 개선
+- 원/달러(USDKRW) **(Mild, -0.09%)** → 원화 강세/수급 개선
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -100,7 +100,7 @@ Some commentary here
 
 - **금리 상승(US10Y↑)** → 실질 금리 압박 → 달러 강세(DXY↑) 유도: **신흥국 자본 유출 및 고밸류 성장주 할인율 부담 증가**
 - **변동성 보합(VIX→)** → 심리 변화 제한: 현재의 추세가 관성적으로 유지되는 구간
-- **유가 상승(WTI↑)** → 기대 인플레이션 자극: **제조/운송업 비용 부담 가중 및 중앙은행의 긴축 유지 명분 강화**
+- **유가 하락(WTI↓)** → 물가 부담 완화: **실질 구매력 회복 및 긴축 압력 완화(Dovish Tilt) 가능성 시사**
 
 > **[Strategic Note]:** 위 연쇄 반응이 역사적 상관관계에서 벗어날 경우, **6.5) Correlation Break Monitor**를 통해 국면 전환 여부를 정밀 판별함
 
@@ -118,27 +118,27 @@ No significant sector-level correlation break detected.
 - **VIX 보합(VIX→)** → 심리 변화 제한
 - **금리 상승(US10Y↑)** → 할인율 부담/유동성 압박 가능
 - **달러 보합(DXY→)** → 달러 변수 제한
-- **유가 상승(WTI↑)** → 인플레 압력/실질소득 부담 가능
+- **유가 하락(WTI↓)** → 물가 부담 완화 가능
 
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
-- **Geo Stress Score (z-composite):** **-0.55**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **-0.60**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
-- **3D Avg Score:** -0.34
-- **Geo Momentum:** -0.20 *(Status: FLAT)*
+- **3D Avg Score:** -0.36
+- **Geo Momentum:** -0.24 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Israel_2023
-- **Cosine Similarity Score:** 0.040
+- **Cosine Similarity Score:** -0.049
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Israel_2023: 0.040
-  - Iran_Crisis_2020: -0.094
-  - Red_Sea: -0.101
+  - Israel_2023: -0.049
+  - Ukraine_2022: -0.265
+  - Red_Sea: -0.282
 - **Top Drivers:**
-  - USDCNH: z_used=-2.70 (z1d=-2.70, z5d=-2.70, raw_w=0.18, norm_w=0.14) → contrib=-0.37
-  - USDMXN: z_used=-2.52 (z1d=-2.53, z5d=-2.50, raw_w=0.05, norm_w=0.04) → contrib=-0.10
+  - USDCNH: z_used=-2.72 (z1d=-2.72, z5d=-2.71, raw_w=0.18, norm_w=0.14) → contrib=-0.38
+  - WTI: z_used=-2.56 (z1d=-3.35, z5d=-1.37, raw_w=0.10, norm_w=0.08) → contrib=-0.20
+  - GOLD: z_used=+1.19 (z1d=+1.27, z5d=+1.07, raw_w=0.12, norm_w=0.09) → contrib=+0.11
   - KR10Y_SPREAD: z_used=-1.00 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
-  - EMB: z_used=-0.60 (z1d=+0.08, z5d=+1.39, raw_w=0.12, norm_w=0.09) → contrib=-0.06
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
 
@@ -159,12 +159,12 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 ### 🔍 9) Cause Filter
 - **질문:** 무엇이 이 움직임을 만들었는가?
-- **핵심 신호:** US10Y(↑) / DXY(→) / WTI(↑) / VIX(→)
-- **판정:** **금리 상승(US10Y↑) + 유가 상승(WTI↑)**
+- **핵심 신호:** US10Y(↑) / DXY(→) / WTI(↓) / VIX(→)
+- **판정:** **금리 상승(US10Y↑) + 유가 하락(WTI↓)**
 
 ### 🔄 10) Direction Filter
 - **질문:** 오늘 움직임은 ‘노이즈’인가 ‘의미 있는 변화’인가?
-- **강도:** US10Y(Strong) / DXY(Noise) / WTI(Mild) / VIX(Noise)
+- **강도:** US10Y(Strong) / DXY(Noise) / WTI(Strong) / VIX(Noise)
 - **판정:** **SIGNIFICANT MOVE (의미 있는 변화)**
 
 ### ⏳ 11) Timing Filter
@@ -176,7 +176,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 ### 🏗️ 12) Structural Filter (v2)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
-- **핵심 신호:** US10Y(↑) / DXY(→) / GOLD(↑) / VIX(→) / WTI(↑)
+- **핵심 신호:** US10Y(↑) / DXY(→) / GOLD(↑) / VIX(→) / WTI(↓)
 - **판정:** **NEUTRAL**
 - **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
 
@@ -311,8 +311,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5723847544724808
-- **Z-Score (5d):** 1.7038967742805868
+- **Z-Score (1d):** -0.5723859442507939
+- **Z-Score (5d):** 1.703897596698242
 
 ### EEM
 - **Crash?** False
@@ -329,8 +329,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.036592922308892835
-- **Z-Score (5d):** 2.2198864855855653
+- **Z-Score (1d):** -0.03659291714378551
+- **Z-Score (5d):** 2.219887391785265
 
 ### EWJ
 - **Crash?** False
