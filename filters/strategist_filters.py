@@ -2721,92 +2721,75 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     
 def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
     """
-    14) Divergence Monitor (Upgraded)
+    14) Divergence Monitor (Upgraded with Positioning Engine)
     
-    [차이점 명시]
-    - 3번 필터: "지금 경제 지표상 정책 환경(금리/달러/FCI)이 어떠한가?" (Fact Check)
-    - 14번 필터: "정책은 이런데, 왜 주가는 반대로 가지?" (Anomaly Detection)
-    
-    [추가 이유]
-    - 시장 가격과 중앙은행 정책 사이의 괴리는 국면 전환의 '초기 신호'가 될 수 있음.
+    [핵심 로직]
+    - Macro(Structure) vs Price(Regime) 사이의 괴리 분석
+    - Positioning(Z-Score, Gamma, CTA)을 통한 '쏠림' 및 '폭발' 가능성 진단
     """
 
-    # 1️⃣ 데이터 로드 (3번 필터의 결과물과 현재 시장 국면 활용)
+    # 1️⃣ 기초 데이터 로드
     policy_bias_line = str(market_data.get("POLICY_BIAS_LINE", ""))
     market_regime = str(market_data.get("MARKET_REGIME", "N/A")).upper()
-    
-    # VIX 데이터 가져오기 (market_data 내 구조에 맞춰 추출)
     vix_series = _get_series(market_data, "VIX") or {}
     vix_value = float(vix_series.get("today", 20)) 
 
-    # 2️⃣ Structure(정책) & Price(시장) 판별
-    # 3번 필터에서 저장한 POLICY_BIAS_LINE에서 키워드 추출
-    if "EASING" in policy_bias_line.upper():
-        structure = "EASING"
-    elif "TIGHTENING" in policy_bias_line.upper():
-        structure = "TIGHTENING"
-    else:
-        structure = "MIXED"
+    # 2️⃣ [New] 포지셔닝 데이터 추출 (없으면 0.0/1.0 등 중립값)
+    pos_z = float(market_data.get("SP500_POS_Z", 0.0))
+    gamma = float(market_data.get("DEALER_GAMMA_BIAS", 1.0)) # 1.0이 중립
+    cta = float(market_data.get("CTA_MOMENTUM_SCORE", 0.0))
 
-    # 현재 시장의 가격 국면(Price Regime) 판별
-    if "RISK-ON" in market_regime:
-        price = "RISK-ON"
-    elif "RISK-OFF" in market_regime:
-        price = "RISK-OFF"
-    else:
-        price = "MIXED"
+    # 3️⃣ Structure(정책) & Price(시장) 판별
+    structure = "EASING" if "EASING" in policy_bias_line.upper() else \
+                "TIGHTENING" if "TIGHTENING" in policy_bias_line.upper() else "MIXED"
+    price = "RISK-ON" if "RISK-ON" in market_regime else \
+            "RISK-OFF" if "RISK-OFF" in market_regime else "MIXED"
 
-    # 3️⃣ Divergence 심화 판단 로직 (VIX 및 Trap 로직 반영)
+    # 4️⃣ 포지셔닝 기반 Deep Divergence 판정
     status = "ALIGNED"
-    explanation = "구조(정책)와 가격 신호가 조화를 이루며 추세 유지 중"
+    explanation = "구조와 가격, 수급이 조화를 이루며 추세 유지 중"
     action_signal = "STAY (포지션 유지)"
 
-    # CASE 1: 완화 정책(EASING) vs 시장 하락(RISK-OFF)
+    # CASE A: 정책은 완화(EASING)인데 가격은 하락(RISK-OFF)할 때
     if structure == "EASING" and price == "RISK-OFF":
-        if vix_value > 30:
-            status = "STRUCTURAL BREAK"
-            explanation = "완화 정책에도 가격 붕괴. 정책 약발이 안 먹히는 시스템 리스크 구간"
-            action_signal = "DEFENSIVE (방어 강화)"
+        # 수급까지 비어있다면(역대급 숏 + 기계적 매도 완료) -> 세일 기간
+        if pos_z < -1.8 and cta < -0.5:
+            status = "🚀 CAPITULATION / GENERATIONAL BUY"
+            explanation = "완화 정책 + 가격 하락 + 포지션 항복. '공포에 사야 할' 강력한 반전 신호"
+            action_signal = "AGGRESSIVE ACCUMULATE (공격적 매수)"
         else:
             status = "BEAR TRAP / DISCOUNT"
-            explanation = "유동성 구조는 우호적이나 일시적 가격 눌림. '가짜 하락' 혹은 저가 매수 기회"
+            explanation = "유동성 구조는 우호적이나 일시적 수급 꼬임"
             action_signal = "ACCUMULATE (분할 매수)"
 
-    # CASE 2: 긴축 정책(TIGHTENING) vs 시장 상승(RISK-ON)
+    # CASE B: 정책은 긴축(TIGHTENING)인데 가격은 상승(RISK-ON)할 때
     elif structure == "TIGHTENING" and price == "RISK-ON":
-        status = "BULL TRAP / OVERHEATED"
-        explanation = "긴축 구조 속에서 가격만 상승. '가짜 반등' 혹은 막바지 과열 국면"
-        action_signal = "REDUCE RISK (익절 및 비중 축소)"
+        # 수급이 꽉 찼다면(역대급 롱 + 딜러 매도 압력) -> 막차 경고
+        if pos_z > 1.8 and gamma < 0.6:
+            status = "🚨 EXTREME BULL TRAP / LIQUIDATION RISK"
+            explanation = "긴축 중 가격 상승 + 포지션 쏠림 + 딜러 매도 압력. 폭락 전 '마지막 불꽃'"
+            action_signal = "EXIT / PROTECT CAPITAL (비중 대폭 축소)"
+        else:
+            status = "BULL TRAP / OVERHEATED"
+            explanation = "긴축 구조 속 가격 상승. 점진적 과열 국면"
+            action_signal = "REDUCE RISK (익절 시작)"
 
-    # CASE 3: 구조와 가격의 반응 시차 (Delayed Response)
-    elif structure != "MIXED" and price == "MIXED":
-        status = "DELAYED RESPONSE"
-        explanation = "정책 구조는 변화했으나 시장 가격이 아직 방향을 잡지 못한 관망 구간"
-        action_signal = "WATCH (변곡점 확인 대기)"
+    # CASE C: 정책과 가격이 정렬되었으나 포지션이 너무 쏠린 경우 (추세 반전 예고)
+    elif structure == price and abs(pos_z) > 2.2:
+        status = "TREND EXHAUSTION"
+        explanation = f"추세와 정책은 일치하나 포지션이 역대급(Z:{pos_z})으로 쏠려 '에너지 고갈' 상태"
+        action_signal = "MONITOR REVERSAL (반전 대기)"
 
-    # CASE 4: 괴리가 해소되며 정렬되는 순간 (Convergence)
-    elif structure == price and status == "ALIGNED":
-        status = "TREND REINFORCED"
-        explanation = "정책과 가격이 한 방향으로 정렬됨. 추세의 신뢰도가 매우 높음"
-        action_signal = "AGGRESSIVE (추세 추종)"
-
-    # 4️⃣ Output 구성
-
-    lines = []
-    lines.append("### ⚠ 14) Divergence Monitor (Macro vs Price)")
-    lines.append("- **정의:** 중앙은행 정책(Structure)과 시장 가격(Regime) 사이의 괴리 및 전환 신호 감지")
+    # 5️⃣ Output 구성
+    lines = [
+        "### ⚠ 14) Divergence Monitor (Macro vs Positioning)",
+        f"- **Structure(3번):** `{structure}` | **Price(Regime):** `{price}` | **VIX:** `{vix_value:.2f}`",
+        f"- **Positioning Data:** `Z-Score: {pos_z:.2f}` | `Gamma: {gamma:.2f}` | `CTA: {cta:.1f}`",
+        f"- **Status:** **{status}**",
+        f"- **Action Signal:** 🚨 **{action_signal}**",
+        f"- **해석:** {explanation}"
+    ]
     
-   
-    lines.append("  - *추가 이유:* 시장 가격과 정책 사이의 괴리는 국면 전환의 **'초기 신호'**가 될 수 있음")
-    lines.append("  - *핵심 질문:* 3번이 '현재 정책 환경(Fact)'을 묻는다면, 14번은 **'정책은 이런데 왜 주가는 반대로 가지?(Anomaly)'**를 분석함")
-    lines.append("")
-    
-    # 실제 분석 결과 데이터
-    lines.append(f"- **Structure(3번 결과):** `{structure}` | **Price(현재 국면):** `{price}` | **VIX:** `{vix_value:.2f}`")
-    lines.append(f"- **Status:** **{status}**")
-    lines.append(f"- **Action Signal:** 🚨 **{action_signal}**")
-    lines.append(f"- **해석:** {explanation}")
-
     return "\n".join(lines)
     #Build
 
