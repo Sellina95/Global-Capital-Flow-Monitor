@@ -134,9 +134,13 @@ jobs:
           RESEND_TO: ${{ secrets.RESEND_TO }}
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
-          python -u scripts/generate_report.py
-          echo "=== [CHECK 1] 오늘 리포트 파일이 생성되었나? ==="
-          ls -l reports/daily_report_2026-04-08.md || echo "❌ 파일이 없습니다!"
+          echo "=== [STEP 1] 리포트 생성기 실행 시작 ==="
+          # -u: 버퍼링 없이 즉시 출력, 2>&1: 에러 메시지까지 전부 화면에 표시
+          python -u scripts/generate_report.py 2>&1
+          
+          echo "=== [STEP 2] 오늘 리포트 파일 상태 확인 ==="
+          # 파일의 수정 시각을 초 단위까지 확인 (오늘 밤에 새로 써졌는지 판별용)
+          ls -l --full-time reports/daily_report_2026-04-08.md || echo "❌ 파일이 없습니다!"
           
       # ✅ (디버그) 최신 리포트 상단 확인
       - name: Debug report head (latest)
