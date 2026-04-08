@@ -922,8 +922,15 @@ def generate_daily_report() -> None:
         .tail(10)
         .to_string(index=False)
     )
-
+    print("\n" + "="*50)
+    print(f"!!! [BEFORE BUILD] CSV DXY (today_idx): {df.iloc[today_idx].get('DXY')}")
+    print("="*50 + "\n")
+    
     market_data = build_market_data(df, today_idx)
+    
+    print("\n" + "="*50)
+    print(f"!!! [AFTER BUILD] MarketData DXY: {market_data.get('DXY', {}).get('today')}")
+    print("="*50 + "\n")
     
     # -----------------------------
     # 2) Detect stale / market closed
