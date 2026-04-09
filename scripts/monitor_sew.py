@@ -108,16 +108,18 @@ def check_market_anomaly():
     csv_path = "data/market_data_history.csv"
     context = load_war_room_context(csv_path) or {} # 진짜 데이터 가져오기
     
-    tickers = {"VIX": "^VIX", "WTI": "CL=F", "DXY": "DX-Y.NYB",  "NQ": "NQ=F", "SPY": "SPY", "QQQ": "QQQ"}
-    
+    #tickers = {"VIX": "^VIX", "WTI": "CL=F", "DXY": "DX-Y.NYB",  "NQ": "NQ=F", "SPY": "SPY", "QQQ": "QQQ"}
+    tickers = {"SPY": "SPY", "QQQ": "QQQ"}
     market_snap = {}
     summary_lines = []
     is_spiking = False
+    is_spiking = True
     
     print(f"🚀 [{now_str}] 통합 상황실 가동 (Data: {context.get('date', 'N/A')})")
 
     for name, ticker in tickers.items():
         try:
+            print(f"🔍 {name} 데이터 수집 시도...")
             df = yf.download(ticker, period="1d", interval="5m", progress=False)
             if df.empty: continue
             prices = df['Close'].values.flatten()
