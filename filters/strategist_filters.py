@@ -2824,24 +2824,21 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
 
 def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     """
-    🎯 15) Volatility-Controlled Exposure (v2.5 - Positioning Integrated)
+    🎯 15) Volatility-Controlled Exposure (v2.6 - Dead Man's Switch Integrated)
 
-    Risk Budget → 실제 익스포저 변환
     업그레이드:
+    - [CRITICAL] Dead Man's Switch: POS_Z 과열 및 Slope 폭주 시 강제 0%
     - VIX 레벨 + 변화율 반영
-    - [NEW] Positioning Data (Gamma, CTA) 연동 가중치 적용
-    - Phase cap 재적용 및 Exposure smoothing
-    - Guardrail (리스크 자동 브레이크)
+    - Positioning Data (Gamma, CTA) 연동 가중치 적용
+    - Exposure smoothing 및 Phase cap 적용
     """
 
     # ---------------------------
     # Helpers
     # ---------------------------
     def _to_float(x) -> Optional[float]:
-        if x is None:
-            return None
-        if isinstance(x, (int, float)):
-            return float(x)
+        if x is None: return None
+        if isinstance(x, (int, float)): return float(x)
         try:
             return float(str(x).replace(",", "").replace("%", "").strip())
         except Exception:
@@ -2853,17 +2850,16 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # ---------------------------
     # Inputs
     # ---------------------------
-    risk_budget = _to_float(market_data.get("RISK_BUDGET", 50))
-    if risk_budget is None:
-        risk_budget = 50.0
-
+    risk_budget = _to_float(market_data.get("RISK_BUDGET", 50)) or 50.0
     phase = str(market_data.get("MARKET_REGIME", "N/A")).upper()
 
     vix_series = market_data.get("VIX", {}) or {}
     vix_today = _to_float(vix_series.get("today"))
     vix_pct = _to_float(vix_series.get("pct_change"))
 
-    # 14번 포지셔닝 데이터 추가 추출
+    # 14번 포지셔닝 데이터 + 기울기(Slope) 추출
+    pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
+    pos_slope = _to_float(market_data.get("POS_SLOPE", 0.0)) # 수급의 가파른 변화
     gamma = _to_float(market_data.get("DEALER_GAMMA_BIAS", 1.0))
     cta = _to_float(market_data.get("CTA_MOMENTUM_SCORE", 1.0))
 
@@ -2872,17 +2868,29 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         prev_exposure = risk_budget
 
     # ---------------------------
+    # 0️⃣ [NEW] Dead Man's Switch (최우선 브레이크)
+    # ---------------------------
+    is_deadman_switch_on = False
+    deadman_reason = ""
+    
+    # 1. POS_Z가 2.0을 넘으면 (과열/항복 극단)
+    if abs(pos_z) > 2.0:
+        is_deadman_switch_on = True
+        deadman_reason = f"POS_Z Extreme ({pos_z:.2f})"
+    
+    # 2. 기울기가 급격할 때 (폭주)
+    if abs(pos_slope) > 0.5: # 0.5는 임계치 예시, 필요시 조정
+        is_deadman_switch_on = True
+        deadman_reason = f"Aggressive Slope ({pos_slope:.2f})"
+
+    # ---------------------------
     # 1️⃣ Phase Cap
     # ---------------------------
     cap = 100
-    if phase.startswith("WAITING") or "RANGE" in phase:
-        cap = 60
-    elif phase.startswith("TRANSITION") or "MIXED" in phase:
-        cap = 70
-    elif phase.startswith("RISK-ON"):
-        cap = 85
-    elif phase.startswith("RISK-OFF"):
-        cap = 35
+    if "WAITING" in phase or "RANGE" in phase: cap = 60
+    elif "TRANSITION" in phase or "MIXED" in phase: cap = 70
+    elif "RISK-ON" in phase: cap = 85
+    elif "RISK-OFF" in phase: cap = 35
 
     exposure = min(risk_budget, cap)
 
@@ -2894,63 +2902,52 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     if vix_today is not None:
         if vix_today < 14:
-            vol_state = "LOW"
-            multiplier *= 1.05
+            vol_state = "LOW"; multiplier *= 1.05
         elif vix_today < 20:
             vol_state = "NORMAL"
         elif vix_today < 30:
-            vol_state = "HIGH"
-            multiplier *= 0.80
+            vol_state = "HIGH"; multiplier *= 0.80
         else:
-            vol_state = "EXTREME"
-            multiplier *= 0.60
+            vol_state = "EXTREME"; multiplier *= 0.60
 
-    # VIX Momentum
     if vix_pct is not None:
-        if vix_pct > 5:
-            multiplier *= 0.85  # 급등 시 추가 감산
-        elif vix_pct < -5:
-            multiplier *= 1.05  # 급락 시 소폭 가산
+        if vix_pct > 5: multiplier *= 0.85  # 급등 시 감산
+        elif vix_pct < -5: multiplier *= 1.05 # 급락 시 가산
 
     # ---------------------------
-    # 3️⃣ [NEW] Multiplier: Positioning (Gamma/CTA)
+    # 3️⃣ Multiplier: Positioning (Gamma/CTA)
     # ---------------------------
     pos_multiplier = 1.0
     pos_notes = []
 
-    # 감마(에어백) 체크: 0.5 미만 시 에어백 부재로 인한 추가 리스크 반영
     if gamma < 0.5:
         pos_multiplier *= 0.85
         pos_notes.append(f"Low Gamma({gamma:.2f})")
     
-    # CTA(기계 수급) 체크: 0 이하 시 추세 반전 및 투매 위험 반영
     if cta <= 0:
         pos_multiplier *= 0.90
         pos_notes.append(f"Bearish CTA({cta:.1f})")
 
     multiplier *= pos_multiplier
-
     exposure *= multiplier
 
     # ---------------------------
-    # 4️⃣ Guardrail (Stress Brake)
+    # 4️⃣ Guardrail & Smoothing
     # ---------------------------
     hy_oas = market_data.get("HY_OAS", {}) or {}
     hy_level = _to_float(hy_oas.get("today"))
-
     if hy_level is not None and hy_level > 5:
-        exposure *= 0.75  # 크레딧 스트레스 발생 시 감산
+        exposure *= 0.75 
 
-    # ---------------------------
-    # 5️⃣ Smoothing & Final Cap
-    # ---------------------------
     if prev_exposure is not None:
         exposure = 0.7 * prev_exposure + 0.3 * exposure
 
+    # 🚨 Dead Man's Switch 적용 (계산 마지막 단계에서 0으로 셧다운)
+    if is_deadman_switch_on:
+        exposure = 0 # 강제 동결
+
     exposure = min(exposure, cap)
     exposure = _clamp(exposure)
-
-    # 저장 (다음날용)
     market_data["PREV_EXPOSURE"] = exposure
 
     # ---------------------------
@@ -2958,25 +2955,28 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # ---------------------------
     vix_display = f"{vix_today:.2f}" if vix_today is not None else "N/A"
     vix_pct_display = f"{vix_pct:+.2f}%" if vix_pct is not None else "N/A"
-    pos_warning = f" | ⚠️ {', '.join(pos_notes)}" if pos_notes else ""
-
+    
     lines = []
-    lines.append("### 🎯 15) Volatility-Controlled Exposure (v2.5)")
-    lines.append("- **정의:** Risk Budget을 실제 익스포저로 변환 (Pro Version)")
-    lines.append("- **추가 이유:** 변동성(VIX) 뿐만 아니라 포지셔닝(Gamma, CTA)의 취약성을 동시에 반영")
+    lines.append("### 🎯 15) Volatility-Controlled Exposure (v2.6)")
+    lines.append("- **정의:** Risk Budget을 실제 익스포저로 변환 (Positions & Deadman Switch)")
+    lines.append("- **추가 이유:** 수급 과열(POS_Z)이나 급격한 쏠림 발생 시 강제 시스템 셧다운")
     lines.append("")
-    lines.append(f"- **Risk Budget:** {risk_budget:.0f}")
-    lines.append(f"- **Phase Cap:** {cap}")
-    lines.append(f"- **VIX Level:** {vix_display} ({vol_state})")
-    lines.append(f"- **VIX Change (%):** {vix_pct_display}")
-    lines.append(f"- **Final Multiplier:** {multiplier:.2f}x (Vol x Pos)")
-    if pos_notes:
-        lines.append(f"- **Positioning Brake:** 적용됨{pos_warning}")
+    lines.append(f"- **Risk Budget:** {risk_budget:.0f} | **Phase Cap:** {cap}")
+    lines.append(f"- **VIX Level:** {vix_display} ({vol_state}) | **Change:** {vix_pct_display}")
+    
+    if is_deadman_switch_on:
+        lines.append(f"- **🚨 STATUS:** **DEAD MAN'S SWITCH ACTIVATED**")
+        lines.append(f"- **Reason:** {deadman_reason}")
+    else:
+        lines.append(f"- **Final Multiplier:** {multiplier:.2f}x (Vol x Pos)")
+        if pos_notes:
+            lines.append(f"- **Positioning Brake:** 적용됨 | ⚠️ {', '.join(pos_notes)}")
+
     lines.append("")
     lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
 
     return "\n".join(lines)
-
+        
 def style_tilt_filter(market_data: Dict[str, Any]) -> str:
     """
     🎨 16) Style Tilt (v1.1)
