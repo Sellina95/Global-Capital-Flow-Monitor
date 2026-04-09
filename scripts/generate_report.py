@@ -1137,14 +1137,31 @@ def generate_daily_report() -> None:
     # -------------------------
     lines = []
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
-    # --- [상황실 섹션 추가] ---
-    status_emoji = "✅" if "ALIGNED" in div_status else "🚨"
-    lines.append("\n## ⚡ Strategic War Room")
-    lines.append(f"> **[14번 수격괴리]: {status_emoji} {div_status}**")
-    lines.append(f"> **[액션]: {div_action}**\n")
-    lines.append("---")
     lines.append(f"**Date:** {report_date}")
     lines.append(f"**Data as of:** {data_as_of_date}")
+    lines.append("")
+    # 2. 🛰️ [통합 상황실] - 14번 수급괴리 + SEW 보초병 로그를 하나로 합침
+    status_emoji = "✅" if "ALIGNED" in div_status else "🚨"
+    lines.append("## ⚡ Strategic War Room (통합 대응)")
+    lines.append("> **구조적 수급(14번)과 실시간 발작(SEW)을 통합하여 판단합니다.**")
+    lines.append("")
+    lines.append(f"- **[14번 수급괴리]:** {status_emoji} {div_status}")
+    lines.append(f"- **[액션 시그널]:** {div_action}")
+    
+    # 여기서 SEW 로그를 바로 아래에 붙입니다.
+    sew_summary = get_sew_summary()
+    lines.append(f"- **[실시간 보초병(SEW)]:**")
+    lines.append(f"  {sew_summary}") # 한 칸 들여쓰기해서 14번이랑 묶여 보이게 함
+    lines.append("")
+    # 3. 🚨 Regime Change Monitor (상황실 바로 아래 배치)
+    lines.append("### 🚩 Market Regime Status")
+    if regime_result.get("status") == "DETECTED":
+        lines.append(f"- **국면 전환 감지:** 🚨 **{regime_result.get('prev_regime')}** → **{regime_result.get('current_regime')}**")
+    else:
+        lines.append(f"- **현재 국면 유지:** ✅ **{regime_result.get('current_regime')}**")
+    
+    lines.append("")
+    lines.append("---")
     lines.append("")
     lines.append("## 📊 Daily Macro Signals")
     lines.append("")
@@ -1214,7 +1231,7 @@ def generate_daily_report() -> None:
             if net is not None:
                 lines.append(f"- **NET_LIQ**: {float(net):.1f}")
 
-    # ✅ Regime Change Monitor
+    """# ✅ Regime Change Monitor
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -1233,15 +1250,8 @@ def generate_daily_report() -> None:
     else:
         lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
         lines.append(f"- **Current Regime:** {regime_result.get('current_regime')}")
-        lines.append(f"- **File/Email:** not created (no previous regime to compare)")
+        lines.append(f"- **File/Email:** not created (no previous regime to compare)")"""
         
-    # 🚨 바로 여기입니다! (if/elif/else 블록 완전히 밖으로 나오세요)
-    lines.append("")
-    lines.append("---")
-    lines.append("## 🛰️ Strategic Early Warning (SEW) Log")
-    sew_summary = get_sew_summary()
-    lines.append(sew_summary)
-    lines.append("")
 
     
     # -------------------------
