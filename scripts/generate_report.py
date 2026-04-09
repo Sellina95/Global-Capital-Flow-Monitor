@@ -964,52 +964,65 @@ def get_sew_summary():
         return f"❌ SEW 로그 분석 실패: {e}"
 
 def generate_war_room_history():
+    import os
+    import pandas as pd
+    
     print("🚀 전략 상황실(War Room)용 통합 데이터팩 생성을 시작합니다...")
     
     try:
-        # 1. 세연 님이 알려준 각 파일의 경로 (상대 경로 확인!)
+        # 1. 파일 경로 설정
         pos_path = 'data/positioning_data.csv'
         macro_path = 'data/macro_data.csv'
         yield_path = 'data/sovereign_yields.csv'
         spread_path = 'data/sovereign_spreads.csv'
+        output_path = "data/market_data_history.csv"
 
-        # 모든 파일이 존재하는지 먼저 확인
+        # 파일 존재 여부 체크
         paths = [pos_path, macro_path, yield_path, spread_path]
         for p in paths:
             if not os.path.exists(p):
                 print(f"❌ 파일 누락: {p}")
                 return
 
-        # 2. 각 파일의 마지막 줄(가장 최신 데이터) 추출
-        pos_df = pd.read_csv(pos_path).tail(1)
-        macro_df = pd.read_csv(macro_path).tail(1)
-        yield_df = pd.read_csv(yield_path).tail(1)
-        spread_df = pd.read_csv(spread_path).tail(1)
+        # 2. 데이터 로드 및 날짜 전처리 (가장 중요!)
+        # tail(1)로 가져온 뒤 날짜를 'YYYY-MM-DD' 형식으로 강제 통일합니다.
+        def get_clean_last_row(path):
+            df = pd.read_csv(path).tail(1).copy()
+            if 'date' in df.columns:
+                df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
+            return df
 
-        # 3. 데이터 통합 (기준 컬럼은 'date' 혹은 'datetime')
-        # 세연 님 파일 확인 결과 'date' 컬럼으로 되어 있으니 'date' 기준 병합
+        pos_df = get_clean_last_row(pos_path)
+        macro_df = get_clean_last_row(macro_path)
+        yield_df = get_clean_last_row(yield_path)
+        spread_df = get_clean_last_row(spread_path)
+
+        # 3. 데이터 통합 (Inner Join)
+        # 이제 날짜 형식이 같으므로 빈 칸 없이 꽉 찬 데이터가 생성됩니다.
         merged = pd.merge(pos_df, macro_df, on='date', how='inner')
         merged = pd.merge(merged, yield_df, on='date', how='inner')
         merged = pd.merge(merged, spread_df, on='date', how='inner')
 
-        # 4. 상황실 전용 파일인 'market_data_history.csv'로 저장
-        output_path = "data/market_data_history.csv"
-        
-        # 파일이 없으면 새로 만들고, 있으면 오늘 데이터만 추가(Append)
+        if merged.empty:
+            print("❌ 병합 실패: 날짜(date)가 일치하는 데이터를 찾을 수 없습니다.")
+            return
+
+        # 4. 저장 및 누적 로직
         if not os.path.exists(output_path):
             merged.to_csv(output_path, index=False)
             print(f"✅ {output_path} 파일이 새로 생성되었습니다.")
         else:
             existing_df = pd.read_csv(output_path)
-            # 오늘 날짜 데이터가 이미 들어있는지 체크 (중복 방지)
-            if str(merged['date'].values[0]) not in existing_df['date'].astype(str).values:
+            # 오늘 날짜 중복 체크
+            today_str = str(merged['date'].values[0])
+            if today_str not in existing_df['date'].astype(str).values:
                 merged.to_csv(output_path, mode='a', header=False, index=False)
-                print(f"✅ {output_path}에 오늘자 데이터가 누적되었습니다.")
+                print(f"✅ {output_path}에 오늘자({today_str}) 데이터가 누적되었습니다.")
             else:
-                print("ℹ️ 오늘자 데이터가 이미 존재합니다. 업데이트를 건너뜁니다.")
+                print(f"ℹ️ 오늘자({today_str}) 데이터가 이미 존재합니다. 스킵합니다.")
 
     except Exception as e:
-        print(f"❌ 통합 데이터팩 생성 중 에러 발생: {e}")
+        print(f"❌ 통합 데이터 생성 중 치명적 에러: {e}")
 
 
     
