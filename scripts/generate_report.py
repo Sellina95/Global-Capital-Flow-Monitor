@@ -966,8 +966,9 @@ def get_sew_summary():
 def generate_war_room_history():
     import os
     import pandas as pd
-    
-    print("🚀 전략 상황실(War Room)용 통합 데이터팩 생성을 시작합니다...")
+    import numpy as np
+
+    print("🚀 전략 상황실용 통합 데이터팩 최종 보정 및 생성을 시작합니다...")
     
     try:
         # 1. 파일 경로 설정
@@ -977,53 +978,56 @@ def generate_war_room_history():
         spread_path = 'data/sovereign_spreads.csv'
         output_path = "data/market_data_history.csv"
 
-        # 파일 존재 여부 체크
-        paths = [pos_path, macro_path, yield_path, spread_path]
-        for p in paths:
-            if not os.path.exists(p):
-                print(f"❌ 파일 누락: {p}")
-                return
-
-        # 2. 데이터 로드 및 날짜 전처리 (가장 중요!)
-        # tail(1)로 가져온 뒤 날짜를 'YYYY-MM-DD' 형식으로 강제 통일합니다.
-        def get_clean_last_row(path):
-            df = pd.read_csv(path).tail(1).copy()
+        # 2. 데이터 로드 및 날짜 전처리
+        def get_clean_df(path):
+            if not os.path.exists(path): return pd.DataFrame()
+            df = pd.read_csv(path)
             if 'date' in df.columns:
                 df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
             return df
 
-        pos_df = get_clean_last_row(pos_path)
-        macro_df = get_clean_last_row(macro_path)
-        yield_df = get_clean_last_row(yield_path)
-        spread_df = get_clean_last_row(spread_path)
+        pos_df = get_clean_df(pos_path)
+        macro_df = get_clean_df(macro_path)
+        yield_df = get_clean_df(yield_path)
+        spread_df = get_clean_df(spread_path)
 
-        # 3. 데이터 통합 (Inner Join)
-        # 이제 날짜 형식이 같으므로 빈 칸 없이 꽉 찬 데이터가 생성됩니다.
-        merged = pd.merge(pos_df, macro_df, on='date', how='inner')
-        merged = pd.merge(merged, yield_df, on='date', how='inner')
-        merged = pd.merge(merged, spread_df, on='date', how='inner')
+        # 3. 데이터 통합 (전체 날짜 기준 Outer Join 후 정렬)
+        # Inner가 아니라 Outer로 합쳐야 과거 데이터까지 다 가져와서 메꿀 수 있습니다.
+        merged = pd.merge(pos_df, macro_df, on='date', how='outer')
+        merged = pd.merge(merged, yield_df, on='date', how='outer')
+        merged = pd.merge(merged, spread_df, on='date', how='outer')
+        
+        # 날짜순 정렬
+        merged = merged.sort_values('date')
 
+        # 💡 [핵심: 보정 로직]
+        # ffill(): 과거의 마지막 유효한 값을 오늘 빈칸에 복사 (Forward Fill)
+        # bfill(): 혹시라도 맨 앞 데이터가 비어있으면 뒤에서 가져옴 (Backward Fill)
+        merged = merged.ffill().bfill()
+
+        # 4. 저장 로직 (가장 최신일자 데이터만 누적 혹은 업데이트)
         if merged.empty:
-            print("❌ 병합 실패: 날짜(date)가 일치하는 데이터를 찾을 수 없습니다.")
+            print("❌ 병합된 데이터가 없습니다.")
             return
 
-        # 4. 저장 및 누적 로직
+        # 최종적으로는 오늘(가장 마지막 행) 데이터가 꽉 차게 됩니다.
+        today_data = merged.tail(1)
+        
         if not os.path.exists(output_path):
             merged.to_csv(output_path, index=False)
-            print(f"✅ {output_path} 파일이 새로 생성되었습니다.")
+            print(f"✅ {output_path} 신규 생성 완료.")
         else:
             existing_df = pd.read_csv(output_path)
-            # 오늘 날짜 중복 체크
-            today_str = str(merged['date'].values[0])
-            if today_str not in existing_df['date'].astype(str).values:
-                merged.to_csv(output_path, mode='a', header=False, index=False)
-                print(f"✅ {output_path}에 오늘자({today_str}) 데이터가 누적되었습니다.")
-            else:
-                print(f"ℹ️ 오늘자({today_str}) 데이터가 이미 존재합니다. 스킵합니다.")
+            today_str = str(today_data['date'].values[0])
+            
+            # 중복 제거 후 오늘 데이터 업데이트
+            existing_df = existing_df[existing_df['date'].astype(str) != today_str]
+            final_df = pd.concat([existing_df, today_data], ignore_index=True)
+            final_df.to_csv(output_path, index=False)
+            print(f"✅ {output_path}에 오늘자({today_str}) 보정 데이터 반영 완료.")
 
     except Exception as e:
-        print(f"❌ 통합 데이터 생성 중 치명적 에러: {e}")
-
+        print(f"❌ 데이터팩 생성 중 에러: {e}")
 
     
     
