@@ -3,6 +3,7 @@ import time
 import requests
 import yfinance as yf
 import sys
+from datetime import datetime
 
 def send_sew_email(subject, body):
     api_key = os.getenv("RESEND_API_KEY")
@@ -22,50 +23,68 @@ def send_sew_email(subject, body):
         return False, str(e)
 
 def check_market_anomaly():
-    print(f"🚀 [{time.strftime('%Y-%m-%d %H:%M:%S')}] Monitoring Start...")
-    tickers = {"VIX": "^VIX", "WTI": "CL=F", "DXY": "DX-Y.NYB"}
+    # 시간 설정 (KST 기준은 UTC+9지만, 일단 깃허브 시간 기준으로 표시)
+    now = datetime.now()
+    now_str = now.strftime('%Y-%m-%d %H:%M:%S')
+    
+    print(f"🚀 [{now_str}] Strategic Early Warning Monitoring...")
+    
+    tickers = {"VIX(변동성)": "^VIX", "WTI(원유)": "CL=F", "DXY(달러인덱스)": "DX-Y.NYB"}
     summary_lines = []
-    alert_detected = False
+    alert_assets = []
+    threshold = 2.0 # 세연 님이 설정하신 2.0% 임계치
 
     for name, ticker in tickers.items():
         try:
-            # 데이터를 가져온 후 인덱스를 단순화합니다.
             df = yf.download(ticker, period="1d", interval="1m", progress=False)
             if df.empty or len(df) < 5:
-                summary_lines.append(f"- {name}: Data insufficient")
                 continue
             
-            # 🚨 핵심 수정: 어떤 구조로 들어오든 '최근 값' 딱 하나만 추출합니다.
-            # .values.flatten()을 사용해 1차원 배열로 만든 뒤 마지막 값을 가져옵니다.
             prices = df['Close'].values.flatten()
             curr_price = float(prices[-1])
-            prev_price = float(prices[-5]) # 5분 전
-            
+            prev_price = float(prices[-5])
             change = (curr_price - prev_price) / prev_price * 100
             
-            line = f"- {name}: {curr_price:.2f} ({change:+.2f}%)"
+            status_icon = "🔺" if change > 0 else "🔻"
+            line = f"{status_icon} {name}: {curr_price:.2f} ({change:+.2f}%)"
             summary_lines.append(line)
-            print(line)
-
-            # 테스트용 임계치 0.01 (성공 확인 후 높이세요!)
-            if abs(change) >= 0.01: 
-                alert_detected = True
+            
+            if abs(change) >= threshold:
+                alert_assets.append(f"{name}({change:+.2f}%)")
         except Exception as e:
-            # 에러 발생 시 로그를 아주 상세하게 찍습니다.
-            print(f"❌ {name} 감시 중 에러 발생: {str(e)}")
-            summary_lines.append(f"- {name}: Error ({str(e)})")
+            summary_lines.append(f"❌ {name}: 데이터 수집 에러")
 
-    # 이메일 본문 구성
-    full_body = "Strategic Early Warning System - Status Report\n\n"
-    full_body += "\n".join(summary_lines)
-    full_body += f"\n\nChecked at: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+    if alert_assets:
+        # 🚨 이메일 제목: 어떤 자산이 튀었는지 바로 알 수 있게
+        subject = f"🚨 [SEW Alert] {', '.join(alert_assets)} 수급 발작 포착!"
+        
+        # 📝 이메일 본문: 전략적 가독성 높이기
+        body = f"""
+[Strategic Early Warning System - Briefing]
 
-    if alert_detected:
-        subject = f"🚨 [SEW Alert] Market Status ({time.strftime('%H:%M')})"
-        ok, note = send_sew_email(subject, full_body)
-        print(f"📧 Email Sent Result: {note}")
+세연 전략가님, 실시간 시장 감시 엔진이 '비정상적 수급 쏠림'을 감지했습니다.
+
+📍 감지 시각: {now_str} (UTC)
+📍 감지 대상: {', '.join(alert_assets)}
+
+-----------------------------------------
+📊 현재 시장 주요 지표 현황 (5분 변동률)
+-----------------------------------------
+{chr(10).join(summary_lines)}
+
+-----------------------------------------
+💡 전략적 가이드라인
+1. 현재 'EVENT-WATCHING' 국면이므로 작은 수급 이탈이 패닉 셀로 이어질 수 있습니다.
+2. 14번(유동성 가드레일) 및 15번(리스크 오프 필터) 수치를 즉시 점검하십시오.
+3. 해당 자산의 급변이 단순 기술적 반등인지, 매크로 펀더멘털의 균열인지 파악이 필요합니다.
+
+※ 본 메일은 설정하신 임계치({threshold}%) 초과 시에만 자동 발송됩니다.
+-----------------------------------------
+        """
+        ok, note = send_sew_email(subject, body)
+        print(f"📧 상세 브리핑 발송 완료: {note}")
     else:
-        print("✅ No significant anomaly detected.")
+        print("✅ 이상 징후 없음. 평온한 시장입니다.")
 
 if __name__ == "__main__":
     check_market_anomaly()
