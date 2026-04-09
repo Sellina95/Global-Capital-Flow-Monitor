@@ -174,6 +174,7 @@ def check_market_anomaly():
 
         # 이메일 발송 (환경변수 체크)
         api_key = os.getenv("RESEND_API_KEY")
+        print(f"DEBUG: is_spiking={is_spiking}, recommended_exp={recommended_exp}, corr_msg_len={len(corr_msg)}")
         if api_key:
             requests.post("https://api.resend.com/emails",
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
