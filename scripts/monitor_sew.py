@@ -1,3 +1,4 @@
+#실시간으로 연동되는데이터 모니터링을위한 함수
 import os
 import time
 import requests
@@ -62,4 +63,10 @@ def run_strategic_early_warning():
         time.sleep(300) # 5분 대기
 
 if __name__ == "__main__":
-    run_strategic_early_warning()
+    #run_strategic_early_warning()
+    # 깃허브 액션에서는 한 번만 훑고 지나가게 설정
+    import sys
+    if "--once" in sys.argv:
+        check_market_anomaly() # 루프 없이 딱 한 번만 실행하는 함수 호출
+    else:
+        run_strategic_early_warning() # 로컬용 무한 루프
