@@ -993,7 +993,7 @@ def generate_war_room_history():
         merged = pd.merge(merged, spread_df, on='date', how='inner')
 
         # 4. 상황실 전용 파일인 'market_data_history.csv'로 저장
-        output_path = "market_data_history.csv"
+        output_path = "data/market_data_history.csv"
         
         # 파일이 없으면 새로 만들고, 있으면 오늘 데이터만 추가(Append)
         if not os.path.exists(output_path):
