@@ -118,7 +118,7 @@ def check_market_anomaly():
 
     for name, ticker in tickers.items():
         try:
-            df = yf.download(ticker, period="1d", interval="1m", progress=False)
+            df = yf.download(ticker, period="1d", interval="5m", progress=False)
             if df.empty: continue
             prices = df['Close'].values.flatten()
             curr = float(prices[-1])
