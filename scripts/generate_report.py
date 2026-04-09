@@ -1131,6 +1131,18 @@ def generate_daily_report() -> None:
         if "**Action Signal:**" in line: div_action = line.split("**Action Signal:**")[-1].strip()
     # --- [14번 필터 요약 추출 끝] ---
 
+    recommended_exposure = 100 # 기본값
+    is_deadman_activated = False
+    
+    for line in commentary_block.split('\n'):
+        if "Recommended Exposure:" in line:
+            # "78%" 같은 문자열에서 숫자만 추출
+            try:
+                recommended_exposure = int(''.join(filter(str.isdigit, line)))
+            except: pass
+        if "DEAD MAN'S SWITCH ACTIVATED" in line:
+            is_deadman_activated = True
+
 
     # -------------------------
     # Report assembly
@@ -1140,10 +1152,18 @@ def generate_daily_report() -> None:
     lines.append(f"**Date:** {report_date}")
     lines.append(f"**Data as of:** {data_as_of_date}")
     lines.append("")
+    
     # 2. 🛰️ [통합 상황실] - 14번 수급괴리 + SEW 보초병 로그를 하나로 합침
-    status_emoji = "✅" if "ALIGNED" in div_status else "🚨"
+    war_room_emoji = "🚨" if is_deadman_activated or "ALIGNED" not in div_status else "✅"
     lines.append("## ⚡ Strategic War Room (통합 대응)")
-    lines.append("> **구조적 수급(14번)과 실시간 발작(SEW)을 통합하여 판단합니다.**")
+    # 데드맨 스위치 가동 시 강렬한 경고 문구 삽입
+    if is_deadman_activated:
+        lines.append("> ### 🚨 **SYSTEM SHUTDOWN: DEAD MAN'S SWITCH**")
+        lines.append(f"> **현재 권장 노출도: 0% (자산 보호 모드 강제 가동 중)**")
+    else:
+        lines.append(f"> **시스템 상태: {war_room_emoji} STABLE (권장 노출도: {recommended_exposure}%)**")
+    
+    lines.append("> **구조적 수급(14번)과 실시간 발작(SEW), 15번 데드맨 로직을 통합하여 판단합니다.**")
     lines.append("")
     lines.append(f"- **[14번 수급괴리]:** {status_emoji} {div_status}")
     lines.append(f"- **[액션 시그널]:** {div_action}")
@@ -1152,7 +1172,12 @@ def generate_daily_report() -> None:
     sew_summary = get_sew_summary()
     lines.append(f"- **[실시간 보초병(SEW)]:**")
     lines.append(f"  {sew_summary}") # 한 칸 들여쓰기해서 14번이랑 묶여 보이게 함
-    lines.append("")
+    
+    if is_deadman_activated:
+        lines.append(f"- **[15번 데드맨]:** 🚨 **ACTIVATED** (수급 폭주 감지됨)")
+    else:
+        lines.append(f"- **[15번 데드맨]:** ✅ PASS (정상 범위 내)")
+        
     # 3. 🚨 Regime Change Monitor (상황실 바로 아래 배치)
     lines.append("### 🚩 Market Regime Status")
     if regime_result.get("status") == "DETECTED":
