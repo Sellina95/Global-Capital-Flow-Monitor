@@ -113,7 +113,7 @@ def check_market_anomaly():
     market_snap = {}
     summary_lines = []
     is_spiking = False
-    is_spiking = True
+    #is_spiking = True
     
     print(f"🚀 [{now_str}] 통합 상황실 가동 (Data: {context.get('date', 'N/A')})")
 
