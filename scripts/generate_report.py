@@ -1217,14 +1217,15 @@ def generate_daily_report() -> None:
         lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
         lines.append(f"- **Current Regime:** {regime_result.get('current_regime')}")
         lines.append(f"- **File/Email:** not created (no previous regime to compare)")
-        # 🚨 바로 여기입니다! (if/elif/else 블록 완전히 밖으로 나오세요)
-        lines.append("")
-        lines.append("---")
-        lines.append("## 🛰️ Strategic Early Warning (SEW) Log")
-        sew_summary = get_sew_summary()
-        lines.append(sew_summary)
-        lines.append("")
-        lines.append("---")
+        
+    # 🚨 바로 여기입니다! (if/elif/else 블록 완전히 밖으로 나오세요)
+    lines.append("")
+    lines.append("---")
+    lines.append("## 🛰️ Strategic Early Warning (SEW) Log")
+    sew_summary = get_sew_summary()
+    lines.append(sew_summary)
+    lines.append("")
+    lines.append("---")
     
     # -------------------------
     # Top layers first
