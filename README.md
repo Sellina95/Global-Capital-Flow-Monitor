@@ -87,6 +87,8 @@ It separates:
 # ⚙️ System Architecture
 Macro Data
 ↓
+Real-time Market "Scream" Detector (2-Sigma Alert) 
+↓
 Regime Detection
 ↓
 Liquidity & Policy Analysis
@@ -97,7 +99,11 @@ Narrative Engine
 ↓
 Risk Budget Calculation
 ↓
+Dead Man’s Switch (Mechanical Fail-safe) 
+↓
 Volatility-Controlled Exposure
+↓
+Automated Notification (Resend API Workflow)
 ↓
 Style Tilt
 ↓
@@ -172,7 +178,7 @@ These outputs represent **interpreted capital flow narratives**, not raw data du
 
 15. Divergence Monitor
 
-16. Volatility-Controlled Exposure
+16. Volatility-Controlled Exposure & Dead Man's Switch
 
 17. Style Tilt  
 (Growth / Value / Duration / Defensive)
@@ -277,19 +283,32 @@ It is a **structured macro interpretation and risk allocation framework.**
 
 ---
 
-# 🎯 Differentiation
+# 🎯 Strategic Differentiation
+The Global Capital Flow Monitor is not a conventional collection of technical indicators; it is a disciplined capital flow hierarchy model designed to navigate market complexity through structural rigor and real-time execution.
 
-This system differs from conventional macro dashboards in several ways:
+1. Execution-Layer Intelligence
+Real-time Market "Scream" Detection: Most systems react to official data releases. This engine captures the exact moment when the market starts to "scream"—detecting information leakage and price reflexivity via real-time rolling z-scores (2-Sigma) across cross-asset correlations before macro updates.
 
-- Structural separation of **policy vs price reaction**
-- Explicit modeling of **liquidity plumbing (TGA / RRP)**
-- Quantified **risk budget construction**
-- Volatility-adjusted exposure framework
-- Macro → Style → Sector → Company translation
-- Cross-asset correlation break detection
-- Execution-layer interpretation
-- Scenario-driven strategist framing
-- Regime-based capital allocation logic
+Mechanical Fail-Safe (Dead Man’s Switch): To ensure algorithmic sustainability, the system implements a Fail-Safe Shutdown Protocol (Filter 15.0). If liquidity velocity (Slope) or positioning extremes (POS_Z) exceed safety thresholds, the system automatically triggers a Dead Man’s Switch, mandating a 0% exposure to preserve capital during tail-risk events.
+
+Event-Driven Workflow: Integrated with the Resend API, the system bridges the gap between analysis and action by dispatching instant strategist alerts the moment a regime transition or liquidity spike is detected.
+
+2. Structural & Liquidity Plumbing
+Policy vs. Price Reaction: Explicitly separates structural policy shifts from noise-driven price reactions, ensuring the strategy remains anchored in "what the Fed does" rather than "what the market hopes."
+
+Fed Plumbing Integration: Direct modeling of the financial system’s "pipes"—including the Treasury General Account (TGA), Reverse Repo Facility (RRP), and Net Liquidity—to track the actual movement of institutional funds.
+
+3. Risk & Allocation Hierarchy
+Macro-to-Execution Translation: A rigorous top-down framework that flows from Macro Regimes → Style Factors → Sector Allocation → Company Traits, ensuring that every position is a direct translation of a macro-structural view.
+
+Quantified Risk Budgeting: Replaces subjective "conviction" with a volatility-adjusted exposure framework, calculating risk budgets based on real-time stress levels and regime-specific caps.
+
+Scenario-Driven Framing: Moves beyond binary predictions by utilizing a dynamic scenario engine, allowing the strategist to prepare for Base, Bull, and Bear cases simultaneously within a structured transmission map.
+
+4. Adaptive Market Monitoring
+Correlation Break Detection: Monitors the breakdown of historical relationships between assets (e.g., Rates vs. Tech, USD vs. Emerging Markets) to identify regime shifts before they become consensus.
+
+Geopolitical Stress Mapping: Translates vague geopolitical fears into quantified Geo Stress Scores through pattern matching and sovereign spread differentials.
 
 This is **not an indicator stack.**
 
