@@ -19,6 +19,11 @@ SERIES = {
     "KR10Y": "IRLTLT01KRM156N",
     "JP10Y": "IRLTLT01JPM156N",
     "DE10Y": "IRLTLT01DEM156N",
+    "CN10Y": "CHILT",           # 중국 (China 10Y)
+    "IL10Y": "IRLTLT01ILM156N", # 이스라엘 (Israel 10Y)
+    "TR10Y": "IRLTLT01TRM156N", # 터키 (Turkey 10Y)
+    "GB10Y": "IRLTLT01GBM156N", # 영국 (UK 10Y)
+    "MX10Y": "IRLTLT01MXM156N", # 멕시코 (Mexico 10Y)
 }
 
 
