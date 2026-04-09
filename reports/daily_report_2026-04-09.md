@@ -5,10 +5,10 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.291  (-1.20% vs 4.343)
-- **달러 인덱스**: 99.000  (-0.64% vs 99.640)
-- **WTI 유가**: 97.300  (-13.86% vs 112.950)
+- **달러 인덱스**: 99.003  (-0.64% vs 99.640)
+- **WTI 유가**: 97.490  (-13.69% vs 112.950)
 - **변동성 지수 (VIX)**: 21.040  (-18.39% vs 25.780)
-- **원/달러 환율**: 1479.990  (-1.85% vs 1507.850)
+- **원/달러 환율**: 1480.280  (-1.83% vs 1507.850)
 
 ---
 
@@ -52,7 +52,7 @@ Some commentary here
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(↓) / DXY(↓) / VIX(↓)
-- **Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.640 / US10YΔ -0.052**
+- **Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.637 / US10YΔ -0.052**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY EASING (완화)**
@@ -94,9 +94,9 @@ Some commentary here
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Strong, -1.20%)** → 완화 기대 강화
 - DXY **(Strong, -0.64%)** → 달러 약세/리스크 선호
-- WTI **(Strong, -13.86%)** → 물가 부담 완화
+- WTI **(Strong, -13.69%)** → 물가 부담 완화
 - VIX **(Strong, -18.39%)** → 심리 개선/리스크온
-- 원/달러(USDKRW) **(Strong, -1.85%)** → 원화 강세/수급 개선
+- 원/달러(USDKRW) **(Strong, -1.83%)** → 원화 강세/수급 개선
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -126,24 +126,24 @@ No significant sector-level correlation break detected.
 - **유가 하락(WTI↓)** → 물가 부담 완화 가능
 
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
-- **Geo Stress Score (z-composite):** **-0.83**  *(Level: N/A)*
+- **Geo Stress Score (z-composite):** **-0.84**  *(Level: N/A)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
 - **3D Avg Score:** -0.41
-- **Geo Momentum:** -0.42 *(Status: FALLING)*
+- **Geo Momentum:** -0.43 *(Status: FALLING)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Israel_2023
-- **Cosine Similarity Score:** -0.230
+- **Cosine Similarity Score:** -0.231
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Israel_2023: -0.230
-  - Red_Sea: -0.385
-  - China_Trade_2018: -0.402
+  - Israel_2023: -0.231
+  - Red_Sea: -0.386
+  - China_Trade_2018: -0.405
 - **Top Drivers:**
-  - USDCNH: z_used=-2.64 (z1d=-2.65, z5d=-2.63, raw_w=0.18, norm_w=0.14) → contrib=-0.37
+  - USDCNH: z_used=-2.67 (z1d=-2.69, z5d=-2.65, raw_w=0.18, norm_w=0.14) → contrib=-0.37
   - VIX: z_used=-1.89 (z1d=-2.07, z5d=-1.62, raw_w=0.18, norm_w=0.14) → contrib=-0.26
-  - WTI: z_used=-2.40 (z1d=-3.26, z5d=-1.12, raw_w=0.10, norm_w=0.08) → contrib=-0.18
-  - USDMXN: z_used=-2.02 (z1d=-1.77, z5d=-2.40, raw_w=0.05, norm_w=0.04) → contrib=-0.08
+  - WTI: z_used=-2.38 (z1d=-3.23, z5d=-1.10, raw_w=0.10, norm_w=0.08) → contrib=-0.18
+  - USDMXN: z_used=-2.42 (z1d=-2.25, z5d=-2.66, raw_w=0.05, norm_w=0.04) → contrib=-0.09
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
 
@@ -177,7 +177,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.291), DXY(99.000), VIX(21.04)
+- **Today snapshot:** US10Y(4.291), DXY(99.003), VIX(21.04)
 
 ### 🏗️ 12) Structural Filter (v2)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
@@ -189,7 +189,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.640 / US10YΔ -0.052 (정상)
+- **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.637 / US10YΔ -0.052 (정상)
 - **Sentiment (Fear&Greed):** 49.23857481699622 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
@@ -315,8 +315,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5626365947147827
-- **Z-Score (5d):** 0.9532389282212054
+- **Z-Score (1d):** 0.5626398627478267
+- **Z-Score (5d):** 0.9532396387671846
 
 ### EEM
 - **Crash?** False
