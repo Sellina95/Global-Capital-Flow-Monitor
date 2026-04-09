@@ -962,7 +962,56 @@ def get_sew_summary():
         return summary
     except Exception as e:
         return f"❌ SEW 로그 분석 실패: {e}"
+
+def generate_war_room_history():
+    print("🚀 전략 상황실(War Room)용 통합 데이터팩 생성을 시작합니다...")
     
+    try:
+        # 1. 세연 님이 알려준 각 파일의 경로 (상대 경로 확인!)
+        pos_path = 'data/positioning_data.csv'
+        macro_path = 'data/macro_data.csv'
+        yield_path = 'data/sovereign_yields.csv'
+        spread_path = 'data/sovereign_spreads.csv'
+
+        # 모든 파일이 존재하는지 먼저 확인
+        paths = [pos_path, macro_path, yield_path, spread_path]
+        for p in paths:
+            if not os.path.exists(p):
+                print(f"❌ 파일 누락: {p}")
+                return
+
+        # 2. 각 파일의 마지막 줄(가장 최신 데이터) 추출
+        pos_df = pd.read_csv(pos_path).tail(1)
+        macro_df = pd.read_csv(macro_path).tail(1)
+        yield_df = pd.read_csv(yield_path).tail(1)
+        spread_df = pd.read_csv(spread_path).tail(1)
+
+        # 3. 데이터 통합 (기준 컬럼은 'date' 혹은 'datetime')
+        # 세연 님 파일 확인 결과 'date' 컬럼으로 되어 있으니 'date' 기준 병합
+        merged = pd.merge(pos_df, macro_df, on='date', how='inner')
+        merged = pd.merge(merged, yield_df, on='date', how='inner')
+        merged = pd.merge(merged, spread_df, on='date', how='inner')
+
+        # 4. 상황실 전용 파일인 'market_data_history.csv'로 저장
+        output_path = "market_data_history.csv"
+        
+        # 파일이 없으면 새로 만들고, 있으면 오늘 데이터만 추가(Append)
+        if not os.path.exists(output_path):
+            merged.to_csv(output_path, index=False)
+            print(f"✅ {output_path} 파일이 새로 생성되었습니다.")
+        else:
+            existing_df = pd.read_csv(output_path)
+            # 오늘 날짜 데이터가 이미 들어있는지 체크 (중복 방지)
+            if str(merged['date'].values[0]) not in existing_df['date'].astype(str).values:
+                merged.to_csv(output_path, mode='a', header=False, index=False)
+                print(f"✅ {output_path}에 오늘자 데이터가 누적되었습니다.")
+            else:
+                print("ℹ️ 오늘자 데이터가 이미 존재합니다. 업데이트를 건너뜁니다.")
+
+    except Exception as e:
+        print(f"❌ 통합 데이터팩 생성 중 에러 발생: {e}")
+
+
     
     
 def generate_daily_report() -> None:
@@ -1463,7 +1512,7 @@ if __name__ == "__main__":
     """generate_final_state_history()"""
     # 기존 리포트 실행
     real_market_data = generate_daily_report()
-
+    generate_war_room_history()
     # =========================
     # 🔥 ETF BACKTEST DEBUG BLOCK
     # =========================
