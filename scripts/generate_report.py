@@ -1165,7 +1165,7 @@ def generate_daily_report() -> None:
     
     lines.append("> **구조적 수급(14번)과 실시간 발작(SEW), 15번 데드맨 로직을 통합하여 판단합니다.**")
     lines.append("")
-    lines.append(f"- **[14번 수급괴리]:** {status_emoji} {div_status}")
+    lines.append(f"- **[14번 수급괴리]:** {war_room_emoji} {div_status}")
     lines.append(f"- **[액션 시그널]:** {div_action}")
     
     # 여기서 SEW 로그를 바로 아래에 붙입니다.
