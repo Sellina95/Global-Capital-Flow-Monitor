@@ -2,8 +2,67 @@ import os
 import time
 import requests
 import yfinance as yf
+import pandas as pd
+import numpy as np
 from datetime import datetime
+from typing import Dict, Any, Optional
 
+# ---------------------------
+# 1. Slope(기울기) 계산 함수 (데이터 누락 방어 로직 포함)
+# ---------------------------
+def get_recent_pos_slope(csv_path: str, column_name='SP500_POS_Z'):
+    try:
+        if not os.path.exists(csv_path):
+            return 0.0
+        
+        df = pd.read_csv(csv_path)
+        # 데이터가 있는(NaN이 아닌) 행만 추출 (4/8일 누락 등 대응)
+        valid_data = df[column_name].dropna().tail(3).tolist()
+        
+        if len(valid_data) >= 3:
+            # (오늘 값 - 2일 전 값) / 2 -> 하루 평균 변화량(기울기)
+            slope = (valid_data[-1] - valid_data[-3]) / 2
+            return slope
+        elif len(valid_data) == 2:
+            return valid_data[-1] - valid_data[-2]
+    except Exception as e:
+        print(f"❌ Slope 계산 중 오류: {e}")
+    return 0.0
+
+# ---------------------------
+# 2. 15번 필터: Volatility-Controlled Exposure (v2.6)
+# ---------------------------
+def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> (int, str):
+    risk_budget = float(market_data.get("RISK_BUDGET", 50))
+    phase = str(market_data.get("MARKET_REGIME", "N/A")).upper()
+    vix_today = market_data.get("VIX_TODAY")
+    pos_z = float(market_data.get("SP500_POS_Z", 0.0))
+    pos_slope = float(market_data.get("POS_SLOPE", 0.0))
+    is_spiking = market_data.get("IS_SPIKING", False)
+
+    # Dead Man's Switch 판단
+    is_deadman_on = False
+    reason = ""
+    if is_spiking:
+        is_deadman_on = True; reason = "Real-time Vol Spike Detected"
+    elif abs(pos_z) > 2.0:
+        is_deadman_on = True; reason = f"POS_Z Extreme ({pos_z:.2f})"
+    elif abs(pos_slope) > 0.5:
+        is_deadman_on = True; reason = f"Aggressive Slope ({pos_slope:.2f})"
+
+    if is_deadman_on:
+        return 0, f"🚨 DEAD MAN'S SWITCH: {reason}"
+
+    # 기본 Cap 및 계산 (단순화 버전)
+    cap = 85 if "RISK-ON" in phase else 35
+    exposure = min(risk_budget, cap)
+    if vix_today and vix_today > 25: exposure *= 0.8
+    
+    return int(exposure), "Normal Operation"
+
+# ---------------------------
+# 3. 이메일 발송 함수
+# ---------------------------
 def send_sew_email(subject, body):
     api_key = os.getenv("RESEND_API_KEY")
     from_email = os.getenv("RESEND_FROM")
@@ -21,10 +80,13 @@ def send_sew_email(subject, body):
     except Exception as e: 
         return False, str(e)
 
+# ---------------------------
+# 4. 메인 감시 함수
+# ---------------------------
 def check_market_anomaly():
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    csv_path = "market_data_history.csv" # 세연 님의 데이터 파일 경로
     
-    # 1. 감시 자산 확장 (매크로 핵심 지표 5종)
     tickers = {
         "VIX(공포지수)": "^VIX",
         "WTI(원유)": "CL=F",
@@ -35,83 +97,74 @@ def check_market_anomaly():
     
     summary_lines = []
     alert_assets = []
-    threshold = 2.0  # 세연 님이 설정한 2.0% 가드레일
-    anomaly_count = 0
+    threshold = 2.0 
+    is_spiking = False
 
     print(f"🚀 [{now_str}] 통합 상황실 가동...")
 
+    current_vix = None
     for name, ticker in tickers.items():
         try:
             df = yf.download(ticker, period="1d", interval="1m", progress=False)
             if df.empty: continue
-            
-            # Multi-Index 대응을 위해 flatten 후 값 추출
             prices = df['Close'].values.flatten()
             curr = float(prices[-1])
-            prev = float(prices[-5]) # 5분 전 데이터와 비교
+            prev = float(prices[-5]) if len(prices) > 5 else prices[0]
             change = (curr - prev) / prev * 100
             
+            if "^VIX" in ticker: current_vix = curr
+
             icon = "🔺" if change > 0 else "🔻"
-            line = f"{icon} {name}: {curr:.2f} ({change:+.2f}%)"
-            summary_lines.append(line)
+            summary_lines.append(f"{icon} {name}: {curr:.2f} ({change:+.2f}%)")
             
             if abs(change) >= threshold:
                 alert_assets.append(f"{name}({change:+.2f}%)")
-                anomaly_count += 1
+                is_spiking = True
         except Exception as e:
-            summary_lines.append(f"❌ {name}: 데이터 수집 실패")
+            summary_lines.append(f"❌ {name}: 수집 실패")
 
-    # 2. 이상 징후 포착 시 행동
-    if alert_assets:
-        # (1) 이메일 제목 및 본문 구성
-        subject = f"🚨 [상황실] {', '.join(alert_assets)} 15번 필터 수급 발작 포착!"
-        
+    # 5. 15번 필터 연동 (Slope 계산 및 데드맨 판단)
+    pos_slope = get_recent_pos_slope(csv_path)
+    
+    # 임시 market_data 구성 (실제 환경에 맞게 조정 필요)
+    market_data_snapshot = {
+        "RISK_BUDGET": 85,
+        "MARKET_REGIME": "RISK-ON", # 예시
+        "VIX_TODAY": current_vix,
+        "SP500_POS_Z": 0.72, # 예시 (실제로는 CSV에서 가져옴)
+        "POS_SLOPE": pos_slope,
+        "IS_SPIKING": is_spiking
+    }
+
+    recommended_exp, status_msg = volatility_controlled_exposure_filter(market_data_snapshot)
+
+    # 6. 이상 징후 혹은 데드맨 스위치 작동 시 알림
+    if is_spiking or recommended_exp == 0:
+        subject = f"🚨 [Emergency] {status_msg if recommended_exp == 0 else 'Market Spike Detected'}"
         body = f"""
 [Digital War Room - Real-time Status]
 
-세연 전략가님, 시스템이 '15번 수급 쏠림 필터'에서 이상 징후를 감지했습니다.
+세연 전략가님, 시스템이 자산 보호를 위해 긴급 조치를 검토 중입니다.
 
 ─────────────────────────────────────────
-📢 실시간 요약 (Status: 🚨 DETECTED)
+📢 실시간 요약 (Exposure: {recommended_exp}%)
 ─────────────────────────────────────────
-- 일시: {now_str} (UTC)
-- 탐지된 이상 징후: {anomaly_count}건 발생
-- 주요 타격 자산: {', '.join(alert_assets)}
+- 일시: {now_str}
+- 시스템 상태: {status_msg}
+- 기울기(Slope): {pos_slope:.4f}
 
-📊 자산별 실시간 수치 (5분 변동률)
+📊 자산별 변동률 (5분 기준)
 {chr(10).join(summary_lines)}
 
 ─────────────────────────────────────────
-🧠 전략적 가이드 (14/15번 필터 체크)
+🧠 전략적 가이드
 ─────────────────────────────────────────
-✅ [15번 필터] 수급 쏠림 : {anomaly_count}건 포착 (대응 요망)
-💡 현재 {', '.join(alert_assets)}의 변동성이 임계치({threshold}%)를 초과했습니다.
-💡 이는 단순 노이즈가 아닌 '수급의 방향성 전환'일 확률이 높습니다.
-
-✅ [14번 필터] 유동성 가드레일 : EVENT-WATCHING 국면
-💡 유동성이 극도로 민감한 구간이므로, 위 자산의 움직임이 
-   포트폴리오 전체 리스크(Beta)에 미치는 영향을 즉시 확인하십시오.
-
+💡 권장 익스포저가 {recommended_exp}%로 산출되었습니다. 
+💡 {'즉시 포지션을 동결하거나 축소하십시오.' if recommended_exp == 0 else '주의 깊게 관찰하십시오.'}
 ─────────────────────────────────────────
-Log: ✅ {anomaly_count} Anomaly Detected / Email sent to {os.getenv("RESEND_TO")}
         """
-        
-        # (2) 이메일 발송
         ok, note = send_sew_email(subject, body)
-        print(f"📧 통합 리포트 발송 결과: {note}")
-
-        # (3) 📂 아침 리포트용 로그 기록 (개큰 이슈 기록소)
-        try:
-            os.makedirs("insights", exist_ok=True)
-            log_entry = f"[{now_str}] {', '.join(alert_assets)} 발작 탐지\n"
-            with open("insights/alerts.log", "a", encoding="utf-8") as f:
-                f.write(log_entry)
-            print("📝 insights/alerts.log에 이상 징후 기록 완료")
-        except Exception as e:
-            print(f"❌ 로그 기록 실패: {e}")
-
-    else:
-        print(f"✅ [{now_str}] 이상 없음. 15번 필터 통과.")
+        print(f"📧 알림 발송 완료: {note}")
 
 if __name__ == "__main__":
     check_market_anomaly()
