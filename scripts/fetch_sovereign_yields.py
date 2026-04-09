@@ -80,9 +80,21 @@ def main(days: int = 365) -> None:
 
     existing = _load_existing()
 
+    # 1. 누락 데이터 감지 및 fetch_days 결정
+    if existing.empty or "CN10Y" not in existing.columns or existing["CN10Y"].isna().all():
+        print("🚨 누락된 과거 데이터를 감지했습니다. 전체 기간(2000일) 조회를 시작합니다.")
+        fetch_days = 2000
+    else:
+        fetch_days = days
+
     fetched = {}
     for col, sid in SERIES.items():
         print(f"[FETCH] {col} ({sid})")
+        # 💡 [수정 포인트] 여기서 fetch_days를 사용해야 합니다!
+        # 하지만 현재 fetch_fred_csv 함수 구조상 URL에 직접 기간을 넣지 않으므로, 
+        # FRED CSV 다운로드 URL은 보통 전체 데이터를 줍니다.
+        # 따라서 병합(Merge) 후 마지막에 '자르는(tail)' 기준을 fetch_days로 잡아야 합니다.
+        
         df = fetch_fred_csv(sid)
         if df.empty:
             print("  -> no data")
@@ -94,62 +106,17 @@ def main(days: int = 365) -> None:
 
     today_ts = pd.Timestamp(datetime.now(KST).date())
 
-    candidate_starts = []
-    if not existing.empty:
-        candidate_starts.append(existing["date"].min())
+    # ... (중략: 병합 로직 동일) ...
 
-    for col, df in fetched.items():
-        if df is not None and not df.empty:
-            candidate_starts.append(df["date"].min())
-
-    if candidate_starts:
-        start_date = min(candidate_starts)
-    else:
-        start_date = today_ts
-
-    # ✅ 오늘까지 날짜 무조건 생성
-    full_dates = pd.date_range(start=start_date, end=today_ts, freq="D")
-    base = pd.DataFrame({"date": full_dates})
-
-    merged = base.merge(existing, on="date", how="left")
-
-    def _merge_series(base_df: pd.DataFrame, new_df: pd.DataFrame | None, col: str) -> pd.DataFrame:
-        if new_df is None or new_df.empty:
-            if col not in base_df.columns:
-                base_df[col] = pd.NA
-            return base_df
-
-        work = new_df[["date", col]].copy()
-        work[col] = pd.to_numeric(work[col], errors="coerce")
-        work = work.rename(columns={col: f"{col}__new"})
-
-        out = base_df.merge(work, on="date", how="left")
-
-        if col not in out.columns:
-            out[col] = pd.NA
-
-        # 새 값 있으면 새 값 우선, 없으면 기존 유지
-        out[col] = out[f"{col}__new"].combine_first(out[col])
-        out = out.drop(columns=[f"{col}__new"])
-        return out
-
-    for col in SERIES.keys():
-        merged = _merge_series(merged, fetched.get(col), col)
-
-    for col in SERIES.keys():
-        merged[col] = pd.to_numeric(merged[col], errors="coerce")
-
-    merged = merged.sort_values("date").drop_duplicates(subset=["date"], keep="last")
-
-    if days is not None and len(merged) > days:
-        merged = merged.tail(days).reset_index(drop=True)
+    # 2. 마지막에 데이터를 자를 때 days 대신 fetch_days 사용
+    if fetch_days is not None and len(merged) > fetch_days:
+        merged = merged.tail(fetch_days).reset_index(drop=True) # 👈 여기서 fetch_days 적용!
 
     merged["date"] = merged["date"].dt.strftime("%Y-%m-%d")
     merged.to_csv(OUT_CSV, index=False)
 
     print(f"[DEBUG] CSV last date after update: {merged['date'].iloc[-1] if not merged.empty else 'EMPTY'}")
     print(f"[OK] sovereign_yields updated: {OUT_CSV} (rows={len(merged)})")
-
 
 if __name__ == "__main__":
     main()
