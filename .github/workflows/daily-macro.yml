@@ -174,7 +174,7 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM: ${{ secrets.RESEND_FROM }}
           RESEND_TO: ${{ secrets.RESEND_TO }}
-        run: python monitor_sew.py --once # 👈 --once 옵션 주의!
+        run: python scripts/monitor_sew.py --once 👈 --once 옵션 주의!
         
       # ✅ (디버그) 최신 리포트 상단 확인
       - name: Debug report head (latest)
