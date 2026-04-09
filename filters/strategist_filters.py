@@ -2953,6 +2953,9 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # ---------------------------
     # Output 구성
     # ---------------------------
+    # ---------------------------
+    # Output 구성 (리포트 시각화)
+    # ---------------------------
     vix_display = f"{vix_today:.2f}" if vix_today is not None else "N/A"
     vix_pct_display = f"{vix_pct:+.2f}%" if vix_pct is not None else "N/A"
     
@@ -2964,13 +2967,16 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Risk Budget:** {risk_budget:.0f} | **Phase Cap:** {cap}")
     lines.append(f"- **VIX Level:** {vix_display} ({vol_state}) | **Change:** {vix_pct_display}")
     
-    if is_deadman_switch_on:
+    # 🚨 데드맨 스위치 작동 여부에 따른 리포트 분기
+    if is_deadman_on:
         lines.append(f"- **🚨 STATUS:** **DEAD MAN'S SWITCH ACTIVATED**")
-        lines.append(f"- **Reason:** {deadman_reason}")
+        lines.append(f"- **Reason:** {reason}")  # 여기서 'Aggressive Slope' 등이 찍힙니다.
+        lines.append(f"- **Action:** 포지션 진입 금지 및 기존 물량 청산 권고")
     else:
         lines.append(f"- **Final Multiplier:** {multiplier:.2f}x (Vol x Pos)")
         if pos_notes:
             lines.append(f"- **Positioning Brake:** 적용됨 | ⚠️ {', '.join(pos_notes)}")
+        lines.append(f"- **Slope Intensity:** {pos_slope:.4f} (Stable)")
 
     lines.append("")
     lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
