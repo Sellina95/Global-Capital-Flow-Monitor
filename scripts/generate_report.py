@@ -1225,7 +1225,7 @@ def generate_daily_report() -> None:
     sew_summary = get_sew_summary()
     lines.append(sew_summary)
     lines.append("")
-    lines.append("---")
+
     
     # -------------------------
     # Top layers first
