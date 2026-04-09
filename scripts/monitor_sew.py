@@ -108,7 +108,7 @@ def check_market_anomaly():
     csv_path = "data/market_data_history.csv"
     context = load_war_room_context(csv_path) or {} # 진짜 데이터 가져오기
     
-    tickers = {"VIX": "^VIX", "WTI": "CL=F", "DXY": "DX-Y.NYB", "US10Y": "^TNX", "NQ": "NQ=F", "SPY": "SPY", "QQQ": "QQQ"}
+    tickers = {"VIX": "^VIX", "WTI": "CL=F", "DXY": "DX-Y.NYB",  "NQ": "NQ=F", "SPY": "SPY", "QQQ": "QQQ"}
     
     market_snap = {}
     summary_lines = []
