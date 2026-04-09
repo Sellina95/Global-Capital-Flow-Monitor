@@ -148,7 +148,7 @@ def check_market_anomaly():
         body = f"""
 [Digital War Room - Real-time Status]
 
-세연 전략가님, 시스템이 자산 보호를 위해 긴급 조치를 검토 중입니다.
+현재 마켓에서 이상징후가 발견되어 시스템이 자산 보호를 위해 긴급 조치를 검토 중입니다.
 
 ─────────────────────────────────────────
 📢 실시간 요약 (Exposure: {recommended_exp}%)
