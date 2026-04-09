@@ -168,6 +168,14 @@ jobs:
           else
             echo "❌ 오늘자 리포트 파일이 생성되지 않았습니다."
           fi
+
+      - name: Run Strategic Early Warning # 👈 이 섹션을 새로 추가하세요!
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
+          RESEND_TO: ${{ secrets.RESEND_TO }}
+        run: python monitor_sew.py --once # 👈 --once 옵션 주의!
+        
       # ✅ (디버그) 최신 리포트 상단 확인
       - name: Debug report head (latest)
         run: |
