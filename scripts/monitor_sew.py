@@ -129,7 +129,7 @@ def check_market_anomaly():
             icon = "🔺" if change > 0 else "🔻"
             summary_lines.append(f"{icon} {name}: {curr:.2f} ({change:+.2f}%)")
             
-            if abs(change) >= 2.0: is_spiking = True
+            if abs(change) >= 1.0: is_spiking = True
         except: continue
 
     # 추가 데이터 구성
