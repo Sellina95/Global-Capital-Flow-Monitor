@@ -209,6 +209,7 @@ jobs:
 
           git add reports/*.md || true
           git add data/*.csv || true
+          git add data/market_data_history.csv  # 👈 자, 여기 확실하게 넣었습니다! ㅡㅡ+
 
           echo "== data files =="
           ls -al data || true
@@ -221,7 +222,7 @@ jobs:
             exit 0
           fi
 
-          git commit -m "chore: auto-update data + generate report"
+          git commit -m "chore: auto-update daily report and war room data [skip ci]"
           git push
           
       - name: Commit and Push State Update
