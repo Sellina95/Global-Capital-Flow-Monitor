@@ -1121,11 +1121,28 @@ def generate_daily_report() -> None:
         country_risk_lines.append("- No country ETF risk data available.")
         country_risk_lines.append("")
 
+
+    # --- [14번 필터 요약 추출 시작] ---
+    from filters.strategist_filters import divergence_monitor_filter
+    div_full_text = divergence_monitor_filter(market_data)
+    div_status = "N/A"; div_action = "N/A"
+    for line in div_full_text.split('\n'):
+        if "**Status:**" in line: div_status = line.split("**Status:**")[-1].strip()
+        if "**Action Signal:**" in line: div_action = line.split("**Action Signal:**")[-1].strip()
+    # --- [14번 필터 요약 추출 끝] ---
+
+
     # -------------------------
     # Report assembly
     # -------------------------
     lines = []
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
+    # --- [상황실 섹션 추가] ---
+    status_emoji = "✅" if "ALIGNED" in div_status else "🚨"
+    lines.append("\n## ⚡ Strategic War Room")
+    lines.append(f"> **[14번 수격괴리]: {status_emoji} {div_status}**")
+    lines.append(f"> **[액션]: {div_action}**\n")
+    lines.append("---")
     lines.append(f"**Date:** {report_date}")
     lines.append(f"**Data as of:** {data_as_of_date}")
     lines.append("")
