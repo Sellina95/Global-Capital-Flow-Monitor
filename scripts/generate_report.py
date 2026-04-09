@@ -933,6 +933,35 @@ def _find_effective_market_idx(
         return int(candidates_any[-1])
 
     return len(df) - 1
+
+
+def get_sew_summary():
+    log_path = "insights/alerts.log"
+    if not os.path.exists(log_path):
+        return "✅ 지난 24시간 내 특이 수급 발작 없음 (15번 필터 통과)"
+    
+    try:
+        with open(log_path, "r", encoding="utf-8") as f:
+            logs = f.readlines()
+        
+        if not logs:
+            return "✅ 지난 24시간 내 특이 수급 발작 없음 (15번 필터 통과)"
+        
+        # 로그 요약 생성
+        count = len(logs)
+        summary = f"⚠️ [주의] 지난 24시간 내 총 {count}건의 실시간 수급 발작이 감지되었습니다.\n"
+        
+        # 최근 3개의 발작 기록만 리스트업
+        recent_logs = "".join([f"   - {line}" for line in logs[-3:]])
+        summary += f"   (최근 기록)\n{recent_logs}"
+        
+        # ⚠️ 중요: 리포트 생성 후 로그 파일 초기화 (다음 날 중복 기록 방지)
+        # 만약 기록을 남기고 싶다면 파일명을 날짜별로 바꾸거나 주석 처리하세요.
+        open(log_path, "w").close() 
+        
+        return summary
+    except Exception as e:
+        return f"❌ SEW 로그 분석 실패: {e}"
     
     
     
@@ -1188,7 +1217,15 @@ def generate_daily_report() -> None:
         lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
         lines.append(f"- **Current Regime:** {regime_result.get('current_regime')}")
         lines.append(f"- **File/Email:** not created (no previous regime to compare)")
-
+        # 🚨 바로 여기입니다! (if/elif/else 블록 완전히 밖으로 나오세요)
+        lines.append("")
+        lines.append("---")
+        lines.append("## 🛰️ Strategic Early Warning (SEW) Log")
+        sew_summary = get_sew_summary()
+        lines.append(sew_summary)
+        lines.append("")
+        lines.append("---")
+    
     # -------------------------
     # Top layers first
     # -------------------------
