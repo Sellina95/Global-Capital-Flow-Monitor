@@ -2859,7 +2859,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     # 14번 포지셔닝 데이터 + 기울기(Slope) 추출
     pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
-    pos_slope = _to_float(market_data.get("POS_SLOPE", 0.0)) # 수급의 가파른 변화
+    pos_slope = _to_float(market_data.get("POS_SLOPE", 0.0)) 
     gamma = _to_float(market_data.get("DEALER_GAMMA_BIAS", 1.0))
     cta = _to_float(market_data.get("CTA_MOMENTUM_SCORE", 1.0))
 
@@ -2870,17 +2870,17 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # ---------------------------
     # 0️⃣ [NEW] Dead Man's Switch (최우선 브레이크)
     # ---------------------------
-    is_deadman_switch_on = False
+    is_deadman_on = False  # 변수명 통일
     deadman_reason = ""
     
     # 1. POS_Z가 2.0을 넘으면 (과열/항복 극단)
     if abs(pos_z) > 2.0:
-        is_deadman_switch_on = True
+        is_deadman_on = True
         deadman_reason = f"POS_Z Extreme ({pos_z:.2f})"
     
     # 2. 기울기가 급격할 때 (폭주)
-    if abs(pos_slope) > 0.5: # 0.5는 임계치 예시, 필요시 조정
-        is_deadman_switch_on = True
+    if abs(pos_slope) > 0.5: 
+        is_deadman_on = True
         deadman_reason = f"Aggressive Slope ({pos_slope:.2f})"
 
     # ---------------------------
@@ -2911,8 +2911,8 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
             vol_state = "EXTREME"; multiplier *= 0.60
 
     if vix_pct is not None:
-        if vix_pct > 5: multiplier *= 0.85  # 급등 시 감산
-        elif vix_pct < -5: multiplier *= 1.05 # 급락 시 가산
+        if vix_pct > 5: multiplier *= 0.85  
+        elif vix_pct < -5: multiplier *= 1.05 
 
     # ---------------------------
     # 3️⃣ Multiplier: Positioning (Gamma/CTA)
@@ -2942,17 +2942,14 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     if prev_exposure is not None:
         exposure = 0.7 * prev_exposure + 0.3 * exposure
 
-    # 🚨 Dead Man's Switch 적용 (계산 마지막 단계에서 0으로 셧다운)
-    if is_deadman_switch_on:
-        exposure = 0 # 강제 동결
+    # 🚨 Dead Man's Switch 적용
+    if is_deadman_on:
+        exposure = 0 
 
     exposure = min(exposure, cap)
     exposure = _clamp(exposure)
     market_data["PREV_EXPOSURE"] = exposure
 
-    # ---------------------------
-    # Output 구성
-    # ---------------------------
     # ---------------------------
     # Output 구성 (리포트 시각화)
     # ---------------------------
@@ -2970,7 +2967,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # 🚨 데드맨 스위치 작동 여부에 따른 리포트 분기
     if is_deadman_on:
         lines.append(f"- **🚨 STATUS:** **DEAD MAN'S SWITCH ACTIVATED**")
-        lines.append(f"- **Reason:** {reason}")  # 여기서 'Aggressive Slope' 등이 찍힙니다.
+        lines.append(f"- **Reason:** {deadman_reason}")  # 위에서 선언한 이름으로 수정
         lines.append(f"- **Action:** 포지션 진입 금지 및 기존 물량 청산 권고")
     else:
         lines.append(f"- **Final Multiplier:** {multiplier:.2f}x (Vol x Pos)")
