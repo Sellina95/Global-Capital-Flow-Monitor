@@ -384,22 +384,6 @@ def check_market_anomaly():
         market_snap=market_snap,
     )
     # ---------------------------
-# SEW 상태 저장
-# ---------------------------
-sew_output = {
-    "status": "STABLE" if not is_spiking else "ALERT",
-    "summary": "실시간 이상징후 없음" if not is_spiking else "시장 이상반응 감지",
-    "event_type": event_type,
-    "deadman": (recommended_exp == 0),
-    "spike_count": spike_count,
-    "extreme_count": extreme_count,
-}
-
-os.makedirs("insights", exist_ok=True)
-with open("insights/sew_state.json", "w", encoding="utf-8") as f:
-    import json
-    json.dump(sew_output, f, ensure_ascii=False, indent=2)
-
     # ---------------------------
     # 실전용 발송 조건
     # ---------------------------
