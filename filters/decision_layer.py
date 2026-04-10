@@ -96,3 +96,115 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
     if geo_overlay and geo_overlay.get("budget_delta", 0) != 0:
         lines.append(f"- **Geo Overlay:** {geo_overlay.get('note')} → budget {geo_overlay.get('base_budget')}% → {geo_overlay.get('final_budget')}%")
     return "\n".join(lines)
+    
+    
+    from typing import Dict, Any
+
+def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Final Decision Layer (War Room Override)
+    Priority:
+    1) SEW
+    2) Divergence
+    3) Narrative / FINAL_STATE
+    4) Exposure sizing
+    """
+
+    state = market_data.get("FINAL_STATE", {}) or {}
+    sew = market_data.get("SEW_STATE", {}) or {}
+    div = market_data.get("DIVERGENCE_STATE", {}) or {}
+
+    # -------------------------
+    # Inputs
+    # -------------------------
+    narrative_action = str(state.get("risk_action", "HOLD")).upper()
+    risk_budget = int(state.get("risk_budget", 50)) if state.get("risk_budget") is not None else 50
+    phase = str(state.get("phase", "N/A"))
+
+    sew_status = str(sew.get("status", "N/A")).upper()
+    sew_summary = str(sew.get("summary", "SEW 상태 없음"))
+    sew_event = str(sew.get("event_type", "N/A")).upper()
+
+    div_status = str(div.get("status", "N/A")).upper()
+    div_action = str(div.get("action", "HOLD")).upper()
+
+    # Exposure from 15번 있으면 우선 사용, 없으면 risk_budget 사용
+    base_exposure = market_data.get("RECOMMENDED_EXPOSURE", risk_budget)
+    try:
+        base_exposure = int(base_exposure)
+    except Exception:
+        base_exposure = risk_budget
+
+    final_action = narrative_action
+    final_exposure = base_exposure
+    reason_chain = []
+
+    # -------------------------
+    # 1) SEW override (highest priority)
+    # -------------------------
+    if sew_status == "DEADMAN":
+        final_action = "EXIT"
+        final_exposure = 0
+        reason_chain.append("SEW DEADMAN 발동 → 즉시 EXIT / 익스포저 0%")
+    elif sew_status == "ALERT":
+        final_action = "REDUCE"
+        final_exposure = int(base_exposure * 0.7)
+        reason_chain.append("SEW ALERT → 실시간 발작 감지, 익스포저 30% 축소")
+    elif sew_status == "WATCH":
+        # WATCH면 증가 금지
+        if narrative_action == "INCREASE":
+            final_action = "HOLD"
+            final_exposure = base_exposure
+            reason_chain.append("SEW WATCH → 증가 보류, HOLD 유지")
+        else:
+            final_action = narrative_action
+            final_exposure = base_exposure
+            reason_chain.append("SEW WATCH → 모니터링 강화, 기존 전략 유지")
+    else:
+        reason_chain.append("SEW STABLE → 실시간 이상징후 없음")
+
+    # -------------------------
+    # 2) Divergence override
+    # -------------------------
+    if sew_status not in ["DEADMAN", "ALERT"]:
+        if div_status != "ALIGNED":
+            # 구조/수급 괴리면 공격적 확장 억제
+            if final_action == "INCREASE":
+                final_action = "HOLD"
+                final_exposure = int(base_exposure * 0.8)
+                reason_chain.append("Divergence 비정렬 → INCREASE 억제, HOLD로 하향")
+            elif final_action == "HOLD":
+                final_action = "REDUCE"
+                final_exposure = int(base_exposure * 0.8)
+                reason_chain.append("Divergence 비정렬 → HOLD에서 REDUCE로 전환")
+            else:
+                reason_chain.append("Divergence 비정렬 → 방어적 태도 유지")
+        else:
+            reason_chain.append("Divergence ALIGNED → 구조·가격·수급 정렬")
+
+    # -------------------------
+    # 3) Narrative confirmation
+    # -------------------------
+    if sew_status == "STABLE" and div_status == "ALIGNED":
+        reason_chain.append(f"Narrative Action={narrative_action} 반영")
+    else:
+        reason_chain.append("상위 레이어(SEW/Divergence)가 Narrative보다 우선")
+
+    # -------------------------
+    # Safety clamp
+    # -------------------------
+    final_exposure = max(0, min(100, final_exposure))
+
+    # -------------------------
+    # Render
+    # -------------------------
+    lines = []
+    lines.append("## 🎯 Final Decision (War Room Override)")
+    lines.append(f"- **Final Action:** **{final_action}**")
+    lines.append(f"- **Final Exposure:** **{final_exposure}%**")
+    lines.append(f"- **Base Context:** phase={phase} / narrative={narrative_action} / base_exposure={base_exposure}%")
+    lines.append(f"- **SEW:** {sew_status} / {sew_event}")
+    lines.append(f"- **Divergence:** {div_status} / {div_action}")
+    lines.append(f"- **Why:** " + " → ".join(reason_chain))
+
+    return "\n".join(lines)
