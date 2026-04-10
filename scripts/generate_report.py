@@ -1203,6 +1203,9 @@ def generate_daily_report() -> None:
         # -------------------------
     # Strategic War Room inputs
     # -------------------------
+        # -------------------------
+    # Strategic War Room inputs
+    # -------------------------
     from filters.strategist_filters import divergence_monitor_filter
 
     div_full_text = divergence_monitor_filter(market_data)
@@ -1222,7 +1225,7 @@ def generate_daily_report() -> None:
         if "Recommended Exposure:" in line:
             try:
                 recommended_exposure = int(''.join(filter(str.isdigit, line)))
-            except:
+            except Exception:
                 pass
         if "DEAD MAN'S SWITCH ACTIVATED" in line:
             is_deadman_activated = True
@@ -1237,31 +1240,31 @@ def generate_daily_report() -> None:
     sew_deadman = sew_state["deadman"]
     sew_spike_count = sew_state["spike_count"]
     sew_extreme_count = sew_state["extreme_count"]
-    
+
     market_data["SEW_STATE"] = {
-    "status": sew_status,
-    "summary": sew_summary,
-    "event_type": sew_event_type,
-    "deadman": sew_deadman,
+        "status": sew_status,
+        "summary": sew_summary,
+        "event_type": sew_event_type,
+        "deadman": sew_deadman,
     }
 
     clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
+    if "ALIGNED" in clean_div_status.upper():
+        clean_div_status = "ALIGNED"
+    elif "DISALIGNED" in clean_div_status.upper():
+        clean_div_status = "DISALIGNED"
+    else:
+        clean_div_status = "N/A"
 
-if "ALIGNED" in clean_div_status.upper():
-    clean_div_status = "ALIGNED"
-elif "DISALIGNED" in clean_div_status.upper():
-    clean_div_status = "DISALIGNED"
-else:
-    clean_div_status = "N/A"
+    clean_div_action = div_action.replace("🚨", "").replace("✅", "").strip()
 
-clean_div_action = div_action.replace("🚨", "").replace("✅", "").strip()
+    market_data["DIVERGENCE_STATE"] = {
+        "status": clean_div_status,
+        "action": clean_div_action,
+    }
 
-market_data["DIVERGENCE_STATE"] = {
-    "status": clean_div_status,
-    "action": clean_div_action,
-}
+    market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
 
-market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
     # -------------------------
     # 워룸 상태 판단
     # -------------------------
@@ -1307,20 +1310,23 @@ market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
     lines.append(f"- **[SEW Spike Monitor]:** Spike {sew_spike_count} / Extreme {sew_extreme_count}")
 
     if is_deadman_activated or sew_deadman:
-        lines.append(f"- **[15번 데드맨]:** 🚨 ACTIVATED")
+        lines.append("- **[15번 데드맨]:** 🚨 ACTIVATED")
     else:
-        lines.append(f"- **[15번 데드맨]:** ✅ PASS")
+        lines.append("- **[15번 데드맨]:** ✅ PASS")
 
     lines.append(f"- **[현재 액션]:** {div_action}")
     lines.append("")
-    
+
     final_decision_text = war_room_final_decision_filter(market_data)
     lines.append(final_decision_text)
     lines.append("")
+
     # Regime Status
     lines.append("### 🚩 Market Regime Status")
     if regime_result.get("status") == "DETECTED":
-        lines.append(f"- **국면 전환 감지:** 🚨 **{regime_result.get('prev_regime')}** → **{regime_result.get('current_regime')}**")
+        lines.append(
+            f"- **국면 전환 감지:** 🚨 **{regime_result.get('prev_regime')}** → **{regime_result.get('current_regime')}**"
+        )
     else:
         lines.append(f"- **현재 국면 유지:** ✅ **{regime_result.get('current_regime')}**")
 
