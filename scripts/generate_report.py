@@ -1264,7 +1264,27 @@ def generate_daily_report() -> None:
     }
 
     market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
+        # -------------------------
+    # Warning signal states (6.5 / 6.6 / 7.2)
+    # -------------------------
+    corr65_break = False
+    corr66_break = False
 
+    if correlation_break_text and "No significant correlation break detected" not in correlation_break_text:
+        corr65_break = True
+
+    if sector_corr_break_text and "Correlation Break Detected" in sector_corr_break_text:
+        corr66_break = True
+
+    geo_state = market_data.get("GEO_EW", {}) or {}
+    geo_level = str(geo_state.get("level", "NORMAL")).upper()
+
+    market_data["WARNING_SIGNALS"] = {
+        "corr65_break": corr65_break,
+        "corr66_break": corr66_break,
+        "geo_level": geo_level,
+    }
+    
     # -------------------------
     # 워룸 상태 판단
     # -------------------------
