@@ -130,6 +130,9 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_positioning_data.py
+
+      - name: Run SEW Monitor (force update)
+        run: python scripts/monitor_sew.py
           
       # ✅ 3) 리포트 생성 및 디버깅 (전체 교체)
       - name: Run report generator
