@@ -1,3 +1,4 @@
+
 import os
 import requests
 import yfinance as yf
@@ -185,7 +186,11 @@ def detect_event_signature(z_map: Dict[str, float]) -> str:
 # ---------------------------
 # 6. 야후 데이터 다운로드 헬퍼
 # ---------------------------
-def download_intraday_prices(ticker: str, period: str = "1d", interval: str = "5m") -> Optional[np.ndarray]:
+def download_intraday_prices(
+    ticker: str,
+    period: str = "5d",
+    interval: str = "5m"
+) -> Optional[np.ndarray]:
     try:
         df = yf.download(
             ticker,
@@ -195,6 +200,7 @@ def download_intraday_prices(ticker: str, period: str = "1d", interval: str = "5
             auto_adjust=False,
             threads=False,
         )
+
         if df is None or df.empty or "Close" not in df.columns:
             return None
 
@@ -207,6 +213,7 @@ def download_intraday_prices(ticker: str, period: str = "1d", interval: str = "5
             return None
 
         return close_series.values.astype(float)
+
     except Exception:
         return None
 
@@ -219,7 +226,6 @@ def check_market_anomaly():
     csv_path = "data/market_data_history.csv"
     context = load_war_room_context(csv_path) or {}
 
-    # yfinance 기준 현실적인 프록시 조합
     tickers = {
         "SPY": "SPY",
         "QQQ": "QQQ",
@@ -241,14 +247,21 @@ def check_market_anomaly():
     for name, ticker in tickers.items():
         try:
             print(f"🔍 {name} 데이터 수집 시도... ({ticker})")
-            prices = download_intraday_prices(ticker)
+            prices = download_intraday_prices(ticker, period="5d", interval="5m")
 
-            if prices is None or len(prices) < 6:
+            if prices is None or len(prices) < 2:
                 print(f"⚠️ {name} 데이터 부족 또는 수집 실패")
                 continue
 
             curr = float(prices[-1])
-            prev = float(prices[-5]) if len(prices) > 5 else float(prices[0])
+
+            if len(prices) >= 6:
+                prev = float(prices[-5])
+            elif len(prices) >= 2:
+                prev = float(prices[-2])
+            else:
+                prev = curr
+
             change = 0.0 if prev == 0 else ((curr - prev) / prev) * 100.0
 
             z = compute_zscore(prices)
@@ -272,6 +285,8 @@ def check_market_anomaly():
                 f"{icon} {name}: {curr:.2f} ({change:+.2f}%) | z={z:+.2f} [{state}]"
             )
 
+            print(f"✅ {name} 수집 성공 | len={len(prices)} | curr={curr:.2f} | change={change:+.2f}% | z={z:+.2f}")
+
         except Exception as e:
             print(f"❌ {name} 오류: {e}")
             continue
@@ -289,7 +304,6 @@ def check_market_anomaly():
     market_snap["EVENT_TYPE"] = event_type
     market_snap["Z_MAP"] = z_map
 
-    # 필터 판정
     corr_msg = correlation_break_filter(market_snap)
     recommended_exp, status_msg = volatility_controlled_exposure_filter(market_snap, context)
 
@@ -335,7 +349,6 @@ def check_market_anomaly():
 ─────────────────────────────────────────
         """.strip()
 
-        # 로그 저장
         os.makedirs("insights", exist_ok=True)
         with open("insights/alerts.log", "a", encoding="utf-8") as f:
             f.write(
@@ -344,7 +357,6 @@ def check_market_anomaly():
                 f"z={z_map}\n"
             )
 
-        # 이메일 발송
         api_key = os.getenv("RESEND_API_KEY")
         resend_from = os.getenv("RESEND_FROM")
         resend_to = os.getenv("RESEND_TO")
