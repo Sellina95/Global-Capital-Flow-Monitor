@@ -1,6 +1,6 @@
 
 from __future__ import annotations
-from filters.decision_layer import decision_layer_filter
+from filters.decision_layer import decision_layer_filter, war_room_final_decision_filter
 from filters.transmission_layer import transmission_layer_filter
 from pathlib import Path
 # generate_report.py 파일에서 'save_etf_data_to_combined_csv' 임포트 문을 제거
@@ -1237,7 +1237,20 @@ def generate_daily_report() -> None:
     sew_deadman = sew_state["deadman"]
     sew_spike_count = sew_state["spike_count"]
     sew_extreme_count = sew_state["extreme_count"]
+    
+    market_data["SEW_STATE"] = {
+    "status": sew_status,
+    "summary": sew_summary,
+    "event_type": sew_event_type,
+    "deadman": sew_deadman,
+    }
 
+    market_data["DIVERGENCE_STATE"] = {
+        "status": div_status.replace("✅", "").replace("🚨", "").strip().split("->")[0].strip(),
+        "action": div_action.replace("🚨", "").strip(),
+    }
+
+    market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
     # -------------------------
     # 워룸 상태 판단
     # -------------------------
@@ -1289,7 +1302,10 @@ def generate_daily_report() -> None:
 
     lines.append(f"- **[현재 액션]:** {div_action}")
     lines.append("")
-
+    
+    final_decision_text = war_room_final_decision_filter(market_data)
+    lines.append(final_decision_text)
+    lines.append("")
     # Regime Status
     lines.append("### 🚩 Market Regime Status")
     if regime_result.get("status") == "DETECTED":
