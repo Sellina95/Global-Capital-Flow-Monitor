@@ -1,48 +1,12 @@
 import os
+import json
 import requests
 import yfinance as yf
 import pandas as pd
 import numpy as np
 from datetime import datetime
 from typing import Dict, Any, Optional
-import json
 
-def save_sew_state(
-    filepath: str,
-    timestamp: str,
-    sew_status: str,
-    event_type: str,
-    spike_count: int,
-    extreme_count: int,
-    recommended_exposure: int,
-    deadman: bool,
-    summary: str,
-    z_map: Dict[str, float],
-    market_snap: Dict[str, Any],
-):
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-
-    assets = {}
-    for name, z in z_map.items():
-        assets[name] = {
-            "zscore": round(float(z), 2),
-            "state": market_snap.get(name, {}).get("spike_state", "N/A"),
-        }
-
-    payload = {
-        "timestamp": timestamp,
-        "status": sew_status,
-        "event_type": event_type,
-        "spike_count": spike_count,
-        "extreme_count": extreme_count,
-        "recommended_exposure": recommended_exposure,
-        "deadman": deadman,
-        "summary": summary,
-        "assets": assets,
-    }
-
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
 
 # ---------------------------
 # 1. 통합 데이터(CSV) 로드 함수
@@ -148,10 +112,10 @@ def correlation_break_filter(market_data: Dict[str, Any]) -> str:
     if not breaks:
         return ""
 
-    res = ["\n### ⚠ 6.5) Correlation Break Detected:"]
+    res = ["### ⚠ 6.5) Correlation Break Detected:"]
     for b in breaks:
         res.append(f"- {b}")
-    res.append(f"\n💡 So What?\n- {interp[0]}")
+    res.append(f"💡 So What? - {interp[0]}")
     return "\n".join(res)
 
 
@@ -255,7 +219,49 @@ def download_intraday_prices(
 
 
 # ---------------------------
-# 7. 메인 감시 및 이메일 로직 (실전용)
+# 7. SEW 상태 저장 함수
+# ---------------------------
+def save_sew_state(
+    filepath: str,
+    timestamp: str,
+    sew_status: str,
+    event_type: str,
+    spike_count: int,
+    extreme_count: int,
+    recommended_exposure: int,
+    deadman: bool,
+    summary: str,
+    z_map: Dict[str, float],
+    market_snap: Dict[str, Any],
+):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    assets = {}
+    for name, z in z_map.items():
+        assets[name] = {
+            "zscore": round(float(z), 2),
+            "state": market_snap.get(name, {}).get("spike_state", "N/A"),
+            "pct_change": round(float(market_snap.get(name, {}).get("pct_change", 0.0)), 2),
+        }
+
+    payload = {
+        "timestamp": timestamp,
+        "status": sew_status,
+        "event_type": event_type,
+        "spike_count": spike_count,
+        "extreme_count": extreme_count,
+        "recommended_exposure": recommended_exposure,
+        "deadman": deadman,
+        "summary": summary,
+        "assets": assets,
+    }
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+
+# ---------------------------
+# 8. 메인 감시 및 이메일 로직 (실전용)
 # ---------------------------
 def check_market_anomaly():
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -344,6 +350,41 @@ def check_market_anomaly():
     recommended_exp, status_msg = volatility_controlled_exposure_filter(market_snap, context)
 
     # ---------------------------
+    # SEW 상태 판단
+    # ---------------------------
+    deadman = (recommended_exp == 0)
+
+    if deadman:
+        sew_status = "DEADMAN"
+        sew_summary = "🚨 데드맨 스위치 발동 (익스포저 0% / 자산 보호 모드)"
+    elif extreme_count >= 1:
+        sew_status = "ALERT"
+        sew_summary = "🚨 실시간 발작 감지 (EXTREME z-score 발생 / 즉시 모니터링 필요)"
+    elif spike_count >= 2:
+        sew_status = "WATCH"
+        sew_summary = "⚠️ 다중 자산 경미한 이상반응 감지 (ALERT 2건 이상)"
+    else:
+        sew_status = "STABLE"
+        sew_summary = f"✅ 이상징후 없음 ({len(z_map)}개 자산 정상 범위 / z-score 발작 없음)"
+
+    # ---------------------------
+    # SEW 상태 파일 저장 (항상 저장)
+    # ---------------------------
+    save_sew_state(
+        filepath="insights/sew_state.json",
+        timestamp=now_str,
+        sew_status=sew_status,
+        event_type=event_type,
+        spike_count=spike_count,
+        extreme_count=extreme_count,
+        recommended_exposure=recommended_exp,
+        deadman=deadman,
+        summary=sew_summary,
+        z_map=z_map,
+        market_snap=market_snap,
+    )
+
+    # ---------------------------
     # 실전용 발송 조건
     # ---------------------------
     should_alert = is_spiking or recommended_exp == 0 or bool(corr_msg)
@@ -361,6 +402,7 @@ def check_market_anomaly():
 ─────────────────────────────────────────
 - 일시: {now_str}
 - 시스템 상태: {status_msg}
+- SEW Status: {sew_status}
 - Event Type: {event_type}
 - 아침 데이터 기준: {context.get('date', 'Unknown')}
 - POS_Z: {context.get('SP500_POS_Z', 'N/A')}
@@ -384,7 +426,7 @@ def check_market_anomaly():
         os.makedirs("insights", exist_ok=True)
         with open("insights/alerts.log", "a", encoding="utf-8") as f:
             f.write(
-                f"[{now_str}] Event={event_type} | Exp={recommended_exp}% | "
+                f"[{now_str}] Event={event_type} | SEW={sew_status} | Exp={recommended_exp}% | "
                 f"{status_msg} | spike={spike_count} extreme={extreme_count} | "
                 f"z={z_map}\n"
             )
@@ -395,7 +437,7 @@ def check_market_anomaly():
 
         print(
             f"DEBUG: should_alert={should_alert}, recommended_exp={recommended_exp}, "
-            f"event_type={event_type}, z_map={z_map}"
+            f"event_type={event_type}, sew_status={sew_status}, z_map={z_map}"
         )
         print(f"DEBUG: RESEND_FROM={resend_from}, RESEND_TO={resend_to}")
 
@@ -425,6 +467,14 @@ def check_market_anomaly():
         print(f"📧 실전 알림 발송 완료: {status_msg} | {event_type}")
 
     else:
+        # 메일 안 가는 정상 상황도 로그 남기기
+        os.makedirs("insights", exist_ok=True)
+        with open("insights/alerts.log", "a", encoding="utf-8") as f:
+            f.write(
+                f"[{now_str}] NO_ALERT | SEW={sew_status} | Exp={recommended_exp}% | "
+                f"spike={spike_count} extreme={extreme_count} | z={z_map}\n"
+            )
+
         print("✅ 특이사항 없음. 정상 모니터링 종료.")
 
 
