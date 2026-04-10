@@ -1,4 +1,3 @@
-
 import os
 import requests
 import yfinance as yf
@@ -219,7 +218,7 @@ def download_intraday_prices(
 
 
 # ---------------------------
-# 7. 메인 감시 및 이메일 로직 (테스트용)
+# 7. 메인 감시 및 이메일 로직 (실전용)
 # ---------------------------
 def check_market_anomaly():
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -308,21 +307,17 @@ def check_market_anomaly():
     recommended_exp, status_msg = volatility_controlled_exposure_filter(market_snap, context)
 
     # ---------------------------
-    # 테스트용 강제 발송
+    # 실전용 발송 조건
     # ---------------------------
-    should_alert = True
-    event_type = "TEST_EMAIL"
-    status_msg = "Manual Email Test"
-    recommended_exp = 42
+    should_alert = is_spiking or recommended_exp == 0 or bool(corr_msg)
 
     if should_alert:
-        subject = f"🧪 [Test] {status_msg} | {event_type}"
+        subject = f"🚨 [SEW] {status_msg} | {event_type} | Exp {recommended_exp}%"
 
         body = f"""
 [Digital War Room - Real-time Status]
 
-현재 테스트 메일 발송 중입니다.
-이 메일은 시스템 연동 및 본문 포맷 확인용입니다.
+현재 마켓에서 이상징후가 발견되어 시스템이 자산 보호를 위해 긴급 조치를 검토 중입니다.
 
 ─────────────────────────────────────────
 📢 실시간 요약 (Exposure: {recommended_exp}%)
@@ -345,14 +340,14 @@ def check_market_anomaly():
 🧠 전략적 가이드
 ─────────────────────────────────────────
 💡 권장 익스포저가 {recommended_exp}%로 산출되었습니다.
-💡 이 메일은 테스트용입니다. 실전 로직 복귀 전까진 자동 발송 상태를 유지하지 마라.
+💡 {'즉시 포지션을 동결하거나 축소하십시오.' if recommended_exp == 0 else '가격/포지셔닝/상관관계 이상반응을 주의 깊게 관찰하십시오.'}
 ─────────────────────────────────────────
         """.strip()
 
         os.makedirs("insights", exist_ok=True)
         with open("insights/alerts.log", "a", encoding="utf-8") as f:
             f.write(
-                f"[{now_str}] TEST Event={event_type} | Exp={recommended_exp}% | "
+                f"[{now_str}] Event={event_type} | Exp={recommended_exp}% | "
                 f"{status_msg} | spike={spike_count} extreme={extreme_count} | "
                 f"z={z_map}\n"
             )
@@ -390,7 +385,7 @@ def check_market_anomaly():
         else:
             print("❌ RESEND_API_KEY / RESEND_FROM / RESEND_TO 환경변수 확인 필요")
 
-        print(f"📧 테스트 알림 발송 완료: {status_msg} | {event_type}")
+        print(f"📧 실전 알림 발송 완료: {status_msg} | {event_type}")
 
     else:
         print("✅ 특이사항 없음. 정상 모니터링 종료.")
