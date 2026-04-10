@@ -212,7 +212,7 @@ def download_intraday_prices(ticker: str, period: str = "1d", interval: str = "5
 
 
 # ---------------------------
-# 7. 메인 감시 및 이메일 로직
+# 7. 메인 감시 및 이메일 로직 (테스트용)
 # ---------------------------
 def check_market_anomaly():
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -234,7 +234,7 @@ def check_market_anomaly():
 
     spike_count = 0
     extreme_count = 0
-    is_spiking = True
+    is_spiking = False
 
     print(f"🚀 [{now_str}] 통합 상황실 가동 (Data: {context.get('date', 'N/A')})")
 
@@ -282,8 +282,7 @@ def check_market_anomaly():
     elif spike_count >= 2:
         is_spiking = True
 
-    #event_type = detect_event_signature(z_map)
-    event_type = "TEST_EVENT"
+    event_type = detect_event_signature(z_map)
 
     market_snap["IS_SPIKING"] = is_spiking
     market_snap["POS_SLOPE"] = get_recent_pos_slope(csv_path)
@@ -294,16 +293,22 @@ def check_market_anomaly():
     corr_msg = correlation_break_filter(market_snap)
     recommended_exp, status_msg = volatility_controlled_exposure_filter(market_snap, context)
 
-    should_alert = is_spiking or recommended_exp == 0 or bool(corr_msg)
+    # ---------------------------
+    # 테스트용 강제 발송
+    # ---------------------------
+    should_alert = True
+    event_type = "TEST_EMAIL"
+    status_msg = "Manual Email Test"
+    recommended_exp = 42
 
     if should_alert:
-        emergency_title = status_msg if recommended_exp == 0 else "Market Anomaly Detected"
-        subject = f"🚨 [Emergency] {emergency_title} | {event_type}"
+        subject = f"🧪 [Test] {status_msg} | {event_type}"
 
         body = f"""
 [Digital War Room - Real-time Status]
 
-현재 마켓에서 이상징후가 발견되어 시스템이 자산 보호를 위해 긴급 조치를 검토 중입니다.
+현재 테스트 메일 발송 중입니다.
+이 메일은 시스템 연동 및 본문 포맷 확인용입니다.
 
 ─────────────────────────────────────────
 📢 실시간 요약 (Exposure: {recommended_exp}%)
@@ -320,13 +325,13 @@ def check_market_anomaly():
 📊 자산별 변동률 (5분 기준)
 {chr(10).join(summary_lines)}
 
-{corr_msg}
+{corr_msg if corr_msg else 'No correlation break message.'}
 
 ─────────────────────────────────────────
 🧠 전략적 가이드
 ─────────────────────────────────────────
 💡 권장 익스포저가 {recommended_exp}%로 산출되었습니다.
-💡 {'즉시 포지션을 동결하거나 축소하십시오.' if recommended_exp == 0 else '가격/포지셔닝/상관관계 이상반응을 주의 깊게 관찰하십시오.'}
+💡 이 메일은 테스트용입니다. 실전 로직 복귀 전까진 자동 발송 상태를 유지하지 마라.
 ─────────────────────────────────────────
         """.strip()
 
@@ -334,38 +339,46 @@ def check_market_anomaly():
         os.makedirs("insights", exist_ok=True)
         with open("insights/alerts.log", "a", encoding="utf-8") as f:
             f.write(
-                f"[{now_str}] Event={event_type} | Exp={recommended_exp}% | "
+                f"[{now_str}] TEST Event={event_type} | Exp={recommended_exp}% | "
                 f"{status_msg} | spike={spike_count} extreme={extreme_count} | "
                 f"z={z_map}\n"
             )
 
         # 이메일 발송
         api_key = os.getenv("RESEND_API_KEY")
-        print(
-            f"DEBUG: is_spiking={is_spiking}, recommended_exp={recommended_exp}, "
-            f"corr_msg_len={len(corr_msg)}, event_type={event_type}, z_map={z_map}"
-        )
+        resend_from = os.getenv("RESEND_FROM")
+        resend_to = os.getenv("RESEND_TO")
 
-        if api_key:
+        print(
+            f"DEBUG: should_alert={should_alert}, recommended_exp={recommended_exp}, "
+            f"event_type={event_type}, z_map={z_map}"
+        )
+        print(f"DEBUG: RESEND_FROM={resend_from}, RESEND_TO={resend_to}")
+
+        if api_key and resend_from and resend_to:
             try:
-                requests.post(
+                resp = requests.post(
                     "https://api.resend.com/emails",
                     headers={
                         "Authorization": f"Bearer {api_key}",
                         "Content-Type": "application/json",
                     },
                     json={
-                        "from": os.getenv("RESEND_FROM"),
-                        "to": [os.getenv("RESEND_TO")],
+                        "from": resend_from,
+                        "to": [resend_to],
                         "subject": subject,
                         "text": body,
                     },
                     timeout=15,
                 )
+                print(f"✅ Resend status: {resp.status_code}")
+                print(f"✅ Resend response: {resp.text}")
             except Exception as e:
                 print(f"❌ 이메일 발송 실패: {e}")
+        else:
+            print("❌ RESEND_API_KEY / RESEND_FROM / RESEND_TO 환경변수 확인 필요")
 
-        print(f"📧 알림 발송 완료: {status_msg} | {event_type}")
+        print(f"📧 테스트 알림 발송 완료: {status_msg} | {event_type}")
 
     else:
         print("✅ 특이사항 없음. 정상 모니터링 종료.")
