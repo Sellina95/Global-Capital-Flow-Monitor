@@ -1201,12 +1201,10 @@ def generate_daily_report() -> None:
 
 
         # -------------------------
-    # Strategic War Room inputs
-    # -------------------------
         # -------------------------
     # Strategic War Room inputs
     # -------------------------
-    from filters.strategist_filters import divergence_monitor_filter
+    from filters.strategist_filters import divergence_monitor_filter, correlation_break_filter, sector_correlation_break_filter
 
     div_full_text = divergence_monitor_filter(market_data)
     div_status = "N/A"
@@ -1249,66 +1247,63 @@ def generate_daily_report() -> None:
     }
 
     # -------------------------
-# Divergence 정리
-# -------------------------
-clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
+    # Divergence 상태 정제
+    # -------------------------
+    clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
 
-if "ALIGNED" in clean_div_status.upper():
-    clean_div_status = "ALIGNED"
-elif "DISALIGNED" in clean_div_status.upper():
-    clean_div_status = "DISALIGNED"
-else:
-    clean_div_status = "N/A"
+    if "ALIGNED" in clean_div_status.upper():
+        clean_div_status = "ALIGNED"
+    elif "DISALIGNED" in clean_div_status.upper():
+        clean_div_status = "DISALIGNED"
+    else:
+        clean_div_status = "N/A"
 
-clean_div_action = div_action.replace("🚨", "").replace("✅", "").strip()
+    clean_div_action = div_action.replace("🚨", "").replace("✅", "").strip()
 
-market_data["DIVERGENCE_STATE"] = {
-    "status": clean_div_status,
-    "action": clean_div_action,
-}
+    market_data["DIVERGENCE_STATE"] = {
+        "status": clean_div_status,
+        "action": clean_div_action,
+    }
 
-market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
+    market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
 
+    # -------------------------
+    # 6.5 / 6.6 결과 생성
+    # -------------------------
+    correlation_break_text = correlation_break_filter(market_data)
+    sector_corr_break_text = sector_correlation_break_filter(market_data)
 
-# -------------------------
-# 6.5 / 6.6 결과 먼저 생성
-# -------------------------
-correlation_break_text = correlation_break_filter(market_data)
-sector_corr_break_text = sector_correlation_break_filter(market_data)
+    # -------------------------
+    # Warning signal states (6.5 / 6.6 / 7.2)
+    # -------------------------
+    corr65_break = "Correlation Break Detected:" in correlation_break_text
+    corr66_break = "Correlation Break Detected:" in sector_corr_break_text
 
+    geo_state = market_data.get("GEO_EW", {}) or {}
+    geo_level = str(geo_state.get("level", "NORMAL")).upper()
 
-# -------------------------
-# Warning signal states (6.5 / 6.6 / 7.2)
-# -------------------------
-corr65_break = "Correlation Break Detected:" in correlation_break_text
-corr66_break = "Correlation Break Detected:" in sector_corr_break_text
+    market_data["WARNING_SIGNALS"] = {
+        "corr65_break": corr65_break,
+        "corr66_break": corr66_break,
+        "geo_level": geo_level,
+    }
 
-geo_state = market_data.get("GEO_EW", {}) or {}
-geo_level = str(geo_state.get("level", "NORMAL")).upper()
-
-market_data["WARNING_SIGNALS"] = {
-    "corr65_break": corr65_break,
-    "corr66_break": corr66_break,
-    "geo_level": geo_level,
-}
-
-
-# -------------------------
-# 워룸 상태 판단
-# -------------------------
-is_war_room_alert = (
-    is_deadman_activated
-    or sew_deadman
-    or (clean_div_status != "ALIGNED")   # 🔥 이거 수정 (중요)
-    or (sew_status in ["WATCH", "ALERT", "DEADMAN"])
-)
+    # -------------------------
+    # 워룸 상태 판단
+    # -------------------------
+    is_war_room_alert = (
+        is_deadman_activated
+        or sew_deadman
+        or (clean_div_status != "ALIGNED")
+        or (sew_status in ["WATCH", "ALERT", "DEADMAN"])
+    )
 
     war_room_emoji = "🚨" if is_war_room_alert else "✅"
     war_room_state = "ALERT" if is_war_room_alert else "STABLE"
 
     if is_deadman_activated or sew_deadman:
         war_room_summary = "데드맨 스위치 발동 / 자산 보호 모드 강제 전환"
-    elif "ALIGNED" in div_status.upper() and sew_status == "STABLE":
+    elif clean_div_status == "ALIGNED" and sew_status == "STABLE":
         war_room_summary = "구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상"
     elif sew_status == "WATCH":
         war_room_summary = "구조는 유지되나 실시간 수급 이상반응 초기 감지 / 모니터링 필요"
@@ -1342,7 +1337,7 @@ is_war_room_alert = (
     else:
         lines.append("- **[15번 데드맨]:** ✅ PASS")
 
-    lines.append(f"- **[현재 액션]:** {div_action}")
+    lines.append(f"- **[14번 수급 시그널]:** {div_action}")
     lines.append("")
 
     final_decision_text = war_room_final_decision_filter(market_data)
