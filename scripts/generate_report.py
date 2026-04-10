@@ -8,6 +8,7 @@ from scripts.data_processing import download_all_etfs_and_save, load_etf_data_fr
 from typing import Dict, Any
 import pandas as pd
 import os
+import json
 
 
 from filters.strategist_filters import build_strategist_commentary
@@ -24,11 +25,16 @@ from scripts.fetch_expectation_data import fetch_expectation_data  # external ex
 from scripts.fetch_sentiment import fetch_cnn_fear_greed
 
 
+
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 REPORTS_DIR = BASE_DIR / "reports"
 BACKTEST_DATA_DIR = DATA_DIR / "backtests"
 BACKTEST_REPORTS_DIR = REPORTS_DIR / "backtests"
+
+
 
 # macro_data.csv에 들어있는 키들 (여기서 추가된 지표는 자동으로 읽히지만,
 # 필수 daily macro 라인은 이 KEYS를 기준으로 출력)
@@ -37,6 +43,40 @@ KEYS = ["US10Y", "DXY", "WTI", "VIX", "USDKRW"]
 # 리포트 상단에 따로 Liquidity Snapshot 블럭을 띄울지 (Fed Plumbing Filter가 있으니 보통 False 추천)
 SHOW_LIQUIDITY_SNAPSHOT = False
 
+
+def get_sew_state(filepath: str = "insights/sew_state.json") -> dict:
+    default = {
+        "timestamp": None,
+        "status": "N/A",
+        "summary": "⚪ SEW 상태 파일 없음",
+        "event_type": "N/A",
+        "recommended_exposure": None,
+        "deadman": False,
+        "spike_count": 0,
+        "extreme_count": 0,
+        "assets": {},
+    }
+
+    if not os.path.exists(filepath):
+        return default
+
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        return {
+            "timestamp": data.get("timestamp"),
+            "status": data.get("status", "N/A"),
+            "summary": data.get("summary", "⚪ SEW 요약 없음"),
+            "event_type": data.get("event_type", "N/A"),
+            "recommended_exposure": data.get("recommended_exposure"),
+            "deadman": data.get("deadman", False),
+            "spike_count": data.get("spike_count", 0),
+            "extreme_count": data.get("extreme_count", 0),
+            "assets": data.get("assets", {}),
+        }
+    except Exception:
+        return default
 
 # -------------------------
 # Loaders
@@ -1188,91 +1228,105 @@ def generate_daily_report() -> None:
         country_risk_lines.append("")
 
 
-    # --- [14번 필터 요약 추출 시작] ---
+        # -------------------------
+    # Strategic War Room inputs
+    # -------------------------
     from filters.strategist_filters import divergence_monitor_filter
 
-div_full_text = divergence_monitor_filter(market_data)
-div_status = "N/A"
-div_action = "N/A"
+    div_full_text = divergence_monitor_filter(market_data)
+    div_status = "N/A"
+    div_action = "N/A"
 
-for line in div_full_text.split('\n'):
-    if "**Status:**" in line:
-        div_status = line.split("**Status:**")[-1].strip()
-    if "**Action Signal:**" in line:
-        div_action = line.split("**Action Signal:**")[-1].strip()
+    for line in div_full_text.split('\n'):
+        if "**Status:**" in line:
+            div_status = line.split("**Status:**")[-1].strip()
+        if "**Action Signal:**" in line:
+            div_action = line.split("**Action Signal:**")[-1].strip()
 
-recommended_exposure = 100
-is_deadman_activated = False
+    recommended_exposure = 100
+    is_deadman_activated = False
 
-for line in commentary_block.split('\n'):
-    if "Recommended Exposure:" in line:
-        try:
-            recommended_exposure = int(''.join(filter(str.isdigit, line)))
-        except:
-            pass
-    if "DEAD MAN'S SWITCH ACTIVATED" in line:
-        is_deadman_activated = True
+    for line in commentary_block.split('\n'):
+        if "Recommended Exposure:" in line:
+            try:
+                recommended_exposure = int(''.join(filter(str.isdigit, line)))
+            except:
+                pass
+        if "DEAD MAN'S SWITCH ACTIVATED" in line:
+            is_deadman_activated = True
 
-# SEW 요약 먼저 가져오기
-sew_summary = get_sew_summary()
+    # -------------------------
+    # SEW 상태 로드
+    # -------------------------
+    sew_state = get_sew_state()
+    sew_summary = sew_state["summary"]
+    sew_status = sew_state["status"]
+    sew_event_type = sew_state["event_type"]
+    sew_deadman = sew_state["deadman"]
+    sew_spike_count = sew_state["spike_count"]
+    sew_extreme_count = sew_state["extreme_count"]
 
-# 워룸 상태 판단
-is_war_room_alert = (
-    is_deadman_activated
-    or ("ALIGNED" not in div_status.upper())
-    or ("이상징후" in sew_summary)
-    or ("발작" in sew_summary)
-    or ("ALERT" in sew_summary.upper())
-)
+    # -------------------------
+    # 워룸 상태 판단
+    # -------------------------
+    is_war_room_alert = (
+        is_deadman_activated
+        or sew_deadman
+        or ("ALIGNED" not in div_status.upper())
+        or (sew_status in ["WATCH", "ALERT", "DEADMAN"])
+    )
 
-war_room_emoji = "🚨" if is_war_room_alert else "✅"
-war_room_state = "ALERT" if is_war_room_alert else "STABLE"
+    war_room_emoji = "🚨" if is_war_room_alert else "✅"
+    war_room_state = "ALERT" if is_war_room_alert else "STABLE"
 
-if is_deadman_activated:
-    war_room_summary = "데드맨 스위치 발동 / 자산 보호 모드 강제 전환"
-elif "ALIGNED" in div_status.upper() and (
-    "이상징후 없음" in sew_summary or "PASS" in sew_summary or "정상" in sew_summary
-):
-    war_room_summary = "구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상"
-else:
-    war_room_summary = "구조 또는 실시간 수급에 경미한 이상징후 존재 / 모니터링 필요"
+    if is_deadman_activated or sew_deadman:
+        war_room_summary = "데드맨 스위치 발동 / 자산 보호 모드 강제 전환"
+    elif "ALIGNED" in div_status.upper() and sew_status == "STABLE":
+        war_room_summary = "구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상"
+    elif sew_status == "WATCH":
+        war_room_summary = "구조는 유지되나 실시간 수급 이상반응 초기 감지 / 모니터링 필요"
+    elif sew_status == "ALERT":
+        war_room_summary = "실시간 발작 감지 / 구조 또는 수급 레벨에서 즉시 점검 필요"
+    else:
+        war_room_summary = "구조 또는 실시간 수급에 경미한 이상징후 존재 / 모니터링 필요"
 
-# -------------------------
-# Report assembly
-# -------------------------
-lines = []
-lines.append("# 🌍 Global Capital Flow – Daily Brief")
-lines.append(f"**Date:** {report_date}")
-lines.append(f"**Data as of:** {data_as_of_date}")
-lines.append("")
+    # -------------------------
+    # Report assembly
+    # -------------------------
+    lines = []
+    lines.append("# 🌍 Global Capital Flow – Daily Brief")
+    lines.append(f"**Date:** {report_date}")
+    lines.append(f"**Data as of:** {data_as_of_date}")
+    lines.append("")
 
-# Strategic War Room
-lines.append("## ⚡ Strategic War Room (통합 대응)")
-lines.append(f"> **시스템 상태: {war_room_emoji} {war_room_state} | 권장 노출도: {recommended_exposure}%**")
-lines.append(f"> **판단 요약: {war_room_summary}**")
-lines.append("")
+    # Strategic War Room
+    lines.append("## ⚡ Strategic War Room (통합 대응)")
+    lines.append(f"> **시스템 상태: {war_room_emoji} {war_room_state} | 권장 노출도: {recommended_exposure}%**")
+    lines.append(f"> **판단 요약: {war_room_summary}**")
+    lines.append("")
 
-lines.append(f"- **[14번 구조·수급 괴리]:** {war_room_emoji} {div_status}")
-lines.append(f"- **[실시간 보초병(SEW)]:** {sew_summary}")
+    lines.append(f"- **[14번 구조·수급 괴리]:** {war_room_emoji} {div_status}")
+    lines.append(f"- **[실시간 보초병(SEW)]:** {sew_status} | {sew_summary}")
+    lines.append(f"- **[SEW Event Type]:** {sew_event_type}")
+    lines.append(f"- **[SEW Spike Monitor]:** Spike {sew_spike_count} / Extreme {sew_extreme_count}")
 
-if is_deadman_activated:
-    lines.append(f"- **[15번 데드맨]:** 🚨 ACTIVATED")
-else:
-    lines.append(f"- **[15번 데드맨]:** ✅ PASS")
+    if is_deadman_activated or sew_deadman:
+        lines.append(f"- **[15번 데드맨]:** 🚨 ACTIVATED")
+    else:
+        lines.append(f"- **[15번 데드맨]:** ✅ PASS")
 
-lines.append(f"- **[현재 액션]:** {div_action}")
-lines.append("")
+    lines.append(f"- **[현재 액션]:** {div_action}")
+    lines.append("")
 
-# Regime Status
-lines.append("### 🚩 Market Regime Status")
-if regime_result.get("status") == "DETECTED":
-    lines.append(f"- **국면 전환 감지:** 🚨 **{regime_result.get('prev_regime')}** → **{regime_result.get('current_regime')}**")
-else:
-    lines.append(f"- **현재 국면 유지:** ✅ **{regime_result.get('current_regime')}**")
+    # Regime Status
+    lines.append("### 🚩 Market Regime Status")
+    if regime_result.get("status") == "DETECTED":
+        lines.append(f"- **국면 전환 감지:** 🚨 **{regime_result.get('prev_regime')}** → **{regime_result.get('current_regime')}**")
+    else:
+        lines.append(f"- **현재 국면 유지:** ✅ **{regime_result.get('current_regime')}**")
+
     lines.append("")
     lines.append("---")
-    lines.append("")
-    lines.append("## 📊 Daily Macro Signals")
     lines.append("")
 
     # daily core signals
