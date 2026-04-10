@@ -5,7 +5,44 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from typing import Dict, Any, Optional
+import json
 
+def save_sew_state(
+    filepath: str,
+    timestamp: str,
+    sew_status: str,
+    event_type: str,
+    spike_count: int,
+    extreme_count: int,
+    recommended_exposure: int,
+    deadman: bool,
+    summary: str,
+    z_map: Dict[str, float],
+    market_snap: Dict[str, Any],
+):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    assets = {}
+    for name, z in z_map.items():
+        assets[name] = {
+            "zscore": round(float(z), 2),
+            "state": market_snap.get(name, {}).get("spike_state", "N/A"),
+        }
+
+    payload = {
+        "timestamp": timestamp,
+        "status": sew_status,
+        "event_type": event_type,
+        "spike_count": spike_count,
+        "extreme_count": extreme_count,
+        "recommended_exposure": recommended_exposure,
+        "deadman": deadman,
+        "summary": summary,
+        "assets": assets,
+    }
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
 
 # ---------------------------
 # 1. 통합 데이터(CSV) 로드 함수
