@@ -1,35 +1,39 @@
 from typing import Dict, Any
+from typing import Dict, Any
 
 def decision_layer_filter(market_data: Dict[str, Any]) -> str:
     """
-    So What? Decision Layer (v1)
+    So What? Decision Layer (v2)
     Turns FINAL_STATE + style/factor outputs into actionable guidance.
-    + GEO_EW overlay (Early Warning)
+    + GEO_EW overlay
+    + WARNING_SIGNALS overlay (6.5 / 6.6 / 7.2)
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
 
     phase = str(state.get("phase", "N/A"))
-    action = str(state.get("risk_action", "HOLD"))
+    action = str(state.get("risk_action", "HOLD")).upper()
     budget = state.get("risk_budget", None)
 
-    liq_dir = str(state.get("liquidity_dir", "N/A"))
-    liq_lvl = str(state.get("liquidity_level_bucket", "N/A"))
+    liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
+    liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
     credit_calm = state.get("credit_calm", None)
 
-    # Optional if you later store them as keys
     style = market_data.get("STYLE_TILT", None)
     duration = market_data.get("DURATION_TILT", None)
     cyclical = market_data.get("CYCLICAL_TILT", None)
 
     exposure_txt = f"{budget}%" if isinstance(budget, int) else "중립"
 
-    # --- stance adjustment (liquidity penalty)
+    # -------------------------
+    # 기본 stance
+    # -------------------------
     stance = action
+
+    # Liquidity penalty
     if action == "INCREASE" and (liq_dir == "DOWN" or liq_lvl == "LOW"):
         stance = "HOLD"
 
-    # --- build Do / Don't / Triggers
     do, dont, triggers = [], [], []
 
     if stance == "INCREASE":
@@ -39,7 +43,7 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
         do += ["현금/단기자산 비중 확대, 레버리지·저품질 크레딧 노출 축소"]
         triggers += ["크레딧 추가 악화 시 추가 디레버리징"]
     else:
-        do += ["노출은 유지하되, 베타 확대보다 ‘선별적 포지셔닝(퀄리티)’ 유지"]
+        do += ["노출은 유지하되, 베타 확대보다 선별적 포지셔닝(퀄리티) 유지"]
         triggers += ["NET_LIQ 추가 하락/LOW 고착 시 노출 축소 준비"]
 
     # Liquidity overlay
@@ -51,18 +55,15 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
     # Credit overlay
     if credit_calm is False:
         do += ["크레딧 스트레스 확인 시(우선순위 1) 방어 전환"]
-        triggers += ["HY OAS 4% 상회 시 ‘Risk-Off 프로토콜’"]
+        triggers += ["HY OAS 4% 상회 시 Risk-Off 프로토콜"]
 
     # -------------------------
-    # ✅ GEO Early Warning overlay (NEW)
-    # - market_data["GEO_EW"] created by attach_geopolitical_ew_layer
-    # - This does NOT change FINAL_STATE logic; only adjusts stance + guidance
+    # GEO Early Warning overlay
     # -------------------------
     geo = market_data.get("GEO_EW", {}) or {}
     geo_level = str(geo.get("level", "NORMAL")).upper()
 
     if geo_level == "ELEVATED":
-        # if you wanted to increase, suppress to HOLD
         if stance == "INCREASE":
             stance = "HOLD"
         do.append("Geo EW Elevated → 지정학 리스크 헤어컷 적용 (베타 확대 자제)")
@@ -73,32 +74,91 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
         dont.append("공격적 베타 포지셔닝")
         triggers.append("Geo Score 정상화 확인 전까지 리스크 축소 유지")
 
-    # Style hints (optional text)
-    style_hint = []
-    if style or duration or cyclical:
-        if style:
-            style_hint.append(f"Style={style}")
-        if duration:
-            style_hint.append(f"Duration={duration}")
-        if cyclical:
-            style_hint.append(f"Cyclical/Defensive={cyclical}")
+    # -------------------------
+    # WARNING SIGNALS overlay (6.5 / 6.6 / 7.2)
+    # -------------------------
+    warn = market_data.get("WARNING_SIGNALS", {}) or {}
+    corr65_break = bool(warn.get("corr65_break", False))
+    corr66_break = bool(warn.get("corr66_break", False))
+    warn_geo_level = str(warn.get("geo_level", geo_level)).upper()
 
+    warning_score = 0
+    warning_notes = []
+
+    if corr65_break:
+        warning_score += 1
+        warning_notes.append("6.5 매크로 상관관계 붕괴")
+
+    if corr66_break:
+        warning_score += 1
+        warning_notes.append("6.6 섹터 상관관계 붕괴")
+
+    if warn_geo_level == "ELEVATED":
+        warning_score += 1
+        warning_notes.append("7.2 지정학 경계(ELEVATED)")
+    elif warn_geo_level == "CRISIS":
+        warning_score += 2
+        warning_notes.append("7.2 지정학 위기(CRISIS)")
+
+    # Warning score가 높으면 stance를 더 보수적으로
+    if warning_score >= 3:
+        if stance == "INCREASE":
+            stance = "HOLD"
+        elif stance == "HOLD":
+            stance = "REDUCE"
+        do.append("Warning Score 3+ → 공격적 확장 금지, 익스포저 대폭 축소 고려")
+        dont.append("공격적 베타 확대")
+        triggers.append("경고 신호 해소 전까지 방어적 운용 유지")
+
+    elif warning_score == 2:
+        if stance == "INCREASE":
+            stance = "HOLD"
+        do.append("Warning Score 2 → 확신도 하락, 익스포저 10~15% 헤어컷 고려")
+        triggers.append("상관관계 붕괴 지속 시 추가 축소 검토")
+
+    elif warning_score == 1:
+        do.append("Warning Score 1 → 경미한 이상신호, 포지션은 유지하되 모니터링 강화")
+
+    # -------------------------
+    # Style hints
+    # -------------------------
+    style_hint = []
+    if style:
+        style_hint.append(f"Style={style}")
+    if duration:
+        style_hint.append(f"Duration={duration}")
+    if cyclical:
+        style_hint.append(f"Cyclical/Defensive={cyclical}")
+
+    # -------------------------
+    # Render
+    # -------------------------
     lines = []
     lines.append("## 🧭 So What? (Decision Layer)")
     lines.append(f"- **Risk Stance:** **{stance}** *(target exposure: {exposure_txt})*")
-    lines.append(f"- **Context:** phase={phase} / liquidity={liq_dir}-{liq_lvl} / credit_calm={credit_calm} / geo={geo_level}")
+    lines.append(f"- **Context:** phase={phase} / liquidity={liq_dir}-{liq_lvl} / credit_calm={credit_calm} / geo={warn_geo_level}")
+
+    if warning_score > 0:
+        lines.append(f"- **Warning Score:** {warning_score} ({', '.join(warning_notes)})")
+    else:
+        lines.append("- **Warning Score:** 0 (No warning)")
+
     if style_hint:
-        lines.append(f"- **Style Hints:** " + " / ".join(style_hint))
-        lines.append(f"- **Do:** " + "; ".join(do))
-        lines.append(f"- **Don't:** " + "; ".join(dont))
-        lines.append(f"- **Triggers:** " + "; ".join(triggers))
+        lines.append("- **Style Hints:** " + " / ".join(style_hint))
+
+    lines.append("- **Do:** " + "; ".join(do))
+    lines.append("- **Don't:** " + "; ".join(dont))
+    lines.append("- **Triggers:** " + "; ".join(triggers))
+
     geo_overlay = market_data.get("GEO_OVERLAY", {}) or {}
     if geo_overlay and geo_overlay.get("budget_delta", 0) != 0:
-        lines.append(f"- **Geo Overlay:** {geo_overlay.get('note')} → budget {geo_overlay.get('base_budget')}% → {geo_overlay.get('final_budget')}%")
+        lines.append(
+            f"- **Geo Overlay:** {geo_overlay.get('note')} → "
+            f"budget {geo_overlay.get('base_budget')}% → {geo_overlay.get('final_budget')}%"
+        )
+
     return "\n".join(lines)
-    
-    
-    from typing import Dict, Any
+
     
 def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     """
