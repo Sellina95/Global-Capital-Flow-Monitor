@@ -1245,10 +1245,21 @@ def generate_daily_report() -> None:
     "deadman": sew_deadman,
     }
 
-    market_data["DIVERGENCE_STATE"] = {
-        "status": div_status.replace("✅", "").replace("🚨", "").strip().split("->")[0].strip(),
-        "action": div_action.replace("🚨", "").strip(),
-    }
+    clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
+
+if "ALIGNED" in clean_div_status.upper():
+    clean_div_status = "ALIGNED"
+elif "DISALIGNED" in clean_div_status.upper():
+    clean_div_status = "DISALIGNED"
+else:
+    clean_div_status = "N/A"
+
+clean_div_action = div_action.replace("🚨", "").replace("✅", "").strip()
+
+market_data["DIVERGENCE_STATE"] = {
+    "status": clean_div_status,
+    "action": clean_div_action,
+}
 
     market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
     # -------------------------
