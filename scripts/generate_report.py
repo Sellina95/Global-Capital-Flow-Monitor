@@ -1261,7 +1261,7 @@ market_data["DIVERGENCE_STATE"] = {
     "action": clean_div_action,
 }
 
-    market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
+market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
     # -------------------------
     # 워룸 상태 판단
     # -------------------------
