@@ -99,20 +99,23 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
     
     
     from typing import Dict, Any
-
+    
 def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     """
     Final Decision Layer (War Room Override)
+
     Priority:
     1) SEW
     2) Divergence
     3) Narrative / FINAL_STATE
-    4) Exposure sizing
+    4) Warning Score (6.5 / 6.6 / 7.2)
+    5) Exposure sizing
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
     sew = market_data.get("SEW_STATE", {}) or {}
     div = market_data.get("DIVERGENCE_STATE", {}) or {}
+    warn = market_data.get("WARNING_SIGNALS", {}) or {}
 
     # -------------------------
     # Inputs
@@ -128,7 +131,6 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     div_status = str(div.get("status", "N/A")).upper()
     div_action = str(div.get("action", "HOLD")).upper()
 
-    # Exposure from 15번 있으면 우선 사용, 없으면 risk_budget 사용
     base_exposure = market_data.get("RECOMMENDED_EXPOSURE", risk_budget)
     try:
         base_exposure = int(base_exposure)
@@ -146,12 +148,13 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         final_action = "EXIT"
         final_exposure = 0
         reason_chain.append("SEW DEADMAN 발동 → 즉시 EXIT / 익스포저 0%")
+
     elif sew_status == "ALERT":
         final_action = "REDUCE"
         final_exposure = int(base_exposure * 0.7)
         reason_chain.append("SEW ALERT → 실시간 발작 감지, 익스포저 30% 축소")
+
     elif sew_status == "WATCH":
-        # WATCH면 증가 금지
         if narrative_action == "INCREASE":
             final_action = "HOLD"
             final_exposure = base_exposure
@@ -160,6 +163,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
             final_action = narrative_action
             final_exposure = base_exposure
             reason_chain.append("SEW WATCH → 모니터링 강화, 기존 전략 유지")
+
     else:
         reason_chain.append("SEW STABLE → 실시간 이상징후 없음")
 
@@ -168,7 +172,6 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     if sew_status not in ["DEADMAN", "ALERT"]:
         if div_status != "ALIGNED":
-            # 구조/수급 괴리면 공격적 확장 억제
             if final_action == "INCREASE":
                 final_action = "HOLD"
                 final_exposure = int(base_exposure * 0.8)
@@ -191,6 +194,47 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         reason_chain.append("상위 레이어(SEW/Divergence)가 Narrative보다 우선")
 
     # -------------------------
+    # 4) Warning signals (6.5 / 6.6 / 7.2)
+    # -------------------------
+    corr65_break = bool(warn.get("corr65_break", False))
+    corr66_break = bool(warn.get("corr66_break", False))
+    geo_level = str(warn.get("geo_level", "NORMAL")).upper()
+
+    warning_score = 0
+    warning_reasons = []
+
+    if corr65_break:
+        warning_score += 1
+        warning_reasons.append("6.5 매크로 상관관계 붕괴")
+
+    if corr66_break:
+        warning_score += 1
+        warning_reasons.append("6.6 섹터 상관관계 붕괴")
+
+    if geo_level == "ELEVATED":
+        warning_score += 1
+        warning_reasons.append("7.2 지정학 경계(ELEVATED)")
+    elif geo_level == "CRISIS":
+        warning_score += 2
+        warning_reasons.append("7.2 지정학 위기(CRISIS)")
+
+    # Warning Score overlay
+    if warning_score >= 3:
+        if final_action == "INCREASE":
+            final_action = "HOLD"
+        elif final_action == "HOLD":
+            final_action = "REDUCE"
+        final_exposure = int(final_exposure * 0.75)
+        reason_chain.append("Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut")
+
+    elif warning_score == 2:
+        final_exposure = int(final_exposure * 0.85)
+        reason_chain.append("Warning Score 2 → 익스포저 15% haircut")
+
+    elif warning_score == 1:
+        reason_chain.append("Warning Score 1 → 경미한 이상신호, 모니터링 강화")
+
+    # -------------------------
     # Safety clamp
     # -------------------------
     final_exposure = max(0, min(100, final_exposure))
@@ -205,6 +249,8 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Base Context:** phase={phase} / narrative={narrative_action} / base_exposure={base_exposure}%")
     lines.append(f"- **SEW:** {sew_status} / {sew_event}")
     lines.append(f"- **Divergence:** {div_status} / {div_action}")
+    lines.append(f"- **Warning Score:** {warning_score} ({', '.join(warning_reasons) if warning_reasons else 'No warning'})")
     lines.append(f"- **Why:** " + " → ".join(reason_chain))
 
     return "\n".join(lines)
+
