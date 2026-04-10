@@ -1248,52 +1248,60 @@ def generate_daily_report() -> None:
         "deadman": sew_deadman,
     }
 
-    clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
-    if "ALIGNED" in clean_div_status.upper():
-        clean_div_status = "ALIGNED"
-    elif "DISALIGNED" in clean_div_status.upper():
-        clean_div_status = "DISALIGNED"
-    else:
-        clean_div_status = "N/A"
-
-    clean_div_action = div_action.replace("🚨", "").replace("✅", "").strip()
-
-    market_data["DIVERGENCE_STATE"] = {
-        "status": clean_div_status,
-        "action": clean_div_action,
-    }
-
-    market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
-        # -------------------------
-    # Warning signal states (6.5 / 6.6 / 7.2)
     # -------------------------
-    corr65_break = False
-    corr66_break = False
+# Divergence 정리
+# -------------------------
+clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
 
-    if correlation_break_text and "No significant correlation break detected" not in correlation_break_text:
-        corr65_break = True
+if "ALIGNED" in clean_div_status.upper():
+    clean_div_status = "ALIGNED"
+elif "DISALIGNED" in clean_div_status.upper():
+    clean_div_status = "DISALIGNED"
+else:
+    clean_div_status = "N/A"
 
-    if sector_corr_break_text and "Correlation Break Detected" in sector_corr_break_text:
-        corr66_break = True
+clean_div_action = div_action.replace("🚨", "").replace("✅", "").strip()
 
-    geo_state = market_data.get("GEO_EW", {}) or {}
-    geo_level = str(geo_state.get("level", "NORMAL")).upper()
+market_data["DIVERGENCE_STATE"] = {
+    "status": clean_div_status,
+    "action": clean_div_action,
+}
 
-    market_data["WARNING_SIGNALS"] = {
-        "corr65_break": corr65_break,
-        "corr66_break": corr66_break,
-        "geo_level": geo_level,
-    }
-    
-    # -------------------------
-    # 워룸 상태 판단
-    # -------------------------
-    is_war_room_alert = (
-        is_deadman_activated
-        or sew_deadman
-        or ("ALIGNED" not in div_status.upper())
-        or (sew_status in ["WATCH", "ALERT", "DEADMAN"])
-    )
+market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
+
+
+# -------------------------
+# 6.5 / 6.6 결과 먼저 생성
+# -------------------------
+correlation_break_text = correlation_break_filter(market_data)
+sector_corr_break_text = sector_correlation_break_filter(market_data)
+
+
+# -------------------------
+# Warning signal states (6.5 / 6.6 / 7.2)
+# -------------------------
+corr65_break = "Correlation Break Detected:" in correlation_break_text
+corr66_break = "Correlation Break Detected:" in sector_corr_break_text
+
+geo_state = market_data.get("GEO_EW", {}) or {}
+geo_level = str(geo_state.get("level", "NORMAL")).upper()
+
+market_data["WARNING_SIGNALS"] = {
+    "corr65_break": corr65_break,
+    "corr66_break": corr66_break,
+    "geo_level": geo_level,
+}
+
+
+# -------------------------
+# 워룸 상태 판단
+# -------------------------
+is_war_room_alert = (
+    is_deadman_activated
+    or sew_deadman
+    or (clean_div_status != "ALIGNED")   # 🔥 이거 수정 (중요)
+    or (sew_status in ["WATCH", "ALERT", "DEADMAN"])
+)
 
     war_room_emoji = "🚨" if is_war_room_alert else "✅"
     war_room_state = "ALERT" if is_war_room_alert else "STABLE"
