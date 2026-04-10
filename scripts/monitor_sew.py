@@ -234,7 +234,7 @@ def check_market_anomaly():
 
     spike_count = 0
     extreme_count = 0
-    is_spiking = False
+    is_spiking = True
 
     print(f"🚀 [{now_str}] 통합 상황실 가동 (Data: {context.get('date', 'N/A')})")
 
@@ -282,7 +282,8 @@ def check_market_anomaly():
     elif spike_count >= 2:
         is_spiking = True
 
-    event_type = detect_event_signature(z_map)
+    #event_type = detect_event_signature(z_map)
+    event_type = "TEST_EVENT"
 
     market_snap["IS_SPIKING"] = is_spiking
     market_snap["POS_SLOPE"] = get_recent_pos_slope(csv_path)
