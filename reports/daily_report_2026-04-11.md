@@ -23,9 +23,11 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영 → Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **WAITING / RANGE (대기·박스권)** → **RISK-ON (부분 정렬)**
+- **현재 국면 유지:** ✅ **RISK-ON (부분 정렬)**
 
 ---
+
+## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.317  (+0.56% vs 4.293)
 - **달러 인덱스**: 98.650  (-0.17% vs 98.820)
@@ -337,8 +339,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5849431296727751
-- **Z-Score (5d):** 0.13491001710315206
+- **Z-Score (1d):** -0.584941319420326
+- **Z-Score (5d):** 0.13491016391181482
 
 ### EEM
 - **Crash?** False
@@ -355,8 +357,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.04763823930956332
-- **Z-Score (5d):** 1.8640110356222455
+- **Z-Score (1d):** -0.047638297075600085
+- **Z-Score (5d):** 1.8640124345125106
 
 ### EWJ
 - **Crash?** False
