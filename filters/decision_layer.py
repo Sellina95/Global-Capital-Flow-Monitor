@@ -174,19 +174,23 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     except Exception:
         base_exposure = risk_budget
 
-    final_action = narrative_action
+        final_action = narrative_action
     final_exposure = base_exposure
     reason_chain = []
 
+    # -------------------------
     # 1) SEW override
+    # -------------------------
     if sew_status == "DEADMAN":
         final_action = "EXIT"
         final_exposure = 0
         reason_chain.append("SEW DEADMAN 발동 → 즉시 EXIT / 익스포저 0%")
+
     elif sew_status == "ALERT":
         final_action = "REDUCE"
         final_exposure = int(base_exposure * 0.7)
         reason_chain.append("SEW ALERT → 실시간 발작 감지, 익스포저 30% 축소")
+
     elif sew_status == "WATCH":
         if narrative_action == "INCREASE":
             final_action = "HOLD"
@@ -196,9 +200,41 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
             final_action = narrative_action
             final_exposure = base_exposure
             reason_chain.append("SEW WATCH → 모니터링 강화, 기존 전략 유지")
+
     else:
         reason_chain.append("SEW STABLE → 실시간 이상징후 없음")
 
+    # -------------------------
+    # 1.5) Event Type Override
+    # -------------------------
+    if sew_status != "DEADMAN":  # DEADMAN은 최우선
+        if sew_event == "LIQUIDATION_SHOCK":
+            final_action = "EXIT"
+            final_exposure = 0
+            reason_chain.append("Event: LIQUIDATION_SHOCK → 강제 청산 흐름 → 즉시 EXIT")
+
+        elif sew_event == "MACRO_UNWIND":
+            final_action = "REDUCE"
+            final_exposure = int(final_exposure * 0.6)
+            reason_chain.append("Event: MACRO_UNWIND → 자금 언와인딩 → 익스포저 축소")
+
+        elif sew_event == "TECH_DELEVERAGING":
+            if final_action == "INCREASE":
+                final_action = "HOLD"
+            final_exposure = int(final_exposure * 0.75)
+            reason_chain.append("Event: TECH_DELEVERAGING → 기술주 디레버리징 → 보수적 대응")
+
+        elif sew_event == "POSITION_UNWIND_RISK":
+            if final_action == "INCREASE":
+                final_action = "HOLD"
+            reason_chain.append("Event: POSITION_UNWIND_RISK → 포지션 과열 → 증가 억제")
+
+        elif sew_event == "VOL_CRUSH_SQUEEZE":
+            reason_chain.append("Event: VOL_CRUSH_SQUEEZE → 변동성 압축 상승 → 추격 주의")
+
+        elif sew_event == "RISK_ON_SQUEEZE":
+            reason_chain.append("Event: RISK_ON_SQUEEZE → 상승 압력 강화 (단, 과열 주의)")
+            
     # 2) Divergence override
     if sew_status not in ["DEADMAN", "ALERT"]:
         if div_status != "ALIGNED":
