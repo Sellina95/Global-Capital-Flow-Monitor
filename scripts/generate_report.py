@@ -1045,11 +1045,16 @@ def generate_war_room_history():
             print(f"✅ {output_path} 신규 생성 완료.")
         else:
             existing_df = pd.read_csv(output_path)
-            existing_df = existing_df[existing_df['date'].astype(str) != anchor_date]
+            existing_df['date'] = pd.to_datetime(existing_df['date'], errors='coerce').dt.strftime('%Y-%m-%d')
+        
+            # ✅ anchor_date보다 뒤의 가짜 미래 row 제거
+            existing_df = existing_df[existing_df['date'] <= anchor_date]
+        
             final_df = pd.concat([existing_df, today_data], ignore_index=True)
             final_df = final_df.sort_values('date').reset_index(drop=True)
             final_df.to_csv(output_path, index=False)
             print(f"✅ {output_path}에 오늘자({anchor_date}) 보정 데이터 반영 완료.")
+                
 
     except Exception as e:
         print(f"❌ 데이터팩 생성 중 에러: {e}")
