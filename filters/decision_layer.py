@@ -1,7 +1,9 @@
 from typing import Dict, Any
 from typing import Dict, Any
 
-def decision_layer_filter(market_data: Dict[str, Any]) -> str:
+def decision_lawarning_score = 0
+warning_notes = []
+yer_filter(market_data: Dict[str, Any]) -> str:
     """
     So What? Decision Layer (v2)
     Turns FINAL_STATE + style/factor outputs into actionable guidance.
@@ -260,40 +262,50 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     corr66_break = bool(warn.get("corr66_break", False))
     geo_level = str(warn.get("geo_level", "NORMAL")).upper()
 
+
     warning_score = 0
-    warning_reasons = []
-
-    if corr65_break:
+    warning_notes = []
+    
+    # ✅ NEW: state 기반 점수 합산
+    warning_score += warn.get("corr65_score", 0)
+    warning_score += warn.get("corr66_score", 0)
+    
+    # (선택) 로그용 노트
+    if warn.get("corr65_break"):
+        warning_notes.append("6.5 상관관계 붕괴")
+    
+    if warn.get("corr66_break"):
+        warning_notes.append("6.6 섹터 상관관계 붕괴")
+    
+    # GEO
+    if warn_geo_level == "ELEVATED":
         warning_score += 1
-        warning_reasons.append("6.5 매크로 상관관계 붕괴")
-
-    if corr66_break:
-        warning_score += 1
-        warning_reasons.append("6.6 섹터 상관관계 붕괴")
-
-    if geo_level == "ELEVATED":
-        warning_score += 1
-        warning_reasons.append("7.2 지정학 경계(ELEVATED)")
-    elif geo_level == "CRISIS":
+        warning_notes.append("7.2 지정학 경계(ELEVATED)")
+    elif warn_geo_level == "CRISIS":
         warning_score += 2
-        warning_reasons.append("7.2 지정학 위기(CRISIS)")
-
-    # Warning Score overlay
+        warning_notes.append("7.2 지정학 위기(CRISIS)")
+    
+    # -------------------------
+    # 🎯 Stance Adjustment
+    # -------------------------
     if warning_score >= 3:
-        if final_action == "INCREASE":
-            final_action = "HOLD"
-        elif final_action == "HOLD":
-            final_action = "REDUCE"
-        final_exposure = int(final_exposure * 0.75)
-        reason_chain.append("Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut")
-
+        if stance == "INCREASE":
+            stance = "HOLD"
+        elif stance == "HOLD":
+            stance = "REDUCE"
+        do.append("Warning Score 3+ → 공격적 확장 금지, 익스포저 대폭 축소 고려")
+        dont.append("공격적 베타 확대")
+        triggers.append("경고 신호 해소 전까지 방어적 운용 유지")
+    
     elif warning_score == 2:
-        final_exposure = int(final_exposure * 0.85)
-        reason_chain.append("Warning Score 2 → 익스포저 15% haircut")
-
+        if stance == "INCREASE":
+            stance = "HOLD"
+        do.append("Warning Score 2 → 확신도 하락, 익스포저 10~15% 헤어컷 고려")
+        triggers.append("상관관계 붕괴 지속 시 추가 축소 검토")
+    
     elif warning_score == 1:
-        reason_chain.append("Warning Score 1 → 경미한 이상신호, 모니터링 강화")
-
+        do.append("Warning Score 1 → 경미한 이상신호, 포지션은 유지하되 모니터링 강화")
+         
     # -------------------------
     # Safety clamp
     # -------------------------
