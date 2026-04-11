@@ -23,15 +23,15 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=HOLD 반영
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **RISK-ON (부분 정렬)** → **WAITING / RANGE (대기·박스권)**
+- **현재 국면 유지:** ✅ **WAITING / RANGE (대기·박스권)**
 
 ---
 
 - **미국 10년물 금리**: 4.317  (+0.00% vs 4.317)
-- **달러 인덱스**: 98.698  (+0.00% vs 98.698)
-- **WTI 유가**: 95.630  (+0.00% vs 95.630)
+- **달러 인덱스**: 98.650  (+0.00% vs 98.650)
+- **WTI 유가**: 96.570  (+0.00% vs 96.570)
 - **변동성 지수 (VIX)**: 19.230  (+0.00% vs 19.230)
-- **원/달러 환율**: 1485.410  (+0.00% vs 1485.410)
+- **원/달러 환율**: 1482.700  (+0.64% vs 1473.280)
 
 ---
 
@@ -106,7 +106,7 @@ Some commentary here
 - DXY **(Noise, +0.00%)** → 달러 보합(방향성 약함)
 - WTI **(Noise, +0.00%)** → 유가 보합(물가 변수 제한)
 - VIX **(Noise, +0.00%)** → 변동성 보합(심리 변화 제한)
-- 원/달러(USDKRW) **(Noise, +0.00%)** → 환율 보합(수급 압력 제한)
+- 원/달러(USDKRW) **(Strong, +0.64%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Noise, +0.00%)** → 보합(크레딧 변화 제한)
 - LQD (IG Bond ETF) **(Noise, +0.00%)** → 보합(방향성 제한)
 
@@ -148,17 +148,17 @@ No significant sector-level correlation break detected.
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Red_Sea
-- **Cosine Similarity Score:** -0.422
+- **Cosine Similarity Score:** -0.421
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Red_Sea: -0.422
-  - Taiwan_Tension: -0.513
-  - Israel_2023: -0.520
+  - Red_Sea: -0.421
+  - Taiwan_Tension: -0.517
+  - Israel_2023: -0.522
 - **Top Drivers:**
   - VIX: z_used=-0.71 (z1d=-0.07, z5d=-1.67, raw_w=0.18, norm_w=0.14) → contrib=-0.10
   - USDCNH: z_used=-0.64 (z1d=+0.15, z5d=-1.81, raw_w=0.18, norm_w=0.14) → contrib=-0.09
   - EMB: z_used=-0.79 (z1d=+0.03, z5d=+1.94, raw_w=0.12, norm_w=0.09) → contrib=-0.07
-  - WTI: z_used=-0.94 (z1d=-0.18, z5d=-2.09, raw_w=0.10, norm_w=0.08) → contrib=-0.07
+  - WTI: z_used=-0.92 (z1d=-0.18, z5d=-2.02, raw_w=0.10, norm_w=0.08) → contrib=-0.07
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
 
@@ -169,7 +169,7 @@ No significant sector-level correlation break detected.
 
 ### 🎯 8) Incentive Filter (Wall St. Logic)
 
-**핵심 신호:** 장단기차(50.00bp) | 실질금리(1.95%) | DXY(98.70)
+**핵심 신호:** 장단기차(50.00bp) | 실질금리(1.95%) | DXY(98.65)
 *(as of: RealRate: 2026-04-11 / FRED last available)*
 
 Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화 과정)
@@ -191,7 +191,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.317), DXY(98.698), VIX(19.23)
+- **Today snapshot:** US10Y(4.317), DXY(98.650), VIX(19.23)
 
 ### 🏗️ 12) Structural Filter (v2)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
@@ -211,14 +211,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **HOLD**
 - **Risk Budget (0~100):** **60**
-- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=0.83 → Phase=WAITING / RANGE (대기·박스권)
+- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=0.81 → Phase=WAITING / RANGE (대기·박스권)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `MIXED` | **Price(Regime):** `MIXED` | **VIX:** `19.23`
-- **Positioning Data:** Z-Score: `0.83` (>1.8 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `0.81` (>1.8 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -332,8 +332,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5849432186614175
-- **Z-Score (5d):** 0.13490992362262907
+- **Z-Score (1d):** -0.584941319420326
+- **Z-Score (5d):** 0.13491016391181482
 
 ### EEM
 - **Crash?** False
@@ -350,8 +350,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.047638297075600085
-- **Z-Score (5d):** 1.8640124345125106
+- **Z-Score (1d):** -0.04763826157844059
+- **Z-Score (5d):** 1.864011071858537
 
 ### EWJ
 - **Crash?** False
