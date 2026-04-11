@@ -57,6 +57,36 @@ KEYS = ["US10Y", "DXY", "WTI", "VIX", "USDKRW"]
 SHOW_LIQUIDITY_SNAPSHOT = False
 
 
+def interpret_sew_event(event_type: str) -> str:
+    """
+    SEW Event Type → 전략적 해석
+    """
+
+    mapping = {
+        "NORMAL": "정상 상태 / 구조적 리스크 없음",
+        
+        "RISK_OFF_SHOCK": "전면 리스크오프 충격 / 시장 전반 디레버리징",
+        
+        "LIQUIDATION_SHOCK": "강제 청산 발생 / 포지션 붕괴 / 급락 리스크",
+        
+        "TECH_DELEVERAGING": "기술주 중심 디레버리징 / 성장주 압력",
+        
+        "TECH_STRESS": "기술 섹터 약세 / 초기 균열 신호",
+        
+        "MACRO_FLOW_DISLOCATION": "매크로 흐름 왜곡 / 오일·달러 비정상 움직임",
+        
+        "MACRO_UNWIND": "글로벌 자금 언와인딩 / 레버리지 축소 진행",
+        
+        "RISK_ON_SQUEEZE": "리스크온 숏스퀴즈 / 상승 압력 확대",
+        
+        "VOL_CRUSH_SQUEEZE": "변동성 압축 기반 상승 / 감마 구조 영향",
+        
+        "POSITION_UNWIND_RISK": "포지션 과열 상태 / 향후 급격한 언와인딩 위험",
+    }
+
+    return mapping.get(event_type, "해석 불가")
+
+
 def get_sew_state(filepath: str = "insights/sew_state.json") -> dict:
     default = {
         "timestamp": None,
@@ -1247,6 +1277,8 @@ def generate_daily_report() -> None:
         if "DEAD MAN'S SWITCH ACTIVATED" in line:
             is_deadman_activated = True
 
+    
+
     # -------------------------
     # SEW 상태 로드
     # -------------------------
@@ -1257,6 +1289,9 @@ def generate_daily_report() -> None:
     sew_deadman = sew_state["deadman"]
     sew_spike_count = sew_state["spike_count"]
     sew_extreme_count = sew_state["extreme_count"]
+    
+    
+    
 
     market_data["SEW_STATE"] = {
         "status": sew_status,
