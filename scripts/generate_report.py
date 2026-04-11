@@ -1371,7 +1371,9 @@ def generate_daily_report() -> None:
     lines.append("")
     lines.append("---")
     lines.append("")
-
+    lines.append("## 📊 Daily Macro Signals")
+    lines.append("")
+    
     # daily core signals
     if "US10Y" in market_data and market_data["US10Y"].get("today") is not None:
         prev = market_data["US10Y"].get("prev")
