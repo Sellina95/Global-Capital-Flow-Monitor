@@ -1,4 +1,3 @@
-# scripts/fetch_macro_data.py
 from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
@@ -37,89 +36,98 @@ INDICATORS: Dict[str, str] = {
     "QQQ": "QQQ",
     "SPY": "SPY",
 
-    # Geopolitical EW proxies (can be flaky on some days)
+    # Geopolitical EW proxies
     "GOLD": "GC=F",
-    "USDCNH": "CNH=X", 
+    "USDCNH": "CNH=X",
     "USDJPY": "JPY=X",
     "USDMXN": "MXN=X",
 
-    # --------------------------------------------------------
-    # ✅ NEW: Geo EW v1 확장 (data-friendly)
-    # --------------------------------------------------------
-    "SEA": "SEA",         # Shipping / supply chain proxy (ETF)
-    "BDRY": "BDRY",       # Dry bulk shipping ETF (optional but useful)
-    "ITA": "ITA",         # Defense / aerospace
-    "XAR": "XAR",         # Defense / aerospace (alt)
-    "EEM": "EEM",         # EM equity stress
-    "EMB": "EMB",         # EM USD bond stress
+    # Geo EW v1 확장
+    "SEA": "SEA",
+    "BDRY": "BDRY",
+    "ITA": "ITA",
+    "XAR": "XAR",
+    "EEM": "EEM",
+    "EMB": "EMB",
 }
-# --- Fallback ticker mapping (for flaky FX like CNH) ---
+
+# fallback tickers
 FALLBACK_TICKERS = {
     "USDCNH": ["CNH=X", "CNY=X"],
-    "DXY": ["DX-Y.NYB", "DX=F","UUP"],# try offshore first, then onshore
+    "DXY": ["DX-Y.NYB", "DX=F", "UUP"],
 }
 
-# 핵심 파이프라인이 죽으면 안 되는 지표들(없으면 raise)
+# 핵심 파이프라인이 죽으면 안 되는 지표들
 REQUIRED_KEYS = {"US10Y", "DXY", "WTI", "VIX", "USDKRW", "HYG", "LQD"}
 
-# 항상 유지하고 싶은 시간 컬럼(리포트 로더 호환성)
+# 시간 컬럼
 TIME_COLS = ["datetime", "date"]
 
 
-def _safe_last_close(df: pd.DataFrame) -> Optional[float]:
-    """yfinance 결과에서 마지막 close를 float 하나로 뽑기 (Series/MultiIndex 방어)."""
+def _safe_last_close_and_date(df: pd.DataFrame) -> Tuple[Optional[float], Optional[str]]:
+    """
+    yfinance 결과에서 마지막 close 값과 해당 index 날짜(시장 기준 날짜)를 반환
+    """
     if df is None or df.empty:
-        return None
+        return None, None
 
-    # MultiIndex columns 방어: ('Close', 'TICKER') 형태
-    if isinstance(df.columns, pd.MultiIndex):
-        close_cols = [c for c in df.columns if str(c[0]).lower() == "close"]
-        if not close_cols:
-            return None
-        close_block = df[close_cols].dropna(how="all")
-        if close_block.empty:
-            return None
-        last_row = close_block.iloc[-1].dropna()
-        if last_row.empty:
-            return None
-        return float(last_row.iloc[-1])
+    try:
+        # MultiIndex columns 대응
+        if isinstance(df.columns, pd.MultiIndex):
+            close_cols = [c for c in df.columns if str(c[0]).lower() == "close"]
+            if not close_cols:
+                return None, None
 
-    # 일반 컬럼
-    close_col = None
-    if "Close" in df.columns:
-        close_col = "Close"
-    else:
-        cands = [c for c in df.columns if str(c).lower() == "close"]
-        if cands:
-            close_col = cands[0]
-    if close_col is None:
-        return None
+            close_block = df[close_cols].dropna(how="all")
+            if close_block.empty:
+                return None, None
 
-    close = df[close_col].dropna()
-    if close.empty:
-        return None
+            last_valid_idx = close_block.dropna(how="all").index[-1]
+            last_row = close_block.loc[last_valid_idx].dropna()
+            if last_row.empty:
+                return None, None
 
-    last = close.iloc[-1]
-    if isinstance(last, pd.Series):
-        last = last.dropna()
-        if last.empty:
-            return None
-        last = last.iloc[-1]
+            value = float(last_row.iloc[-1])
+            asof_date = pd.Timestamp(last_valid_idx).strftime("%Y-%m-%d")
+            return value, asof_date
 
-    return float(last)
+        # 일반 columns
+        close_col = None
+        if "Close" in df.columns:
+            close_col = "Close"
+        else:
+            cands = [c for c in df.columns if str(c).lower() == "close"]
+            if cands:
+                close_col = cands[0]
+
+        if close_col is None:
+            return None, None
+
+        close = pd.to_numeric(df[close_col], errors="coerce").dropna()
+        if close.empty:
+            return None, None
+
+        last_valid_idx = close.index[-1]
+        value = float(close.iloc[-1])
+        asof_date = pd.Timestamp(last_valid_idx).strftime("%Y-%m-%d")
+        return value, asof_date
+
+    except Exception:
+        return None, None
 
 
-def fetch_macro_data() -> Dict[str, float]:
+def fetch_macro_data() -> Tuple[Dict[str, float], Optional[str]]:
     """
     Fetch all INDICATORS from yfinance.
-    - REQUIRED_KEYS missing => store as NaN instead of raising error
-    - Optional indicators missing => store as NaN
-    - FX tickers (USDCNH) use robust fallback (download -> history)
+    Returns:
+      - results: {indicator: value}
+      - market_date: 핵심 지표 기준 시장 날짜
     """
     results: Dict[str, float] = {}
+    required_asof_dates: List[str] = []
 
-    def _fetch_last_close_robust(ticker: str) -> Optional[float]:
-        # 1) try download (fast path)
+    def _fetch_last_close_robust(ticker: str) -> Tuple[Optional[float], Optional[str]]:
+        # 1) try download
         try:
             df = yf.download(
                 ticker,
@@ -130,57 +138,61 @@ def fetch_macro_data() -> Dict[str, float]:
                 threads=False,
                 auto_adjust=False,
             )
-            v = _safe_last_close(df)
+            v, d = _safe_last_close_and_date(df)
             if v is not None:
-                return float(v)
+                return float(v), d
         except Exception as e:
             print(f"Error fetching {ticker}: {e}")
-            return None
 
-        # 2) fallback: Ticker().history (often more reliable for FX)
+        # 2) fallback: Ticker().history
         try:
             hist = yf.Ticker(ticker).history(period="90d", interval="1d", auto_adjust=False)
             if hist is None or hist.empty:
-                return None
-            if "Close" not in hist.columns:
-                return None
-            close = hist["Close"].dropna()
-            if close.empty:
-                return None
-            return float(close.iloc[-1])
+                return None, None
+            v, d = _safe_last_close_and_date(hist)
+            if v is not None:
+                return float(v), d
         except Exception as e:
             print(f"Error with fallback for {ticker}: {e}")
-            return None
+
+        return None, None
 
     for name, ticker in INDICATORS.items():
-        # fallback tickers for USDCNH
         tickers_to_try = FALLBACK_TICKERS.get(name, [ticker])
 
         value = None
         used_src = None
+        asof_date = None
 
         for t in tickers_to_try:
             print(f"Fetching {name} ({t}) ...")
-            value = _fetch_last_close_robust(t)
+            value, asof_date = _fetch_last_close_robust(t)
             if value is not None:
                 used_src = t
                 break
 
         if value is None:
             if name in REQUIRED_KEYS:
-                print(f"[WARNING] [{name}] No valid Close data from yfinance (tickers tried={tickers_to_try}). Storing NaN.")
-                results[name] = float("nan")
-            else:
-                results[name] = float("nan")
+                print(
+                    f"[WARNING] [{name}] No valid Close data from yfinance "
+                    f"(tickers tried={tickers_to_try}). Storing NaN."
+                )
+            results[name] = float("nan")
             continue
 
         results[name] = float(value)
-        if used_src:
-            print(f"  → {name}: {value} (source={used_src})")
-        else:
-            print(f"  → {name}: {value}")
 
-    return results
+        if asof_date and name in REQUIRED_KEYS:
+            required_asof_dates.append(asof_date)
+
+        print(f"  → {name}: {value} (source={used_src}, asof={asof_date})")
+
+    # 핵심 지표 기준 시장 날짜
+    market_date = max(required_asof_dates) if required_asof_dates else None
+    print(f"[DEBUG] derived market_date = {market_date}")
+
+    return results, market_date
+
 
 def _read_existing_header(csv_path: Path) -> List[str]:
     with open(csv_path, "r", encoding="utf-8") as f:
@@ -191,21 +203,17 @@ def _read_existing_header(csv_path: Path) -> List[str]:
 def _compute_new_column_order(existing_cols: List[str], new_cols: List[str]) -> List[str]:
     """
     Keep existing order, append truly new columns to the end.
-    Ensure TIME_COLS are present and stay in front (datetime, date).
+    Ensure TIME_COLS are present and stay in front.
     """
     existing_set = set(existing_cols)
     appended = [c for c in new_cols if c not in existing_set]
 
-    # Base order = existing + appended
     merged = existing_cols + appended
 
-    # Ensure time cols exist
     for tc in TIME_COLS:
         if tc not in merged:
             merged.insert(0, tc)
 
-    # Force TIME_COLS to be the first two (stable)
-    # Remove then re-insert in correct order
     merged_wo_time = [c for c in merged if c not in TIME_COLS]
     final_cols = TIME_COLS + merged_wo_time
     return final_cols
@@ -214,8 +222,7 @@ def _compute_new_column_order(existing_cols: List[str], new_cols: List[str]) -> 
 def _expand_and_rewrite_csv(csv_path: Path, final_cols: List[str]) -> None:
     """
     Rewrite existing CSV to include new columns (backfill NaN),
-    and normalize column order to final_cols.
-    This prevents 'field count mismatch' ParserError forever.
+    and normalize column order.
     """
     df = pd.read_csv(csv_path)
     df = df.loc[:, ~df.columns.duplicated()].copy()
@@ -228,17 +235,17 @@ def _expand_and_rewrite_csv(csv_path: Path, final_cols: List[str]) -> None:
     df.to_csv(csv_path, index=False, encoding="utf-8")
 
 
-def append_to_csv(values: Dict[str, float]) -> None:
-    now = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+def append_to_csv(values: Dict[str, float], market_date: Optional[str]) -> None:
+    run_dt = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    row_date = market_date if market_date else datetime.now(KST).strftime("%Y-%m-%d")
 
-    # ✅ 둘 다 채워서 호환성 유지 (너희 load_macro_df가 datetime/date 혼용 방어함)
-    row = {"datetime": now, "date": now}
+    # datetime = 실행시각 / date = 시장기준일
+    row = {"datetime": run_dt, "date": row_date}
     row.update(values)
 
     df_row = pd.DataFrame([row])
 
     if not CSV_PATH.exists():
-        # New file: write with deterministic order (time cols + indicators order)
         ordered = _compute_new_column_order([], list(df_row.columns))
         for c in ordered:
             if c not in df_row.columns:
@@ -249,30 +256,37 @@ def append_to_csv(values: Dict[str, float]) -> None:
         print(df_row)
         return
 
-    # Existing file: may need header expansion
     existing_cols = _read_existing_header(CSV_PATH)
-
-    # Union columns (existing + row cols)
     final_cols = _compute_new_column_order(existing_cols, list(df_row.columns))
 
-    # If header needs expansion (new cols introduced), rewrite entire file once
     if set(final_cols) != set(existing_cols) or final_cols != existing_cols:
-        # rewrite existing CSV with expanded columns + normalized order
         _expand_and_rewrite_csv(CSV_PATH, final_cols)
 
-    # Align df_row to final_cols (fill missing)
+    df_existing = pd.read_csv(CSV_PATH)
+
     for c in final_cols:
         if c not in df_row.columns:
             df_row[c] = pd.NA
+        if c not in df_existing.columns:
+            df_existing[c] = pd.NA
+
     df_row = df_row[final_cols]
+    df_existing = df_existing[final_cols]
 
-    # Append safely
-    df_row.to_csv(CSV_PATH, mode="a", index=False, header=False, encoding="utf-8")
-
-    print(f"\n✅ Saved row to {CSV_PATH}")
-    print(df_row)
+    # 같은 시장 날짜가 이미 있으면 update
+    if "date" in df_existing.columns and row_date in df_existing["date"].astype(str).values:
+        print(f"⚠ Existing row for market date {row_date} found. Updating instead of appending.")
+        df_existing = df_existing[df_existing["date"].astype(str) != row_date]
+        df_updated = pd.concat([df_existing, df_row], ignore_index=True)
+        df_updated.to_csv(CSV_PATH, index=False, encoding="utf-8")
+        print(f"\n✅ Updated row for market date {row_date} in {CSV_PATH}")
+        print(df_row)
+    else:
+        df_row.to_csv(CSV_PATH, mode="a", index=False, header=False, encoding="utf-8")
+        print(f"\n✅ Appended new row to {CSV_PATH}")
+        print(df_row)
 
 
 if __name__ == "__main__":
-    vals = fetch_macro_data()
-    append_to_csv(vals)
+    vals, market_date = fetch_macro_data()
+    append_to_csv(vals, market_date)
