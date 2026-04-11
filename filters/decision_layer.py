@@ -1,9 +1,7 @@
 from typing import Dict, Any
-from typing import Dict, Any
 
-def decision_lawarning_score = 0
-warning_notes = []
-yer_filter(market_data: Dict[str, Any]) -> str:
+
+def decision_layer_filter(market_data: Dict[str, Any]) -> str:
     """
     So What? Decision Layer (v2)
     Turns FINAL_STATE + style/factor outputs into actionable guidance.
@@ -27,12 +25,8 @@ yer_filter(market_data: Dict[str, Any]) -> str:
 
     exposure_txt = f"{budget}%" if isinstance(budget, int) else "중립"
 
-    # -------------------------
-    # 기본 stance
-    # -------------------------
     stance = action
 
-    # Liquidity penalty
     if action == "INCREASE" and (liq_dir == "DOWN" or liq_lvl == "LOW"):
         stance = "HOLD"
 
@@ -48,20 +42,16 @@ yer_filter(market_data: Dict[str, Any]) -> str:
         do += ["노출은 유지하되, 베타 확대보다 선별적 포지셔닝(퀄리티) 유지"]
         triggers += ["NET_LIQ 추가 하락/LOW 고착 시 노출 축소 준비"]
 
-    # Liquidity overlay
     if liq_dir == "DOWN" or liq_lvl == "LOW":
         dont += ["공격적 베타 확대", "장기듀레이션 성장주/레버리지 익스포저 확대"]
     else:
         dont += ["무분별한 테마 추격", "리스크 관리 없는 집중 포지션"]
 
-    # Credit overlay
     if credit_calm is False:
         do += ["크레딧 스트레스 확인 시(우선순위 1) 방어 전환"]
         triggers += ["HY OAS 4% 상회 시 Risk-Off 프로토콜"]
 
-    # -------------------------
-    # GEO Early Warning overlay
-    # -------------------------
+    # GEO overlay
     geo = market_data.get("GEO_EW", {}) or {}
     geo_level = str(geo.get("level", "NORMAL")).upper()
 
@@ -76,23 +66,21 @@ yer_filter(market_data: Dict[str, Any]) -> str:
         dont.append("공격적 베타 포지셔닝")
         triggers.append("Geo Score 정상화 확인 전까지 리스크 축소 유지")
 
-    # -------------------------
-    # WARNING SIGNALS overlay (6.5 / 6.6 / 7.2)
-    # -------------------------
+    # WARNING SIGNALS overlay
     warn = market_data.get("WARNING_SIGNALS", {}) or {}
-    corr65_break = bool(warn.get("corr65_break", False))
-    corr66_break = bool(warn.get("corr66_break", False))
+    corr65_score = int(warn.get("corr65_score", 0) or 0)
+    corr66_score = int(warn.get("corr66_score", 0) or 0)
     warn_geo_level = str(warn.get("geo_level", geo_level)).upper()
 
     warning_score = 0
     warning_notes = []
 
-    if corr65_break:
-        warning_score += 1
-        warning_notes.append("6.5 매크로 상관관계 붕괴")
+    warning_score += corr65_score
+    warning_score += corr66_score
 
-    if corr66_break:
-        warning_score += 1
+    if warn.get("corr65_break"):
+        warning_notes.append("6.5 상관관계 붕괴")
+    if warn.get("corr66_break"):
         warning_notes.append("6.6 섹터 상관관계 붕괴")
 
     if warn_geo_level == "ELEVATED":
@@ -102,7 +90,6 @@ yer_filter(market_data: Dict[str, Any]) -> str:
         warning_score += 2
         warning_notes.append("7.2 지정학 위기(CRISIS)")
 
-    # Warning score가 높으면 stance를 더 보수적으로
     if warning_score >= 3:
         if stance == "INCREASE":
             stance = "HOLD"
@@ -111,19 +98,14 @@ yer_filter(market_data: Dict[str, Any]) -> str:
         do.append("Warning Score 3+ → 공격적 확장 금지, 익스포저 대폭 축소 고려")
         dont.append("공격적 베타 확대")
         triggers.append("경고 신호 해소 전까지 방어적 운용 유지")
-
     elif warning_score == 2:
         if stance == "INCREASE":
             stance = "HOLD"
         do.append("Warning Score 2 → 확신도 하락, 익스포저 10~15% 헤어컷 고려")
         triggers.append("상관관계 붕괴 지속 시 추가 축소 검토")
-
     elif warning_score == 1:
         do.append("Warning Score 1 → 경미한 이상신호, 포지션은 유지하되 모니터링 강화")
 
-    # -------------------------
-    # Style hints
-    # -------------------------
     style_hint = []
     if style:
         style_hint.append(f"Style={style}")
@@ -132,9 +114,6 @@ yer_filter(market_data: Dict[str, Any]) -> str:
     if cyclical:
         style_hint.append(f"Cyclical/Defensive={cyclical}")
 
-    # -------------------------
-    # Render
-    # -------------------------
     lines = []
     lines.append("## 🧭 So What? (Decision Layer)")
     lines.append(f"- **Risk Stance:** **{stance}** *(target exposure: {exposure_txt})*")
@@ -161,7 +140,7 @@ yer_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
-    
+
 def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     """
     Final Decision Layer (War Room Override)
@@ -179,15 +158,11 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     div = market_data.get("DIVERGENCE_STATE", {}) or {}
     warn = market_data.get("WARNING_SIGNALS", {}) or {}
 
-    # -------------------------
-    # Inputs
-    # -------------------------
     narrative_action = str(state.get("risk_action", "HOLD")).upper()
     risk_budget = int(state.get("risk_budget", 50)) if state.get("risk_budget") is not None else 50
     phase = str(state.get("phase", "N/A"))
 
     sew_status = str(sew.get("status", "N/A")).upper()
-    sew_summary = str(sew.get("summary", "SEW 상태 없음"))
     sew_event = str(sew.get("event_type", "N/A")).upper()
 
     div_status = str(div.get("status", "N/A")).upper()
@@ -203,19 +178,15 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     final_exposure = base_exposure
     reason_chain = []
 
-    # -------------------------
-    # 1) SEW override (highest priority)
-    # -------------------------
+    # 1) SEW override
     if sew_status == "DEADMAN":
         final_action = "EXIT"
         final_exposure = 0
         reason_chain.append("SEW DEADMAN 발동 → 즉시 EXIT / 익스포저 0%")
-
     elif sew_status == "ALERT":
         final_action = "REDUCE"
         final_exposure = int(base_exposure * 0.7)
         reason_chain.append("SEW ALERT → 실시간 발작 감지, 익스포저 30% 축소")
-
     elif sew_status == "WATCH":
         if narrative_action == "INCREASE":
             final_action = "HOLD"
@@ -225,13 +196,10 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
             final_action = narrative_action
             final_exposure = base_exposure
             reason_chain.append("SEW WATCH → 모니터링 강화, 기존 전략 유지")
-
     else:
         reason_chain.append("SEW STABLE → 실시간 이상징후 없음")
 
-    # -------------------------
     # 2) Divergence override
-    # -------------------------
     if sew_status not in ["DEADMAN", "ALERT"]:
         if div_status != "ALIGNED":
             if final_action == "INCREASE":
@@ -247,73 +215,47 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         else:
             reason_chain.append("Divergence ALIGNED → 구조·가격·수급 정렬")
 
-    # -------------------------
     # 3) Narrative confirmation
-    # -------------------------
     if sew_status == "STABLE" and div_status == "ALIGNED":
         reason_chain.append(f"Narrative Action={narrative_action} 반영")
     else:
         reason_chain.append("상위 레이어(SEW/Divergence)가 Narrative보다 우선")
 
-    # -------------------------
-    # 4) Warning signals (6.5 / 6.6 / 7.2)
-    # -------------------------
-    corr65_break = bool(warn.get("corr65_break", False))
-    corr66_break = bool(warn.get("corr66_break", False))
+    # 4) Warning signals
+    corr65_score = int(warn.get("corr65_score", 0) or 0)
+    corr66_score = int(warn.get("corr66_score", 0) or 0)
     geo_level = str(warn.get("geo_level", "NORMAL")).upper()
 
-
-    warning_score = 0
+    warning_score = corr65_score + corr66_score
     warning_notes = []
-    
-    # ✅ NEW: state 기반 점수 합산
-    warning_score += warn.get("corr65_score", 0)
-    warning_score += warn.get("corr66_score", 0)
-    
-    # (선택) 로그용 노트
+
     if warn.get("corr65_break"):
         warning_notes.append("6.5 상관관계 붕괴")
-    
     if warn.get("corr66_break"):
         warning_notes.append("6.6 섹터 상관관계 붕괴")
-    
-    # GEO
-    if warn_geo_level == "ELEVATED":
+
+    if geo_level == "ELEVATED":
         warning_score += 1
         warning_notes.append("7.2 지정학 경계(ELEVATED)")
-    elif warn_geo_level == "CRISIS":
+    elif geo_level == "CRISIS":
         warning_score += 2
         warning_notes.append("7.2 지정학 위기(CRISIS)")
-    
-    # -------------------------
-    # 🎯 Stance Adjustment
-    # -------------------------
+
     if warning_score >= 3:
-        if stance == "INCREASE":
-            stance = "HOLD"
-        elif stance == "HOLD":
-            stance = "REDUCE"
-        do.append("Warning Score 3+ → 공격적 확장 금지, 익스포저 대폭 축소 고려")
-        dont.append("공격적 베타 확대")
-        triggers.append("경고 신호 해소 전까지 방어적 운용 유지")
-    
+        if final_action == "INCREASE":
+            final_action = "HOLD"
+        elif final_action == "HOLD":
+            final_action = "REDUCE"
+        final_exposure = int(final_exposure * 0.75)
+        reason_chain.append("Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut")
     elif warning_score == 2:
-        if stance == "INCREASE":
-            stance = "HOLD"
-        do.append("Warning Score 2 → 확신도 하락, 익스포저 10~15% 헤어컷 고려")
-        triggers.append("상관관계 붕괴 지속 시 추가 축소 검토")
-    
+        final_exposure = int(final_exposure * 0.85)
+        reason_chain.append("Warning Score 2 → 익스포저 15% haircut")
     elif warning_score == 1:
-        do.append("Warning Score 1 → 경미한 이상신호, 포지션은 유지하되 모니터링 강화")
-         
-    # -------------------------
-    # Safety clamp
-    # -------------------------
+        reason_chain.append("Warning Score 1 → 경미한 이상신호, 모니터링 강화")
+
     final_exposure = max(0, min(100, final_exposure))
 
-    # -------------------------
-    # Render
-    # -------------------------
     lines = []
     lines.append("## 🎯 Final Decision (War Room Override)")
     lines.append(f"- **Final Action:** **{final_action}**")
@@ -321,8 +263,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Base Context:** phase={phase} / narrative={narrative_action} / base_exposure={base_exposure}%")
     lines.append(f"- **SEW:** {sew_status} / {sew_event}")
     lines.append(f"- **Divergence:** {div_status} / {div_action}")
-    lines.append(f"- **Warning Score:** {warning_score} ({', '.join(warning_reasons) if warning_reasons else 'No warning'})")
+    lines.append(f"- **Warning Score:** {warning_score} ({', '.join(warning_notes) if warning_notes else 'No warning'})")
     lines.append(f"- **Why:** " + " → ".join(reason_chain))
 
     return "\n".join(lines)
-
