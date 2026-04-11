@@ -1029,7 +1029,7 @@ def generate_war_room_history():
         merged = pd.merge(merged, spread_df, on='date', how='outer')
 
         merged = merged.sort_values('date').reset_index(drop=True)
-
+        merged = merged[merged['date'] <= anchor_date]
         # ✅ 미래 데이터 누수 방지: bfill 제거
         merged = merged.ffill()
 
