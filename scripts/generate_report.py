@@ -1046,9 +1046,9 @@ def generate_war_room_history():
         else:
             existing_df = pd.read_csv(output_path)
             existing_df['date'] = pd.to_datetime(existing_df['date'], errors='coerce').dt.strftime('%Y-%m-%d')
-        
-            # ✅ anchor_date보다 뒤의 가짜 미래 row 제거
-            existing_df = existing_df[existing_df['date'] <= anchor_date]
+
+            # ✅ anchor_date 이전까지만 남기고, anchor_date는 새 today_data로 교체
+            existing_df = existing_df[existing_df['date'] < anchor_date]
         
             final_df = pd.concat([existing_df, today_data], ignore_index=True)
             final_df = final_df.sort_values('date').reset_index(drop=True)
