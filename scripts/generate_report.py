@@ -1270,23 +1270,18 @@ def generate_daily_report() -> None:
     # -------------------------
     # 6.5 / 6.6 결과 생성
     # -------------------------
-    correlation_break_text = correlation_break_filter(market_data)
-    sector_corr_break_text = sector_correlation_break_filter(market_data)
+    from filters.strategist_filters import correlation_break_state, sector_corr_break_state
 
-    # -------------------------
-    # Warning signal states (6.5 / 6.6 / 7.2)
-    # -------------------------
-    corr65_break = "Correlation Break Detected:" in correlation_break_text
-    corr66_break = "Correlation Break Detected:" in sector_corr_break_text
-
-    geo_state = market_data.get("GEO_EW", {}) or {}
-    geo_level = str(geo_state.get("level", "NORMAL")).upper()
-
+    corr65_state = correlation_break_state(market_data)
+    corr66_state = sector_corr_break_state(market_data)
+    
     market_data["WARNING_SIGNALS"] = {
-        "corr65_break": corr65_break,
-        "corr66_break": corr66_break,
+        "corr65_break": corr65_state["break"],
+        "corr66_break": corr66_state["break"],
+        "corr65_score": corr65_state["score"],
+        "corr66_score": corr66_state["score"],
         "geo_level": geo_level,
-    }
+}
 
     # -------------------------
     # 워룸 상태 판단
