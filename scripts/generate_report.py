@@ -992,24 +992,23 @@ def _find_effective_market_idx(
 def generate_war_room_history():
     import os
     import pandas as pd
-    import numpy as np
 
     print("🚀 전략 상황실용 통합 데이터팩 최종 보정 및 생성을 시작합니다...")
-    
+
     try:
-        # 1. 파일 경로 설정
         pos_path = 'data/positioning_data.csv'
         macro_path = 'data/macro_data.csv'
         yield_path = 'data/sovereign_yields.csv'
         spread_path = 'data/sovereign_spreads.csv'
         output_path = "data/market_data_history.csv"
 
-        # 2. 데이터 로드 및 날짜 전처리
         def get_clean_df(path):
-            if not os.path.exists(path): return pd.DataFrame()
+            if not os.path.exists(path):
+                return pd.DataFrame()
             df = pd.read_csv(path)
             if 'date' in df.columns:
-                df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
+                df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.strftime('%Y-%m-%d')
+                df = df.dropna(subset=['date']).sort_values('date').reset_index(drop=True)
             return df
 
         pos_df = get_clean_df(pos_path)
@@ -1017,40 +1016,40 @@ def generate_war_room_history():
         yield_df = get_clean_df(yield_path)
         spread_df = get_clean_df(spread_path)
 
-        # 3. 데이터 통합 (전체 날짜 기준 Outer Join 후 정렬)
-        # Inner가 아니라 Outer로 합쳐야 과거 데이터까지 다 가져와서 메꿀 수 있습니다.
+        if macro_df.empty:
+            print("❌ macro_data.csv가 비어 있어 데이터팩 생성 불가")
+            return
+
+        # ✅ anchor date는 반드시 macro_data의 마지막 시장 기준 날짜
+        anchor_date = str(macro_df['date'].max())
+        print(f"[DEBUG] war room anchor_date = {anchor_date}")
+
         merged = pd.merge(pos_df, macro_df, on='date', how='outer')
         merged = pd.merge(merged, yield_df, on='date', how='outer')
         merged = pd.merge(merged, spread_df, on='date', how='outer')
-        
-        # 날짜순 정렬
-        merged = merged.sort_values('date')
 
-        # 💡 [핵심: 보정 로직]
-        # ffill(): 과거의 마지막 유효한 값을 오늘 빈칸에 복사 (Forward Fill)
-        # bfill(): 혹시라도 맨 앞 데이터가 비어있으면 뒤에서 가져옴 (Backward Fill)
-        merged = merged.ffill().bfill()
+        merged = merged.sort_values('date').reset_index(drop=True)
 
-        # 4. 저장 로직 (가장 최신일자 데이터만 누적 혹은 업데이트)
-        if merged.empty:
-            print("❌ 병합된 데이터가 없습니다.")
+        # ✅ 미래 데이터 누수 방지: bfill 제거
+        merged = merged.ffill()
+
+        # ✅ anchor_date 기준 row만 사용
+        today_data = merged[merged['date'].astype(str) == anchor_date].tail(1)
+
+        if today_data.empty:
+            print(f"❌ anchor_date={anchor_date}에 해당하는 데이터가 없습니다.")
             return
 
-        # 최종적으로는 오늘(가장 마지막 행) 데이터가 꽉 차게 됩니다.
-        today_data = merged.tail(1)
-        
         if not os.path.exists(output_path):
-            merged.to_csv(output_path, index=False)
+            today_data.to_csv(output_path, index=False)
             print(f"✅ {output_path} 신규 생성 완료.")
         else:
             existing_df = pd.read_csv(output_path)
-            today_str = str(today_data['date'].values[0])
-            
-            # 중복 제거 후 오늘 데이터 업데이트
-            existing_df = existing_df[existing_df['date'].astype(str) != today_str]
+            existing_df = existing_df[existing_df['date'].astype(str) != anchor_date]
             final_df = pd.concat([existing_df, today_data], ignore_index=True)
+            final_df = final_df.sort_values('date').reset_index(drop=True)
             final_df.to_csv(output_path, index=False)
-            print(f"✅ {output_path}에 오늘자({today_str}) 보정 데이터 반영 완료.")
+            print(f"✅ {output_path}에 오늘자({anchor_date}) 보정 데이터 반영 완료.")
 
     except Exception as e:
         print(f"❌ 데이터팩 생성 중 에러: {e}")
@@ -1179,6 +1178,8 @@ def generate_daily_report() -> None:
         print("[DEBUG] Fred Extra Saved: skipped (empty fred df)")
     
     print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
+    generate_war_room_history()
+
     commentary_block = build_strategist_commentary(market_data)
     # -------------------------
     # 6) Fred Data Loading and Injection
@@ -1646,7 +1647,7 @@ if __name__ == "__main__":
     """generate_final_state_history()"""
     # 기존 리포트 실행
     real_market_data = generate_daily_report()
-    generate_war_room_history()
+    #generate_war_room_history()
     # =========================
     # 🔥 ETF BACKTEST DEBUG BLOCK
     # =========================
