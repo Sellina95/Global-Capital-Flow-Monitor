@@ -1,28 +1,41 @@
-
 from __future__ import annotations
-from filters.decision_layer import decision_layer_filter, war_room_final_decision_filter
-from filters.transmission_layer import transmission_layer_filter
-from pathlib import Path
-# generate_report.py 파일에서 'save_etf_data_to_combined_csv' 임포트 문을 제거
-from scripts.data_processing import download_all_etfs_and_save, load_etf_data_from_csv
-from typing import Dict, Any
-import pandas as pd
-import os
+
 import json
+import os
+from pathlib import Path
+from typing import Any, Dict
 
+import pandas as pd
 
-from filters.strategist_filters import build_strategist_commentary
-from filters.strategist_filters import attach_geopolitical_ew_layer
-from filters.strategist_filters import geopolitical_early_warning_filter
-from filters.strategist_filters import attach_country_risk_layer
-from filters.strategist_filters import attach_geo_similarity_layer
+from filters.decision_layer import (
+    decision_layer_filter,
+    war_room_final_decision_filter,
+)
 from filters.executive_layer import executive_summary_filter
-#from filters.executive_layer import calculate_raroc
 from filters.scenario_layer import scenario_generator_filter
-from filters.strategist_filters import apply_geo_overlay_to_final_state
-from scripts.risk_alerts import check_regime_change_and_alert
-from scripts.fetch_expectation_data import fetch_expectation_data  # external expectations
+from filters.transmission_layer import transmission_layer_filter
+
+from filters.strategist_filters import (
+    attach_country_risk_layer,
+    attach_geo_similarity_layer,
+    attach_geopolitical_ew_layer,
+    apply_geo_overlay_to_final_state,
+    build_strategist_commentary,
+    correlation_break_filter,
+    correlation_break_state,
+    divergence_monitor_filter,
+    geopolitical_early_warning_filter,
+    sector_correlation_break_filter,
+    sector_correlation_break_state,
+)
+
+from scripts.data_processing import (
+    download_all_etfs_and_save,
+    load_etf_data_from_csv,
+)
+from scripts.fetch_expectation_data import fetch_expectation_data
 from scripts.fetch_sentiment import fetch_cnn_fear_greed
+from scripts.risk_alerts import check_regime_change_and_alert
 
 
 
@@ -1202,10 +1215,9 @@ def generate_daily_report() -> None:
 
         # -------------------------
         # -------------------------
+        # -------------------------
     # Strategic War Room inputs
     # -------------------------
-    from filters.strategist_filters import divergence_monitor_filter, correlation_break_filter, sector_correlation_break_filter
-
     div_full_text = divergence_monitor_filter(market_data)
     div_status = "N/A"
     div_action = "N/A"
@@ -1270,18 +1282,25 @@ def generate_daily_report() -> None:
     # -------------------------
     # 6.5 / 6.6 결과 생성
     # -------------------------
-    from filters.strategist_filters import correlation_break_state, sector_corr_break_state
+    correlation_break_text = correlation_break_filter(market_data)
+    sector_corr_break_text = sector_correlation_break_filter(market_data)
 
     corr65_state = correlation_break_state(market_data)
-    corr66_state = sector_corr_break_state(market_data)
-    
+    corr66_state = sector_correlation_break_state(market_data)
+
+    # -------------------------
+    # Warning signal states (6.5 / 6.6 / 7.2)
+    # -------------------------
+    geo_state = market_data.get("GEO_EW", {}) or {}
+    geo_level = str(geo_state.get("level", "NORMAL")).upper()
+
     market_data["WARNING_SIGNALS"] = {
         "corr65_break": corr65_state["break"],
         "corr66_break": corr66_state["break"],
         "corr65_score": corr65_state["score"],
         "corr66_score": corr66_state["score"],
         "geo_level": geo_level,
-}
+    }
 
     # -------------------------
     # 워룸 상태 판단
