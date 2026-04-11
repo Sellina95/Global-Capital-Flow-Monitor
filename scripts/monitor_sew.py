@@ -161,24 +161,53 @@ def volatility_controlled_exposure_filter(
 # ---------------------------
 # 5. Event Signature 분류
 # ---------------------------
-def detect_event_signature(z_map: Dict[str, float]) -> str:
-    spy_z = z_map.get("SPY", 0.0)
-    qqq_z = z_map.get("QQQ", 0.0)
-    vix_z = z_map.get("VIX", 0.0)
-    dxy_z = z_map.get("DXY", 0.0)
-    wti_z = z_map.get("WTI", 0.0)
+def detect_event_signature(
+    z_map: Dict[str, float],
+    context: Dict[str, Any],
+    market_snap: Dict[str, Any],
+) -> str:
+    """
+    가격 + 포지셔닝 결합형 이벤트 해석
+    """
 
+    spy_z = float(z_map.get("SPY", 0.0) or 0.0)
+    qqq_z = float(z_map.get("QQQ", 0.0) or 0.0)
+    vix_z = float(z_map.get("VIX", 0.0) or 0.0)
+    dxy_z = float(z_map.get("DXY", 0.0) or 0.0)
+    wti_z = float(z_map.get("WTI", 0.0) or 0.0)
+
+    pos_z = float(context.get("SP500_POS_Z", 0.0) or 0.0)
+    gamma_bias = float(context.get("DEALER_GAMMA_BIAS", 1.0) or 1.0)
+    cta_score = float(context.get("CTA_MOMENTUM_SCORE", 0.0) or 0.0)
+    pos_slope = float(market_snap.get("POS_SLOPE", 0.0) or 0.0)
+
+    # 1) 시장 전체 리스크오프 쇼크
     if spy_z < -2.5 and vix_z > 2.5:
+        if pos_z > 1.8 or abs(pos_slope) > 0.5:
+            return "LIQUIDATION_SHOCK"
         return "RISK_OFF_SHOCK"
 
+    # 2) 기술주 중심 디레버리징
     if qqq_z < -2.5 and vix_z > 2.0:
-        return "TECH_DELEVERAGING"
+        if cta_score >= 1.0 or pos_z > 1.5:
+            return "TECH_DELEVERAGING"
+        return "TECH_STRESS"
 
+    # 3) 오일 급락 + 달러 급등 = 매크로 플로우 왜곡
     if wti_z < -2.5 and dxy_z > 2.0:
+        if pos_z > 1.8 or abs(pos_slope) > 0.5:
+            return "MACRO_UNWIND"
         return "MACRO_FLOW_DISLOCATION"
 
+    # 4) 상승 쪽 squeeze
     if spy_z > 2.5 and vix_z < -2.0:
+        if gamma_bias < 0.5:
+            return "VOL_CRUSH_SQUEEZE"
         return "RISK_ON_SQUEEZE"
+
+    # 5) 포지셔닝만 과열된 unwind 경고
+    if pos_z > 2.2 and abs(pos_slope) > 0.5:
+        return "POSITION_UNWIND_RISK"
 
     return "NORMAL"
 
@@ -339,7 +368,8 @@ def check_market_anomaly():
     elif spike_count >= 2:
         is_spiking = True
 
-    event_type = detect_event_signature(z_map)
+    
+    event_type = detect_event_signature(z_map, context, market_snap)
 
     market_snap["IS_SPIKING"] = is_spiking
     market_snap["POS_SLOPE"] = get_recent_pos_slope(csv_path)
