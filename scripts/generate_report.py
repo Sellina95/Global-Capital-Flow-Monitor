@@ -1289,6 +1289,7 @@ def generate_daily_report() -> None:
     sew_deadman = sew_state["deadman"]
     sew_spike_count = sew_state["spike_count"]
     sew_extreme_count = sew_state["extreme_count"]
+    sew_event_interp = interpret_sew_event(sew_event_type)
     
     
     
@@ -1386,6 +1387,7 @@ def generate_daily_report() -> None:
     lines.append(f"- **[14번 구조·수급 괴리]:** {war_room_emoji} {div_status}")
     lines.append(f"- **[실시간 보초병(SEW)]:** {sew_status} | {sew_summary}")
     lines.append(f"- **[SEW Event Type]:** {sew_event_type}")
+    lines.append(f"  → 해석: {sew_event_interp}")
     lines.append(f"- **[SEW Spike Monitor]:** Spike {sew_spike_count} / Extreme {sew_extreme_count}")
 
     if is_deadman_activated or sew_deadman:
