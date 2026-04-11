@@ -115,9 +115,10 @@ def load_macro_df() -> pd.DataFrame:
     csv_path = DATA_DIR / "macro_data.csv"
 
     if xlsx_path.exists():
+        print(f"[DEBUG] load_macro_df: loading XLSX -> {xlsx_path}")
         df = pd.read_excel(xlsx_path)
     elif csv_path.exists():
-        # ✅ tolerant read for occasional malformed rows
+        print(f"[DEBUG] load_macro_df: loading CSV -> {csv_path}")
         try:
             df = pd.read_csv(csv_path)
         except Exception:
