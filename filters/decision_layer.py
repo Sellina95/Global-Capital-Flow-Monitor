@@ -158,7 +158,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     div = market_data.get("DIVERGENCE_STATE", {}) or {}
     warn = market_data.get("WARNING_SIGNALS", {}) or {}
 
-    narrative_action = str(state.get("risk_action", "HOLD")).upper()
+        narrative_action = str(state.get("risk_action", "HOLD")).upper()
     risk_budget = int(state.get("risk_budget", 50)) if state.get("risk_budget") is not None else 50
     phase = str(state.get("phase", "N/A"))
 
@@ -174,7 +174,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     except Exception:
         base_exposure = risk_budget
 
-        final_action = narrative_action
+    final_action = narrative_action
     final_exposure = base_exposure
     reason_chain = []
 
@@ -207,7 +207,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # 1.5) Event Type Override
     # -------------------------
-    if sew_status != "DEADMAN":  # DEADMAN은 최우선
+    if sew_status != "DEADMAN":
         if sew_event == "LIQUIDATION_SHOCK":
             final_action = "EXIT"
             final_exposure = 0
