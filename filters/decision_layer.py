@@ -140,17 +140,17 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
-
 def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     """
     Final Decision Layer (War Room Override)
 
     Priority:
     1) SEW
-    2) Divergence
-    3) Narrative / FINAL_STATE
-    4) Warning Score (6.5 / 6.6 / 7.2)
-    5) Exposure sizing
+    2) Event Type
+    3) Divergence
+    4) Narrative / FINAL_STATE
+    5) Warning Score (6.5 / 6.6 / 7.2)
+    6) Exposure sizing
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
@@ -158,7 +158,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     div = market_data.get("DIVERGENCE_STATE", {}) or {}
     warn = market_data.get("WARNING_SIGNALS", {}) or {}
 
-        narrative_action = str(state.get("risk_action", "HOLD")).upper()
+    narrative_action = str(state.get("risk_action", "HOLD")).upper()
     risk_budget = int(state.get("risk_budget", 50)) if state.get("risk_budget") is not None else 50
     phase = str(state.get("phase", "N/A"))
 
@@ -234,30 +234,36 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
 
         elif sew_event == "RISK_ON_SQUEEZE":
             reason_chain.append("Event: RISK_ON_SQUEEZE → 상승 압력 강화 (단, 과열 주의)")
-            
+
+    # -------------------------
     # 2) Divergence override
+    # -------------------------
     if sew_status not in ["DEADMAN", "ALERT"]:
         if div_status != "ALIGNED":
             if final_action == "INCREASE":
                 final_action = "HOLD"
-                final_exposure = int(base_exposure * 0.8)
+                final_exposure = int(final_exposure * 0.8)
                 reason_chain.append("Divergence 비정렬 → INCREASE 억제, HOLD로 하향")
             elif final_action == "HOLD":
                 final_action = "REDUCE"
-                final_exposure = int(base_exposure * 0.8)
+                final_exposure = int(final_exposure * 0.8)
                 reason_chain.append("Divergence 비정렬 → HOLD에서 REDUCE로 전환")
             else:
                 reason_chain.append("Divergence 비정렬 → 방어적 태도 유지")
         else:
             reason_chain.append("Divergence ALIGNED → 구조·가격·수급 정렬")
 
+    # -------------------------
     # 3) Narrative confirmation
+    # -------------------------
     if sew_status == "STABLE" and div_status == "ALIGNED":
         reason_chain.append(f"Narrative Action={narrative_action} 반영")
     else:
         reason_chain.append("상위 레이어(SEW/Divergence)가 Narrative보다 우선")
 
+    # -------------------------
     # 4) Warning signals
+    # -------------------------
     corr65_score = int(warn.get("corr65_score", 0) or 0)
     corr66_score = int(warn.get("corr66_score", 0) or 0)
     geo_level = str(warn.get("geo_level", "NORMAL")).upper()
@@ -284,9 +290,11 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
             final_action = "REDUCE"
         final_exposure = int(final_exposure * 0.75)
         reason_chain.append("Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut")
+
     elif warning_score == 2:
         final_exposure = int(final_exposure * 0.85)
         reason_chain.append("Warning Score 2 → 익스포저 15% haircut")
+
     elif warning_score == 1:
         reason_chain.append("Warning Score 1 → 경미한 이상신호, 모니터링 강화")
 
@@ -303,3 +311,6 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Why:** " + " → ".join(reason_chain))
 
     return "\n".join(lines)
+
+
+
