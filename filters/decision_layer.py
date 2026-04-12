@@ -193,9 +193,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     final_exposure = base_exposure
     reason_chain = []
 
-    # -------------------------
     # 1) SEW override
-    # -------------------------
     if sew_status == "DEADMAN":
         final_action = "EXIT"
         final_exposure = 0
@@ -219,9 +217,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     else:
         reason_chain.append("SEW STABLE → 실시간 이상징후 없음")
 
-    # -------------------------
     # 1.5) Event Type Override
-    # -------------------------
     if sew_status != "DEADMAN":
         if sew_event == "LIQUIDATION_SHOCK":
             final_action = "EXIT"
@@ -250,9 +246,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         elif sew_event == "RISK_ON_SQUEEZE":
             reason_chain.append("Event: RISK_ON_SQUEEZE → 상승 압력 강화 (단, 과열 주의)")
 
-    # -------------------------
     # 2) Divergence override
-    # -------------------------
     if sew_status not in ["DEADMAN", "ALERT"]:
         if div_status != "ALIGNED":
             if final_action == "INCREASE":
@@ -268,17 +262,13 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         else:
             reason_chain.append("Divergence ALIGNED → 구조·가격·수급 정렬")
 
-    # -------------------------
     # 3) Narrative confirmation
-    # -------------------------
     if sew_status == "STABLE" and div_status == "ALIGNED":
         reason_chain.append(f"Narrative Action={narrative_action} 반영")
     else:
         reason_chain.append("상위 레이어(SEW/Divergence)가 Narrative보다 우선")
 
-    # -------------------------
     # 4) Warning signals
-    # -------------------------
     corr65_score = int(warn.get("corr65_score", 0) or 0)
     corr66_score = int(warn.get("corr66_score", 0) or 0)
     geo_level = str(warn.get("geo_level", "NORMAL")).upper()
@@ -324,7 +314,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Divergence:** {div_status} / {div_action}")
     lines.append(f"- **Warning Score:** {warning_score} ({', '.join(warning_notes) if warning_notes else 'No warning'})")
     lines.append(f"- **Why:** " + " → ".join(reason_chain))
-        # Final decision state 저장 (generate_report.py에서 재사용)
+
     market_data["FINAL_DECISION"] = {
         "action": final_action,
         "exposure": final_exposure,
