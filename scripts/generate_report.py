@@ -1542,13 +1542,9 @@ def generate_daily_report() -> None:
     
 
     
+  
+    # Summary / Decision layers first
     # -------------------------
-    # Top layers first
-    # -------------------------
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append(commentary_block)
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -1559,6 +1555,10 @@ def generate_daily_report() -> None:
     lines.append(scenario_block)
     lines.append("")
     lines.append(transmission_block)
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append(commentary_block)
     lines.append("")
     lines.append("---")
     lines.append("")
