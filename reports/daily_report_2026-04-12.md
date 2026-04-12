@@ -58,30 +58,30 @@
 
 ## 🧭 So What? (Decision Layer)
 - **Strategic View:** **INCREASE** *(base exposure: 75%)*
-- **Execution View:** **INCREASE** *(final exposure: 75%)*
+- **Execution View:** **HOLD** *(final exposure: 56%)*
 - **Context:** phase=RISK-ON (부분 정렬) / liquidity=UP-MID / credit_calm=True / geo=NORMAL
-- **SEW / Divergence:** N/A / N/A | N/A / HOLD
-- **Warning Score:** 0 (No warning)
-- **Do:** 전략·실행 판단이 모두 확장 쪽에 정렬된 상태로, 베타를 단계적으로 확대; 퀄리티(현금흐름/재무안정) 중심으로 리스크 자산 비중 확대
-- **Don't:** 무분별한 테마 추격; 리스크 관리 없는 집중 포지션
-- **Triggers:** VIX 급등 또는 HY OAS 확대 시 즉시 방어; Divergence 비정렬 해소 전까지 공격적 확장 보류
+- **SEW / Divergence:** STABLE / NORMAL | ALIGNED / **STAY (포지션 유지)**
+- **Warning Score:** 3 (6.6 섹터 상관관계 붕괴)
+- **Do:** 구조적으로는 확대 가능하나, 현재는 리스크 오버라이드 반영으로 사이징 축소 유지; 퀄리티 중심 선별적 포지셔닝 유지
+- **Don't:** 경고 신호 해소 전 무리한 베타 확대; 테마성 추격 매수
+- **Triggers:** Warning Score 정상화 / SEW 안정 / Divergence ALIGNED 유지 시 확대 재개 검토
 
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
-- **Strategic View:** INCREASE (75%) | **Execution View:** INCREASE (75%)
+- **Strategic View:** INCREASE (75%) | **Execution View:** HOLD (56%)
 - **Context:** phase=RISK-ON (부분 정렬) / liquidity=UP-MID / credit_calm=True / geo=NORMAL
 
 ### 🔹 Base Case
-- 조건: 현재 Execution View=INCREASE 유지 / SEW=N/A / Divergence=N/A / 추가 경고 신호 없음
-- 전략: 실행 노출 75% 유지, 전략 기준과 실행 기준이 정렬된 상태에서 운용
+- 조건: 현재 Execution View=HOLD 유지 / SEW=STABLE / Divergence=ALIGNED / Warning Score 3 지속
+- 전략: 실행 노출 56% 유지, 퀄리티 중심 선별적 접근 (전략 기준 75% 대비 방어적 사이징)
 
 ### 🔼 Bull Case
 - 조건: Warning Score ≤ 1 / SEW: STABLE 유지 / Divergence: ALIGNED 유지 / NET_LIQ 우호 / 크레딧 안정 지속
-- 전략: 실행 노출 75% 유지 또는 추가 확장 검토, 성장/리스크 자산 베타 우호
+- 전략: 실행 노출 56% → 75%로 복귀, 성장/리스크 자산 베타 단계적 재확대
 
 ### 🔻 Bear Case
 - 조건: SEW WATCH/ALERT/DEADMAN 재발 / HY OAS 4% 상회 또는 급등 / VIX 22 이상 또는 급등 전환 / 상관관계 붕괴 심화 / Divergence 비정렬 전환
-- 전략: 실행 노출 75%에서 추가 축소, 방어/현금 비중 확대 및 고베타 자산 감축
+- 전략: 실행 노출 56%에서 추가 축소, 방어/현금 비중 확대 및 고베타 자산 감축
 
 ---
 
@@ -353,8 +353,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5849429365047161
-- **Z-Score (5d):** 0.13491005571385656
+- **Z-Score (1d):** -0.5849432186614175
+- **Z-Score (5d):** 0.13490992362262907
 
 ### EEM
 - **Crash?** False
@@ -371,8 +371,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.047638297075600085
-- **Z-Score (5d):** 1.8640124345125106
+- **Z-Score (1d):** -0.04763823930956332
+- **Z-Score (5d):** 1.8640110356222455
 
 ### EWJ
 - **Crash?** False
