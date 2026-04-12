@@ -417,10 +417,28 @@ def check_market_anomaly():
     # ---------------------------
     # 실전용 발송 조건
     # ---------------------------
-    should_alert = is_spiking or recommended_exp == 0 or bool(corr_msg)
+        # ---------------------------
+    # 실전용 발송 조건
+    # ---------------------------
+    should_alert = (
+        sew_status in ["WATCH", "ALERT", "DEADMAN"]
+        or event_type in [
+            "LIQUIDATION_SHOCK",
+            "MACRO_UNWIND",
+            "TECH_DELEVERAGING",
+            "POSITION_UNWIND_RISK",
+            "RISK_OFF_SHOCK",
+            "MACRO_FLOW_DISLOCATION",
+            "TECH_STRESS",
+            "VOL_CRUSH_SQUEEZE",
+            "RISK_ON_SQUEEZE",
+        ]
+        or recommended_exp == 0
+        or bool(corr_msg)
+    )
 
     if should_alert:
-        subject = f"🚨 [SEW] {status_msg} | {event_type} | Exp {recommended_exp}%"
+        subject = f"🚨 [SEW] {sew_status} | {event_type} | Exp {recommended_exp}%"
 
         body = f"""
 [Digital War Room - Real-time Status]
@@ -441,7 +459,7 @@ def check_market_anomaly():
 - Extreme Count: {extreme_count}
 
 📊 자산별 변동률 (5분 기준)
-{chr(10).join(summary_lines)}
+{chr(10).join(summary_lines) if summary_lines else 'No intraday asset summary available.'}
 
 {corr_msg if corr_msg else 'No correlation break message.'}
 
@@ -456,8 +474,13 @@ def check_market_anomaly():
         os.makedirs("insights", exist_ok=True)
         with open("insights/alerts.log", "a", encoding="utf-8") as f:
             f.write(
-                f"[{now_str}] Event={event_type} | SEW={sew_status} | Exp={recommended_exp}% | "
-                f"{status_msg} | spike={spike_count} extreme={extreme_count} | "
+                f"[{now_str}] ALERT | "
+                f"SEW={sew_status} | "
+                f"EVENT={event_type} | "
+                f"Exp={recommended_exp}% | "
+                f"{status_msg} | "
+                f"spike={spike_count} extreme={extreme_count} | "
+                f"corr_break={'YES' if bool(corr_msg) else 'NO'} | "
                 f"z={z_map}\n"
             )
 
@@ -466,8 +489,12 @@ def check_market_anomaly():
         resend_to = os.getenv("RESEND_TO")
 
         print(
-            f"DEBUG: should_alert={should_alert}, recommended_exp={recommended_exp}, "
-            f"event_type={event_type}, sew_status={sew_status}, z_map={z_map}"
+            f"DEBUG: should_alert={should_alert}, "
+            f"recommended_exp={recommended_exp}, "
+            f"event_type={event_type}, "
+            f"sew_status={sew_status}, "
+            f"corr_msg_exists={bool(corr_msg)}, "
+            f"z_map={z_map}"
         )
         print(f"DEBUG: RESEND_FROM={resend_from}, RESEND_TO={resend_to}")
 
@@ -489,20 +516,27 @@ def check_market_anomaly():
                 )
                 print(f"✅ Resend status: {resp.status_code}")
                 print(f"✅ Resend response: {resp.text}")
+
+                if resp.status_code not in [200, 201]:
+                    print("❌ 이메일 API 호출은 되었지만 성공 응답이 아닙니다.")
             except Exception as e:
                 print(f"❌ 이메일 발송 실패: {e}")
         else:
             print("❌ RESEND_API_KEY / RESEND_FROM / RESEND_TO 환경변수 확인 필요")
 
-        print(f"📧 실전 알림 발송 완료: {status_msg} | {event_type}")
+        print(f"📧 실전 알림 발송 완료: {sew_status} | {event_type}")
 
     else:
-        # 메일 안 가는 정상 상황도 로그 남기기
         os.makedirs("insights", exist_ok=True)
         with open("insights/alerts.log", "a", encoding="utf-8") as f:
             f.write(
-                f"[{now_str}] NO_ALERT | SEW={sew_status} | Exp={recommended_exp}% | "
-                f"spike={spike_count} extreme={extreme_count} | z={z_map}\n"
+                f"[{now_str}] NO_ALERT | "
+                f"SEW={sew_status} | "
+                f"EVENT={event_type} | "
+                f"Exp={recommended_exp}% | "
+                f"spike={spike_count} extreme={extreme_count} | "
+                f"corr_break={'YES' if bool(corr_msg) else 'NO'} | "
+                f"z={z_map}\n"
             )
 
         print("✅ 특이사항 없음. 정상 모니터링 종료.")
