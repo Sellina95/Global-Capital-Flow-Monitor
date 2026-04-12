@@ -1300,12 +1300,6 @@ def generate_daily_report() -> None:
         "event_type": sew_event_type,
         "deadman": sew_deadman,
     }
-
-
-
-    # -------------------------
-    # Divergence 상태 정제
-    # -------------------------
     clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
 
     if "ALIGNED" in clean_div_status.upper():
@@ -1348,6 +1342,22 @@ def generate_daily_report() -> None:
     }
 
     # -------------------------
+    # Final Decision 먼저 계산
+    # -------------------------
+    final_decision_text = war_room_final_decision_filter(market_data)
+    final_decision_state = market_data.get("FINAL_DECISION", {}) or {}
+
+    base_exposure_display = int(
+        final_decision_state.get("base_exposure", recommended_exposure)
+    )
+    final_exposure_display = int(
+        final_decision_state.get("exposure", recommended_exposure)
+    )
+    final_action_display = str(
+        final_decision_state.get("action", "HOLD")
+    ).upper()
+
+    # -------------------------
     # 워룸 상태 판단
     # -------------------------
     is_war_room_alert = (
@@ -1371,6 +1381,18 @@ def generate_daily_report() -> None:
     else:
         war_room_summary = "구조 또는 실시간 수급에 경미한 이상징후 존재 / 모니터링 필요"
 
+    # Exposure 해석문
+    exposure_interp_lines = []
+    if final_exposure_display < base_exposure_display:
+        exposure_interp_lines.append("→ 시장 구조상 확대 가능 환경이더라도, 현재는 리스크 오버라이드가 우선입니다")
+        exposure_interp_lines.append("→ Event / Warning / SEW 반영으로 방어적 축소 필요")
+    elif final_exposure_display > base_exposure_display:
+        exposure_interp_lines.append("→ 구조 대비 실행 레이어가 더 우호적으로 해석되었습니다")
+        exposure_interp_lines.append("→ 실시간 리스크 이상 없음 / 전략 기준보다 공격적 운용 가능")
+    else:
+        exposure_interp_lines.append("→ 구조와 리스크 오버라이드가 대체로 정렬된 상태입니다")
+        exposure_interp_lines.append("→ 전략 기준 노출 유지 가능")
+
     # -------------------------
     # Report assembly
     # -------------------------
@@ -1382,8 +1404,17 @@ def generate_daily_report() -> None:
 
     # Strategic War Room
     lines.append("## ⚡ Strategic War Room (통합 대응)")
-    lines.append(f"> **시스템 상태: {war_room_emoji} {war_room_state} | 권장 노출도: {recommended_exposure}%**")
+    lines.append(f"> **시스템 상태: {war_room_emoji} {war_room_state}**")
     lines.append(f"> **판단 요약: {war_room_summary}**")
+    lines.append("")
+
+    lines.append("### 🎯 Exposure Framework")
+    lines.append(f"- **Base Exposure (전략 기준): {base_exposure_display}%**")
+    lines.append(f"- **Final Exposure (실행 기준): {final_exposure_display}%**")
+    lines.append("")
+
+    lines.append("### 📌 Interpretation")
+    lines.extend(exposure_interp_lines)
     lines.append("")
 
     lines.append(f"- **[14번 구조·수급 괴리]:** {war_room_emoji} {div_status}")
@@ -1400,7 +1431,6 @@ def generate_daily_report() -> None:
     lines.append(f"- **[14번 수급 시그널]:** {div_action}")
     lines.append("")
 
-    final_decision_text = war_room_final_decision_filter(market_data)
     lines.append(final_decision_text)
     lines.append("")
 
@@ -1418,7 +1448,7 @@ def generate_daily_report() -> None:
     lines.append("")
     lines.append("## 📊 Daily Macro Signals")
     lines.append("")
-    
+
     # daily core signals
     if "US10Y" in market_data and market_data["US10Y"].get("today") is not None:
         prev = market_data["US10Y"].get("prev")
@@ -1504,7 +1534,12 @@ def generate_daily_report() -> None:
         lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
         lines.append(f"- **Current Regime:** {regime_result.get('current_regime')}")
         lines.append(f"- **File/Email:** not created (no previous regime to compare)")"""
-        
+
+
+    # -------------------------
+    # Divergence 상태 정제
+    # -------------------------
+    
 
     
     # -------------------------
