@@ -3,80 +3,71 @@ from typing import Dict, Any
 
 def decision_layer_filter(market_data: Dict[str, Any]) -> str:
     """
-    So What? Decision Layer (v2)
-    Turns FINAL_STATE + style/factor outputs into actionable guidance.
-    + GEO_EW overlay
-    + WARNING_SIGNALS overlay (6.5 / 6.6 / 7.2)
+    So What? Decision Layer (v3)
+    - Strategic View (FINAL_STATE)와 Execution View (FINAL_DECISION)를 분리해서 보여줌
+    - War Room 최종 판단을 보고서 하단 So What에 일관되게 반영
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
+    final_decision = market_data.get("FINAL_DECISION", {}) or {}
+    warn = market_data.get("WARNING_SIGNALS", {}) or {}
 
+    # -------------------------
+    # Strategic layer (Base)
+    # -------------------------
     phase = str(state.get("phase", "N/A"))
-    action = str(state.get("risk_action", "HOLD")).upper()
-    budget = state.get("risk_budget", None)
+    strategic_action = str(state.get("risk_action", "HOLD")).upper()
+    strategic_budget = state.get("risk_budget", None)
 
     liq_dir = str(state.get("liquidity_dir", "N/A")).upper()
     liq_lvl = str(state.get("liquidity_level_bucket", "N/A")).upper()
     credit_calm = state.get("credit_calm", None)
 
+    # -------------------------
+    # Execution layer (Final)
+    # -------------------------
+    execution_action = str(final_decision.get("action", strategic_action)).upper()
+
+    try:
+        base_exposure = int(final_decision.get("base_exposure", strategic_budget if strategic_budget is not None else 50))
+    except Exception:
+        base_exposure = 50
+
+    try:
+        final_exposure = int(final_decision.get("exposure", base_exposure))
+    except Exception:
+        final_exposure = base_exposure
+
+    sew_status = str(final_decision.get("sew_status", "N/A")).upper()
+    sew_event = str(final_decision.get("sew_event", "N/A")).upper()
+
+    div_status = str(final_decision.get("div_status", "N/A")).upper()
+    div_action = str(final_decision.get("div_action", "HOLD")).upper()
+
+    # -------------------------
+    # Style / Factor hints
+    # -------------------------
     style = market_data.get("STYLE_TILT", None)
     duration = market_data.get("DURATION_TILT", None)
     cyclical = market_data.get("CYCLICAL_TILT", None)
 
-    exposure_txt = f"{budget}%" if isinstance(budget, int) else "중립"
+    style_hint = []
+    if style:
+        style_hint.append(f"Style={style}")
+    if duration:
+        style_hint.append(f"Duration={duration}")
+    if cyclical:
+        style_hint.append(f"Cyclical/Defensive={cyclical}")
 
-    stance = action
-
-    if action == "INCREASE" and (liq_dir == "DOWN" or liq_lvl == "LOW"):
-        stance = "HOLD"
-
-    do, dont, triggers = [], [], []
-
-    if stance == "INCREASE":
-        do += ["노출을 단계적으로 확대하되, 퀄리티(현금흐름/재무안정) 중심으로 확대"]
-        triggers += ["VIX 급등 또는 HY OAS 확대 시 즉시 방어"]
-    elif stance == "REDUCE":
-        do += ["현금/단기자산 비중 확대, 레버리지·저품질 크레딧 노출 축소"]
-        triggers += ["크레딧 추가 악화 시 추가 디레버리징"]
-    else:
-        do += ["노출은 유지하되, 베타 확대보다 선별적 포지셔닝(퀄리티) 유지"]
-        triggers += ["NET_LIQ 추가 하락/LOW 고착 시 노출 축소 준비"]
-
-    if liq_dir == "DOWN" or liq_lvl == "LOW":
-        dont += ["공격적 베타 확대", "장기듀레이션 성장주/레버리지 익스포저 확대"]
-    else:
-        dont += ["무분별한 테마 추격", "리스크 관리 없는 집중 포지션"]
-
-    if credit_calm is False:
-        do += ["크레딧 스트레스 확인 시(우선순위 1) 방어 전환"]
-        triggers += ["HY OAS 4% 상회 시 Risk-Off 프로토콜"]
-
-    # GEO overlay
-    geo = market_data.get("GEO_EW", {}) or {}
-    geo_level = str(geo.get("level", "NORMAL")).upper()
-
-    if geo_level == "ELEVATED":
-        if stance == "INCREASE":
-            stance = "HOLD"
-        do.append("Geo EW Elevated → 지정학 리스크 헤어컷 적용 (베타 확대 자제)")
-        triggers.append("Geo Score 추가 상승/확산 시 방어 전환")
-    elif geo_level == "CRISIS":
-        stance = "REDUCE"
-        do.append("Geo EW Crisis → 지정학 스트레스 급등, 즉시 방어 모드")
-        dont.append("공격적 베타 포지셔닝")
-        triggers.append("Geo Score 정상화 확인 전까지 리스크 축소 유지")
-
-    # WARNING SIGNALS overlay
-    warn = market_data.get("WARNING_SIGNALS", {}) or {}
+    # -------------------------
+    # Warning score
+    # -------------------------
     corr65_score = int(warn.get("corr65_score", 0) or 0)
     corr66_score = int(warn.get("corr66_score", 0) or 0)
-    warn_geo_level = str(warn.get("geo_level", geo_level)).upper()
+    warn_geo_level = str(warn.get("geo_level", "NORMAL")).upper()
 
-    warning_score = 0
+    warning_score = corr65_score + corr66_score
     warning_notes = []
-
-    warning_score += corr65_score
-    warning_score += corr66_score
 
     if warn.get("corr65_break"):
         warning_notes.append("6.5 상관관계 붕괴")
@@ -90,34 +81,58 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
         warning_score += 2
         warning_notes.append("7.2 지정학 위기(CRISIS)")
 
-    if warning_score >= 3:
-        if stance == "INCREASE":
-            stance = "HOLD"
-        elif stance == "HOLD":
-            stance = "REDUCE"
-        do.append("Warning Score 3+ → 공격적 확장 금지, 익스포저 대폭 축소 고려")
+    # -------------------------
+    # Actionable guidance
+    # -------------------------
+    do, dont, triggers = [], [], []
+
+    # execution_action 기준으로 작성
+    if execution_action == "INCREASE":
+        do.append("전략·실행 판단이 모두 확장 쪽에 정렬된 상태로, 베타를 단계적으로 확대")
+        do.append("퀄리티(현금흐름/재무안정) 중심으로 리스크 자산 비중 확대")
+        triggers.append("VIX 급등 또는 HY OAS 확대 시 즉시 방어")
+        dont.append("무분별한 테마 추격")
+        dont.append("리스크 관리 없는 집중 포지션")
+
+    elif execution_action == "REDUCE":
+        do.append("실행 레이어 기준 방어 우선, 현금/단기자산 비중 확대")
+        do.append("레버리지·저품질 크레딧·고베타 익스포저 축소")
+        triggers.append("SEW 안정화 / Warning 정상화 확인 전까지 방어적 운용 유지")
         dont.append("공격적 베타 확대")
-        triggers.append("경고 신호 해소 전까지 방어적 운용 유지")
-    elif warning_score == 2:
-        if stance == "INCREASE":
-            stance = "HOLD"
-        do.append("Warning Score 2 → 확신도 하락, 익스포저 10~15% 헤어컷 고려")
-        triggers.append("상관관계 붕괴 지속 시 추가 축소 검토")
-    elif warning_score == 1:
-        do.append("Warning Score 1 → 경미한 이상신호, 포지션은 유지하되 모니터링 강화")
+        dont.append("고변동성 자산 비중 확대")
 
-    style_hint = []
-    if style:
-        style_hint.append(f"Style={style}")
-    if duration:
-        style_hint.append(f"Duration={duration}")
-    if cyclical:
-        style_hint.append(f"Cyclical/Defensive={cyclical}")
+    else:  # HOLD
+        if final_exposure < base_exposure:
+            do.append("구조적으로는 확대 가능하나, 현재는 리스크 오버라이드 반영으로 사이징 축소 유지")
+            do.append("퀄리티 중심 선별적 포지셔닝 유지")
+            triggers.append("Warning Score 정상화 / SEW 안정 / Divergence ALIGNED 유지 시 확대 재개 검토")
+            dont.append("경고 신호 해소 전 무리한 베타 확대")
+            dont.append("테마성 추격 매수")
+        else:
+            do.append("노출은 유지하되, 베타 확대보다 선별적 포지셔닝(퀄리티) 유지")
+            triggers.append("NET_LIQ 추가 하락/LOW 고착 시 노출 축소 준비")
+            dont.append("무분별한 테마 추격")
+            dont.append("리스크 관리 없는 집중 포지션")
 
+    if credit_calm is False:
+        do.append("크레딧 스트레스 확인 시 방어 전환 우선")
+        triggers.append("HY OAS 4% 상회 시 Risk-Off 프로토콜")
+
+    if sew_status in ["WATCH", "ALERT", "DEADMAN"]:
+        triggers.append(f"SEW {sew_status} 해소 여부 확인 필요")
+
+    if div_status != "ALIGNED":
+        triggers.append("Divergence 비정렬 해소 전까지 공격적 확장 보류")
+
+    # -------------------------
+    # Text assembly
+    # -------------------------
     lines = []
     lines.append("## 🧭 So What? (Decision Layer)")
-    lines.append(f"- **Risk Stance:** **{stance}** *(target exposure: {exposure_txt})*")
+    lines.append(f"- **Strategic View:** **{strategic_action}** *(base exposure: {base_exposure}%)*")
+    lines.append(f"- **Execution View:** **{execution_action}** *(final exposure: {final_exposure}%)*")
     lines.append(f"- **Context:** phase={phase} / liquidity={liq_dir}-{liq_lvl} / credit_calm={credit_calm} / geo={warn_geo_level}")
+    lines.append(f"- **SEW / Divergence:** {sew_status} / {sew_event} | {div_status} / {div_action}")
 
     if warning_score > 0:
         lines.append(f"- **Warning Score:** {warning_score} ({', '.join(warning_notes)})")
