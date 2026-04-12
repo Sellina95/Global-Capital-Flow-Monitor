@@ -3,8 +3,16 @@
 **Data as of:** 2026-04-10
 
 ## ⚡ Strategic War Room (통합 대응)
-> **시스템 상태: ✅ STABLE | 권장 노출도: 75%**
+> **시스템 상태: ✅ STABLE**
 > **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
+
+### 🎯 Exposure Framework
+- **Base Exposure (전략 기준): 75%**
+- **Final Exposure (실행 기준): 56%**
+
+### 📌 Interpretation
+→ 시장 구조상 확대 가능 환경이더라도, 현재는 리스크 오버라이드가 우선입니다
+→ Event / Warning / SEW 반영으로 방어적 축소 필요
 
 - **[14번 구조·수급 괴리]:** ✅ **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
@@ -15,16 +23,16 @@
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
 ## 🎯 Final Decision (War Room Override)
-- **Final Action:** **REDUCE**
-- **Final Exposure:** **23%**
+- **Final Action:** **HOLD**
+- **Final Exposure:** **56%**
 - **Base Context:** phase=RISK-ON (부분 정렬) / narrative=INCREASE / base_exposure=75%
-- **SEW:** ALERT / MACRO_UNWIND
+- **SEW:** STABLE / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
 - **Warning Score:** 3 (6.6 섹터 상관관계 붕괴)
-- **Why:** SEW ALERT → 실시간 발작 감지, 익스포저 30% 축소 → Event: MACRO_UNWIND → 자금 언와인딩 → 익스포저 축소 → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut
+- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영 → Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **WAITING / RANGE (대기·박스권)** → **RISK-ON (부분 정렬)**
+- **현재 국면 유지:** ✅ **RISK-ON (부분 정렬)**
 
 ---
 
@@ -358,8 +366,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.047637975845747034
-- **Z-Score (5d):** 1.8640122306708429
+- **Z-Score (1d):** -0.04763826157844059
+- **Z-Score (5d):** 1.864011071858537
 
 ### EWJ
 - **Crash?** False
