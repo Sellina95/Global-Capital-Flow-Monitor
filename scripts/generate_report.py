@@ -1540,9 +1540,6 @@ def generate_daily_report() -> None:
     # Divergence 상태 정제
     # -------------------------
     
-
-    
-  
     # Summary / Decision layers first
     # -------------------------
     lines.append("")
@@ -1554,11 +1551,11 @@ def generate_daily_report() -> None:
     lines.append("")
     lines.append(scenario_block)
     lines.append("")
-    lines.append(transmission_block)
-    lines.append("")
     lines.append("---")
     lines.append("")
     lines.append(commentary_block)
+    lines.append("")
+    lines.append(transmission_block)
     lines.append("")
     lines.append("---")
     lines.append("")
