@@ -1302,6 +1302,13 @@ def generate_daily_report() -> None:
     }
 
     # -------------------------
+    # TEST MOCK: Event Override 확인용
+    # -------------------------
+    market_data["SEW_STATE"]["status"] = "ALERT"
+    market_data["SEW_STATE"]["event_type"] = "MACRO_UNWIND"
+    market_data["SEW_STATE"]["summary"] = "⚠ 테스트용: 자금 언와인딩 이벤트 강제 주입"
+
+    # -------------------------
     # Divergence 상태 정제
     # -------------------------
     clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
