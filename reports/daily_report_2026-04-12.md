@@ -46,16 +46,6 @@
 
 ---
 
-### 🧬 19) Execution / Style Translation Layer
-- **Implementation Focus:** Environment-Aware Stock Types
-
-**Preferred Company Traits:**
-- Balanced quality exposure
-- Selective sector-neutral positioning
-
-**Risk Control / Avoid:**
-- Unscreened speculative exposure
-
 ## 🧭 So What? (Decision Layer)
 - **Strategic View:** **INCREASE** *(base exposure: 75%)*
 - **Execution View:** **HOLD** *(final exposure: 56%)*
@@ -334,6 +324,16 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - UW Utilities: -1: 유동성 완화 → 방어주 상대매력 저하
 
 
+### 🧬 19) Execution / Style Translation Layer
+- **Implementation Focus:** Environment-Aware Stock Types
+
+**Preferred Company Traits:**
+- Balanced quality exposure
+- Selective sector-neutral positioning
+
+**Risk Control / Avoid:**
+- Unscreened speculative exposure
+
 ## 🔗 Transmission Map (Macro → Industry → Company)
 - **1-Line Conclusion:** 퀄리티 중심 차별화 + 베타 확장 가능 → **High operating leverage / cyclicals / growth optionality** 선호
 
@@ -353,8 +353,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5849432186614175
-- **Z-Score (5d):** 0.13490992362262907
+- **Z-Score (1d):** -0.5849396333551152
+- **Z-Score (5d):** 0.13490965885313455
 
 ### EEM
 - **Crash?** False
@@ -371,8 +371,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.04763823930956332
-- **Z-Score (5d):** 1.8640110356222455
+- **Z-Score (1d):** -0.047637975845747034
+- **Z-Score (5d):** 1.8640122306708429
 
 ### EWJ
 - **Crash?** False
