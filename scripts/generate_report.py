@@ -1134,16 +1134,16 @@ def generate_daily_report() -> None:
         .tail(10)
         .to_string(index=False)
     )
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print(f"!!! [BEFORE BUILD] CSV DXY (today_idx): {df.iloc[today_idx].get('DXY')}")
-    print("="*50 + "\n")
-    
+    print("=" * 50 + "\n")
+
     market_data = build_market_data(df, today_idx)
-    
-    print("\n" + "="*50)
+
+    print("\n" + "=" * 50)
     print(f"!!! [AFTER BUILD] MarketData DXY: {market_data.get('DXY', {}).get('today')}")
-    print("="*50 + "\n")
-    
+    print("=" * 50 + "\n")
+
     # -----------------------------
     # 2) Detect stale / market closed
     # -----------------------------
@@ -1163,7 +1163,7 @@ def generate_daily_report() -> None:
     market_data["_STALE"] = stale
 
     # -----------------------------
-    # 3) Attach layers (기존 코드 시작)
+    # 3) Attach layers
     # -----------------------------
     market_data = attach_liquidity_layer(market_data) or market_data
     market_data = attach_positioning_layer(market_data) or market_data
@@ -1173,7 +1173,7 @@ def generate_daily_report() -> None:
     market_data = attach_expectation_layer(market_data) or market_data
     market_data = attach_geopolitical_ew_layer(market_data, df, today_idx) or market_data
 
-    # 국가 ETF 리스크 레이어 먼저
+    # 국가 ETF 리스크 레이어
     market_data = attach_country_risk_layer(market_data, df, today_idx) or market_data
 
     # Cosine Similarity는 country risk 이후
@@ -1182,7 +1182,7 @@ def generate_daily_report() -> None:
     # Wall-Street Sentiment Proxy
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
 
-    # regime change monitor
+    # Regime change monitor
     regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
 
     # -------------------------
@@ -1202,8 +1202,6 @@ def generate_daily_report() -> None:
             "T10Y2Y": float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0,
             "T10YIE": float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0,
             "DFII10": float(latest_fred["DFII10"]) if pd.notna(latest_fred.get("DFII10")) else 0.0,
-            
-            # 🚨 보정: FRED의 120 대신, 앞서 build_market_data에서 가져온 98.xx를 씁니다.
             "VIX": market_data["VIX"].get("today") if "VIX" in market_data else 20.0,
             "DXY": market_data["DXY"].get("today") if "DXY" in market_data else 100.0,
         }
@@ -1211,20 +1209,16 @@ def generate_daily_report() -> None:
         print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
     else:
         print("[DEBUG] Fred Extra Saved: skipped (empty fred df)")
-    
+
     print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
+
+    # War room history 저장
     generate_war_room_history()
 
+    # -------------------------
+    # 5) Commentary block 먼저 생성
+    # -------------------------
     commentary_block = build_strategist_commentary(market_data)
-    # -------------------------
-    # 6) Fred Data Loading and Injection
-    # -------------------------
-
-    # 5) Top layers
-    exec_block = executive_summary_filter(market_data)
-    decision_block = decision_layer_filter(market_data)
-    scenario_block = scenario_generator_filter(market_data)
-    transmission_block = transmission_layer_filter(market_data)
 
     # -------------------------
     # 6) Country ETF risk block
@@ -1249,17 +1243,14 @@ def generate_daily_report() -> None:
         country_risk_lines.append("- No country ETF risk data available.")
         country_risk_lines.append("")
 
-
-        # -------------------------
-        # -------------------------
-        # -------------------------
-    # Strategic War Room inputs
+    # -------------------------
+    # 7) Strategic War Room inputs
     # -------------------------
     div_full_text = divergence_monitor_filter(market_data)
     div_status = "N/A"
     div_action = "N/A"
 
-    for line in div_full_text.split('\n'):
+    for line in div_full_text.split("\n"):
         if "**Status:**" in line:
             div_status = line.split("**Status:**")[-1].strip()
         if "**Action Signal:**" in line:
@@ -1268,19 +1259,17 @@ def generate_daily_report() -> None:
     recommended_exposure = 100
     is_deadman_activated = False
 
-    for line in commentary_block.split('\n'):
+    for line in commentary_block.split("\n"):
         if "Recommended Exposure:" in line:
             try:
-                recommended_exposure = int(''.join(filter(str.isdigit, line)))
+                recommended_exposure = int("".join(filter(str.isdigit, line)))
             except Exception:
                 pass
         if "DEAD MAN'S SWITCH ACTIVATED" in line:
             is_deadman_activated = True
 
-    
-
     # -------------------------
-    # SEW 상태 로드
+    # 8) SEW 상태 로드
     # -------------------------
     sew_state = get_sew_state()
     sew_summary = sew_state["summary"]
@@ -1290,9 +1279,6 @@ def generate_daily_report() -> None:
     sew_spike_count = sew_state["spike_count"]
     sew_extreme_count = sew_state["extreme_count"]
     sew_event_interp = interpret_sew_event(sew_event_type)
-    
-    
-    
 
     market_data["SEW_STATE"] = {
         "status": sew_status,
@@ -1300,6 +1286,10 @@ def generate_daily_report() -> None:
         "event_type": sew_event_type,
         "deadman": sew_deadman,
     }
+
+    # -------------------------
+    # 9) Divergence state 정제
+    # -------------------------
     clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
 
     if "ALIGNED" in clean_div_status.upper():
@@ -1319,7 +1309,7 @@ def generate_daily_report() -> None:
     market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
 
     # -------------------------
-    # 6.5 / 6.6 결과 생성
+    # 10) 6.5 / 6.6 결과 생성
     # -------------------------
     correlation_break_text = correlation_break_filter(market_data)
     sector_corr_break_text = sector_correlation_break_filter(market_data)
@@ -1328,7 +1318,7 @@ def generate_daily_report() -> None:
     corr66_state = sector_correlation_break_state(market_data)
 
     # -------------------------
-    # Warning signal states (6.5 / 6.6 / 7.2)
+    # 11) Warning signal states (6.5 / 6.6 / 7.2)
     # -------------------------
     geo_state = market_data.get("GEO_EW", {}) or {}
     geo_level = str(geo_state.get("level", "NORMAL")).upper()
@@ -1342,23 +1332,26 @@ def generate_daily_report() -> None:
     }
 
     # -------------------------
-    # Final Decision 먼저 계산
+    # 12) Final Decision 먼저 계산
     # -------------------------
     final_decision_text = war_room_final_decision_filter(market_data)
     final_decision_state = market_data.get("FINAL_DECISION", {}) or {}
+    print("[DEBUG] FINAL_DECISION:", final_decision_state)
 
-    base_exposure_display = int(
-        final_decision_state.get("base_exposure", recommended_exposure)
-    )
-    final_exposure_display = int(
-        final_decision_state.get("exposure", recommended_exposure)
-    )
-    final_action_display = str(
-        final_decision_state.get("action", "HOLD")
-    ).upper()
+    base_exposure_display = int(final_decision_state.get("base_exposure", recommended_exposure))
+    final_exposure_display = int(final_decision_state.get("exposure", recommended_exposure))
+    final_action_display = str(final_decision_state.get("action", "HOLD")).upper()
 
     # -------------------------
-    # 워룸 상태 판단
+    # 13) 이제서야 Summary / Decision blocks 생성
+    # -------------------------
+    exec_block = executive_summary_filter(market_data)
+    decision_block = decision_layer_filter(market_data)
+    scenario_block = scenario_generator_filter(market_data)
+    transmission_block = transmission_layer_filter(market_data)
+
+    # -------------------------
+    # 14) 워룸 상태 판단
     # -------------------------
     is_war_room_alert = (
         is_deadman_activated
@@ -1394,7 +1387,7 @@ def generate_daily_report() -> None:
         exposure_interp_lines.append("→ 전략 기준 노출 유지 가능")
 
     # -------------------------
-    # Report assembly
+    # 15) Report assembly
     # -------------------------
     lines = []
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
@@ -1430,7 +1423,6 @@ def generate_daily_report() -> None:
 
     lines.append(f"- **[14번 수급 시그널]:** {div_action}")
     lines.append("")
-
     lines.append(final_decision_text)
     lines.append("")
 
@@ -1514,32 +1506,7 @@ def generate_daily_report() -> None:
             if net is not None:
                 lines.append(f"- **NET_LIQ**: {float(net):.1f}")
 
-    """# ✅ Regime Change Monitor
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append("## 🚨 Regime Change Monitor (always-on)")
-
-    if regime_result.get("status") == "DETECTED":
-        lines.append(f"- **Status:** ✅ DETECTED")
-        lines.append(f"- **Prev → Current:** {regime_result.get('prev_regime')} → {regime_result.get('current_regime')}")
-        lines.append(f"- **File:** `insights/risk_alerts.txt` ✅ created")
-        lines.append(f"- **Email:** {'✅ sent' if regime_result.get('email_sent') else '❌ not sent'} ({regime_result.get('email_note')})")
-    elif regime_result.get("status") == "NOT_DETECTED":
-        lines.append(f"- **Status:** ❎ NOT DETECTED")
-        lines.append(f"- **Current Regime:** {regime_result.get('current_regime')}")
-        lines.append(f"- **File:** not created")
-        lines.append(f"- **Email:** not sent")
-    else:
-        lines.append(f"- **Status:** ⚪ BASELINE SET (first run)")
-        lines.append(f"- **Current Regime:** {regime_result.get('current_regime')}")
-        lines.append(f"- **File/Email:** not created (no previous regime to compare)")"""
-
-
     # -------------------------
-    # Divergence 상태 정제
-    # -------------------------
-    
     # Summary / Decision layers first
     # -------------------------
     lines.append("")
@@ -1560,8 +1527,6 @@ def generate_daily_report() -> None:
     lines.append("---")
     lines.append("")
 
-  
-
     # Optional country block append
     if country_risk_lines:
         lines.append("")
@@ -1573,6 +1538,8 @@ def generate_daily_report() -> None:
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Report written: {report_path}")
     return market_data
+
+    
     
 def generate_final_state_history():
     BACKTEST_DATA_DIR.mkdir(parents=True, exist_ok=True)
