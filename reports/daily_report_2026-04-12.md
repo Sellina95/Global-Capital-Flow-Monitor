@@ -83,15 +83,6 @@
 - 조건: SEW WATCH/ALERT/DEADMAN 재발 / HY OAS 4% 상회 또는 급등 / VIX 22 이상 또는 급등 전환 / 상관관계 붕괴 심화 / Divergence 비정렬 전환
 - 전략: 실행 노출 75%에서 추가 축소, 방어/현금 비중 확대 및 고베타 자산 감축
 
-## 🔗 Transmission Map (Macro → Industry → Company)
-- **1-Line Conclusion:** 퀄리티 중심 차별화 + 베타 확장 가능 → **High operating leverage / cyclicals / growth optionality** 선호
-
-- **Policy → Valuation:** 할인율 방향성 불명확 → 퀄리티 중심 차별화
-- **Liquidity → Risk Budget:** 유동성 공급(리스크 허용↑) → 베타 확장 가능
-- **Credit → Balance Sheet:** 크레딧 안정 → 시스템 리스크 제한
-
-- **Sector/Company Shortcut:** Cyclicals/Tech(상황에 따라) + Small/Mid beta
-
 ---
 
 Some commentary here
@@ -343,6 +334,15 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - UW Utilities: -1: 유동성 완화 → 방어주 상대매력 저하
 
 
+## 🔗 Transmission Map (Macro → Industry → Company)
+- **1-Line Conclusion:** 퀄리티 중심 차별화 + 베타 확장 가능 → **High operating leverage / cyclicals / growth optionality** 선호
+
+- **Policy → Valuation:** 할인율 방향성 불명확 → 퀄리티 중심 차별화
+- **Liquidity → Risk Budget:** 유동성 공급(리스크 허용↑) → 베타 확장 가능
+- **Credit → Balance Sheet:** 크레딧 안정 → 시스템 리스크 제한
+
+- **Sector/Company Shortcut:** Cyclicals/Tech(상황에 따라) + Small/Mid beta
+
 ---
 
 
@@ -353,8 +353,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.584941319420326
-- **Z-Score (5d):** 0.13491016391181482
+- **Z-Score (1d):** -0.5849429365047161
+- **Z-Score (5d):** 0.13491005571385656
 
 ### EEM
 - **Crash?** False
