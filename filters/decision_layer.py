@@ -309,6 +309,21 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Divergence:** {div_status} / {div_action}")
     lines.append(f"- **Warning Score:** {warning_score} ({', '.join(warning_notes) if warning_notes else 'No warning'})")
     lines.append(f"- **Why:** " + " → ".join(reason_chain))
+        # Final decision state 저장 (generate_report.py에서 재사용)
+    market_data["FINAL_DECISION"] = {
+        "action": final_action,
+        "exposure": final_exposure,
+        "base_exposure": base_exposure,
+        "warning_score": warning_score,
+        "warning_notes": warning_notes,
+        "sew_status": sew_status,
+        "sew_event": sew_event,
+        "div_status": div_status,
+        "div_action": div_action,
+        "phase": phase,
+        "narrative_action": narrative_action,
+        "reason_chain": reason_chain,
+    }
 
     return "\n".join(lines)
 
