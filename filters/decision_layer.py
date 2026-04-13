@@ -304,6 +304,34 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         reason_chain.append("Warning Score 1 → 경미한 이상신호, 모니터링 강화")
 
     final_exposure = max(0, min(100, final_exposure))
+    
+    # -------------------------
+    # 5) Recovery Engine v1 (Phased Recovery)
+    # -------------------------
+
+    # 복귀는 방어가 끝난 뒤에만 허용
+    if (
+        warning_score <= 1
+        and sew_status == "STABLE"
+        and div_status == "ALIGNED"
+    ):
+
+        # 현재가 전략보다 낮을 때만 복귀
+        if final_exposure < base_exposure:
+    
+            gap = base_exposure - final_exposure
+    
+            # 단계적 복귀 (한 번에 다 복구하지 않음)
+            recovery_step = max(5, int(gap * 0.5))
+    
+            final_exposure = min(
+                base_exposure,
+                final_exposure + recovery_step
+            )
+    
+            reason_chain.append(
+                f"Recovery Engine → 조건 충족, 익스포저 단계적 복귀 (+{recovery_step}%)"
+            )
 
     lines = []
     lines.append("## 🎯 Final Decision (War Room Override)")
