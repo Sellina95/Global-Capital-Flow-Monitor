@@ -3532,6 +3532,43 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines.append("**Rationale (top drivers):**")
     for r in top_rationales:
         lines.append(f"- {r}")
+        # -------------------------
+    # [NEW] 18.5) Execution Weight Allocation Logic
+    # -------------------------
+    # 15번 필터에서 계산된 최종 노출도를 가져옴 (없으면 기본값 50)
+    final_exposure = market_data.get("PREV_EXPOSURE", 50.0) 
+    
+    # 점수가 양수인 섹터들만 추출
+    positive_sectors = {s: score[s] for s in sectors if score[s] > 0}
+    total_score_sum = sum(positive_sectors.values())
+
+    allocation_lines = []
+    allocation_lines.append("### 💰 18.5) Tactical Asset Allocation (Execution Weight)")
+    allocation_lines.append(f"- **Total Target Exposure:** **{final_exposure}%** (from Filter 15)")
+    allocation_lines.append("")
+    
+    if total_score_sum > 0:
+        allocation_lines.append("| Sector | Score | **Weight in Portfolio** | **Action** |")
+        allocation_lines.append("| :--- | :---: | :---: | :--- |")
+        
+        # 점수 비중대로 exposure 분할 계산
+        for s in ow_sorted:
+            s_score = score[s]
+            # 계산식: (섹터점수 / 점수총합) * 최종노출도
+            s_weight = (s_score / total_score_sum) * final_exposure
+            
+            action = "STRONG BUY" if s_score >= 3 else "ACCUMULATE"
+            allocation_lines.append(f"| {s} | +{s_score} | **{s_weight:.1f}%** | {action} |")
+        
+        # 현금 비중 계산
+        cash_weight = 100.0 - final_exposure
+        allocation_lines.append(f"| **Cash & Hedge** | - | **{cash_weight:.1f}%** | DEFENSIVE |")
+    else:
+        allocation_lines.append("⚠️ 양수 점수를 받은 섹터가 없습니다. 현금 비중을 확대하십시오.")
+
+    # 기존 lines 리스트에 추가
+    lines.append("\n" + "\n".join(allocation_lines))
+
 
     return "\n".join(lines)
 
