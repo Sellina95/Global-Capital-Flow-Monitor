@@ -29,7 +29,12 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
     execution_action = str(final_decision.get("action", strategic_action)).upper()
 
     try:
-        base_exposure = int(final_decision.get("base_exposure", strategic_budget if strategic_budget is not None else 50))
+        base_exposure = int(
+            final_decision.get(
+                "base_exposure",
+                strategic_budget if strategic_budget is not None else 50,
+            )
+        )
     except Exception:
         base_exposure = 50
 
@@ -154,6 +159,7 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
         )
 
     return "\n".join(lines)
+
 
 def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     """
@@ -303,35 +309,39 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     elif warning_score == 1:
         reason_chain.append("Warning Score 1 → 경미한 이상신호, 모니터링 강화")
 
-    final_exposure = max(0, min(100, final_exposure))
-    
     # -------------------------
     # 5) Recovery Engine v1 (Phased Recovery)
     # -------------------------
-
-    # 복귀는 방어가 끝난 뒤에만 허용
     if (
         warning_score <= 1
         and sew_status == "STABLE"
         and div_status == "ALIGNED"
     ):
-
-        # 현재가 전략보다 낮을 때만 복귀
         if final_exposure < base_exposure:
-    
             gap = base_exposure - final_exposure
-    
-            # 단계적 복귀 (한 번에 다 복구하지 않음)
             recovery_step = max(5, int(gap * 0.5))
-    
+
             final_exposure = min(
                 base_exposure,
                 final_exposure + recovery_step
             )
-    
+
             reason_chain.append(
                 f"Recovery Engine → 조건 충족, 익스포저 단계적 복귀 (+{recovery_step}%)"
             )
+
+    # -------------------------
+    # 5.5) Recovery Debug
+    # -------------------------
+    market_data["RECOVERY_DEBUG"] = {
+        "sew_ok": sew_status == "STABLE",
+        "div_ok": div_status == "ALIGNED",
+        "warning_ok": warning_score <= 1,
+        "base_exposure": base_exposure,
+        "final_exposure_before_clamp": final_exposure,
+    }
+
+    final_exposure = max(0, min(100, final_exposure))
 
     lines = []
     lines.append("## 🎯 Final Decision (War Room Override)")
@@ -359,6 +369,3 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     }
 
     return "\n".join(lines)
-
-
-
