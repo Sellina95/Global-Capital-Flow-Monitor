@@ -3309,12 +3309,13 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # 3) 우선순위
     # -------------------------
     PRIORITY = {
-        "VOL": 5,
-        "LIQ": 4,
-        "CURVE": 3,
-        "CREDIT": 2,
-        "PHASE": 1,
-    }
+    "VOL": 6,
+    "LIQ": 5,
+    "CURVE": 4,
+    "CREDIT": 3,
+    "PHASE": 2,
+    "MOM": 1,
+}
 
     sectors = [
         "Technology",
@@ -3449,10 +3450,9 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     for sector_name, ticker in ticker_map.items():
         m_score = momentum_data.get(ticker, 0)
         if m_score > 0:
-            add_score(sector_name, m_score, f"Relative Strength 강세 (vs SPY) → 자금 유입 확인", "PHASE")
+            add_score(sector_name, m_score, f"Relative Strength 강세 (vs SPY) → 자금 유입 확인", "MOM")
         elif m_score < 0:
-            add_score(sector_name, m_score, f"Relative Strength 약세 (vs SPY) → 소외 섹터", "PHASE")
-
+            add_score(sector_name, m_score, f"Relative Strength 약세 (vs SPY) → 소외 섹터", "MOM")
 
 
     # -------------------------
@@ -3515,7 +3515,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         for d in drivers[sector]:
             bucket_sum[d["bucket"]] = bucket_sum.get(d["bucket"], 0) + d["pts"]
 
-        ordered_buckets = ["VOL", "LIQ", "CURVE", "CREDIT", "PHASE"]
+        ordered_buckets = ["VOL", "LIQ", "CURVE", "CREDIT", "PHASE", "MOM"]
         parts = []
         for b in ordered_buckets:
             if b in bucket_sum and bucket_sum[b] != 0:
