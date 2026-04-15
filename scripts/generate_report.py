@@ -1379,7 +1379,7 @@ def generate_daily_report() -> None:
 
     # 국가 ETF 리스크 레이어
     market_data = attach_country_risk_layer(market_data, df, today_idx) or market_data
-
+    market_data = attach_sector_momentum_layer(market_data, df, today_idx) or market_data
     # Cosine Similarity는 country risk 이후
     market_data = attach_geo_similarity_layer(market_data) or market_data
 
