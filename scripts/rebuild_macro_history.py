@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List
 import time
 
 import pandas as pd
@@ -17,11 +17,11 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 KST = timezone(timedelta(hours=9))
 
 LOOKBACK_DAYS = 120
-MAX_RETRIES = 3
-RETRY_SLEEP_SEC = 2
+
+# base calendar 후보만 최소 fallback
+CALENDAR_CANDIDATES: List[str] = ["SPY", "QQQ", "HYG"]
 
 # 미국장 종가 확정 전 today row 제거용 보수적 cutoff
-# UTC 21:30 이전이면 "오늘 미국 row"는 아직 미완성 가능성이 있다고 보고 제거
 US_MARKET_SAFE_CLOSE_HOUR_UTC = 21
 US_MARKET_SAFE_CLOSE_MINUTE_UTC = 30
 
@@ -54,15 +54,6 @@ INDICATORS: Dict[str, str] = {
     "EEM": "EEM",
     "EMB": "EMB",
 }
-
-CALENDAR_CANDIDATES: List[str] = [
-    "SPY",
-    "QQQ",
-    "HYG",
-    "LQD",
-    "XLK",
-    "XLF",
-]
 
 
 def _extract_close_series(df: pd.DataFrame) -> pd.Series:
@@ -107,7 +98,6 @@ def _drop_incomplete_us_today_row(s: pd.Series) -> pd.Series:
         microsecond=0,
     )
 
-    # 아직 미국장 종가 안전시간 전이면 today row 제거
     if now_utc < cutoff_today_utc:
         today_utc_date = pd.Timestamp(now_utc.date())
         if len(s) > 0 and pd.Timestamp(s.index[-1]) >= today_utc_date:
@@ -122,18 +112,22 @@ def _drop_incomplete_us_today_row(s: pd.Series) -> pd.Series:
 
 
 def _download_close_once(ticker: str) -> pd.Series:
-    df = yf.download(
-        ticker,
-        period=f"{LOOKBACK_DAYS}d",
-        interval="1d",
-        progress=False,
-        auto_adjust=False,
-        group_by="column",
-        threads=False,
-    )
-    s = _extract_close_series(df)
-    s = _drop_incomplete_us_today_row(s)
-    return s
+    try:
+        df = yf.download(
+            ticker,
+            period=f"{LOOKBACK_DAYS}d",
+            interval="1d",
+            progress=False,
+            auto_adjust=False,
+            group_by="column",
+            threads=False,
+        )
+        s = _extract_close_series(df)
+        s = _drop_incomplete_us_today_row(s)
+        return s
+    except Exception as e:
+        print(f"[DOWNLOAD-ERROR] {ticker}: {e}")
+        return pd.Series(dtype="float64")
 
 
 def _download_close_fallback(ticker: str) -> pd.Series:
@@ -151,38 +145,24 @@ def _download_close_fallback(ticker: str) -> pd.Series:
         return pd.Series(dtype="float64")
 
 
-def _download_close(ticker: str) -> pd.Series:
-    last_error: Optional[Exception] = None
-
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            s = _download_close_once(ticker)
-            if not s.empty:
-                if attempt > 1:
-                    print(f"[RETRY-SUCCESS] {ticker} succeeded on attempt {attempt}")
-                return s
-        except Exception as e:
-            last_error = e
-            print(f"[RETRY] {ticker} attempt {attempt}/{MAX_RETRIES} failed: {e}")
-
-        time.sleep(RETRY_SLEEP_SEC)
-
-    print(f"[FALLBACK] trying Ticker().history for {ticker}")
-    s = _download_close_fallback(ticker)
-    if not s.empty:
-        return s
-
-    if last_error is not None:
-        print(f"[FINAL-FAIL] {ticker}: {last_error}")
-    return pd.Series(dtype="float64")
-
-
-def _build_calendar_base() -> pd.Series:
+def _download_base_calendar() -> pd.Series:
+    """
+    base calendar만 최소한으로 fallback.
+    나머지 ticker는 빠르게 1회 시도만 한다.
+    """
     for ticker in CALENDAR_CANDIDATES:
         print(f"[CALENDAR] trying base ticker: {ticker}")
-        s = _download_close(ticker)
+        s = _download_close_once(ticker)
         if not s.empty:
             print(f"[CALENDAR] using {ticker} as base calendar ({len(s)} rows)")
+            return s
+
+        # base calendar만 fallback 1회
+        print(f"[CALENDAR-FALLBACK] trying fallback for {ticker}")
+        time.sleep(1)
+        s = _download_close_fallback(ticker)
+        if not s.empty:
+            print(f"[CALENDAR] using {ticker} fallback as base calendar ({len(s)} rows)")
             return s
 
     return pd.Series(dtype="float64")
@@ -190,21 +170,22 @@ def _build_calendar_base() -> pd.Series:
 
 def main() -> None:
     # 1) 날짜 인덱스부터 만들기
-    base = _build_calendar_base()
+    base = _download_base_calendar()
     if base.empty:
         raise RuntimeError(
-            "Base calendar build failed. SPY/QQQ/HYG/LQD/XLK/XLF 모두 다운로드 실패"
+            "Base calendar build failed. SPY/QQQ/HYG 모두 다운로드 실패"
         )
 
     out = pd.DataFrame(index=base.index)
     out.index.name = "date_key"
 
     # 2) 모든 지표 다운로드해서 날짜에 맞춰 붙이기
+    # 일반 ticker는 1회만 시도. 실패하면 NaN
     for col, ticker in INDICATORS.items():
         print(f"[FETCH] {col} ({ticker}) ...")
-        s = _download_close(ticker)
+        s = _download_close_once(ticker)
         if s.empty:
-            print(f"  -> empty, kept as NaN")
+            print("  -> empty, kept as NaN")
             out[col] = pd.NA
             continue
         out[col] = s
