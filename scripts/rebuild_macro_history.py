@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from datetime import timezone, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
 import time
 
@@ -16,9 +16,14 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 KST = timezone(timedelta(hours=9))
 
-LOOKBACK_DAYS = 120  # 90을 원하면 90으로 바꿔도 됨 (주말/휴장 감안해서 120 추천)
+LOOKBACK_DAYS = 120
 MAX_RETRIES = 3
 RETRY_SLEEP_SEC = 2
+
+# 미국장 종가 확정 전 today row 제거용 보수적 cutoff
+# UTC 21:30 이전이면 "오늘 미국 row"는 아직 미완성 가능성이 있다고 보고 제거
+US_MARKET_SAFE_CLOSE_HOUR_UTC = 21
+US_MARKET_SAFE_CLOSE_MINUTE_UTC = 30
 
 INDICATORS: Dict[str, str] = {
     "US10Y": "^TNX",
@@ -50,7 +55,6 @@ INDICATORS: Dict[str, str] = {
     "EMB": "EMB",
 }
 
-# 캘린더 기준 대체 후보
 CALENDAR_CANDIDATES: List[str] = [
     "SPY",
     "QQQ",
@@ -60,11 +64,11 @@ CALENDAR_CANDIDATES: List[str] = [
     "XLF",
 ]
 
+
 def _extract_close_series(df: pd.DataFrame) -> pd.Series:
     if df is None or df.empty:
         return pd.Series(dtype="float64")
 
-    # Close 추출 (MultiIndex 방어)
     if isinstance(df.columns, pd.MultiIndex):
         close_cols = [c for c in df.columns if str(c[0]).lower() == "close"]
         if not close_cols:
@@ -87,6 +91,36 @@ def _extract_close_series(df: pd.DataFrame) -> pd.Series:
     return s
 
 
+def _drop_incomplete_us_today_row(s: pd.Series) -> pd.Series:
+    """
+    미국장 종가 확정 전이면 '오늘(UTC 기준) row' 제거.
+    목적: 장중값/미완성 종가가 rebuild CSV에 들어오는 것 방지
+    """
+    if s is None or s.empty:
+        return s
+
+    now_utc = datetime.now(timezone.utc)
+    cutoff_today_utc = now_utc.replace(
+        hour=US_MARKET_SAFE_CLOSE_HOUR_UTC,
+        minute=US_MARKET_SAFE_CLOSE_MINUTE_UTC,
+        second=0,
+        microsecond=0,
+    )
+
+    # 아직 미국장 종가 안전시간 전이면 today row 제거
+    if now_utc < cutoff_today_utc:
+        today_utc_date = pd.Timestamp(now_utc.date())
+        if len(s) > 0 and pd.Timestamp(s.index[-1]) >= today_utc_date:
+            print(
+                f"[CUT-OFF] Removing incomplete current-day row: "
+                f"{pd.Timestamp(s.index[-1]).strftime('%Y-%m-%d')} "
+                f"(now_utc={now_utc.strftime('%Y-%m-%d %H:%M:%S')})"
+            )
+            s = s[s.index < today_utc_date]
+
+    return s
+
+
 def _download_close_once(ticker: str) -> pd.Series:
     df = yf.download(
         ticker,
@@ -97,7 +131,9 @@ def _download_close_once(ticker: str) -> pd.Series:
         group_by="column",
         threads=False,
     )
-    return _extract_close_series(df)
+    s = _extract_close_series(df)
+    s = _drop_incomplete_us_today_row(s)
+    return s
 
 
 def _download_close_fallback(ticker: str) -> pd.Series:
@@ -107,16 +143,15 @@ def _download_close_fallback(ticker: str) -> pd.Series:
             interval="1d",
             auto_adjust=False,
         )
-        return _extract_close_series(hist)
+        s = _extract_close_series(hist)
+        s = _drop_incomplete_us_today_row(s)
+        return s
     except Exception as e:
         print(f"[FALLBACK-ERROR] {ticker}: {e}")
         return pd.Series(dtype="float64")
 
 
 def _download_close(ticker: str) -> pd.Series:
-    """
-    Retry + fallback 내장 다운로드
-    """
     last_error: Optional[Exception] = None
 
     for attempt in range(1, MAX_RETRIES + 1):
@@ -132,7 +167,6 @@ def _download_close(ticker: str) -> pd.Series:
 
         time.sleep(RETRY_SLEEP_SEC)
 
-    # fallback
     print(f"[FALLBACK] trying Ticker().history for {ticker}")
     s = _download_close_fallback(ticker)
     if not s.empty:
@@ -144,9 +178,6 @@ def _download_close(ticker: str) -> pd.Series:
 
 
 def _build_calendar_base() -> pd.Series:
-    """
-    SPY 단일 실패로 죽지 않도록 캘린더 기준 대체 후보 순차 시도
-    """
     for ticker in CALENDAR_CANDIDATES:
         print(f"[CALENDAR] trying base ticker: {ticker}")
         s = _download_close(ticker)
@@ -158,7 +189,7 @@ def _build_calendar_base() -> pd.Series:
 
 
 def main() -> None:
-    # 1) 날짜 인덱스부터 만들기 (SPY 단일 의존 제거)
+    # 1) 날짜 인덱스부터 만들기
     base = _build_calendar_base()
     if base.empty:
         raise RuntimeError(
@@ -183,7 +214,6 @@ def main() -> None:
     out["datetime"] = out["date_key"].dt.strftime("%Y-%m-%d %H:%M:%S")
     out["date"] = out["datetime"]
 
-    # 컬럼 순서 정리
     ordered_cols: List[str] = ["datetime", "date"] + [k for k in INDICATORS.keys()]
     out = out[ordered_cols]
 
