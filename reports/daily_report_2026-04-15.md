@@ -32,7 +32,7 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **TRANSITION / MIXED (전환·혼조)** → **RISK-ON (완화 기대·리스크 선호)**
+- **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
 
 ---
 
@@ -245,14 +245,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **85**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.19 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.21 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `EASING` | **Price(Regime):** `RISK-ON` | **VIX:** `18.36`
-- **Positioning Data:** Z-Score: `1.19` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.21` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -296,7 +296,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 **Scoreboard:**
 - Industrials: +4  (+2 LIQ, +1 CURVE, +1 PHASE, = +4)
-- Technology: +3  (+2 LIQ, +1 PHASE, = +3)
+- Technology: +4  (+2 LIQ, +1 PHASE, +1 MOM, = +4)
 - Consumer Discretionary: +2  (+2 LIQ, = +2)
 - Financials: +2  (+1 LIQ, +2 CURVE, -1 MOM, = +2)
 - Energy: +1  (+1 MOM, = +1)
@@ -317,11 +317,11 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | Score | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :--- |
-| Industrials | +4 | **28.3%** | STRONG BUY |
-| Technology | +3 | **21.2%** | STRONG BUY |
-| Consumer Discretionary | +2 | **14.2%** | ACCUMULATE |
-| Financials | +2 | **14.2%** | ACCUMULATE |
-| Energy | +1 | **7.1%** | ACCUMULATE |
+| Industrials | +4 | **26.2%** | STRONG BUY |
+| Technology | +4 | **26.2%** | STRONG BUY |
+| Consumer Discretionary | +2 | **13.1%** | ACCUMULATE |
+| Financials | +2 | **13.1%** | ACCUMULATE |
+| Energy | +1 | **6.5%** | ACCUMULATE |
 | **Cash & Hedge** | - | **15.0%** | DEFENSIVE |
 
 
@@ -354,53 +354,53 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.4546796018944157
-- **Z-Score (5d):** 0.4267740253164827
+- **Z-Score (1d):** -0.4802227732561692
+- **Z-Score (5d):** 0.41357733448623746
 
 ### EEM
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.17529827113508864
-- **Z-Score (5d):** 0.63151822323694
+- **Z-Score (1d):** -0.1663965398353769
+- **Z-Score (5d):** 0.6360477567297972
 
 ### EIS
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.29519094992660727
-- **Z-Score (5d):** 0.9199073539278378
+- **Z-Score (1d):** -0.28113048696352494
+- **Z-Score (5d):** 0.9269280462088069
 
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.30549069135959417
-- **Z-Score (5d):** 1.2204145406120628
+- **Z-Score (1d):** -0.4020091834866754
+- **Z-Score (5d):** 1.174608967735585
 
 ### EWJ
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.34518601315883074
-- **Z-Score (5d):** -0.26219625479951647
+- **Z-Score (1d):** -0.3877477782698469
+- **Z-Score (5d):** -0.28324747743925793
 
 ### FXI
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.09124416145085604
-- **Z-Score (5d):** 0.7610467407971224
+- **Z-Score (1d):** -0.11222668553270228
+- **Z-Score (5d):** 0.7508040768212089
 
 ### GLD
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.2178422612445078
-- **Z-Score (5d):** 0.26330943115349587
+- **Z-Score (1d):** -0.23455071387972926
+- **Z-Score (5d):** 0.25525493820682205
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.33112122914682046
-- **Z-Score (5d):** 1.577794962362049
+- **Z-Score (1d):** 0.2964241750929247
+- **Z-Score (5d):** 1.5608009691996743
 
 ### VXX
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.1780537501467158
-- **Z-Score (5d):** -1.2434977913957883
+- **Z-Score (1d):** -0.014193409647149123
+- **Z-Score (5d):** -1.1487209349888632
