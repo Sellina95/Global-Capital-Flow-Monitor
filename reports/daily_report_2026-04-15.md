@@ -18,7 +18,7 @@
 - **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
 - **[SEW Event Type]:** NORMAL
   → 해석: 정상 상태 / 구조적 리스크 없음
-- **[SEW Spike Monitor]:** Spike 1 / Extreme 0
+- **[SEW Spike Monitor]:** Spike 0 / Extreme 0
 - **[15번 데드맨]:** ✅ PASS
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
@@ -246,14 +246,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **85**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.15 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.12 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `EASING` | **Price(Regime):** `RISK-ON` | **VIX:** `18.36`
-- **Positioning Data:** Z-Score: `1.15` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.12` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -353,8 +353,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.9039229896721038
-- **Z-Score (5d):** 1.0334415047003855
+- **Z-Score (1d):** 0.9039168596442662
+- **Z-Score (5d):** 1.033438542662398
 
 ### EEM
 - **Crash?** False
@@ -371,8 +371,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.8921844705172312
-- **Z-Score (5d):** 2.617919086372207
+- **Z-Score (1d):** 0.8921835953766107
+- **Z-Score (5d):** 2.6179181002584784
 
 ### EWJ
 - **Crash?** False
