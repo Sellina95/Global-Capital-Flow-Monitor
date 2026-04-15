@@ -304,15 +304,15 @@ def attach_sector_momentum_layer(market_data: Dict[str, Any], df: pd.DataFrame, 
     sector_tickers = ["XLK", "XLF", "XLE", "XLI", "XLB", "XLY", "XLP", "XLV", "XLU", "XLRE", "XLC"]
     benchmark = "SPY"
 
+    # 반드시 초기화
     market_data["MOMENTUM_SCORES"] = {}
 
-    # benchmark 체크
     if benchmark not in df.columns:
         for t in sector_tickers:
             market_data["MOMENTUM_SCORES"][t] = 0
         return market_data
 
-    def get_return(series: pd.Series, idx: int, lookback: int) -> Optional[float]:
+    def get_return(series: pd.Series, idx: int, lookback: int):
         if idx - lookback < 0:
             return None
         try:
@@ -343,10 +343,8 @@ def attach_sector_momentum_layer(market_data: Dict[str, Any], df: pd.DataFrame, 
 
         rs_4w = r_4w - spy_4w
         rs_12w = r_12w - spy_12w
-
         composite_rs = (rs_4w * 0.6) + (rs_12w * 0.4)
 
-        # 아주 단순한 v1 점수
         if composite_rs >= 0.05:
             score = 2
         elif composite_rs >= 0.01:
@@ -358,8 +356,10 @@ def attach_sector_momentum_layer(market_data: Dict[str, Any], df: pd.DataFrame, 
         else:
             score = 0
 
+        # 여기서 실제 저장
         market_data["MOMENTUM_SCORES"][ticker] = score
 
+    print("[DEBUG] MOMENTUM_SCORES:", market_data["MOMENTUM_SCORES"])
     return market_data
 
 def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
