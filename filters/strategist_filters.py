@@ -2210,7 +2210,6 @@ def incentive_filter(market_data: Dict[str, Any]) -> str:
 
 # =========================
 # 9) Cause Filter
-# =========================
 def cause_filter(market_data: Dict[str, Any]) -> str:
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
@@ -2222,34 +2221,55 @@ def cause_filter(market_data: Dict[str, Any]) -> str:
     wti_dir = _sign_from(wti)
     vix_dir = _sign_from(vix)
 
-    parts = []
-    if us10y_dir == 1:
-        parts.append("금리 상승(US10Y↑)")
-    elif us10y_dir == -1:
-        parts.append("금리 하락(US10Y↓)")
-
-    if dxy_dir == 1:
-        parts.append("달러 강세(DXY↑)")
-    elif dxy_dir == -1:
-        parts.append("달러 약세(DXY↓)")
-
-    if wti_dir == 1:
-        parts.append("유가 상승(WTI↑)")
-    elif wti_dir == -1:
-        parts.append("유가 하락(WTI↓)")
-
-    if vix_dir == 1:
-        parts.append("변동성 확대(VIX↑)")
+    # -------------------------
+    # 1) 지표 조합 기반 Narrative 판정 로직
+    # -------------------------
+    narrative = ""
+    
+    # CASE A: 전형적인 골디락스 / 리스크온 (금리↓, 달러↓, 유가↓, VIX↓)
+    if us10y_dir <= 0 and dxy_dir <= 0 and vix_dir == -1:
+        narrative = "금리·달러 안정에 따른 전형적인 '위험자산 선호(Risk-On)'"
+    
+    # CASE B: 비용 압박 완화 (유가↓, 금리↓)
+    elif wti_dir == -1 and us10y_dir <= 0:
+        narrative = "인플레이션 압력 둔화 및 비용 감소형 안도 랠리"
+        
+    # CASE C: 긴축 우려 / 리스크오프 (금리↑, 달러↑, VIX↑)
+    elif us10y_dir == 1 and dxy_dir == 1 and vix_dir == 1:
+        narrative = "긴축 공포 및 달러 수급 경색에 따른 '위험회피(Risk-Off)'"
+        
+    # CASE D: 스태그플레이션 우려 (유가↑, 금리↑)
+    elif wti_dir == 1 and us10y_dir == 1:
+        narrative = "비용 상승형 물가 부담 및 경기 둔화 우려 반영"
+        
+    # CASE E: 단순 유동성/심리 장세
     elif vix_dir == -1:
-        parts.append("변동성 완화(VIX↓)")
+        narrative = "매크로 지표 혼조 속 시장 심리 개선 주도"
+    
+    else:
+        narrative = "복합적 요인에 의한 지표 혼조 및 방향성 탐색"
 
-    cause = " + ".join(parts) if parts else "원인 신호 뚜렷하지 않음"
+    # -------------------------
+    # 2) 출력 정리
+    # -------------------------
+    parts = []
+    if us10y_dir == 1: parts.append("금리↑")
+    elif us10y_dir == -1: parts.append("금리↓")
+    if dxy_dir == 1: parts.append("달러↑")
+    elif dxy_dir == -1: parts.append("달러↓")
+    if wti_dir == 1: parts.append("유가↑")
+    elif wti_dir == -1: parts.append("유가↓")
+    if vix_dir == 1: parts.append("VIX↑")
+    elif vix_dir == -1: parts.append("VIX↓")
+
+    raw_signals = " + ".join(parts) if parts else "신호 없음"
 
     lines = []
     lines.append("### 🔍 9) Cause Filter")
     lines.append("- **질문:** 무엇이 이 움직임을 만들었는가?")
-    lines.append(f"- **핵심 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / WTI({_dir_str(wti_dir)}) / VIX({_dir_str(vix_dir)})")
-    lines.append(f"- **판정:** **{cause}**")
+    lines.append(f"- **핵심 신호:** {raw_signals}")
+    lines.append(f"- **최종 판정:** **{narrative}**") # 핵심 서사 출력
+    
     return "\n".join(lines)
 
 
