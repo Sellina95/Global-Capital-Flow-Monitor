@@ -290,6 +290,77 @@ def merge_sovereign_spreads_into_macro_df(df_macro: pd.DataFrame) -> pd.DataFram
     # remove duplicates if any
     out = out.loc[:, ~out.columns.duplicated()].copy()
     return out
+    
+def attach_sector_momentum_layer(market_data: Dict[str, Any], df: pd.DataFrame, today_idx: int) -> Dict[str, Any]:
+    """
+    Sector Momentum & Relative Strength Layer (v1)
+    - 각 섹터 ETF의 4주/12주 수익률을 SPY와 비교
+    - 결과를 MOMENTUM_SCORES에 저장
+    """
+
+    if market_data is None:
+        market_data = {}
+
+    sector_tickers = ["XLK", "XLF", "XLE", "XLI", "XLB", "XLY", "XLP", "XLV", "XLU", "XLRE", "XLC"]
+    benchmark = "SPY"
+
+    market_data["MOMENTUM_SCORES"] = {}
+
+    # benchmark 체크
+    if benchmark not in df.columns:
+        for t in sector_tickers:
+            market_data["MOMENTUM_SCORES"][t] = 0
+        return market_data
+
+    def get_return(series: pd.Series, idx: int, lookback: int) -> Optional[float]:
+        if idx - lookback < 0:
+            return None
+        try:
+            today_val = pd.to_numeric(series.iloc[idx], errors="coerce")
+            prev_val = pd.to_numeric(series.iloc[idx - lookback], errors="coerce")
+            if pd.isna(today_val) or pd.isna(prev_val) or prev_val == 0:
+                return None
+            return float((today_val / prev_val) - 1.0)
+        except Exception:
+            return None
+
+    spy_series = df[benchmark]
+    spy_4w = get_return(spy_series, today_idx, 20)
+    spy_12w = get_return(spy_series, today_idx, 60)
+
+    for ticker in sector_tickers:
+        if ticker not in df.columns:
+            market_data["MOMENTUM_SCORES"][ticker] = 0
+            continue
+
+        s = df[ticker]
+        r_4w = get_return(s, today_idx, 20)
+        r_12w = get_return(s, today_idx, 60)
+
+        if r_4w is None or r_12w is None or spy_4w is None or spy_12w is None:
+            market_data["MOMENTUM_SCORES"][ticker] = 0
+            continue
+
+        rs_4w = r_4w - spy_4w
+        rs_12w = r_12w - spy_12w
+
+        composite_rs = (rs_4w * 0.6) + (rs_12w * 0.4)
+
+        # 아주 단순한 v1 점수
+        if composite_rs >= 0.05:
+            score = 2
+        elif composite_rs >= 0.01:
+            score = 1
+        elif composite_rs <= -0.05:
+            score = -2
+        elif composite_rs <= -0.01:
+            score = -1
+        else:
+            score = 0
+
+        market_data["MOMENTUM_SCORES"][ticker] = score
+
+    return market_data
 
 def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
