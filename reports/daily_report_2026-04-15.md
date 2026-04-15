@@ -246,14 +246,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **85**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.15 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.16 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `EASING` | **Price(Regime):** `RISK-ON` | **VIX:** `18.36`
-- **Positioning Data:** Z-Score: `1.15` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.16` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -291,25 +291,26 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE
 
-**Overweight:** Industrials, Financials, Technology, Consumer Discretionary
+**Overweight:** Industrials, Technology, Consumer Discretionary, Financials, Energy
 
 **Underweight:** Utilities
 
 **Scoreboard:**
 - Industrials: +4  (+2 LIQ, +1 CURVE, +1 PHASE, = +4)
-- Financials: +3  (+1 LIQ, +2 CURVE, = +3)
-- Technology: +3  (+2 LIQ, +1 PHASE, = +3)
+- Technology: +4  (+2 LIQ, +2 PHASE, = +4)
 - Consumer Discretionary: +2  (+2 LIQ, = +2)
+- Financials: +2  (+1 LIQ, +2 CURVE, -1 PHASE, = +2)
+- Energy: +1  (+1 PHASE, = +1)
 - Utilities: -1  (-1 LIQ, = -1)
 
 **Rationale (top drivers):**
 - OW Industrials: +2: 유동성 완화 → 경기민감 회복
 - OW Industrials: +1: 완만한 스티프닝(0.50) → 성장 기대 반영
-- OW Financials: +1: 유동성 완화 → 위험선호 회복
-- OW Financials: +2: 완만한 스티프닝(0.50) → 예대마진 개선
 - OW Technology: +2: 유동성 완화 → 성장주/베타 우호
 - OW Technology: +1: RISK-ON → 성장주 미세 가점
 - OW Consumer Discretionary: +2: 유동성 완화 → 소비 민감주 우호
+- OW Financials: +1: 유동성 완화 → 위험선호 회복
+- OW Financials: +2: 완만한 스티프닝(0.50) → 예대마진 개선
 - UW Utilities: -1: 유동성 완화 → 방어주 상대매력 저하
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
@@ -317,10 +318,11 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | Score | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :--- |
-| Industrials | +4 | **28.3%** | STRONG BUY |
-| Financials | +3 | **21.2%** | STRONG BUY |
-| Technology | +3 | **21.2%** | STRONG BUY |
-| Consumer Discretionary | +2 | **14.2%** | ACCUMULATE |
+| Industrials | +4 | **26.2%** | STRONG BUY |
+| Technology | +4 | **26.2%** | STRONG BUY |
+| Consumer Discretionary | +2 | **13.1%** | ACCUMULATE |
+| Financials | +2 | **13.1%** | ACCUMULATE |
+| Energy | +1 | **6.5%** | ACCUMULATE |
 | **Cash & Hedge** | - | **15.0%** | DEFENSIVE |
 
 
@@ -353,8 +355,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.9039229896721038
-- **Z-Score (5d):** 1.0334415047003855
+- **Z-Score (1d):** 0.9039222527963294
+- **Z-Score (5d):** 1.033441953734606
 
 ### EEM
 - **Crash?** False
@@ -371,8 +373,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.8921835953766107
-- **Z-Score (5d):** 2.6179181002584784
+- **Z-Score (1d):** 0.8921836758075686
+- **Z-Score (5d):** 2.6179188700728435
 
 ### EWJ
 - **Crash?** False
