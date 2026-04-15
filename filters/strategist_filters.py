@@ -3407,6 +3407,33 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     elif "EVENT-WATCHING" in phase or "WAITING" in phase:
         add_score("Health Care", 1, f"{phase} → 관망 구간 방어/퀄리티 선호", "PHASE")
         add_score("Consumer Staples", 1, f"{phase} → 관망 구간 필수소비 선호", "PHASE")
+        
+        # -------------------------
+        # -------------------------
+    # [NEW] F) REAL-TIME MOMENTUM (Relative Strength)
+    # -------------------------
+    # csv에서 계산된 모멘텀 점수가 있다고 가정 (함수 외부에서 계산해서 전달받거나 내부에서 로드)
+    # 여기서는 예시로 로직만 구현합니다.
+    
+    # 세연님의 sectors 이름과 ETF 티커 매핑
+    ticker_map = {
+        "Technology": "XLK", "Financials": "XLF", "Energy": "XLE", 
+        "Industrials": "XLI", "Materials": "XLB", "Consumer Discretionary": "XLY",
+        "Consumer Staples": "XLP", "Health Care": "XLV", "Utilities": "XLU",
+        "Real Estate": "XLRE", "Communication Services": "XLC"
+    }
+
+    # market_data나 context에서 실시간 모멘텀 점수를 가져옴 (없으면 0)
+    momentum_data = market_data.get("MOMENTUM_SCORES", {}) 
+
+    for sector_name, ticker in ticker_map.items():
+        m_score = momentum_data.get(ticker, 0)
+        if m_score > 0:
+            add_score(sector_name, m_score, f"Relative Strength 강세 (vs SPY) → 자금 유입 확인", "PHASE")
+        elif m_score < 0:
+            add_score(sector_name, m_score, f"Relative Strength 약세 (vs SPY) → 소외 섹터", "PHASE")
+
+
 
     # -------------------------
     # 4) Conflict Resolver
