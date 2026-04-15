@@ -514,9 +514,12 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Attach TGA/RRP/NET_LIQ into market_data using FRED 'last available valid' values.
     Adds meta: _LIQ_ASOF = 'YYYY-MM-DD'
+
     Also computes:
       - NET_LIQ dir: UP/DOWN/FLAT
       - NET_LIQ level_bucket: LOW/MID/HIGH
+      - TGA/RRP/NET_LIQ slope (recent momentum)
+      - slope_label: ACCEL_UP / UP / FLAT / DOWN / ACCEL_DOWN
     """
     if market_data is None:
         market_data = {}
@@ -524,27 +527,41 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     liq_df = load_liquidity_df()
     if liq_df is None or liq_df.empty:
         market_data["_LIQ_ASOF"] = None
-        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None}
-        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None}
+        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
+        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
         market_data["NET_LIQ"] = {
             "today": None,
             "prev": None,
             "pct_change": None,
             "dir": "N/A",
             "level_bucket": "N/A",
+            "slope": None,
+            "slope_label": "N/A",
+        }
+        market_data["LIQUIDITY_MOMENTUM"] = {
+            "TGA": "N/A",
+            "RRP": "N/A",
+            "NET_LIQ": "N/A",
         }
         return market_data
 
     if "date" not in liq_df.columns:
         market_data["_LIQ_ASOF"] = None
-        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None}
-        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None}
+        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
+        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
         market_data["NET_LIQ"] = {
             "today": None,
             "prev": None,
             "pct_change": None,
             "dir": "N/A",
             "level_bucket": "N/A",
+            "slope": None,
+            "slope_label": "N/A",
+        }
+        market_data["LIQUIDITY_MOMENTUM"] = {
+            "TGA": "N/A",
+            "RRP": "N/A",
+            "NET_LIQ": "N/A",
         }
         return market_data
 
@@ -559,19 +576,26 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
     liq_df = liq_df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
-    # ✅ 마지막 row가 아니라 마지막 유효 liquidity row 사용
+    # 마지막 유효 NET_LIQ row 사용
     valid_liq_df = liq_df.dropna(subset=["NET_LIQ"]).copy()
 
     if valid_liq_df.empty:
         market_data["_LIQ_ASOF"] = None
-        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None}
-        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None}
+        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
+        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
         market_data["NET_LIQ"] = {
             "today": None,
             "prev": None,
             "pct_change": None,
             "dir": "N/A",
             "level_bucket": "N/A",
+            "slope": None,
+            "slope_label": "N/A",
+        }
+        market_data["LIQUIDITY_MOMENTUM"] = {
+            "TGA": "N/A",
+            "RRP": "N/A",
+            "NET_LIQ": "N/A",
         }
         return market_data
 
@@ -597,26 +621,128 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
             except Exception:
                 return None
 
-    def add_liq_key(key: str, today_val, prev_val):
+    def _calc_recent_slope(df: pd.DataFrame, col: str, lookback: int = 3) -> Optional[float]:
+        """
+        최근 유효값 기준 slope 계산.
+        lookback=3이면 마지막 3개 유효값의 1-step 평균 변화량.
+        """
+        if col not in df.columns:
+            return None
+
+        series = pd.to_numeric(df[col], errors="coerce").dropna()
+        if len(series) < 2:
+            return None
+
+        recent = series.tail(lookback)
+        if len(recent) < 2:
+            return None
+
+        diffs = recent.diff().dropna()
+        if diffs.empty:
+            return None
+
+        try:
+            return float(diffs.mean())
+        except Exception:
+            return None
+
+    def _classify_slope(slope: Optional[float], ref_level: Optional[float]) -> str:
+        """
+        slope를 절대값이 아니라 최근 레벨 대비 상대적으로 라벨링.
+        """
+        if slope is None or ref_level is None:
+            return "N/A"
+
+        base = max(abs(ref_level), 1.0)
+        rel = slope / base
+
+        # 너무 촘촘하면 노이즈가 많아져서 threshold는 느슨하게 둠
+        if rel >= 0.02:
+            return "ACCEL_UP"
+        elif rel >= 0.003:
+            return "UP"
+        elif rel <= -0.02:
+            return "ACCEL_DOWN"
+        elif rel <= -0.003:
+            return "DOWN"
+        else:
+            return "FLAT"
+
+    def add_liq_key(key: str, today_val, prev_val, slope_val=None, slope_label="N/A"):
         t = _to_float(today_val)
         p = _to_float(prev_val)
 
         if t is None:
-            market_data[key] = {"today": None, "prev": None if p is None else p, "pct_change": None}
+            market_data[key] = {
+                "today": None,
+                "prev": None if p is None else p,
+                "pct_change": None,
+                "slope": slope_val,
+                "slope_label": slope_label,
+            }
             return
 
         if p is None:
-            market_data[key] = {"today": t, "prev": None, "pct_change": None}
+            market_data[key] = {
+                "today": t,
+                "prev": None,
+                "pct_change": None,
+                "slope": slope_val,
+                "slope_label": slope_label,
+            }
             return
 
         pct = 0.0 if p == 0 else ((t - p) / p) * 100.0
-        market_data[key] = {"today": t, "prev": p, "pct_change": pct}
+        market_data[key] = {
+            "today": t,
+            "prev": p,
+            "pct_change": pct,
+            "slope": slope_val,
+            "slope_label": slope_label,
+        }
 
-    add_liq_key("TGA", liq_today.get("TGA"), None if liq_prev is None else liq_prev.get("TGA"))
-    add_liq_key("RRP", liq_today.get("RRP"), None if liq_prev is None else liq_prev.get("RRP"))
-    add_liq_key("NET_LIQ", liq_today.get("NET_LIQ"), None if liq_prev is None else liq_prev.get("NET_LIQ"))
+    # 개별 series는 해당 컬럼 유효값 기준으로 slope 계산
+    tga_slope = _calc_recent_slope(liq_df, "TGA", lookback=3)
+    rrp_slope = _calc_recent_slope(liq_df, "RRP", lookback=3)
+    net_slope = _calc_recent_slope(valid_liq_df, "NET_LIQ", lookback=3)
 
-    net = market_data.get("NET_LIQ") or {"today": None, "prev": None, "pct_change": None}
+    tga_today = _to_float(liq_today.get("TGA"))
+    rrp_today = _to_float(liq_today.get("RRP"))
+    net_today_raw = _to_float(liq_today.get("NET_LIQ"))
+
+    tga_slope_label = _classify_slope(tga_slope, tga_today)
+    rrp_slope_label = _classify_slope(rrp_slope, rrp_today)
+    net_slope_label = _classify_slope(net_slope, net_today_raw)
+
+    add_liq_key(
+        "TGA",
+        liq_today.get("TGA"),
+        None if liq_prev is None else liq_prev.get("TGA"),
+        slope_val=tga_slope,
+        slope_label=tga_slope_label,
+    )
+    add_liq_key(
+        "RRP",
+        liq_today.get("RRP"),
+        None if liq_prev is None else liq_prev.get("RRP"),
+        slope_val=rrp_slope,
+        slope_label=rrp_slope_label,
+    )
+    add_liq_key(
+        "NET_LIQ",
+        liq_today.get("NET_LIQ"),
+        None if liq_prev is None else liq_prev.get("NET_LIQ"),
+        slope_val=net_slope,
+        slope_label=net_slope_label,
+    )
+
+    net = market_data.get("NET_LIQ") or {
+        "today": None,
+        "prev": None,
+        "pct_change": None,
+        "slope": None,
+        "slope_label": "N/A",
+    }
     net_today = _to_float(net.get("today"))
     net_prev = _to_float(net.get("prev"))
 
@@ -656,6 +782,13 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
     market_data["NET_LIQ_DIR"] = net_dir
     market_data["NET_LIQ_LEVEL_BUCKET"] = level_bucket
+
+    # 보조 해석용 momentum block
+    market_data["LIQUIDITY_MOMENTUM"] = {
+        "TGA": tga_slope_label,
+        "RRP": rrp_slope_label,
+        "NET_LIQ": net_slope_label,
+    }
 
     return market_data
     
