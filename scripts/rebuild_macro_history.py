@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from datetime import timezone, timedelta
-from typing import Dict, List
+from typing import Dict, List, Optional
+import time
 
 import pandas as pd
 import yfinance as yf
@@ -16,6 +17,8 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 KST = timezone(timedelta(hours=9))
 
 LOOKBACK_DAYS = 120  # 90을 원하면 90으로 바꿔도 됨 (주말/휴장 감안해서 120 추천)
+MAX_RETRIES = 3
+RETRY_SLEEP_SEC = 2
 
 INDICATORS: Dict[str, str] = {
     "US10Y": "^TNX",
@@ -47,16 +50,17 @@ INDICATORS: Dict[str, str] = {
     "EMB": "EMB",
 }
 
-def _download_close(ticker: str) -> pd.Series:
-    df = yf.download(
-        ticker,
-        period=f"{LOOKBACK_DAYS}d",
-        interval="1d",
-        progress=False,
-        auto_adjust=False,
-        group_by="column",
-        threads=False,
-    )
+# 캘린더 기준 대체 후보
+CALENDAR_CANDIDATES: List[str] = [
+    "SPY",
+    "QQQ",
+    "HYG",
+    "LQD",
+    "XLK",
+    "XLF",
+]
+
+def _extract_close_series(df: pd.DataFrame) -> pd.Series:
     if df is None or df.empty:
         return pd.Series(dtype="float64")
 
@@ -67,28 +71,99 @@ def _download_close(ticker: str) -> pd.Series:
             return pd.Series(dtype="float64")
         s = df[close_cols].iloc[:, -1]
     else:
-        if "Close" not in df.columns:
-            # 혹시 close 컬럼명이 다른 케이스 방어
+        if "Close" in df.columns:
+            s = df["Close"]
+        else:
             cands = [c for c in df.columns if str(c).lower() == "close"]
             if not cands:
                 return pd.Series(dtype="float64")
             s = df[cands[0]]
-        else:
-            s = df["Close"]
 
     s = pd.to_numeric(s, errors="coerce").dropna()
     if s.empty:
         return pd.Series(dtype="float64")
 
-    # 날짜 정규화 (일 단위)
     s.index = pd.to_datetime(s.index).tz_localize(None).normalize()
     return s
 
+
+def _download_close_once(ticker: str) -> pd.Series:
+    df = yf.download(
+        ticker,
+        period=f"{LOOKBACK_DAYS}d",
+        interval="1d",
+        progress=False,
+        auto_adjust=False,
+        group_by="column",
+        threads=False,
+    )
+    return _extract_close_series(df)
+
+
+def _download_close_fallback(ticker: str) -> pd.Series:
+    try:
+        hist = yf.Ticker(ticker).history(
+            period=f"{LOOKBACK_DAYS}d",
+            interval="1d",
+            auto_adjust=False,
+        )
+        return _extract_close_series(hist)
+    except Exception as e:
+        print(f"[FALLBACK-ERROR] {ticker}: {e}")
+        return pd.Series(dtype="float64")
+
+
+def _download_close(ticker: str) -> pd.Series:
+    """
+    Retry + fallback 내장 다운로드
+    """
+    last_error: Optional[Exception] = None
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            s = _download_close_once(ticker)
+            if not s.empty:
+                if attempt > 1:
+                    print(f"[RETRY-SUCCESS] {ticker} succeeded on attempt {attempt}")
+                return s
+        except Exception as e:
+            last_error = e
+            print(f"[RETRY] {ticker} attempt {attempt}/{MAX_RETRIES} failed: {e}")
+
+        time.sleep(RETRY_SLEEP_SEC)
+
+    # fallback
+    print(f"[FALLBACK] trying Ticker().history for {ticker}")
+    s = _download_close_fallback(ticker)
+    if not s.empty:
+        return s
+
+    if last_error is not None:
+        print(f"[FINAL-FAIL] {ticker}: {last_error}")
+    return pd.Series(dtype="float64")
+
+
+def _build_calendar_base() -> pd.Series:
+    """
+    SPY 단일 실패로 죽지 않도록 캘린더 기준 대체 후보 순차 시도
+    """
+    for ticker in CALENDAR_CANDIDATES:
+        print(f"[CALENDAR] trying base ticker: {ticker}")
+        s = _download_close(ticker)
+        if not s.empty:
+            print(f"[CALENDAR] using {ticker} as base calendar ({len(s)} rows)")
+            return s
+
+    return pd.Series(dtype="float64")
+
+
 def main() -> None:
-    # 1) 날짜 인덱스부터 만들기 (SPY 기준으로 trading calendar 생성)
-    base = _download_close("SPY")
+    # 1) 날짜 인덱스부터 만들기 (SPY 단일 의존 제거)
+    base = _build_calendar_base()
     if base.empty:
-        raise RuntimeError("SPY history download failed (empty). yfinance 문제 or 시장 데이터 접근 실패")
+        raise RuntimeError(
+            "Base calendar build failed. SPY/QQQ/HYG/LQD/XLK/XLF 모두 다운로드 실패"
+        )
 
     out = pd.DataFrame(index=base.index)
     out.index.name = "date_key"
@@ -103,9 +178,7 @@ def main() -> None:
             continue
         out[col] = s
 
-    # 3) date/datetime 컬럼 생성 (호환성 위해 둘 다)
-    # date_key를 문자열로 내보내고, datetime/date를 같은 값으로 채움
-    # (generate_report / load_macro_df가 둘 중 하나로도 정상 동작)
+    # 3) date/datetime 컬럼 생성
     out = out.reset_index()
     out["datetime"] = out["date_key"].dt.strftime("%Y-%m-%d %H:%M:%S")
     out["date"] = out["datetime"]
@@ -122,6 +195,7 @@ def main() -> None:
 
     out.to_csv(CSV_PATH, index=False)
     print(f"[DONE] rebuilt macro_data.csv rows={len(out)} -> {CSV_PATH}")
+
 
 if __name__ == "__main__":
     main()
