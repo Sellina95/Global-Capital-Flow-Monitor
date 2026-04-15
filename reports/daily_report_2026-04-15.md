@@ -18,7 +18,7 @@
 - **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
 - **[SEW Event Type]:** NORMAL
   → 해석: 정상 상태 / 구조적 리스크 없음
-- **[SEW Spike Monitor]:** Spike 0 / Extreme 0
+- **[SEW Spike Monitor]:** Spike 1 / Extreme 0
 - **[15번 데드맨]:** ✅ PASS
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
@@ -32,7 +32,7 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **RISK-OFF (부분 정렬)** → **RISK-ON (완화 기대·리스크 선호)**
+- **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
 
 ---
 
@@ -239,21 +239,21 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.250 / US10YΔ -0.041 (정상)
-- **Sentiment (Fear&Greed):** 57.0679561383722 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 57.11671123869537 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** RISK-ON (완화 기대·리스크 선호) (Cap: 85)
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **85**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.17 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.15 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `EASING` | **Price(Regime):** `RISK-ON` | **VIX:** `18.36`
-- **Positioning Data:** Z-Score: `1.17` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.15` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -353,8 +353,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.9039188256498685
-- **Z-Score (5d):** 1.0334401548788226
+- **Z-Score (1d):** 0.9039229896721038
+- **Z-Score (5d):** 1.0334415047003855
 
 ### EEM
 - **Crash?** False
@@ -371,8 +371,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.8921841453525108
-- **Z-Score (5d):** 2.617918283232108
+- **Z-Score (1d):** 0.8921844705172312
+- **Z-Score (5d):** 2.617919086372207
 
 ### EWJ
 - **Crash?** False
