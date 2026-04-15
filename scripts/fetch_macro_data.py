@@ -60,6 +60,10 @@ FALLBACK_TICKERS = {
 # 핵심 파이프라인이 죽으면 안 되는 지표들
 REQUIRED_KEYS = {"US10Y", "DXY", "WTI", "VIX", "USDKRW", "HYG", "LQD"}
 
+# 리포트 기준일(market_date)을 결정하는 "미국장 핵심 종가 바스켓"
+# USDKRW처럼 시차가 다른 값은 제외
+MARKET_DATE_KEYS = {"US10Y", "DXY", "WTI", "VIX", "HYG", "LQD", "SPY", "QQQ"}
+
 # 시간 컬럼
 TIME_COLS = ["datetime", "date"]
 
@@ -121,10 +125,11 @@ def fetch_macro_data() -> Tuple[Dict[str, float], Optional[str]]:
     Fetch all INDICATORS from yfinance.
     Returns:
       - results: {indicator: value}
-      - market_date: 핵심 지표 기준 시장 날짜
+      - market_date: 미국장 핵심 종가 바스켓 기준 시장 날짜
     """
     results: Dict[str, float] = {}
     required_asof_dates: List[str] = []
+    market_date_candidates: List[str] = []
 
     def _fetch_last_close_robust(ticker: str) -> Tuple[Optional[float], Optional[str]]:
         # 1) try download
@@ -185,10 +190,16 @@ def fetch_macro_data() -> Tuple[Dict[str, float], Optional[str]]:
         if asof_date and name in REQUIRED_KEYS:
             required_asof_dates.append(asof_date)
 
+        if asof_date and name in MARKET_DATE_KEYS:
+            market_date_candidates.append(asof_date)
+
         print(f"  → {name}: {value} (source={used_src}, asof={asof_date})")
 
-    # 핵심 지표 기준 시장 날짜
-    market_date = max(required_asof_dates) if required_asof_dates else None
+    # 리포트 기준일은 미국장 핵심 종가 바스켓 기준
+    market_date = max(market_date_candidates) if market_date_candidates else None
+
+    print(f"[DEBUG] required_asof_dates = {required_asof_dates}")
+    print(f"[DEBUG] market_date_candidates = {market_date_candidates}")
     print(f"[DEBUG] derived market_date = {market_date}")
 
     return results, market_date
