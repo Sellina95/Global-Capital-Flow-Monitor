@@ -505,6 +505,7 @@ def check_market_anomaly():
             f"z_map={z_map}"
         )
         print(f"DEBUG: RESEND_FROM={resend_from}, RESEND_TO={resend_to}")
+        email_sent = False
 
         if api_key and resend_from and resend_to:
             try:
@@ -524,16 +525,23 @@ def check_market_anomaly():
                 )
                 print(f"✅ Resend status: {resp.status_code}")
                 print(f"✅ Resend response: {resp.text}")
-
-                if resp.status_code not in [200, 201]:
+        
+                if resp.status_code in [200, 201]:
+                    email_sent = True
+                else:
                     print("❌ 이메일 API 호출은 되었지만 성공 응답이 아닙니다.")
+        
             except Exception as e:
                 print(f"❌ 이메일 발송 실패: {e}")
         else:
             print("❌ RESEND_API_KEY / RESEND_FROM / RESEND_TO 환경변수 확인 필요")
+        
+        if email_sent:
+            print(f"📧 실전 알림 발송 완료: {sew_status} | {event_type}")
+        else:
+            print(f"⚠️ 실전 알림 미발송: {sew_status} | {event_type}")
 
-        print(f"📧 실전 알림 발송 완료: {sew_status} | {event_type}")
-
+    
     else:
         os.makedirs("insights", exist_ok=True)
         with open("insights/alerts.log", "a", encoding="utf-8") as f:
