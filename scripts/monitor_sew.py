@@ -11,6 +11,8 @@ from typing import Dict, Any, Optional
 # ---------------------------
 # 1. 통합 데이터(CSV) 로드 함수
 # ---------------------------
+
+
 def load_war_room_context(csv_path: str = "data/market_data_history.csv"):
     if not os.path.exists(csv_path):
         return None
@@ -260,6 +262,7 @@ def save_sew_state(
     recommended_exposure: int,
     deadman: bool,
     summary: str,
+    deadman_reason: str,
     z_map: Dict[str, float],
     market_snap: Dict[str, Any],
 ):
@@ -410,9 +413,10 @@ def check_market_anomaly():
         recommended_exposure=recommended_exp,
         deadman=deadman,
         summary=sew_summary,
+        deadman_reason=status_msg,
         z_map=z_map,
         market_snap=market_snap,
-    )
+)
     # ---------------------------
     # ---------------------------
     # 실전용 발송 조건
