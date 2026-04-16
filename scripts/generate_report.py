@@ -86,7 +86,6 @@ def interpret_sew_event(event_type: str) -> str:
 
     return mapping.get(event_type, "해석 불가")
 
-
 def get_sew_state(filepath: str = "insights/sew_state.json") -> dict:
     default = {
         "timestamp": None,
@@ -119,7 +118,7 @@ def get_sew_state(filepath: str = "insights/sew_state.json") -> dict:
             "spike_count": data.get("spike_count", 0),
             "extreme_count": data.get("extreme_count", 0),
             "assets": data.get("assets", {}),
-    }
+        }
     except Exception:
         return default
 
