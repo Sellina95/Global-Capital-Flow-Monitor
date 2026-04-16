@@ -3659,16 +3659,16 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
 
             action = "STRONG BUY" if s_score >= 3 else "ACCUMULATE"
             allocation_lines.append(
-                f"| {s} | +{s_score} | **{s_weight:.1f}%** | {action} |"
+                f"| {s} | +{s_score} | {flag} | **{s_weight:.1f}%** | {action} |"
             )
     
             
-            action = "STRONG BUY" if s_score >= 3 else "ACCUMULATE"
-            allocation_lines.append(f"| {s} | +{s_score} | **{s_weight:.1f}%** | {action} |")
         
         # 현금 비중 계산
         cash_weight = 100.0 - final_exposure
-        allocation_lines.append(f"| **Cash & Hedge** | - | **{cash_weight:.1f}%** | DEFENSIVE |")
+        allocation_lines.append(
+            f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |"
+        )
     else:
         allocation_lines.append("⚠️ 양수 점수를 받은 섹터가 없습니다. 현금 비중을 확대하십시오.")
 
