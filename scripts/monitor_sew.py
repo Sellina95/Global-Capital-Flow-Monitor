@@ -383,8 +383,8 @@ def check_market_anomaly():
     corr_msg = correlation_break_filter(market_snap)
     recommended_exp, status_msg = volatility_controlled_exposure_filter(market_snap, context)
     # TEST ONLY
-    recommended_exp = 0
-    status_msg = "🚨 DEAD MAN'S SWITCH: TEST_TRIGGER"
+    #recommended_exp = 0
+    #status_msg = "🚨 DEAD MAN'S SWITCH: TEST_TRIGGER"
     # ---------------------------
     # SEW 상태 판단
     # ---------------------------
