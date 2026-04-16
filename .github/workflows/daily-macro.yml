@@ -132,6 +132,10 @@ jobs:
           python scripts/fetch_positioning_data.py
 
       - name: Run SEW Monitor (force update)
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
+          RESEND_TO: ${{ secrets.RESEND_TO }}
         run: python scripts/monitor_sew.py
           
       # ✅ 3) 리포트 생성 및 디버깅 (전체 교체)
