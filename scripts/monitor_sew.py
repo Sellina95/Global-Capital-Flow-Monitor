@@ -277,16 +277,17 @@ def save_sew_state(
         }
 
     payload = {
-        "timestamp": timestamp,
-        "status": sew_status,
-        "event_type": event_type,
-        "spike_count": spike_count,
-        "extreme_count": extreme_count,
-        "recommended_exposure": recommended_exposure,
-        "deadman": deadman,
-        "summary": summary,
-        "assets": assets,
-    }
+    "timestamp": timestamp,
+    "status": sew_status,
+    "event_type": event_type,
+    "spike_count": spike_count,
+    "extreme_count": extreme_count,
+    "recommended_exposure": recommended_exposure,
+    "deadman": deadman,
+    "summary": summary,
+    "deadman_reason": deadman_reason,
+    "assets": assets,
+}
 
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
@@ -456,6 +457,7 @@ def check_market_anomaly():
 - 시스템 상태: {status_msg}
 - SEW Status: {sew_status}
 - Event Type: {event_type}
+- Deadman Reason: {status_msg if recommended_exp == 0 else 'N/A'}
 - 아침 데이터 기준: {context.get('date', 'Unknown')}
 - POS_Z: {context.get('SP500_POS_Z', 'N/A')}
 - POS_SLOPE: {market_snap.get('POS_SLOPE', 0.0):+.2f}
