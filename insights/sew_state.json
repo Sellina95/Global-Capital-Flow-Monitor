@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-16 15:25:59",
+  "timestamp": "2026-04-16 15:48:40",
   "status": "DEADMAN",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -10,29 +10,29 @@
   "deadman_reason": "🚨 DEAD MAN'S SWITCH: TEST_TRIGGER",
   "assets": {
     "SPY": {
-      "zscore": 0.05,
+      "zscore": -0.46,
       "state": "NORMAL",
-      "pct_change": 0.1
+      "pct_change": 0.07
     },
     "QQQ": {
-      "zscore": 0.0,
+      "zscore": -0.94,
       "state": "NORMAL",
       "pct_change": 0.11
     },
     "VIX": {
-      "zscore": -0.45,
+      "zscore": -0.1,
       "state": "NORMAL",
-      "pct_change": -1.06
+      "pct_change": 0.86
     },
     "DXY": {
-      "zscore": -0.03,
+      "zscore": 0.06,
       "state": "NORMAL",
-      "pct_change": -0.04
+      "pct_change": -0.0
     },
     "WTI": {
-      "zscore": -0.56,
+      "zscore": 0.11,
       "state": "NORMAL",
-      "pct_change": 0.37
+      "pct_change": -0.11
     }
   }
 }

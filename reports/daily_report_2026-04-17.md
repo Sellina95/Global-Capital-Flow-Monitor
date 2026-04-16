@@ -19,6 +19,7 @@
 - **[SEW Event Type]:** NORMAL
   → 해석: 정상 상태 / 구조적 리스크 없음
 - **[SEW Spike Monitor]:** Spike 0 / Extreme 0
+- **[SEW Deadman Reason]:** 🚨 DEAD MAN'S SWITCH: TEST_TRIGGER
 - **[15번 데드맨]:** 🚨 ACTIVATED
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
@@ -365,53 +366,53 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.1908807893955969
-- **Z-Score (5d):** 0.20947339182523442
+- **Z-Score (1d):** -0.42511559614432676
+- **Z-Score (5d):** 0.08982637749913816
 
 ### EEM
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.23568158504742323
-- **Z-Score (5d):** 0.8800993875006713
+- **Z-Score (1d):** 0.26256214296535013
+- **Z-Score (5d):** 0.8936115412534495
 
 ### EIS
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5433694769365421
-- **Z-Score (5d):** 0.4344318042534553
+- **Z-Score (1d):** -0.5644945707975901
+- **Z-Score (5d):** 0.42396834860893384
 
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.3726832266424004
-- **Z-Score (5d):** 0.5276312388870988
+- **Z-Score (1d):** -0.5672592236250937
+- **Z-Score (5d):** 0.43418383890458684
 
 ### EWJ
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.10302072768770702
-- **Z-Score (5d):** 0.24059788347490552
+- **Z-Score (1d):** 0.20323520681079418
+- **Z-Score (5d):** 0.2900025312535189
 
 ### FXI
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.055045536113476
-- **Z-Score (5d):** 1.3512414682612737
+- **Z-Score (1d):** 1.034532820222118
+- **Z-Score (5d):** 1.3412042151662869
 
 ### GLD
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.04811278694489145
-- **Z-Score (5d):** 0.05890116789209792
+- **Z-Score (1d):** 0.040391145884457524
+- **Z-Score (5d):** 0.055290682159937765
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.19491324620322878
-- **Z-Score (5d):** 1.5648225148392692
+- **Z-Score (1d):** 0.1488338738795619
+- **Z-Score (5d):** 1.5432778250194612
 
 ### VXX
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.00872656056743085
-- **Z-Score (5d):** -0.5914507978194824
+- **Z-Score (1d):** 0.04101038300393279
+- **Z-Score (5d):** -0.5614749546902127
