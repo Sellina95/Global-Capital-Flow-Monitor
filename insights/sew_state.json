@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-04-16 15:25:59",
+  "status": "DEADMAN",
+  "event_type": "NORMAL",
+  "spike_count": 0,
+  "extreme_count": 0,
+  "recommended_exposure": 0,
+  "deadman": true,
+  "summary": "🚨 데드맨 스위치 발동 (익스포저 0% / 자산 보호 모드)",
+  "deadman_reason": "🚨 DEAD MAN'S SWITCH: TEST_TRIGGER",
+  "assets": {
+    "SPY": {
+      "zscore": 0.05,
+      "state": "NORMAL",
+      "pct_change": 0.1
+    },
+    "QQQ": {
+      "zscore": 0.0,
+      "state": "NORMAL",
+      "pct_change": 0.11
+    },
+    "VIX": {
+      "zscore": -0.45,
+      "state": "NORMAL",
+      "pct_change": -1.06
+    },
+    "DXY": {
+      "zscore": -0.03,
+      "state": "NORMAL",
+      "pct_change": -0.04
+    },
+    "WTI": {
+      "zscore": -0.56,
+      "state": "NORMAL",
+      "pct_change": 0.37
+    }
+  }
+}
