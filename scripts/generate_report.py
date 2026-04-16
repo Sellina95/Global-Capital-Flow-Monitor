@@ -1482,14 +1482,16 @@ def generate_daily_report() -> None:
     sew_deadman = sew_state["deadman"]
     sew_spike_count = sew_state["spike_count"]
     sew_extreme_count = sew_state["extreme_count"]
+    sew_deadman_reason = sew_state.get("deadman_reason", "")
     sew_event_interp = interpret_sew_event(sew_event_type)
 
     market_data["SEW_STATE"] = {
-        "status": sew_status,
-        "summary": sew_summary,
-        "event_type": sew_event_type,
-        "deadman": sew_deadman,
-    }
+    "status": sew_status,
+    "summary": sew_summary,
+    "event_type": sew_event_type,
+    "deadman": sew_deadman,
+    "deadman_reason": sew_deadman_reason,
+}
 
     # -------------------------
     # 9) Divergence state 정제
@@ -1619,7 +1621,8 @@ def generate_daily_report() -> None:
     lines.append(f"- **[SEW Event Type]:** {sew_event_type}")
     lines.append(f"  → 해석: {sew_event_interp}")
     lines.append(f"- **[SEW Spike Monitor]:** Spike {sew_spike_count} / Extreme {sew_extreme_count}")
-
+    if sew_deadman_reason and sew_deadman_reason != "Normal Operation":
+        lines.append(f"- **[SEW Deadman Reason]:** {sew_deadman_reason}")
     if is_deadman_activated or sew_deadman:
         lines.append("- **[15번 데드맨]:** 🚨 ACTIVATED")
     else:
