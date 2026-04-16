@@ -3638,14 +3638,30 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     allocation_lines.append("")
     
     if total_score_sum > 0:
-        allocation_lines.append("| Sector | Score | **Weight in Portfolio** | **Action** |")
-        allocation_lines.append("| :--- | :---: | :---: | :--- |")
+        allocation_lines.append("| Sector | Score | Divergence | **Weight in Portfolio** | **Action** |")
+        allocation_lines.append("| :--- | :---: | :---: | :---: | :--- |")
+        
         
         # 점수 비중대로 exposure 분할 계산
         for s in ow_sorted:
             s_score = score[s]
-            # 계산식: (섹터점수 / 점수총합) * 최종노출도
             s_weight = (s_score / total_score_sum) * final_exposure
+
+            # -------------------------
+            # [NEW] Divergence Penalty
+            # -------------------------
+            flag = divergence_flags.get(s, "ALIGNED")
+
+            if flag == "NEGATIVE_DIVERGENCE":
+                s_weight *= 0.7   # 30% 감산
+            elif flag == "POSITIVE_DIVERGENCE":
+                s_weight *= 1.1   # 일단은 미세 가산만 (보수적)
+
+            action = "STRONG BUY" if s_score >= 3 else "ACCUMULATE"
+            allocation_lines.append(
+                f"| {s} | +{s_score} | **{s_weight:.1f}%** | {action} |"
+            )
+    
             
             action = "STRONG BUY" if s_score >= 3 else "ACCUMULATE"
             allocation_lines.append(f"| {s} | +{s_score} | **{s_weight:.1f}%** | {action} |")
