@@ -95,6 +95,7 @@ def get_sew_state(filepath: str = "insights/sew_state.json") -> dict:
         "event_type": "N/A",
         "recommended_exposure": None,
         "deadman": False,
+        "deadman_reason": "",
         "spike_count": 0,
         "extreme_count": 0,
         "assets": {},
@@ -114,10 +115,11 @@ def get_sew_state(filepath: str = "insights/sew_state.json") -> dict:
             "event_type": data.get("event_type", "N/A"),
             "recommended_exposure": data.get("recommended_exposure"),
             "deadman": data.get("deadman", False),
+            "deadman_reason": data.get("deadman_reason", ""),
             "spike_count": data.get("spike_count", 0),
             "extreme_count": data.get("extreme_count", 0),
             "assets": data.get("assets", {}),
-        }
+    }
     except Exception:
         return default
 
