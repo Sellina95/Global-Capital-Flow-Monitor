@@ -3454,7 +3454,39 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         elif m_score < 0:
             add_score(sector_name, m_score, f"Relative Strength 약세 (vs SPY) → 소외 섹터", "MOM")
 
+        # -------------------------
+    # [NEW] G) Theory vs Flow Divergence Adjustment
+    # -------------------------
+    divergence_flags = {}
 
+    for s in sectors:
+        ticker = ticker_map.get(s)
+        mom = momentum_data.get(ticker, 0) if ticker else 0
+        theo = score[s]
+
+        # 1) 이론은 좋지만 실제 돈이 안 가는 경우
+        if theo >= 2 and mom < 0:
+            score[s] -= 1
+            divergence_flags[s] = "NEGATIVE_DIVERGENCE"
+            drivers[s].append({
+                "pts": -1,
+                "why": "이론 대비 실제 자금 흐름 약세 → 포지션 보수화",
+                "bucket": "MOM",
+                "priority": PRIORITY["MOM"],
+            })
+
+        # 2) 이론은 약한데 실제 돈이 가는 경우
+        elif theo <= 0 and mom > 0:
+            divergence_flags[s] = "POSITIVE_DIVERGENCE"
+            drivers[s].append({
+                "pts": 0,
+                "why": "이론 대비 실제 자금 유입 확인 → 반전 가능성 관찰",
+                "bucket": "MOM",
+                "priority": PRIORITY["MOM"],
+            })
+
+        else:
+            divergence_flags[s] = "ALIGNED"
     # -------------------------
     # 4) Conflict Resolver
     # -------------------------
@@ -3565,7 +3597,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         f"credit={credit_calm}"
     )
     lines.append("")
-    lines.append("**Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE")
+    lines.append("**Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > MOM")
     lines.append("")
     lines.append(f"**Overweight:** {', '.join(ow_sorted) if ow_sorted else 'None'}")
     lines.append("")
@@ -3577,8 +3609,19 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             lines.append(f"- {s}: {score[s]:+d}  ({sector_breakdown(s)})")
     lines.append("")
     lines.append("**Rationale (top drivers):**")
+    
     for r in top_rationales:
         lines.append(f"- {r}")
+            lines.append("")
+    lines.append("**Divergence Monitor (Theory vs Flow):**")
+    has_divergence = False
+    for s in sorted(sectors, key=lambda x: (-score[x], x)):
+        flag = divergence_flags.get(s, "ALIGNED")
+        if flag != "ALIGNED":
+            has_divergence = True
+            lines.append(f"- {s}: {flag}")
+    if not has_divergence:
+        lines.append("- No major theory-vs-flow divergence detected.")
         # -------------------------
     # [NEW] 18.5) Execution Weight Allocation Logic
     # -------------------------
