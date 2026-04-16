@@ -18,7 +18,7 @@
 - **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
 - **[SEW Event Type]:** NORMAL
   → 해석: 정상 상태 / 구조적 리스크 없음
-- **[SEW Spike Monitor]:** Spike 1 / Extreme 0
+- **[SEW Spike Monitor]:** Spike 0 / Extreme 0
 - **[15번 데드맨]:** ✅ PASS
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
@@ -255,14 +255,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **75**
-- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.26 → Phase=RISK-ON (부분 정렬)
+- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.25 → Phase=RISK-ON (부분 정렬)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `MIXED` | **Price(Regime):** `RISK-ON` | **VIX:** `18.17`
-- **Positioning Data:** Z-Score: `1.26` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.25` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -365,53 +365,53 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.03441274847053375
-- **Z-Score (5d):** 0.2891448797317699
+- **Z-Score (1d):** -0.24300695037440173
+- **Z-Score (5d):** 0.1828929514958456
 
 ### EEM
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.05700220863397782
-- **Z-Score (5d):** 0.7901644267576795
+- **Z-Score (1d):** 0.030172597575684777
+- **Z-Score (5d):** 0.7766385056800655
 
 ### EIS
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.6324755864727623
-- **Z-Score (5d):** 0.39023636060397904
+- **Z-Score (1d):** -0.7292643722099602
+- **Z-Score (5d):** 0.3420409822151995
 
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.3401763126097235
-- **Z-Score (5d):** 0.5431826442778286
+- **Z-Score (1d):** -0.5995896220684608
+- **Z-Score (5d):** 0.41859094831583776
 
 ### EWJ
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.10970015797407488
-- **Z-Score (5d):** 0.24389068154505134
+- **Z-Score (1d):** -0.023986988052439727
+- **Z-Score (5d):** 0.17797634282904576
 
 ### FXI
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.7970769585122356
-- **Z-Score (5d):** 1.225256661468966
+- **Z-Score (1d):** 0.9109736010786805
+- **Z-Score (5d):** 1.2808218652210879
 
 ### GLD
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.012808824472771837
-- **Z-Score (5d):** 0.030415538224023243
+- **Z-Score (1d):** -0.03932087982201863
+- **Z-Score (5d):** 0.01801857585553608
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.07459654529639932
-- **Z-Score (5d):** 1.4383453497460967
+- **Z-Score (1d):** -0.19544696483136767
+- **Z-Score (5d):** 1.3812146515350436
 
 ### VXX
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.1724169042536638
-- **Z-Score (5d):** -0.4821322741173183
+- **Z-Score (1d):** 0.19016526301114584
+- **Z-Score (5d):** -0.4713979597800915
