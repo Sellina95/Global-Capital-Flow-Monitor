@@ -137,6 +137,13 @@ jobs:
           RESEND_FROM: ${{ secrets.RESEND_FROM }}
           RESEND_TO: ${{ secrets.RESEND_TO }}
         run: python scripts/monitor_sew.py
+
+      - name: Debug SEW files
+        run: |
+          echo "== insights dir =="
+          ls -al insights || true
+          echo "== sew_state.json =="
+          cat insights/sew_state.json || true
           
       # ✅ 3) 리포트 생성 및 디버깅 (전체 교체)
       - name: Run report generator
@@ -218,6 +225,8 @@ jobs:
           git add data/*.csv || true
           git add data/market_data_history.csv  # 👈 자, 여기 확실하게 넣었습니다! ㅡㅡ+
 
+          git add insights/*.json || true
+          git add insights/*.log || true
           echo "== data files =="
           ls -al data || true
 
