@@ -3,33 +3,33 @@
 **Data as of:** 2026-04-15
 
 ## ⚡ Strategic War Room (통합 대응)
-> **시스템 상태: ✅ STABLE**
-> **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
+> **시스템 상태: 🚨 ALERT**
+> **판단 요약: 데드맨 스위치 발동 / 자산 보호 모드 강제 전환**
 
 ### 🎯 Exposure Framework
 - **Base Exposure (전략 기준): 75%**
-- **Final Exposure (실행 기준): 56%**
+- **Final Exposure (실행 기준): 0%**
 
 ### 📌 Interpretation
 → 시장 구조상 확대 가능 환경이더라도, 현재는 리스크 오버라이드가 우선입니다
 → Event / Warning / SEW 반영으로 방어적 축소 필요
 
-- **[14번 구조·수급 괴리]:** ✅ **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
-- **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
+- **[14번 구조·수급 괴리]:** 🚨 **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
+- **[실시간 보초병(SEW)]:** DEADMAN | 🚨 데드맨 스위치 발동 (익스포저 0% / 자산 보호 모드)
 - **[SEW Event Type]:** NORMAL
   → 해석: 정상 상태 / 구조적 리스크 없음
-- **[SEW Spike Monitor]:** Spike 0 / Extreme 0
-- **[15번 데드맨]:** ✅ PASS
+- **[SEW Spike Monitor]:** Spike 1 / Extreme 2
+- **[15번 데드맨]:** 🚨 ACTIVATED
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
 ## 🎯 Final Decision (War Room Override)
-- **Final Action:** **HOLD**
-- **Final Exposure:** **56%**
+- **Final Action:** **EXIT**
+- **Final Exposure:** **0%**
 - **Base Context:** phase=RISK-ON (부분 정렬) / narrative=INCREASE / base_exposure=75%
-- **SEW:** STABLE / NORMAL
+- **SEW:** DEADMAN / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
 - **Warning Score:** 4 (6.5 상관관계 붕괴, 6.6 섹터 상관관계 붕괴)
-- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영 → Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut
+- **Why:** SEW DEADMAN 발동 → 즉시 EXIT / 익스포저 0% → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut
 
 ### 🚩 Market Regime Status
 - **현재 국면 유지:** ✅ **RISK-ON (부분 정렬)**
@@ -48,30 +48,30 @@
 
 ## 🧭 So What? (Decision Layer)
 - **Strategic View:** **INCREASE** *(base exposure: 75%)*
-- **Execution View:** **HOLD** *(final exposure: 56%)*
+- **Execution View:** **EXIT** *(final exposure: 0%)*
 - **Context:** phase=RISK-ON (부분 정렬) / liquidity=UP-MID / credit_calm=True / geo=NORMAL
-- **SEW / Divergence:** STABLE / NORMAL | ALIGNED / **STAY (포지션 유지)**
+- **SEW / Divergence:** DEADMAN / NORMAL | ALIGNED / **STAY (포지션 유지)**
 - **Warning Score:** 4 (6.5 상관관계 붕괴, 6.6 섹터 상관관계 붕괴)
 - **Do:** 구조적으로는 확대 가능하나, 현재는 리스크 오버라이드 반영으로 사이징 축소 유지; 퀄리티 중심 선별적 포지셔닝 유지
 - **Don't:** 경고 신호 해소 전 무리한 베타 확대; 테마성 추격 매수
-- **Triggers:** Warning Score 정상화 / SEW 안정 / Divergence ALIGNED 유지 시 확대 재개 검토
+- **Triggers:** Warning Score 정상화 / SEW 안정 / Divergence ALIGNED 유지 시 확대 재개 검토; SEW DEADMAN 해소 여부 확인 필요
 
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
-- **Strategic View:** INCREASE (75%) | **Execution View:** HOLD (56%)
+- **Strategic View:** INCREASE (75%) | **Execution View:** EXIT (0%)
 - **Context:** phase=RISK-ON (부분 정렬) / liquidity=UP-MID / credit_calm=True / geo=NORMAL
 
 ### 🔹 Base Case
-- 조건: 현재 Execution View=HOLD 유지 / SEW=STABLE / Divergence=ALIGNED / Warning Score 4 지속
-- 전략: 실행 노출 56% 유지, 퀄리티 중심 선별적 접근 (전략 기준 75% 대비 방어적 사이징)
+- 조건: 현재 Execution View=EXIT 유지 / SEW=DEADMAN / Divergence=ALIGNED / Warning Score 4 지속
+- 전략: 실행 노출 0% 유지, 퀄리티 중심 선별적 접근 (전략 기준 75% 대비 방어적 사이징)
 
 ### 🔼 Bull Case
 - 조건: Warning Score ≤ 1 / SEW: STABLE 유지 / Divergence: ALIGNED 유지 / NET_LIQ 우호 / 크레딧 안정 지속
-- 전략: 실행 노출 56% → 75%로 복귀, 성장/리스크 자산 베타 단계적 재확대
+- 전략: 실행 노출 0% → 75%로 복귀, 성장/리스크 자산 베타 단계적 재확대
 
 ### 🔻 Bear Case
 - 조건: SEW WATCH/ALERT/DEADMAN 재발 / HY OAS 4% 상회 또는 급등 / VIX 22 이상 또는 급등 전환 / 상관관계 붕괴 심화 / Divergence 비정렬 전환
-- 전략: 실행 노출 56%에서 추가 축소, 방어/현금 비중 확대 및 고베타 자산 감축
+- 전략: 실행 노출 0% 이하 방어 유지, 현금/방어자산 중심으로 생존 우선
 
 ---
 
@@ -209,7 +209,7 @@ So What?
 **Trade Information:**
 - 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
 - 역사적 위기 패턴 유사도는 낮습니다. 현재는 **Red_Sea** 유형과 가장 가깝지만, 전면적 지정학 쇼크보다는 제한적·국지적 리스크 모니터링 구간으로 해석됩니다.
-- **Country ETF Crash?** No (BND, EEM, EIS, EMB, EWJ, FXI, GLD, SPY, VXX)
+- **Country ETF Crash?** No (BND, EEM, EIS, EMB, FXI, GLD, SPY, VXX)
 
 ### 🎯 8) Incentive Filter (Wall St. Logic)
 
@@ -248,21 +248,21 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: MIXED (혼조) (WEAK, score=-0.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.060 / US10YΔ +0.026 (정상)
-- **Sentiment (Fear&Greed):** 57.4893823720085 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 57.52579014787031 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** RISK-ON (부분 정렬) (Cap: 85)
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **75**
-- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.31 → Phase=RISK-ON (부분 정렬)
+- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.30 → Phase=RISK-ON (부분 정렬)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `MIXED` | **Price(Regime):** `RISK-ON` | **VIX:** `18.17`
-- **Positioning Data:** Z-Score: `1.31` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.30` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -329,15 +329,11 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Industrials | +4 | **27.3%** | STRONG BUY |
-| Industrials | +4 | **27.3%** | STRONG BUY |
-| Technology | +4 | **27.3%** | STRONG BUY |
-| Technology | +4 | **27.3%** | STRONG BUY |
-| Consumer Discretionary | +2 | **13.6%** | ACCUMULATE |
-| Consumer Discretionary | +2 | **13.6%** | ACCUMULATE |
-| Financials | +1 | **4.8%** | ACCUMULATE |
-| Financials | +1 | **4.8%** | ACCUMULATE |
-| **Cash & Hedge** | - | **25.0%** | DEFENSIVE |
+| Industrials | +4 | ALIGNED | **27.3%** | STRONG BUY |
+| Technology | +4 | ALIGNED | **27.3%** | STRONG BUY |
+| Consumer Discretionary | +2 | ALIGNED | **13.6%** | ACCUMULATE |
+| Financials | +1 | NEGATIVE_DIVERGENCE | **4.8%** | ACCUMULATE |
+| **Cash & Hedge** | - | - | **25.0%** | DEFENSIVE |
 
 
 ### 🧬 19) Execution / Style Translation Layer
@@ -369,14 +365,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5566743117060399
-- **Z-Score (5d):** 0.3740054534221105
+- **Z-Score (1d):** 0.27845716038745233
+- **Z-Score (5d):** 0.44818159453762846
 
 ### EEM
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.11296312622980226
-- **Z-Score (5d):** 0.6632159469862593
+- **Z-Score (1d):** 0.03911483522340937
+- **Z-Score (5d):** 0.7811473901593288
 
 ### EIS
 - **Crash?** False
@@ -387,35 +383,29 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5090364603996447
-- **Z-Score (5d):** 1.1235573560345404
-
-### EWJ
-- **Crash?** False
-- **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.2763590369060348
-- **Z-Score (5d):** -0.22817433625239525
+- **Z-Score (1d):** -0.09047189118188081
+- **Z-Score (5d):** 0.662176674661687
 
 ### FXI
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.05563238584717407
-- **Z-Score (5d):** 0.8326121008928798
+- **Z-Score (1d):** 0.8385602566831701
+- **Z-Score (5d):** 1.2454858818215806
 
 ### GLD
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.4347121661476412
-- **Z-Score (5d):** 0.15854900338083605
+- **Z-Score (1d):** 0.1621954409280996
+- **Z-Score (5d):** 0.11225192332558091
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.7738888625277127
-- **Z-Score (5d):** 1.7936772881894891
+- **Z-Score (1d):** 0.0979457319611326
+- **Z-Score (5d):** 1.5194492631490086
 
 ### VXX
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.016539391700948643
-- **Z-Score (5d):** -1.1308889170266576
+- **Z-Score (1d):** 0.03035307481573866
+- **Z-Score (5d):** -0.5679003352281337
