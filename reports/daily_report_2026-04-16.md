@@ -255,14 +255,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **75**
-- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.30 → Phase=RISK-ON (부분 정렬)
+- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.31 → Phase=RISK-ON (부분 정렬)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `MIXED` | **Price(Regime):** `RISK-ON` | **VIX:** `18.17`
-- **Positioning Data:** Z-Score: `1.30` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.31` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -327,12 +327,16 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
 - **Total Target Exposure:** **75%** (from Filter 15)
 
-| Sector | Score | **Weight in Portfolio** | **Action** |
-| :--- | :---: | :---: | :--- |
+| Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
+| :--- | :---: | :---: | :---: | :--- |
+| Industrials | +4 | **27.3%** | STRONG BUY |
 | Industrials | +4 | **27.3%** | STRONG BUY |
 | Technology | +4 | **27.3%** | STRONG BUY |
+| Technology | +4 | **27.3%** | STRONG BUY |
 | Consumer Discretionary | +2 | **13.6%** | ACCUMULATE |
-| Financials | +1 | **6.8%** | ACCUMULATE |
+| Consumer Discretionary | +2 | **13.6%** | ACCUMULATE |
+| Financials | +1 | **4.8%** | ACCUMULATE |
+| Financials | +1 | **4.8%** | ACCUMULATE |
 | **Cash & Hedge** | - | **25.0%** | DEFENSIVE |
 
 
@@ -383,8 +387,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5090364164728126
-- **Z-Score (5d):** 1.1235580344239504
+- **Z-Score (1d):** -0.5090364603996447
+- **Z-Score (5d):** 1.1235573560345404
 
 ### EWJ
 - **Crash?** False
