@@ -3612,7 +3612,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     
     for r in top_rationales:
         lines.append(f"- {r}")
-            lines.append("")
+    lines.append("")
     lines.append("**Divergence Monitor (Theory vs Flow):**")
     has_divergence = False
     for s in sorted(sectors, key=lambda x: (-score[x], x)):
