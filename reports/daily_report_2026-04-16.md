@@ -3,33 +3,33 @@
 **Data as of:** 2026-04-15
 
 ## ⚡ Strategic War Room (통합 대응)
-> **시스템 상태: ✅ STABLE**
-> **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
+> **시스템 상태: 🚨 ALERT**
+> **판단 요약: 데드맨 스위치 발동 / 자산 보호 모드 강제 전환**
 
 ### 🎯 Exposure Framework
 - **Base Exposure (전략 기준): 75%**
-- **Final Exposure (실행 기준): 56%**
+- **Final Exposure (실행 기준): 0%**
 
 ### 📌 Interpretation
 → 시장 구조상 확대 가능 환경이더라도, 현재는 리스크 오버라이드가 우선입니다
 → Event / Warning / SEW 반영으로 방어적 축소 필요
 
-- **[14번 구조·수급 괴리]:** ✅ **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
-- **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
+- **[14번 구조·수급 괴리]:** 🚨 **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
+- **[실시간 보초병(SEW)]:** DEADMAN | 🚨 데드맨 스위치 발동 (익스포저 0% / 자산 보호 모드)
 - **[SEW Event Type]:** NORMAL
   → 해석: 정상 상태 / 구조적 리스크 없음
 - **[SEW Spike Monitor]:** Spike 0 / Extreme 0
-- **[15번 데드맨]:** ✅ PASS
+- **[15번 데드맨]:** 🚨 ACTIVATED
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
 ## 🎯 Final Decision (War Room Override)
-- **Final Action:** **HOLD**
-- **Final Exposure:** **56%**
+- **Final Action:** **EXIT**
+- **Final Exposure:** **0%**
 - **Base Context:** phase=RISK-ON (부분 정렬) / narrative=INCREASE / base_exposure=75%
-- **SEW:** STABLE / NORMAL
+- **SEW:** DEADMAN / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
 - **Warning Score:** 4 (6.5 상관관계 붕괴, 6.6 섹터 상관관계 붕괴)
-- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영 → Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut
+- **Why:** SEW DEADMAN 발동 → 즉시 EXIT / 익스포저 0% → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut
 
 ### 🚩 Market Regime Status
 - **현재 국면 유지:** ✅ **RISK-ON (부분 정렬)**
@@ -48,30 +48,30 @@
 
 ## 🧭 So What? (Decision Layer)
 - **Strategic View:** **INCREASE** *(base exposure: 75%)*
-- **Execution View:** **HOLD** *(final exposure: 56%)*
+- **Execution View:** **EXIT** *(final exposure: 0%)*
 - **Context:** phase=RISK-ON (부분 정렬) / liquidity=UP-MID / credit_calm=True / geo=NORMAL
-- **SEW / Divergence:** STABLE / NORMAL | ALIGNED / **STAY (포지션 유지)**
+- **SEW / Divergence:** DEADMAN / NORMAL | ALIGNED / **STAY (포지션 유지)**
 - **Warning Score:** 4 (6.5 상관관계 붕괴, 6.6 섹터 상관관계 붕괴)
 - **Do:** 구조적으로는 확대 가능하나, 현재는 리스크 오버라이드 반영으로 사이징 축소 유지; 퀄리티 중심 선별적 포지셔닝 유지
 - **Don't:** 경고 신호 해소 전 무리한 베타 확대; 테마성 추격 매수
-- **Triggers:** Warning Score 정상화 / SEW 안정 / Divergence ALIGNED 유지 시 확대 재개 검토
+- **Triggers:** Warning Score 정상화 / SEW 안정 / Divergence ALIGNED 유지 시 확대 재개 검토; SEW DEADMAN 해소 여부 확인 필요
 
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
-- **Strategic View:** INCREASE (75%) | **Execution View:** HOLD (56%)
+- **Strategic View:** INCREASE (75%) | **Execution View:** EXIT (0%)
 - **Context:** phase=RISK-ON (부분 정렬) / liquidity=UP-MID / credit_calm=True / geo=NORMAL
 
 ### 🔹 Base Case
-- 조건: 현재 Execution View=HOLD 유지 / SEW=STABLE / Divergence=ALIGNED / Warning Score 4 지속
-- 전략: 실행 노출 56% 유지, 퀄리티 중심 선별적 접근 (전략 기준 75% 대비 방어적 사이징)
+- 조건: 현재 Execution View=EXIT 유지 / SEW=DEADMAN / Divergence=ALIGNED / Warning Score 4 지속
+- 전략: 실행 노출 0% 유지, 퀄리티 중심 선별적 접근 (전략 기준 75% 대비 방어적 사이징)
 
 ### 🔼 Bull Case
 - 조건: Warning Score ≤ 1 / SEW: STABLE 유지 / Divergence: ALIGNED 유지 / NET_LIQ 우호 / 크레딧 안정 지속
-- 전략: 실행 노출 56% → 75%로 복귀, 성장/리스크 자산 베타 단계적 재확대
+- 전략: 실행 노출 0% → 75%로 복귀, 성장/리스크 자산 베타 단계적 재확대
 
 ### 🔻 Bear Case
 - 조건: SEW WATCH/ALERT/DEADMAN 재발 / HY OAS 4% 상회 또는 급등 / VIX 22 이상 또는 급등 전환 / 상관관계 붕괴 심화 / Divergence 비정렬 전환
-- 전략: 실행 노출 56%에서 추가 축소, 방어/현금 비중 확대 및 고베타 자산 감축
+- 전략: 실행 노출 0% 이하 방어 유지, 현금/방어자산 중심으로 생존 우선
 
 ---
 
@@ -255,14 +255,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **75**
-- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.25 → Phase=RISK-ON (부분 정렬)
+- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.26 → Phase=RISK-ON (부분 정렬)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `MIXED` | **Price(Regime):** `RISK-ON` | **VIX:** `18.17`
-- **Positioning Data:** Z-Score: `1.25` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.26` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -365,53 +365,53 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.24300695037440173
-- **Z-Score (5d):** 0.1828929514958456
+- **Z-Score (1d):** -0.24300639000166596
+- **Z-Score (5d):** 0.18289218571461782
 
 ### EEM
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.030172597575684777
-- **Z-Score (5d):** 0.7766385056800655
+- **Z-Score (1d):** 0.05252958794984471
+- **Z-Score (5d):** 0.7879100457019549
 
 ### EIS
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.7292643722099602
-- **Z-Score (5d):** 0.3420409822151995
+- **Z-Score (1d):** -0.7726390701244221
+- **Z-Score (5d):** 0.3203739945285738
 
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5995896220684608
-- **Z-Score (5d):** 0.41859094831583776
+- **Z-Score (1d):** -0.6318879447062882
+- **Z-Score (5d):** 0.40299280557798417
 
 ### EWJ
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.023986988052439727
-- **Z-Score (5d):** 0.17797634282904576
+- **Z-Score (1d):** -0.013959953045490619
+- **Z-Score (5d):** 0.18292133870379926
 
 ### FXI
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.9109736010786805
-- **Z-Score (5d):** 1.2808218652210879
+- **Z-Score (1d):** 0.8799694277060313
+- **Z-Score (5d):** 1.2656885215086175
 
 ### GLD
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.03932087982201863
-- **Z-Score (5d):** 0.01801857585553608
+- **Z-Score (1d):** -0.1204755720209834
+- **Z-Score (5d):** -0.019935568597812096
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.19544696483136767
-- **Z-Score (5d):** 1.3812146515350436
+- **Z-Score (1d):** -0.16496546649068747
+- **Z-Score (5d):** 1.3956520183620138
 
 ### VXX
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.19016526301114584
-- **Z-Score (5d):** -0.4713979597800915
+- **Z-Score (1d):** 0.14756435211424565
+- **Z-Score (5d):** -0.49715570085945704
