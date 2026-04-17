@@ -249,7 +249,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.160 / US10YΔ +0.027 (정상)
-- **Sentiment (Fear&Greed):** 60.90776343658277 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 60.9401274597711 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** TRANSITION / MIXED (전환·혼조) (Cap: 70)
@@ -326,14 +326,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - Financials: NEGATIVE_DIVERGENCE
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
-- **Total Target Exposure:** **65%** (from Filter 15)
+- **Total Target Exposure:** **65.0%** (from Filter 15)
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Industrials | +3 | ALIGNED | **21.7%** | STRONG BUY |
-| Technology | +3 | ALIGNED | **21.7%** | STRONG BUY |
-| Consumer Discretionary | +2 | ALIGNED | **14.4%** | ACCUMULATE |
-| Financials | +1 | NEGATIVE_DIVERGENCE | **5.1%** | ACCUMULATE |
+| Industrials | +3 | ALIGNED | **22.4%** | STRONG BUY |
+| Technology | +3 | ALIGNED | **22.4%** | STRONG BUY |
+| Consumer Discretionary | +2 | ALIGNED | **14.9%** | ACCUMULATE |
+| Financials | +1 | NEGATIVE_DIVERGENCE | **5.2%** | HOLD |
 | **Cash & Hedge** | - | - | **35.0%** | DEFENSIVE |
 
 
@@ -365,8 +365,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.6323289806143519
-- **Z-Score (5d):** -0.01657158761275334
+- **Z-Score (1d):** -0.6323290701278577
+- **Z-Score (5d):** -0.01657158636730137
 
 ### EEM
 - **Crash?** False
@@ -383,8 +383,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.7178524056765098
-- **Z-Score (5d):** 0.3613703808006283
+- **Z-Score (1d):** -0.7178526651510584
+- **Z-Score (5d):** 0.36137018556069234
 
 ### EWJ
 - **Crash?** False
