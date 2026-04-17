@@ -144,6 +144,9 @@ jobs:
           ls -al insights || true
           echo "== sew_state.json =="
           cat insights/sew_state.json || true
+
+      - name: Run portfolio return calc
+        run: python portfolio/calc_portfolio_return.py
           
       # ✅ 3) 리포트 생성 및 디버깅 (전체 교체)
       - name: Run report generator
