@@ -3,7 +3,7 @@ name: Daily Macro Report
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 22 * * *" # UTC 22:00 = KST 07:00
+    - cron: "0 1 * * *" # UTC 01:00 = KST 10:00
 
 permissions:
   contents: write
