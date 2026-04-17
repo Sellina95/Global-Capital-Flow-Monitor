@@ -1,0 +1,2 @@
+date,portfolio_return_pct,benchmark_return_pct,alpha_vs_spy_pct,cash_weight,w_XLF,w_XLI,w_XLK,w_XLY,r_XLF,r_XLI,r_XLK,r_XLY,contrib_XLF,contrib_XLI,contrib_XLK,contrib_XLY,contrib_CASH
+2026-04-17,0.0618,0.2457,-0.1839,35.0,5.2,22.4,22.4,14.9,-0.2684,-0.4965,1.1444,-0.4654,-0.014,-0.1112,0.2563,-0.0693,0.0
