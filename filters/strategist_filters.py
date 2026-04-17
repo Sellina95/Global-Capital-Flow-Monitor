@@ -3734,9 +3734,73 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
 
     # 기존 lines 리스트에 추가
     lines.append("\n" + "\n".join(allocation_lines))
-
+    # -------------------------
+    # 19) Execution Layer (ETF Mapping)
+    # -------------------------
+    etf_plan = build_execution_etf_map(weights)
+    
+    lines.append("")
+    lines.append("### 🧬 19) Execution Layer (ETF Mapping)")
+    lines.append("")
+    
+    if etf_plan:
+        lines.append("| Sector | ETF | Weight | Action |")
+        lines.append("| :--- | :---: | :---: | :--- |")
+    
+        for item in etf_plan:
+            lines.append(
+                f"| {item['sector']} | {item['etf']} | {item['weight']}% | {item['action']} |"
+            )
+    else:
+        lines.append("⚠️ 실행 가능한 ETF 매핑이 없습니다.")
 
     return "\n".join(lines)
+
+def build_execution_etf_map(weights: Dict[str, float]) -> List[Dict[str, Any]]:
+    """
+    19) Execution Layer (Phase 1)
+    - 18.5에서 나온 sector weight를 실제 ETF 실행안으로 변환
+    """
+
+    sector_to_etf = {
+        "Technology": "XLK",
+        "Financials": "XLF",
+        "Energy": "XLE",
+        "Industrials": "XLI",
+        "Materials": "XLB",
+        "Consumer Discretionary": "XLY",
+        "Consumer Staples": "XLP",
+        "Health Care": "XLV",
+        "Utilities": "XLU",
+        "Real Estate": "XLRE",
+        "Communication Services": "XLC",
+    }
+
+    results: List[Dict[str, Any]] = []
+
+    for sector, weight in weights.items():
+        if weight <= 0:
+            continue
+
+        etf = sector_to_etf.get(sector)
+        if not etf:
+            continue
+
+        if weight >= 20:
+            action = "PRIMARY"
+        elif weight >= 10:
+            action = "ADD"
+        else:
+            action = "SMALL"
+
+        results.append({
+            "sector": sector,
+            "etf": etf,
+            "weight": round(weight, 1),
+            "action": action,
+        })
+
+    return results
 
     
 
