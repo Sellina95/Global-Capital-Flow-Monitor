@@ -3733,20 +3733,39 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         allocation_lines.append("⚠️ 양수 점수를 받은 섹터가 없습니다. 현금 비중을 확대하십시오.")
 
     # 기존 lines 리스트에 추가
+       # 기존 lines 리스트에 추가
     lines.append("\n" + "\n".join(allocation_lines))
+
     # -------------------------
     # 19) Execution Layer (ETF Mapping)
     # -------------------------
     etf_plan = build_execution_etf_map(weights)
-    
+
+    # -------------------------
+    # Portfolio Logging (Paper Trading)
+    # -------------------------
+    try:
+        from portfolio.save_portfolio import save_paper_portfolio
+
+        etf_weights = {item["etf"]: item["weight"] for item in etf_plan}
+
+        save_paper_portfolio(
+            weights=etf_weights,
+            cash_weight=cash_weight,
+            exposure=final_exposure
+        )
+
+    except Exception as e:
+        print(f"⚠️ Portfolio save failed: {e}")
+
     lines.append("")
     lines.append("### 🧬 19) Execution Layer (ETF Mapping)")
     lines.append("")
-    
+
     if etf_plan:
         lines.append("| Sector | ETF | Weight | Action |")
         lines.append("| :--- | :---: | :---: | :--- |")
-    
+
         for item in etf_plan:
             lines.append(
                 f"| {item['sector']} | {item['etf']} | {item['weight']}% | {item['action']} |"
