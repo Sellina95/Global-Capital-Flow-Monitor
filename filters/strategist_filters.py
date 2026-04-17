@@ -3242,6 +3242,60 @@ def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
     else:
         return (0, "VOLATILITY NORMAL", f"absolute mode: VIX {current_vix:.1f}")
 
+def build_tactical_allocation(
+    score: Dict[str, int],
+    ow_sorted: list,
+    divergence_flags: Dict[str, str],
+    total_exposure: float,
+) -> Dict[str, Any]:
+    """
+    18.5) Tactical Asset Allocation Builder
+    - 양수 점수 섹터만 대상으로 비중 계산
+    - Divergence 반영
+    - 총 노출도(total_exposure) 안에서 정규화
+    """
+
+    positive_scores = {s: score[s] for s in ow_sorted if score.get(s, 0) > 0}
+    total_score_sum = sum(positive_scores.values())
+
+    weights = {}
+
+    if total_score_sum <= 0:
+        return {
+            "weights": {},
+            "cash_weight": round(100.0 - total_exposure, 1),
+            "total_score_sum": 0,
+        }
+
+    # 1) 기본 비중 계산
+    for sector, s_score in positive_scores.items():
+        weights[sector] = (s_score / total_score_sum) * total_exposure
+
+    # 2) Divergence 반영
+    for sector in list(weights.keys()):
+        flag = divergence_flags.get(sector, "ALIGNED")
+        if flag == "NEGATIVE_DIVERGENCE":
+            weights[sector] *= 0.7
+        elif flag == "POSITIVE_DIVERGENCE":
+            weights[sector] *= 1.1
+
+    # 3) 다시 total_exposure 안으로 정규화
+    adjusted_sum = sum(weights.values())
+    if adjusted_sum > 0:
+        for sector in weights:
+            weights[sector] = (weights[sector] / adjusted_sum) * total_exposure
+
+    # 4) 반올림
+    for sector in weights:
+        weights[sector] = round(weights[sector], 1)
+
+    cash_weight = round(100.0 - total_exposure, 1)
+
+    return {
+        "weights": weights,
+        "cash_weight": cash_weight,
+        "total_score_sum": total_score_sum,
+    }
 
 def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     """
@@ -3626,11 +3680,19 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # [NEW] 18.5) Execution Weight Allocation Logic
     # -------------------------
     # 15번 필터에서 계산된 최종 노출도를 가져옴 (없으면 기본값 50)
-    final_exposure = market_data.get("PREV_EXPOSURE", 50.0) 
-    
-    # 점수가 양수인 섹터들만 추출
-    positive_sectors = {s: score[s] for s in sectors if score[s] > 0}
-    total_score_sum = sum(positive_sectors.values())
+        # 15번 필터에서 계산된 최종 노출도를 가져옴 (없으면 기본값 50)
+    final_exposure = float(market_data.get("PREV_EXPOSURE", 50.0))
+
+    alloc_result = build_tactical_allocation(
+        score=score,
+        ow_sorted=ow_sorted,
+        divergence_flags=divergence_flags,
+        total_exposure=final_exposure,
+    )
+
+    weights = alloc_result["weights"]
+    cash_weight = alloc_result["cash_weight"]
+    total_score_sum = alloc_result["total_score_sum"]
 
     allocation_lines = []
     allocation_lines.append("### 💰 18.5) Tactical Asset Allocation (Execution Weight)")
@@ -3644,31 +3706,22 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         
         # 점수 비중대로 exposure 분할 계산
         for s in ow_sorted:
-            s_score = score[s]
-            s_weight = (s_score / total_score_sum) * final_exposure
+            if s not in weights:
+                continue
 
-            # -------------------------
-            # [NEW] Divergence Penalty
-            # -------------------------
+            s_score = score[s]
+            s_weight = weights[s]
             flag = divergence_flags.get(s, "ALIGNED")
 
-            if flag == "NEGATIVE_DIVERGENCE":
-                s_weight *= 0.7   # 30% 감산
-            elif flag == "POSITIVE_DIVERGENCE":
-                s_weight *= 1.1   # 일단은 미세 가산만 (보수적)
+            action = "STRONG BUY" if s_weight >= 20 else ("ACCUMULATE" if s_weight >= 10 else "HOLD")
 
-            action = "STRONG BUY" if s_score >= 3 else "ACCUMULATE"
             allocation_lines.append(
                 f"| {s} | +{s_score} | {flag} | **{s_weight:.1f}%** | {action} |"
             )
     
-            
         
         # 현금 비중 계산
-        cash_weight = 100.0 - final_exposure
-        allocation_lines.append(
-            f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |"
-        )
+        allocation_lines.append(f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |")
     else:
         allocation_lines.append("⚠️ 양수 점수를 받은 섹터가 없습니다. 현금 비중을 확대하십시오.")
 
