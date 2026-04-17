@@ -3722,6 +3722,13 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         
         # 현금 비중 계산
         allocation_lines.append(f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |")
+        total_allocated = round(sum(weights.values()) + cash_weight, 1)
+        allocation_lines.append("")
+        allocation_lines.append(f"- **Allocation Check:** Sector Weights + Cash = **{total_allocated:.1f}%**")
+
+        penalized = [s for s in ow_sorted if divergence_flags.get(s) == "NEGATIVE_DIVERGENCE"]
+        if penalized:
+            allocation_lines.append(f"- **Divergence Adjustment:** {', '.join(penalized)} penalized in weight sizing")
     else:
         allocation_lines.append("⚠️ 양수 점수를 받은 섹터가 없습니다. 현금 비중을 확대하십시오.")
 
