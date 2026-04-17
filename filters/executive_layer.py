@@ -103,7 +103,7 @@ def execution_layer_filter(market_data: Dict[str, Any], debug: bool = False) -> 
     style_tags = _uniq_keep_order(style_tags)
 
     lines: List[str] = []
-    lines.append("### 🧬 19) Execution / Style Translation Layer")
+    lines.append("### 🧬 19.5) Execution / Style Translation Layer")
     lines.append("- **Implementation Focus:** Environment-Aware Stock Types")
     lines.append("")
 
