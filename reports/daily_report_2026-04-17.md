@@ -349,7 +349,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 | Financials | XLF | 5.2% | SMALL |
 
 
-### 🧬 19) Execution / Style Translation Layer
+### 🧬 19.5) Execution / Style Translation Layer
 - **Implementation Focus:** Environment-Aware Stock Types
 
 **Preferred Company Traits:**
@@ -377,8 +377,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.6323290712368403
-- **Z-Score (5d):** -0.016571922715292398
+- **Z-Score (1d):** -0.6323289806143519
+- **Z-Score (5d):** -0.01657158761275334
 
 ### EEM
 - **Crash?** False
@@ -395,8 +395,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.7178528479413984
-- **Z-Score (5d):** 0.3613702913874599
+- **Z-Score (1d):** -0.7178528590098772
+- **Z-Score (5d):** 0.36137062803350334
 
 ### EWJ
 - **Crash?** False
