@@ -2042,17 +2042,15 @@ def attach_geo_similarity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     market_data["GEO_EW"] = geo
     return market_data
 
-
-
-import yfinance as yf
-import pandas as pd
-
 def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Drift v2 input layer
     - SPY / WTI / DXY / GOLD
     - 1H / 4H / 1D / 5D return 계산
     """
+
+    import yfinance as yf
+    import pandas as pd
 
     drift_tickers = {
         "SPY": "SPY",
@@ -2062,15 +2060,10 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
     drift_data = {}
-    label = classify_drift_label(drift_data)
 
-    market_data["DRIFT"] = {
-        "data": drift_data,
-        "score": drift_score,
-        "state": drift_state,
-        "label": label,
-    }
-
+    # -----------------------------
+    # Helpers
+    # -----------------------------
     def safe_ret(curr, past):
         try:
             if curr is None or past is None or past == 0:
@@ -2084,72 +2077,56 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
             return None
 
         try:
-            # MultiIndex columns 대응
             if isinstance(df.columns, pd.MultiIndex):
                 close_cols = [c for c in df.columns if str(c[0]).lower() == "close"]
                 if not close_cols:
                     return None
-                s = df[close_cols]
-                if isinstance(s, pd.DataFrame):
-                    s = s.squeeze()
+                s = df[close_cols].squeeze()
             else:
                 if "Close" not in df.columns:
                     return None
                 s = df["Close"]
 
-            if isinstance(s, pd.DataFrame):
-                s = s.squeeze()
-
             s = pd.to_numeric(s, errors="coerce").dropna()
-            if s.empty:
-                return None
+            return s if not s.empty else None
 
-            return s
         except Exception:
             return None
 
+    # -----------------------------
+    # Main loop
+    # -----------------------------
     for name, ticker in drift_tickers.items():
         try:
             print(f"[DRIFT] Fetching {name} ({ticker}) ...")
 
-            # 7일 / 1시간봉
             intraday = yf.download(
                 ticker,
                 period="7d",
                 interval="60m",
                 progress=False,
-                auto_adjust=False,
                 threads=False,
             )
 
-            # 3개월 / 일봉
             daily = yf.download(
                 ticker,
                 period="3mo",
                 interval="1d",
                 progress=False,
-                auto_adjust=False,
                 threads=False,
             )
 
             intraday_close = extract_close_series(intraday)
             daily_close = extract_close_series(daily)
 
-            print(f"[DRIFT] {name} intraday rows = {0 if intraday_close is None else len(intraday_close)}")
-            print(f"[DRIFT] {name} daily rows    = {0 if daily_close is None else len(daily_close)}")
-
             if intraday_close is None or daily_close is None:
-                print(f"[DRIFT][WARN] {name} close series unavailable")
                 drift_data[name] = {}
                 continue
 
             curr = float(intraday_close.iloc[-1])
 
-            # 1H / 4H
             h1 = float(intraday_close.iloc[-2]) if len(intraday_close) >= 2 else None
             h4 = float(intraday_close.iloc[-5]) if len(intraday_close) >= 5 else None
-
-            # 1D / 5D
             d1 = float(daily_close.iloc[-2]) if len(daily_close) >= 2 else None
             d5 = float(daily_close.iloc[-6]) if len(daily_close) >= 6 else None
 
@@ -2161,15 +2138,17 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
                 "ret_5d": safe_ret(curr, d5),
             }
 
-            print(f"[DRIFT] {name} data = {drift_data[name]}")
+            print(f"[DRIFT] {name} → {drift_data[name]}")
 
         except Exception as e:
-            print(f"[DRIFT][ERROR] {name} failed: {e}")
+            print(f"[DRIFT][ERROR] {name}: {e}")
             drift_data[name] = {}
 
+    # 👉 여기서 딱 이거만 저장
     market_data["DRIFT_DATA"] = drift_data
+
     return market_data
-    
+
 
 def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     """
