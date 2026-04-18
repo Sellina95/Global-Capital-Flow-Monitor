@@ -162,13 +162,18 @@ Some commentary here
 ### 🌊 Drift Monitor (v2)
 - **정의:** 단기 폭발이 아닌 '누적 방향성 흐름' 감지
 
-- **SPY:** 1H=None / 4H=None / 1D=None / 5D=None
-- **WTI:** 1H=None / 4H=None / 1D=None / 5D=None
-- **DXY:** 1H=None / 4H=None / 1D=None / 5D=None
-- **GOLD:** 1H=None / 4H=None / 1D=None / 5D=None
+- **SPY:** 1H=0.11138059618007734 / 4H=-0.20520048244117017 / 1D=1.1957379599176976 / 5D=4.502099436476281
+- **WTI:** 1H=1.095202433766862 / 4H=3.244836983583488 / 1D=-11.289473192295219 / 5D=-13.016464465721567
+- **DXY:** 1H=0.0336040198643639 / 4H=0.29507834038200453 / 1D=0.007122943085113853 / 5D=-0.4287928472861302
+- **GOLD:** 1H=-0.5353317127730461 / 4H=-0.8099835887962814 / 1D=1.3374012894649567 / 5D=1.8375018751850103
 
-- **Drift Score:** 0
-- **State:** **NO DRIFT**
+- **Drift Score:** 3
+- **State:** **⚡ TREND FORMING (초기 흐름 감지)**
+
+- **Drivers:**
+  - WTI 1D downside extension
+  - SPY 1D continuation
+  - Gold strength
 
 ### ⚠ 6.5) Correlation Break Monitor
 ⚠ Market Closed / Stale Data → Correlation signals evaluated conservatively.
