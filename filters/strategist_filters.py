@@ -2345,65 +2345,102 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
     wti_dir = _sign_from(wti)
     gold_dir = _sign_from(gold)
 
-    # 실질금리 값 추출 (float 변환)
-    rr_val = _to_float(rr.get("today")) if rr else 0.0
-    wti_val = _to_float(wti.get("today")) if wti else 0.0
+    # 값 / 변화율 추출
+    rr_val = _to_float(rr.get("today")) if rr else None
+    wti_val = _to_float(wti.get("today")) if wti else None
+
+    us10y_pct = _to_float(us10y.get("pct_change")) if us10y else None
+    dxy_pct = _to_float(dxy.get("pct_change")) if dxy else None
+    vix_pct = _to_float(vix.get("pct_change")) if vix else None
+    wti_pct = _to_float(wti.get("pct_change")) if wti else None
+    gold_pct = _to_float(gold.get("pct_change")) if gold else None
 
     # 2. 상태 초기화
     state = "NEUTRAL"
     rationale = "글로벌 매크로 구조의 특이 신호가 감지되지 않음"
 
     # ---------------------------------------------------------
-    # [12번 필터 통합 로직 - 우선순위 판정]
+    # [NEW] Deadband / Meaningful move thresholds
     # ---------------------------------------------------------
-    
-    # A) 시스템적 헤지 (달러 & 금 동반 상승)
-    if dxy_dir == 1 and gold_dir == 1:
+    TH_DXY = 0.20
+    TH_GOLD = 0.50
+    TH_VIX = 1.00
+    TH_US10Y = 0.20
+    TH_WTI = 2.00
+
+    dxy_up_meaningful = dxy_pct is not None and dxy_pct >= TH_DXY
+    gold_up_meaningful = gold_pct is not None and gold_pct >= TH_GOLD
+    vix_up_meaningful = vix_pct is not None and vix_pct >= TH_VIX
+    us10y_down_meaningful = us10y_pct is not None and us10y_pct <= -TH_US10Y
+    us10y_up_meaningful = us10y_pct is not None and us10y_pct >= TH_US10Y
+    wti_up_meaningful = wti_pct is not None and wti_pct >= TH_WTI
+    wti_down_meaningful = wti_pct is not None and wti_pct <= -TH_WTI
+
+    # ---------------------------------------------------------
+    # [12번 필터 안정화 로직 - 우선순위 판정]
+    # ---------------------------------------------------------
+
+    # A) 시스템적 헤지
+    # 기존: dxy_dir == 1 and gold_dir == 1
+    # 문제: 미세한 + 부호만으로도 발동
+    # 개선: 의미 있는 상승 + 보조 리스크 신호 1개 동반 시에만 발동
+    if dxy_up_meaningful and gold_up_meaningful and (vix_up_meaningful or us10y_down_meaningful):
         state = "SYSTEMIC HEDGE (시스템적 위험 회피)"
-        rationale = "달러와 금의 동반 상승은 법정 화폐 가치 전반에 대한 의구심과 구조적 불확실성을 시사함"
+        rationale = "달러와 금의 의미 있는 동반 상승이 확인되며, 보조 리스크 신호까지 동반됨"
 
-    # B) 에너지 주도 스태그플레이션 (실질금리 2.0 기준 적용)
-    # 수정 후
-    elif wti_val is not None and rr_val is not None and wti_val > 90 and rr_val >= 2.0:
+    # B) 에너지 주도 스태그플레이션
+    elif (
+        wti_val is not None and rr_val is not None
+        and wti_val > 90
+        and rr_val >= 2.0
+        and wti_up_meaningful
+    ):
         state = "ENERGY-DRIVEN STAGFLATION (에너지 주도 스태그)"
-        rationale = f"긴축적인 실질금리({rr_val}%) 환경에서도 고유가가 유지됨. 이는 공급망의 구조적 압박을 의미"
+        rationale = f"긴축적인 실질금리({rr_val}%) 환경에서도 고유가가 의미 있게 유지/상승. 공급 측 구조 압박 가능성"
 
-    # C) 글로벌 긴축 구조 (금리 & 달러 동반 상승)
-    elif us10y_dir == 1 and dxy_dir == 1:
+    # C) 글로벌 긴축 구조
+    elif us10y_up_meaningful and dxy_up_meaningful:
         state = "GLOBAL FINANCIAL TIGHTENING (글로벌 긴축 구조)"
-        rationale = "금리↑ + 달러↑ 조합은 글로벌 자본 조달 비용을 높여 리스크 자산에 구조적 압박"
+        rationale = "금리↑ + 달러↑가 모두 의미 있는 수준으로 나타나 글로벌 자본 조달 비용 압박"
 
-    # D) 비용 주도 구조 (경기 우려 속 유가 상승)
-    elif wti_dir == 1 and us10y_dir <= 0:
+    # D) 비용 주도 구조
+    elif wti_up_meaningful and us10y_dir <= 0:
         state = "COST-PUSH STRUCTURE (비용 주도 구조)"
-        rationale = "경기 지지(금리 하락)가 필요한 상황에서 유가 상승은 실물 경제의 구조적 비용 부담을 가중시킴"
+        rationale = "경기 지지(금리 하락/보합)가 필요한 상황에서 유가가 의미 있게 상승해 실물 비용 부담을 가중"
 
     # E) 수요 둔화 우려
-    elif wti_dir == -1 and vix_dir == 1:
+    elif wti_down_meaningful and vix_up_meaningful:
         state = "WEAK DEMAND + RISK-OFF (수요 둔화)"
-        rationale = "유가 하락과 변동성 상승은 성장의 구조적 둔화 우려를 반영"
+        rationale = "유가 하락과 변동성 상승이 동시에 의미 있게 나타나 성장 둔화 우려를 반영"
 
     # ---------------------------------------------------------
     # 3. 리포트 조립
     # ---------------------------------------------------------
     lines = []
-    lines.append("### 🏗️ 12) Structural Filter (v2)")
+    lines.append("### 🏗️ 12) Structural Filter (v3)")
     lines.append("- **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?")
-    
+
     signals = [
         f"US10Y({_dir_str(us10y_dir)})",
         f"DXY({_dir_str(dxy_dir)})",
         f"GOLD({_dir_str(gold_dir)})",
         f"VIX({_dir_str(vix_dir)})",
-        f"WTI({_dir_str(wti_dir)})"
+        f"WTI({_dir_str(wti_dir)})",
     ]
     lines.append(f"- **핵심 신호:** {' / '.join(signals)}")
+    lines.append(
+        f"- **Meaningful Move Check:** "
+        f"DXY={dxy_pct if dxy_pct is not None else 'N/A'} / "
+        f"GOLD={gold_pct if gold_pct is not None else 'N/A'} / "
+        f"US10Y={us10y_pct if us10y_pct is not None else 'N/A'} / "
+        f"VIX={vix_pct if vix_pct is not None else 'N/A'} / "
+        f"WTI={wti_pct if wti_pct is not None else 'N/A'}"
+    )
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
 
-    # structural_filter 함수 마지막 return 직전에 추가
     market_data["STRUCT_V2_STATE"] = state
-    
+
     return "\n".join(lines)
 
 
