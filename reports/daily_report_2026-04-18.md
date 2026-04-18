@@ -32,7 +32,7 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=REDUCE 반영 → Warning Score 1 → 경미한 이상신호, 모니터링 강화
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **TRANSITION / MIXED (전환·혼조)** → **RISK-ON (부분 정렬)**
+- **현재 국면 유지:** ✅ **RISK-ON (부분 정렬)**
 
 ---
 
@@ -332,9 +332,9 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Industrials | +4 | ALIGNED | **11.2%** | ACCUMULATE |
-| Technology | +4 | ALIGNED | **11.2%** | ACCUMULATE |
-| Consumer Discretionary | +2 | ALIGNED | **5.6%** | HOLD |
+| Industrials | +3.7 | ALIGNED | **10.5%** | ACCUMULATE |
+| Technology | +4.5 | ALIGNED | **12.7%** | ACCUMULATE |
+| Consumer Discretionary | +1.7 | ALIGNED | **4.8%** | HOLD |
 | Financials | +1 | NEGATIVE_DIVERGENCE | **2.0%** | HOLD |
 | **Cash & Hedge** | - | - | **70.0%** | DEFENSIVE |
 
@@ -345,9 +345,9 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Industrials | XLI | 11.2% | ADD |
-| Technology | XLK | 11.2% | ADD |
-| Consumer Discretionary | XLY | 5.6% | SMALL |
+| Industrials | XLI | 10.5% | ADD |
+| Technology | XLK | 12.7% | ADD |
+| Consumer Discretionary | XLY | 4.8% | SMALL |
 | Financials | XLF | 2.0% | SMALL |
 
 
@@ -380,8 +380,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.46499194466929
-- **Z-Score (5d):** 1.0342140081515485
+- **Z-Score (1d):** 1.4649990588483184
+- **Z-Score (5d):** 1.0342154335477431
 
 ### EEM
 - **Crash?** False
@@ -398,8 +398,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391265724409853
-- **Z-Score (5d):** 1.1100981067613784
+- **Z-Score (1d):** 1.5391263266370139
+- **Z-Score (5d):** 1.1100976554845727
 
 ### EWJ
 - **Crash?** False
