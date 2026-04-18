@@ -13,6 +13,35 @@ import math
 # =========================
 # Helpers
 # =========================
+
+def detect_flow_signal(market_data):
+
+    sew = market_data.get("SEW_STATE", "NORMAL")
+    drift_score = market_data.get("DRIFT_SCORE", 0)
+
+    signal = "NONE"
+    strength = 0
+
+    # 🔥 1. Drift 먼저 (기관 축적 단계)
+    if drift_score >= 3:
+        signal = "FLOW_BUILDING"
+        strength = 1
+
+    # 🔥 2. Drift + SEW = 진짜 신호
+    if drift_score >= 2 and sew in ["WATCH", "ALERT"]:
+        signal = "PRE_SHOCK"
+        strength = 2
+
+    # 🔥 3. SEW만 단독
+    if sew in ["ALERT", "DEADMAN"]:
+        signal = "SHOCK"
+        strength = 3
+
+    market_data["FLOW_SIGNAL"] = signal
+    market_data["FLOW_STRENGTH"] = strength
+
+    return market_data
+    
 def classify_drift_label(drift: Dict[str, Any]) -> str:
     spy_1d = drift.get("SPY", {}).get("1D")
     wti_1d = drift.get("WTI", {}).get("1D")
@@ -58,6 +87,48 @@ def classify_drift_label(drift: Dict[str, Any]) -> str:
     # --------------------------------------------------
     return "MIXED"
     
+
+def classify_drift_label(drift_inputs: Dict[str, Any]) -> str:
+    """
+    drift_inputs 예시:
+    {
+        "SPY": {"1D": ...},
+        "WTI": {"1D": ...},
+        "DXY": {"1D": ...},
+        "GOLD": {"1D": ...},
+    }
+    """
+
+    spy_1d = drift_inputs.get("SPY", {}).get("1D")
+    wti_1d = drift_inputs.get("WTI", {}).get("1D")
+    dxy_1d = drift_inputs.get("DXY", {}).get("1D")
+    gold_1d = drift_inputs.get("GOLD", {}).get("1D")
+
+    def up(x, thr=0.8):
+        return x is not None and x > thr
+
+    def down(x, thr=-0.8):
+        return x is not None and x < thr
+
+    # 1) 디스인플레이션 + 리스크온
+    if up(spy_1d) and down(wti_1d):
+        return "DISINFLATION_RISK_ON"
+
+    # 2) 시스템 헤지
+    if up(gold_1d) and up(dxy_1d) and down(spy_1d):
+        return "SYSTEMIC_HEDGE"
+
+    # 3) 오일 쇼크
+    if up(wti_1d, 2.0) and down(spy_1d):
+        return "OIL_SHOCK"
+
+    # 4) 긴축 압력
+    if up(dxy_1d) and down(spy_1d):
+        return "TIGHTENING_PRESSURE"
+
+    return "MIXED"
+
+
 def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
     drift = market_data.get("DRIFT_DATA", {}) or {}
 
@@ -67,17 +138,32 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
         except Exception:
             return None
 
-    spy_1d = g("SPY", "ret_1d")
+    spy_15m = g("SPY", "ret_15m")
+    spy_30m = g("SPY", "ret_30m")
+    spy_1h = g("SPY", "ret_1h")
     spy_4h = g("SPY", "ret_4h")
+    spy_1d = g("SPY", "ret_1d")
 
-    wti_1d = g("WTI", "ret_1d")
+    wti_15m = g("WTI", "ret_15m")
+    wti_30m = g("WTI", "ret_30m")
+    wti_1h = g("WTI", "ret_1h")
     wti_4h = g("WTI", "ret_4h")
+    wti_1d = g("WTI", "ret_1d")
 
+    dxy_15m = g("DXY", "ret_15m")
+    dxy_30m = g("DXY", "ret_30m")
     dxy_1d = g("DXY", "ret_1d")
+
+    gold_15m = g("GOLD", "ret_15m")
+    gold_30m = g("GOLD", "ret_30m")
     gold_1d = g("GOLD", "ret_1d")
 
     score = 0
     reasons = []
+
+    # -----------------------------
+    # 1) 메인 drift 로직
+    # -----------------------------
 
     # WTI downside drift
     if wti_4h is not None and wti_4h <= -3.0:
@@ -105,6 +191,38 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
         score += 1
         reasons.append("Gold strength")
 
+    # -----------------------------
+    # 2) 15m / 30m pre-move 감지
+    # -----------------------------
+    short_premove = 0
+
+    if spy_15m is not None and spy_15m >= 0.25:
+        short_premove += 1
+    if spy_30m is not None and spy_30m >= 0.40:
+        short_premove += 1
+
+    if wti_15m is not None and wti_15m <= -0.60:
+        short_premove += 1
+    if wti_30m is not None and wti_30m <= -1.00:
+        short_premove += 1
+
+    if gold_15m is not None and gold_15m >= 0.30:
+        short_premove += 1
+    if gold_30m is not None and gold_30m >= 0.50:
+        short_premove += 1
+
+    if dxy_15m is not None and dxy_15m <= -0.10:
+        short_premove += 1
+    if dxy_30m is not None and dxy_30m <= -0.20:
+        short_premove += 1
+
+    if short_premove >= 2:
+        score += 1
+        reasons.append("Short-horizon pre-move detected (15m/30m)")
+
+    # -----------------------------
+    # 3) state
+    # -----------------------------
     if score >= 4:
         state = "🔥 STRONG TREND (방향성 자금 흐름 감지)"
     elif score >= 2:
@@ -114,15 +232,43 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
     else:
         state = "NO DRIFT"
 
+    # -----------------------------
+    # 4) SEW 조합 신호
+    # -----------------------------
+    sew_state = str(market_data.get("SEW_STATUS", "STABLE") or "STABLE").upper()
+    combo_signal = "NONE"
+
+    if sew_state == "STABLE" and score >= 3:
+        combo_signal = "🟢 EARLY FLOW WITHOUT SHOCK"
+    elif sew_state in ["WATCH", "ALERT"] and score >= 3:
+        combo_signal = "🟠 FLOW + SHOCK CONFLICT / EVENT RISK"
+    elif sew_state in ["WATCH", "ALERT"] and score <= 1:
+        combo_signal = "🔴 SHOCK WITHOUT DRIFT"
+
+    # -----------------------------
+    # 5) label
+    # -----------------------------
+    label = classify_drift_label({
+        "SPY": {"1D": spy_1d},
+        "WTI": {"1D": wti_1d},
+        "DXY": {"1D": dxy_1d},
+        "GOLD": {"1D": gold_1d},
+    })
+
+    # -----------------------------
+    # 6) output
+    # -----------------------------
     lines = []
-    lines.append("### 🌊 Drift Monitor (v2)")
-    lines.append("- **정의:** 단기 폭발이 아닌 '누적 방향성 흐름' 감지")
+    lines.append("### 🌊 Drift Monitor (v3)")
+    lines.append("- **정의:** 단기 폭발이 아닌 '누적 방향성 흐름 + 단기 선행 흔적' 감지")
     lines.append("")
 
     for asset in ["SPY", "WTI", "DXY", "GOLD"]:
         a = drift.get(asset, {}) or {}
         lines.append(
             f"- **{asset}:** "
+            f"15m={a.get('ret_15m')} / "
+            f"30m={a.get('ret_30m')} / "
             f"1H={a.get('ret_1h')} / "
             f"4H={a.get('ret_4h')} / "
             f"1D={a.get('ret_1d')} / "
@@ -132,6 +278,8 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
     lines.append(f"- **Drift Score:** {score}")
     lines.append(f"- **State:** **{state}**")
+    lines.append(f"- **Label:** **{label}**")
+    lines.append(f"- **SEW Combo Signal:** **{combo_signal}**")
 
     if reasons:
         lines.append("")
@@ -139,19 +287,18 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
         for r in reasons:
             lines.append(f"  - {r}")
 
+    # -----------------------------
+    # 7) market_data 저장
+    # -----------------------------
     market_data["DRIFT_STATE"] = state
     market_data["DRIFT_SCORE"] = score
     market_data["DRIFT"] = {
-    "data": drift,
-    "score": score,
-    "state": state,
-    "label": classify_drift_label({
-        "SPY": {"1D": g("SPY", "ret_1d")},
-        "WTI": {"1D": g("WTI", "ret_1d")},
-        "DXY": {"1D": g("DXY", "ret_1d")},
-        "GOLD": {"1D": g("GOLD", "ret_1d")},
-    }),
-}
+        "data": drift,
+        "score": score,
+        "state": state,
+        "label": label,
+        "combo_signal": combo_signal,
+    }
 
     return "\n".join(lines)
 # -------------------------------------------------------------------
@@ -2055,9 +2202,9 @@ def attach_geo_similarity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
 def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Drift v2 input layer
+    Drift v3 input layer
     - SPY / WTI / DXY / GOLD
-    - 1H / 4H / 1D / 5D return 계산
+    - 15m / 30m / 1H / 4H / 1D / 5D return 계산
     """
 
     import yfinance as yf
@@ -2086,7 +2233,6 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     def extract_close_series(df):
         if df is None or df.empty:
             return None
-
         try:
             if isinstance(df.columns, pd.MultiIndex):
                 close_cols = [c for c in df.columns if str(c[0]).lower() == "close"]
@@ -2100,7 +2246,6 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
             s = pd.to_numeric(s, errors="coerce").dropna()
             return s if not s.empty else None
-
         except Exception:
             return None
 
@@ -2111,55 +2256,81 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         try:
             print(f"[DRIFT] Fetching {name} ({ticker}) ...")
 
-            intraday = yf.download(
+            # 15분봉: 최근 5일
+            intraday_15m = yf.download(
+                ticker,
+                period="5d",
+                interval="15m",
+                progress=False,
+                threads=False,
+                auto_adjust=False,
+            )
+
+            # 60분봉: 최근 7일
+            intraday_60m = yf.download(
                 ticker,
                 period="7d",
                 interval="60m",
                 progress=False,
                 threads=False,
+                auto_adjust=False,
             )
 
+            # 일봉: 최근 3개월
             daily = yf.download(
                 ticker,
                 period="3mo",
                 interval="1d",
                 progress=False,
                 threads=False,
+                auto_adjust=False,
             )
 
-            intraday_close = extract_close_series(intraday)
-            daily_close = extract_close_series(daily)
+            close_15m = extract_close_series(intraday_15m)
+            close_60m = extract_close_series(intraday_60m)
+            close_d = extract_close_series(daily)
 
-            if intraday_close is None or daily_close is None:
+            print(f"[DRIFT] {name} 15m rows = {0 if close_15m is None else len(close_15m)}")
+            print(f"[DRIFT] {name} 60m rows = {0 if close_60m is None else len(close_60m)}")
+            print(f"[DRIFT] {name} daily rows = {0 if close_d is None else len(close_d)}")
+
+            if close_15m is None or close_60m is None or close_d is None:
+                print(f"[DRIFT][WARN] {name} close series unavailable")
                 drift_data[name] = {}
                 continue
 
-            curr = float(intraday_close.iloc[-1])
+            curr = float(close_15m.iloc[-1])
 
-            h1 = float(intraday_close.iloc[-2]) if len(intraday_close) >= 2 else None
-            h4 = float(intraday_close.iloc[-5]) if len(intraday_close) >= 5 else None
-            d1 = float(daily_close.iloc[-2]) if len(daily_close) >= 2 else None
-            d5 = float(daily_close.iloc[-6]) if len(daily_close) >= 6 else None
+            # 15m / 30m
+            m15 = float(close_15m.iloc[-2]) if len(close_15m) >= 2 else None
+            m30 = float(close_15m.iloc[-3]) if len(close_15m) >= 3 else None
+
+            # 1H / 4H
+            h1 = float(close_60m.iloc[-2]) if len(close_60m) >= 2 else None
+            h4 = float(close_60m.iloc[-5]) if len(close_60m) >= 5 else None
+
+            # 1D / 5D
+            d1 = float(close_d.iloc[-2]) if len(close_d) >= 2 else None
+            d5 = float(close_d.iloc[-6]) if len(close_d) >= 6 else None
 
             drift_data[name] = {
                 "current": curr,
+                "ret_15m": safe_ret(curr, m15),
+                "ret_30m": safe_ret(curr, m30),
                 "ret_1h": safe_ret(curr, h1),
                 "ret_4h": safe_ret(curr, h4),
                 "ret_1d": safe_ret(curr, d1),
                 "ret_5d": safe_ret(curr, d5),
             }
 
-            print(f"[DRIFT] {name} → {drift_data[name]}")
+            print(f"[DRIFT] {name} -> {drift_data[name]}")
 
         except Exception as e:
             print(f"[DRIFT][ERROR] {name}: {e}")
             drift_data[name] = {}
 
-    # 👉 여기서 딱 이거만 저장
     market_data["DRIFT_DATA"] = drift_data
-
     return market_data
-
 
 def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
     """
