@@ -160,13 +160,12 @@ Some commentary here
 > **[Strategic Note]:** 위 연쇄 반응이 역사적 상관관계에서 벗어날 경우, **6.5) Correlation Break Monitor**를 통해 국면 전환 여부를 정밀 판별함
 
 ### ⚠ 6.5) Correlation Break Monitor
-⚠ Market Closed / Stale Data → Correlation signals muted.
-
+⚠ Market Closed / Stale Data → Correlation signals evaluated conservatively.
 
 No significant correlation break detected.
 
 ### ⚠ 6.6) Sector Correlation Break Monitor
-⚠ Market Closed / Stale Data → Sector signals muted.
+⚠ Market Closed / Stale Data → Sector signals evaluated conservatively.
 
 No significant sector-level correlation break detected.
 
@@ -381,8 +380,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.464991739768457
-- **Z-Score (5d):** 1.0342141182826374
+- **Z-Score (1d):** 1.46499194466929
+- **Z-Score (5d):** 1.0342140081515485
 
 ### EEM
 - **Crash?** False
@@ -399,8 +398,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391266347816683
-- **Z-Score (5d):** 1.1100984237667042
+- **Z-Score (1d):** 1.5391267247618508
+- **Z-Score (5d):** 1.1100981392930533
 
 ### EWJ
 - **Crash?** False
