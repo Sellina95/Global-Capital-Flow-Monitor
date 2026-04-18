@@ -27,6 +27,7 @@ from filters.strategist_filters import (
     geopolitical_early_warning_filter,
     sector_correlation_break_filter,
     sector_correlation_break_state,
+    attach_drift_data_layer, 
 )
 
 from scripts.data_processing import (
