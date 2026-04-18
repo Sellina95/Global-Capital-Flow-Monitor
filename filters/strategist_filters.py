@@ -13,10 +13,34 @@ import math
 # =========================
 # Helpers
 # =========================
+# -------------------------------------------------------------------
+# 6.5) Correlation Break Monitor (stabilized v2.0)
+# -------------------------------------------------------------------
+def correlation_break_filter(market_data: Dict[str, Any]) -> str:
+    state = correlation_break_state(market_data)
+
+    lines = []
+    lines.append("### ⚠ 6.5) Correlation Break Monitor")
+
+    if market_data.get("_STALE"):
+        lines.append("⚠ Market Closed / Stale Data → Correlation signals evaluated conservatively.")
+        lines.append("")
+
+    if state["break"]:
+        lines.append("Correlation Break Detected:")
+        for b in state["reasons"]:
+            lines.append(f"- {b}")
+        lines.append("")
+        lines.append("So What?")
+        lines.append("- 결론: **공식이 깨진 구간** → 방향 베팅보다 **사이징 보수적 + 퀄리티/리더 중심**")
+    else:
+        lines.append("No significant correlation break detected.")
+
+    return "\n".join(lines)
 
 
 def correlation_break_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
-    def pct(key):
+    def pct(key: str) -> Optional[float]:
         v = market_data.get(key, {}) or {}
         x = v.get("pct_change")
         try:
@@ -24,7 +48,7 @@ def correlation_break_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
         except Exception:
             return None
 
-    def signif(x, thr):
+    def signif(x: Optional[float], thr: float) -> bool:
         return (x is not None) and (abs(x) >= thr)
 
     us10y = pct("US10Y")
@@ -33,38 +57,55 @@ def correlation_break_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
     spy = pct("SPY")
     qqq = pct("QQQ")
     xlk = pct("XLK")
+
+    # Tech proxy 우선순위: QQQ -> XLK
     tech = qqq if qqq is not None else xlk
 
-    THR_US10Y = 0.10
-    THR_DXY = 0.15
-    THR_VIX = 1.00
-    THR_EQ = 0.25
+    # --------------------------------------------------
+    # 안정화 threshold
+    # --------------------------------------------------
+    THR_US10Y = 0.20   # 기존 0.10 → 상향
+    THR_DXY = 0.20     # 기존 0.15 → 상향
+    THR_VIX = 1.20     # 기존 1.00 → 상향
+    THR_EQ = 0.35      # 기존 0.25 → 상향
 
     breaks = []
     score = 0
 
+    # 금리와 주식/기술주의 비정상 동행
     if signif(us10y, THR_US10Y):
-        if us10y > 0 and signif(tech, THR_EQ) and tech > 0:
-            breaks.append("US10Y ↑ but Technology ↑")
-            score += 1
-        if us10y > 0 and signif(spy, THR_EQ) and spy > 0:
-            breaks.append("US10Y ↑ but SPY ↑")
-            score += 1
-        if us10y < 0 and signif(tech, THR_EQ) and tech < 0:
-            breaks.append("US10Y ↓ but Technology ↓")
-            score += 1
+        if us10y > 0:
+            if signif(tech, THR_EQ) and tech > 0:
+                breaks.append("US10Y ↑ but Technology ↑")
+                score += 1
+            if signif(spy, THR_EQ) and spy > 0:
+                breaks.append("US10Y ↑ but SPY ↑")
+                score += 1
 
-    if signif(vix, THR_VIX):
-        if vix > 0 and signif(spy, THR_EQ) and spy > 0:
+        elif us10y < 0:
+            if signif(tech, THR_EQ) and tech < 0:
+                breaks.append("US10Y ↓ but Technology ↓")
+                score += 1
+            if signif(spy, THR_EQ) and spy < 0:
+                breaks.append("US10Y ↓ but SPY ↓")
+                score += 1
+
+    # VIX와 주식의 비정상 동행
+    if signif(vix, THR_VIX) and vix > 0:
+        if signif(spy, THR_EQ) and spy > 0:
             breaks.append("VIX ↑ but SPY ↑")
             score += 1
-        if vix > 0 and signif(tech, THR_EQ) and tech > 0:
+        if signif(tech, THR_EQ) and tech > 0:
             breaks.append("VIX ↑ but Technology ↑")
             score += 1
 
-    if signif(dxy, THR_DXY):
-        if dxy > 0 and signif(spy, THR_EQ) and spy > 0:
+    # DXY와 SPY/Tech의 비정상 동행
+    if signif(dxy, THR_DXY) and dxy > 0:
+        if signif(spy, THR_EQ) and spy > 0:
             breaks.append("DXY ↑ but SPY ↑")
+            score += 1
+        if signif(tech, THR_EQ) and tech > 0:
+            breaks.append("DXY ↑ but Technology ↑")
             score += 1
 
     return {
@@ -73,14 +114,44 @@ def correlation_break_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "reasons": breaks,
     }
 
+
+# -------------------------------------------------------------------
+# 6.6) Sector Correlation Break Monitor (stabilized v2.0)
+# -------------------------------------------------------------------
+def sector_correlation_break_filter(market_data: Dict[str, Any]) -> str:
+    state = sector_correlation_break_state(market_data)
+
+    lines = []
+    lines.append("### ⚠ 6.6) Sector Correlation Break Monitor")
+
+    if market_data.get("_STALE"):
+        lines.append("⚠ Market Closed / Stale Data → Sector signals evaluated conservatively.")
+        lines.append("")
+
+    if state["break"]:
+        lines.append("Correlation Break Detected:")
+        for b in state["reasons"]:
+            lines.append(f"- {b}")
+        lines.append("")
+        lines.append("So What?")
+        lines.append("- 결론: **섹터 ‘공식’이 깨진 구간** → 방향 베팅보다 **사이징 축소 + 리더 중심**")
+    else:
+        lines.append("No significant sector-level correlation break detected.")
+
+    return "\n".join(lines)
+
+
 def sector_correlation_break_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
-    def pct(key):
+    def pct(key: str) -> Optional[float]:
         v = market_data.get(key, {}) or {}
         x = v.get("pct_change")
         try:
             return None if x is None else float(x)
         except Exception:
             return None
+
+    def signif(x: Optional[float], thr: float) -> bool:
+        return (x is not None) and (abs(x) >= thr)
 
     us10y = pct("US10Y")
     wti = pct("WTI")
@@ -92,37 +163,54 @@ def sector_correlation_break_state(market_data: Dict[str, Any]) -> Dict[str, Any
     xle = pct("XLE")
     xlre = pct("XLRE")
 
+    # --------------------------------------------------
+    # 안정화 threshold
+    # --------------------------------------------------
+    THR_US10Y = 0.20   # 금리 변화 의미 있게
+    THR_WTI = 2.00     # 유가 이벤트성 움직임만 반영
+    THR_DXY = 0.20
+    THR_VIX = 1.20
+    THR_SECTOR = 0.35  # 섹터는 0.35 이상일 때만 의미 부여
+
     breaks = []
     score = 0
 
-    if us10y is not None:
+    # 금리 상승인데 금융/리츠/기술주가 반대로 움직이는 경우
+    if signif(us10y, THR_US10Y):
         if us10y > 0:
-            if xlf is not None and xlf < 0:
+            if signif(xlf, THR_SECTOR) and xlf < 0:
                 breaks.append("US10Y ↑ but XLF ↓")
                 score += 1
-            if xlre is not None and xlre > 0:
+            if signif(xlre, THR_SECTOR) and xlre > 0:
                 breaks.append("US10Y ↑ but XLRE ↑")
                 score += 1
-            if xlk is not None and xlk > 0:
+            if signif(xlk, THR_SECTOR) and xlk > 0:
                 breaks.append("US10Y ↑ but XLK ↑")
                 score += 1
+
         elif us10y < 0:
-            if xlk is not None and xlk < 0:
+            if signif(xlk, THR_SECTOR) and xlk < 0:
                 breaks.append("US10Y ↓ but XLK ↓")
                 score += 1
+            if signif(xlf, THR_SECTOR) and xlf < 0:
+                breaks.append("US10Y ↓ but XLF ↓")
+                score += 1
 
-    if wti is not None and wti > 0:
-        if xle is not None and xle < 0:
+    # 유가 상승인데 에너지 섹터 하락
+    if signif(wti, THR_WTI) and wti > 0:
+        if signif(xle, THR_SECTOR) and xle < 0:
             breaks.append("WTI ↑ but XLE ↓")
             score += 1
 
-    if vix is not None and vix > 0:
-        if xlf is not None and xlf > 0:
+    # VIX 상승인데 금융 상승
+    if signif(vix, THR_VIX) and vix > 0:
+        if signif(xlf, THR_SECTOR) and xlf > 0:
             breaks.append("VIX ↑ but XLF ↑")
             score += 1
 
-    if dxy is not None and dxy > 0:
-        if xlk is not None and xlk > 0:
+    # 달러 상승인데 기술 상승
+    if signif(dxy, THR_DXY) and dxy > 0:
+        if signif(xlk, THR_SECTOR) and xlk > 0:
             breaks.append("DXY ↑ but XLK ↑")
             score += 1
 
@@ -131,6 +219,7 @@ def sector_correlation_break_state(market_data: Dict[str, Any]) -> Dict[str, Any
         "score": score,
         "reasons": breaks,
     }
+
     
 def _cumret_series_from_df(df: pd.DataFrame, col: str, days: int = 5) -> pd.Series:
     s = pd.to_numeric(df[col], errors="coerce")
@@ -918,71 +1007,6 @@ def cross_asset_filter(market_data: Dict[str, Any]) -> str:
     # 4. 연결 고리 (Check Point)
     lines.append("")
     lines.append("> **[Strategic Note]:** 위 연쇄 반응이 역사적 상관관계에서 벗어날 경우, **6.5) Correlation Break Monitor**를 통해 국면 전환 여부를 정밀 판별함")
-
-    return "\n".join(lines)
-
-
-from typing import Dict, Any, Optional, List, Tuple
-
-# -------------------------------------------------------------------
-# 6.5) Correlation Break Monitor (v1.2)
-# - Adds: TECH_PROXY + SPY (optional) based "Structural Break" signals
-# - Still works when TECH_PROXY/SPY missing (falls back to credit/USD)
-# - Assumes market_data is produced by build_market_data()
-#   where each key looks like:
-#     market_data["US10Y"] = {"today": float, "prev": float|None, "pct_change": float|None, ...}
-# -------------------------------------------------------------------
-
-from typing import Dict, Any, Optional
-def correlation_break_filter(market_data: Dict[str, Any]) -> str:
-    state = correlation_break_state(market_data)
-
-    lines = []
-    lines.append("### ⚠ 6.5) Correlation Break Monitor")
-
-    if market_data.get("_STALE"):
-        lines.append("⚠ Market Closed / Stale Data → Correlation signals muted.")
-        lines.append("")
-
-    if state["break"]:
-        lines.append("")
-        lines.append("Correlation Break Detected:")
-        for b in state["reasons"]:
-            lines.append(f"- {b}")
-        lines.append("")
-        lines.append("So What?")
-        lines.append("- 결론: **공식이 깨진 구간** → 방향 베팅보다 **사이징 보수적 + 퀄리티/리더 중심**")
-    else:
-        lines.append("")
-        lines.append("No significant correlation break detected.")
-
-    return "\n".join(lines)
-
-# -------------------------------------------------------------------
-# 6.6) Sector Correlation Break Monitor (v1.1)
-# - FIX: missing based on today's pct(None), not key existence
-# - If one sector ETF missing, still runs other rules and prints result
-# -------------------------------------------------------------------
-
-def sector_correlation_break_filter(market_data: Dict[str, Any]) -> str:
-    state = sector_correlation_break_state(market_data)
-
-    lines = []
-    lines.append("### ⚠ 6.6) Sector Correlation Break Monitor")
-
-    if market_data.get("_STALE"):
-        lines.append("⚠ Market Closed / Stale Data → Sector signals muted.")
-        lines.append("")
-
-    if state["break"]:
-        lines.append("Correlation Break Detected:")
-        for b in state["reasons"]:
-            lines.append(f"- {b}")
-        lines.append("")
-        lines.append("So What?")
-        lines.append("- 결론: **섹터 ‘공식’이 깨진 구간** → 방향 베팅보다 **사이징 축소 + 리더 중심**")
-    else:
-        lines.append("No significant sector-level correlation break detected.")
 
     return "\n".join(lines)
 
