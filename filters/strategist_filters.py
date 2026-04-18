@@ -1999,6 +1999,9 @@ def attach_geo_similarity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 
+import yfinance as yf
+import pandas as pd
+
 def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Drift v2 input layer
@@ -2023,9 +2026,40 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         except Exception:
             return None
 
+    def extract_close_series(df):
+        if df is None or df.empty:
+            return None
+
+        try:
+            # MultiIndex columns 대응
+            if isinstance(df.columns, pd.MultiIndex):
+                close_cols = [c for c in df.columns if str(c[0]).lower() == "close"]
+                if not close_cols:
+                    return None
+                s = df[close_cols]
+                if isinstance(s, pd.DataFrame):
+                    s = s.squeeze()
+            else:
+                if "Close" not in df.columns:
+                    return None
+                s = df["Close"]
+
+            if isinstance(s, pd.DataFrame):
+                s = s.squeeze()
+
+            s = pd.to_numeric(s, errors="coerce").dropna()
+            if s.empty:
+                return None
+
+            return s
+        except Exception:
+            return None
+
     for name, ticker in drift_tickers.items():
         try:
-            # 5일 / 1시간봉
+            print(f"[DRIFT] Fetching {name} ({ticker}) ...")
+
+            # 7일 / 1시간봉
             intraday = yf.download(
                 ticker,
                 period="7d",
@@ -2045,23 +2079,14 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
                 threads=False,
             )
 
-            if intraday is None or intraday.empty or daily is None or daily.empty:
-                drift_data[name] = {}
-                continue
+            intraday_close = extract_close_series(intraday)
+            daily_close = extract_close_series(daily)
 
-            # close 처리
-            intraday_close = intraday["Close"]
-            daily_close = daily["Close"]
+            print(f"[DRIFT] {name} intraday rows = {0 if intraday_close is None else len(intraday_close)}")
+            print(f"[DRIFT] {name} daily rows    = {0 if daily_close is None else len(daily_close)}")
 
-            if isinstance(intraday_close, pd.DataFrame):
-                intraday_close = intraday_close.squeeze()
-            if isinstance(daily_close, pd.DataFrame):
-                daily_close = daily_close.squeeze()
-
-            intraday_close = pd.to_numeric(intraday_close, errors="coerce").dropna()
-            daily_close = pd.to_numeric(daily_close, errors="coerce").dropna()
-
-            if intraday_close.empty or daily_close.empty:
+            if intraday_close is None or daily_close is None:
+                print(f"[DRIFT][WARN] {name} close series unavailable")
                 drift_data[name] = {}
                 continue
 
@@ -2083,7 +2108,10 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
                 "ret_5d": safe_ret(curr, d5),
             }
 
-        except Exception:
+            print(f"[DRIFT] {name} data = {drift_data[name]}")
+
+        except Exception as e:
+            print(f"[DRIFT][ERROR] {name} failed: {e}")
             drift_data[name] = {}
 
     market_data["DRIFT_DATA"] = drift_data
