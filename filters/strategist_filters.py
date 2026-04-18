@@ -5,6 +5,7 @@ from scripts.data_processing import load_etf_data_from_csv
 from sklearn.metrics.pairwise import cosine_similarity
 
 import numpy as np
+from pathlib import Path
 
 import pandas as pd
 import math
