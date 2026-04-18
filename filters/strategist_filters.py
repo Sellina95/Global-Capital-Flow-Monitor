@@ -3683,6 +3683,22 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         # 15번 필터에서 계산된 최종 노출도를 가져옴 (없으면 기본값 50)
     final_exposure = float(market_data.get("PREV_EXPOSURE", 50.0))
 
+    
+    corr_msg = correlation_break_filter(market_data)
+    is_corr_break = bool(corr_msg)
+    # -------------------------
+    # [NEW] Correlation Break → Soft Tilt
+    # -------------------------
+    if is_corr_break:
+        # Tech overweight (anomaly 수혜)
+        if "Technology" in score:
+            score["Technology"] += 0.5
+    
+        # 금리/경기 민감 섹터 약화
+        for s in ["Industrials", "Consumer Discretionary"]:
+            if s in score:
+                score[s] -= 0.3
+    
     alloc_result = build_tactical_allocation(
         score=score,
         ow_sorted=ow_sorted,
