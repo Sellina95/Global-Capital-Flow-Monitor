@@ -2407,11 +2407,9 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-from typing import Dict, Any, Optional
-
 def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     """
-    Narrative Engine v2 (Phase-Respecting Risk Budget) — Liquidity upgraded
+    Narrative Engine v2.1 (Phase-Respecting Risk Budget + Smoothing)
 
     Structure + Sentiment + Credit + Liquidity + Phase
     → Final Risk Action + Risk Budget (0~100)
@@ -2419,7 +2417,8 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     핵심 업그레이드:
     - Phase별 Risk Budget 상한(cap) 적용
     - Liquidity를 pct(방향) + level bucket(HIGH/MID/LOW) 2축으로 반영
-      * attach_liquidity_layer에서 market_data["NET_LIQ"]["level_bucket"] 세팅된 것을 사용
+    - Structural v2 cap 반영
+    - NEW: Budget smoothing + max step 제한으로 30↔85 같은 급변 완화
     """
 
     # --------------------------------------------------
@@ -2477,7 +2476,6 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     net_liq_pct = _to_float(net_liq.get("pct_change"))
     liq_dir_tag = _liq_dir_tag(net_liq_pct)
 
-    # NEW: level bucket (HIGH/MID/LOW) from attach_liquidity_layer
     liq_level_bucket = str(
         net_liq.get("level_bucket") or market_data.get("NET_LIQ_LEVEL_BUCKET") or "N/A"
     ).upper()
@@ -2492,8 +2490,12 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     easing = "EASING" in policy_upper
     tightening = "TIGHTENING" in policy_upper
 
+    pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
+    if pos_z is None:
+        pos_z = 0.0
+
     # --------------------------------------------------
-    # 2️⃣ Risk Budget Core
+    # 2️⃣ Raw Risk Budget Core
     # --------------------------------------------------
 
     # Base from sentiment
@@ -2507,7 +2509,6 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         budget = 50
 
     # Structure tilt
-    # ✅ If explicitly mixed, don't apply easing/tightening tilt
     if not mixed:
         if easing and not tightening:
             budget += 10
@@ -2521,42 +2522,47 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         budget -= 10
 
     # Liquidity tilt (Direction + Level)
-    # Direction: UP +10 / DOWN -10 / FLAT 0 / N/A 0
     if liq_dir_tag == "UP":
         budget += 10
     elif liq_dir_tag == "DOWN":
         budget -= 10
 
-    # Level bucket: HIGH +5 / LOW -5 / MID 0 / N/A 0
     if liq_level_bucket == "HIGH":
         budget += 5
     elif liq_level_bucket == "LOW":
         budget -= 5
 
-    # ⚡ [NEW] Structural v2 Penalty (구조적 위기 반영)
     # --------------------------------------------------
-    # ⚡ [NEW] 12번 필터(v2) 기반 추가 Tilt 및 Penalty
-    # 구조적 위기 상황일 때 예산을 추가로 깎습니다.
-    # ⚡ [NEW] 12번 필터(v2) 기반 추가 Tilt 및 Penalty
+    # 2.5️⃣ Structural v2 Penalty / Alert
+    # --------------------------------------------------
     struct_v2_kr = "정상"
-    struct_alert = ""  # <--- 이 줄을 추가해서 에러를 방지하세요!
+    struct_alert = ""
     v2_cap = 100
-    
+
     if "SYSTEMIC" in struct_v2:
-        budget -= 20
-        struct_v2_kr = "시스템위기"
-        struct_alert = "🚨 시스템 불신 감지" # <--- 리포트 출력을 위해 추가
-        v2_cap = 30
-    elif "STAGFLATION" in struct_v2:
+        # 기존 -20 / cap 30은 너무 과격해서 완화
         budget -= 15
+        struct_v2_kr = "시스템위기"
+        struct_alert = "🚨 시스템 불신 감지"
+        v2_cap = 45
+    elif "STAGFLATION" in struct_v2:
+        budget -= 12
         struct_v2_kr = "스태그플레이션"
-        struct_alert = "⚠️ 에너지 비용 전이" # <--- 리포트 출력을 위해 추가
-        v2_cap = 40
+        struct_alert = "⚠️ 에너지 비용 전이"
+        v2_cap = 50
+    elif "GLOBAL FINANCIAL TIGHTENING" in struct_v2:
+        budget -= 8
+        struct_v2_kr = "글로벌긴축"
+    elif "WEAK DEMAND" in struct_v2:
+        budget -= 8
+        struct_v2_kr = "수요둔화"
+    elif "COST-PUSH" in struct_v2:
+        budget -= 6
+        struct_v2_kr = "비용압박"
 
     # --------------------------------------------------
-    # 3️⃣ Phase Cap (핵심 업그레이드)
+    # 3️⃣ Phase Cap
     # --------------------------------------------------
-
     cap = 100
     if phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
         cap = 60
@@ -2567,31 +2573,76 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     elif phase_upper.startswith("RISK-OFF"):
         cap = 35
 
-    # 시스템 위기나 스태그 상황에선 시장 국면(Phase)과 상관없이 리스크 상한을 강제 축소
-    if "SYSTEMIC" in struct_v2 or "STAGFLATION" in struct_v2:
-        cap = min(cap, 30) # 구조적 위기에선 무조건 보수적 접근
-
-    # 원본 phase_cap과 12번 구조적 상한선(v2_cap) 중 더 낮은 것을 선택
     final_cap = min(cap, v2_cap)
-    budget = min(int(round(budget)), final_cap)
-    budget = _clamp(budget, 0, 100)
-    market_data["RISK_BUDGET"] = budget
-
-    pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
 
     # --------------------------------------------------
-    # 4️⃣ Final Action (액션 판정 강화)
+    # 3.5️⃣ Raw Budget 저장
+    # --------------------------------------------------
+    raw_budget = _clamp(int(round(budget)), 0, 100)
+
+    # --------------------------------------------------
+    # 4️⃣ NEW: Budget Smoothing Layer
+    # --------------------------------------------------
+    # 목적:
+    # - 같은 날/유사한 입력에서 30 ↔ 85 급변 방지
+    # - 전일 값을 기준으로 부드럽게 이동
+    state_path = Path("insights/last_risk_budget.json")
+
+    prev_budget = None
+    if state_path.exists():
+        try:
+            with open(state_path, "r", encoding="utf-8") as f:
+                prev_budget = json.load(f).get("risk_budget")
+        except Exception:
+            prev_budget = None
+
+    if prev_budget is not None:
+        try:
+            prev_budget = int(prev_budget)
+        except Exception:
+            prev_budget = None
+
+    # smoothing
+    if prev_budget is not None:
+        smoothed_budget = int(round(0.7 * prev_budget + 0.3 * raw_budget))
+    else:
+        smoothed_budget = raw_budget
+
+    # max step 제한
+    MAX_STEP = 15
+    if prev_budget is not None:
+        delta = smoothed_budget - prev_budget
+        if delta > MAX_STEP:
+            smoothed_budget = prev_budget + MAX_STEP
+        elif delta < -MAX_STEP:
+            smoothed_budget = prev_budget - MAX_STEP
+
+    # cap 적용
+    budget = min(smoothed_budget, final_cap)
+    budget = _clamp(budget, 0, 100)
+
+    # 저장
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(state_path, "w", encoding="utf-8") as f:
+            json.dump({"risk_budget": budget}, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+    market_data["RISK_BUDGET"] = budget
+
+    # --------------------------------------------------
+    # 5️⃣ Final Action
     # --------------------------------------------------
     if budget >= 70:
         action = "INCREASE"
-    elif budget <= 20: # 더 강화된 REDUCE
+    elif budget <= 20:
         action = "STRONG REDUCE"
     elif budget <= 40:
         action = "REDUCE"
     else:
         action = "HOLD"
 
-   # 🔥 [SYSTEM UPGRADE] 포지셔닝 과열 시 제동 로직
     pos_alert = ""
     if pos_z >= 2.0:
         if action == "INCREASE":
@@ -2599,11 +2650,10 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         elif action == "HOLD":
             action = "REDUCE (POS_OVERHEATED)"
         pos_alert = " ⚠️ 수급 과열 감지"
-    # --------------------------------------------------
-    # 5️⃣ Narrative Line
-    # --------------------------------------------------
 
-    # ✅ FIX v1.1: If policy line explicitly says MIXED, force MIXED
+    # --------------------------------------------------
+    # 6️⃣ Narrative Line
+    # --------------------------------------------------
     struct_tag = "MIXED"
     if not mixed:
         if easing and not tightening:
@@ -2611,7 +2661,6 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         elif tightening and not easing:
             struct_tag = "TIGHTENING"
 
-    # Narrative에 12번의 구조적 상태를 괄호로 추가
     struct_tag_final = f"{struct_tag}({struct_v2_kr})" if struct_v2_kr != "정상" else struct_tag
 
     credit_tag = "안정" if credit_calm is True else ("불안" if credit_calm is False else "N/A")
@@ -2619,46 +2668,46 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     liq_lvl_kr = {"HIGH": "높음", "MID": "중간", "LOW": "낮음", "N/A": "N/A"}.get(liq_level_bucket, "N/A")
     liq_tag = f"{liq_dir_kr}/{liq_lvl_kr}"
 
-    # Narrative 라인 수정
     narrative = (
         f"구조={struct_tag_final} / 심리={sent_state} / 유동성={liq_tag} / "
         f"크레딧={credit_tag} / 수급={pos_z:.2f}{pos_alert} → Phase={phase}"
     )
 
     # --------------------------------------------------
-    # 6.5️⃣ Final State Object (for Executive/Decision/Scenario layers)
+    # 6.5️⃣ Final State Object
     # --------------------------------------------------
     final_state = {
         "phase": phase,
         "phase_cap": cap,
+        "final_cap": final_cap,
         "risk_action": action,
         "risk_budget": budget,
+        "raw_budget": raw_budget,
+        "prev_budget": prev_budget,
+        "smoothed_budget": smoothed_budget,
 
-        "structure_tag": struct_tag,           # EASING/TIGHTENING/MIXED
-        "policy_bias_line": policy_bias_line,  # 원문 보존
+        "structure_tag": struct_tag,
+        "policy_bias_line": policy_bias_line,
 
         "sentiment_fear_greed": fear,
-        "sentiment_state": sent_state,         # FEAR/NEUTRAL/GREED
+        "sentiment_state": sent_state,
 
-        "credit_calm": credit_calm,            # True/False/None
+        "credit_calm": credit_calm,
         "hy_oas_today": hy_oas_today,
 
-        "liquidity_dir": liq_dir_tag,          # UP/DOWN/FLAT/N/A
-        "liquidity_level_bucket": liq_level_bucket,  # HIGH/MID/LOW/N/A
+        "liquidity_dir": liq_dir_tag,
+        "liquidity_level_bucket": liq_level_bucket,
         "net_liq_pct_change": net_liq_pct,
 
         "narrative_line": narrative,
     }
     market_data["FINAL_STATE"] = final_state
-    # ... Narrative Engine이 FINAL_STATE를 market_data에 넣은 뒤
 
-    
     # --------------------------------------------------
-    # 6️⃣ Output (기존 필터 스타일 통일)
+    # 7️⃣ Output
     # --------------------------------------------------
-
     lines = []
-    lines.append("### 🧠 13) Narrative Engine (v2 + Risk Budget)")
+    lines.append("### 🧠 13) Narrative Engine (v2.1 + Risk Budget Smoothing)")
     lines.append("- **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정")
     lines.append("- **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문")
     lines.append("")
@@ -2666,11 +2715,16 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Sentiment (Fear&Greed):** {fear if fear is not None else 'N/A'} ({sent_state})")
     lines.append(f"- **Credit Calm:** {credit_calm}")
     lines.append(f"- **Liquidity (NET_LIQ):** {liq_dir_tag} ({liq_level_bucket})")
-    lines.append(f"- **Phase:** {phase} (Cap: {cap})") 
+    lines.append(f"- **Phase:** {phase} (Cap: {cap})")
 
     if struct_alert:
         lines.append(f"- **[SPECIAL ALERT]**: **{struct_alert}** (Structural Cap: {v2_cap})")
-    
+
+    lines.append("")
+    lines.append(f"- **Raw Budget:** **{raw_budget}**")
+    lines.append(f"- **Prev Budget:** **{prev_budget if prev_budget is not None else 'N/A'}**")
+    lines.append(f"- **Smoothed Budget:** **{smoothed_budget}**")
+    lines.append(f"- **Final Cap Applied:** **{final_cap}**")
     lines.append("")
     lines.append(f"- **🎯 Final Risk Action:** **{action}**")
     lines.append(f"- **Risk Budget (0~100):** **{budget}**")
