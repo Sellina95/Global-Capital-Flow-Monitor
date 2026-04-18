@@ -13,6 +13,91 @@ import math
 # =========================
 # Helpers
 # =========================
+
+def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
+
+    def _to_float(x):
+        try:
+            return None if x is None else float(x)
+        except:
+            return None
+
+    def pct(key):
+        v = market_data.get(key, {}) or {}
+        return _to_float(v.get("pct_change"))
+
+    # -----------------------------
+    # 1️⃣ 핵심 자산 변화율
+    # -----------------------------
+    spy = pct("SPY")
+    wti = pct("WTI")
+    dxy = pct("DXY")
+    gold = pct("GOLD")
+
+    # -----------------------------
+    # 2️⃣ Drift Score 계산
+    # -----------------------------
+    score = 0
+    reasons = []
+
+    # 🔻 Oil Down Trend (디스인플레이션 / 공급 증가)
+    if wti is not None and wti <= -2.0:
+        score += 1
+        reasons.append("WTI strong downside drift")
+
+    # 🔺 Equity Up Trend (Risk-On)
+    if spy is not None and spy >= 0.5:
+        score += 1
+        reasons.append("SPY upward drift")
+
+    # 🔻 Dollar Down (Liquidity easing signal)
+    if dxy is not None and dxy <= -0.2:
+        score += 1
+        reasons.append("DXY softening")
+
+    # 🔺 Gold Up (hedge / real rate / fear mix)
+    if gold is not None and gold >= 0.5:
+        score += 1
+        reasons.append("Gold strength")
+
+    # -----------------------------
+    # 3️⃣ Drift 상태 판정
+    # -----------------------------
+    if score >= 3:
+        state = "🔥 STRONG TREND (기관성 흐름 의심)"
+    elif score == 2:
+        state = "⚡ TREND FORMING (초기 흐름)"
+    elif score == 1:
+        state = "WEAK DRIFT (노이즈 가능)"
+    else:
+        state = "NO DRIFT"
+
+    # -----------------------------
+    # 4️⃣ 리포트 출력
+    # -----------------------------
+    lines = []
+    lines.append("### 🌊 Drift Monitor (v1)")
+    lines.append("- **정의:** 단기 폭발이 아닌 '누적 방향성 흐름' 감지")
+    lines.append("")
+    lines.append(f"- **SPY:** {spy}")
+    lines.append(f"- **WTI:** {wti}")
+    lines.append(f"- **DXY:** {dxy}")
+    lines.append(f"- **GOLD:** {gold}")
+    lines.append("")
+    lines.append(f"- **Drift Score:** {score}")
+    lines.append(f"- **State:** **{state}**")
+
+    if reasons:
+        lines.append("")
+        lines.append("- **Drivers:**")
+        for r in reasons:
+            lines.append(f"  - {r}")
+
+    # 👉 market_data에도 저장 (나중에 활용 가능)
+    market_data["DRIFT_STATE"] = state
+    market_data["DRIFT_SCORE"] = score
+
+    return "\n".join(lines)
 # -------------------------------------------------------------------
 # 6.5) Correlation Break Monitor (stabilized v2.0)
 # -------------------------------------------------------------------
@@ -4145,6 +4230,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(legacy_directional_filters(market_data))
     sections.append("")
     sections.append(cross_asset_filter(market_data))
+    sections.append("")
+    sections.append(drift_monitor_filter(market_data))
     sections.append("")
     sections.append(correlation_break_filter(market_data))
     sections.append("")
