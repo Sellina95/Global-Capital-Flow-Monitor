@@ -141,6 +141,17 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
 
     market_data["DRIFT_STATE"] = state
     market_data["DRIFT_SCORE"] = score
+    market_data["DRIFT"] = {
+    "data": drift,
+    "score": score,
+    "state": state,
+    "label": classify_drift_label({
+        "SPY": {"1D": g("SPY", "ret_1d")},
+        "WTI": {"1D": g("WTI", "ret_1d")},
+        "DXY": {"1D": g("DXY", "ret_1d")},
+        "GOLD": {"1D": g("GOLD", "ret_1d")},
+    }),
+}
 
     return "\n".join(lines)
 # -------------------------------------------------------------------
