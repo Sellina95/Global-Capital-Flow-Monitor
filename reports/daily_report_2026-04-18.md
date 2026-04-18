@@ -159,6 +159,22 @@ Some commentary here
 
 > **[Strategic Note]:** 위 연쇄 반응이 역사적 상관관계에서 벗어날 경우, **6.5) Correlation Break Monitor**를 통해 국면 전환 여부를 정밀 판별함
 
+### 🌊 Drift Monitor (v1)
+- **정의:** 단기 폭발이 아닌 '누적 방향성 흐름' 감지
+
+- **SPY:** 1.2085685130224024
+- **WTI:** -11.447886458755653
+- **DXY:** -0.12217750467380029
+- **GOLD:** 1.5087599111024859
+
+- **Drift Score:** 3
+- **State:** **🔥 STRONG TREND (기관성 흐름 의심)**
+
+- **Drivers:**
+  - WTI strong downside drift
+  - SPY upward drift
+  - Gold strength
+
 ### ⚠ 6.5) Correlation Break Monitor
 ⚠ Market Closed / Stale Data → Correlation signals evaluated conservatively.
 
@@ -252,7 +268,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Phase:** RISK-ON (완화 기대·리스크 선호) (Cap: 85)
 
 - **Raw Budget:** **68**
-- **Prev Budget:** **N/A**
+- **Prev Budget:** **68**
 - **Smoothed Budget:** **68**
 - **Final Cap Applied:** **85**
 
@@ -399,8 +415,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391266347816683
-- **Z-Score (5d):** 1.1100984237667042
+- **Z-Score (1d):** 1.5391267757992029
+- **Z-Score (5d):** 1.110098133547303
 
 ### EWJ
 - **Crash?** False
