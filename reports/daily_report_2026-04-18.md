@@ -7,8 +7,8 @@
 > **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
 
 ### 🎯 Exposure Framework
-- **Base Exposure (전략 기준): 85%**
-- **Final Exposure (실행 기준): 85%**
+- **Base Exposure (전략 기준): 68%**
+- **Final Exposure (실행 기준): 68%**
 
 ### 📌 Interpretation
 → 구조와 리스크 오버라이드가 대체로 정렬된 상태입니다
@@ -23,13 +23,13 @@
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
 ## 🎯 Final Decision (War Room Override)
-- **Final Action:** **INCREASE**
-- **Final Exposure:** **85%**
-- **Base Context:** phase=RISK-ON (완화 기대·리스크 선호) / narrative=INCREASE / base_exposure=85%
+- **Final Action:** **HOLD**
+- **Final Exposure:** **68%**
+- **Base Context:** phase=RISK-ON (완화 기대·리스크 선호) / narrative=HOLD / base_exposure=68%
 - **SEW:** STABLE / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
 - **Warning Score:** 0 (No warning)
-- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영
+- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=HOLD 반영
 
 ### 🚩 Market Regime Status
 - **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
@@ -47,31 +47,31 @@
 ---
 
 ## 🧭 So What? (Decision Layer)
-- **Strategic View:** **INCREASE** *(base exposure: 85%)*
-- **Execution View:** **INCREASE** *(final exposure: 85%)*
+- **Strategic View:** **HOLD** *(base exposure: 68%)*
+- **Execution View:** **HOLD** *(final exposure: 68%)*
 - **Context:** phase=RISK-ON (완화 기대·리스크 선호) / liquidity=UP-MID / credit_calm=True / geo=NORMAL
 - **SEW / Divergence:** STABLE / NORMAL | ALIGNED / **STAY (포지션 유지)**
 - **Warning Score:** 0 (No warning)
-- **Do:** 전략·실행 판단이 모두 확장 쪽에 정렬된 상태로, 베타를 단계적으로 확대; 퀄리티(현금흐름/재무안정) 중심으로 리스크 자산 비중 확대
+- **Do:** 노출은 유지하되, 베타 확대보다 선별적 포지셔닝(퀄리티) 유지
 - **Don't:** 무분별한 테마 추격; 리스크 관리 없는 집중 포지션
-- **Triggers:** VIX 급등 또는 HY OAS 확대 시 즉시 방어
+- **Triggers:** NET_LIQ 추가 하락/LOW 고착 시 노출 축소 준비
 
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
-- **Strategic View:** INCREASE (85%) | **Execution View:** INCREASE (85%)
+- **Strategic View:** HOLD (68%) | **Execution View:** HOLD (68%)
 - **Context:** phase=RISK-ON (완화 기대·리스크 선호) / liquidity=UP-MID / credit_calm=True / geo=NORMAL
 
 ### 🔹 Base Case
-- 조건: 현재 Execution View=INCREASE 유지 / SEW=STABLE / Divergence=ALIGNED / 추가 경고 신호 없음
-- 전략: 실행 노출 85% 유지, 전략 기준과 실행 기준이 정렬된 상태에서 운용
+- 조건: 현재 Execution View=HOLD 유지 / SEW=STABLE / Divergence=ALIGNED / 추가 경고 신호 없음
+- 전략: 실행 노출 68% 유지, 전략 기준과 실행 기준이 정렬된 상태에서 운용
 
 ### 🔼 Bull Case
 - 조건: Warning Score ≤ 1 / SEW: STABLE 유지 / Divergence: ALIGNED 유지 / NET_LIQ 우호 / 크레딧 안정 지속
-- 전략: 실행 노출 85% 유지 또는 추가 확장 검토, 성장/리스크 자산 베타 우호
+- 전략: 실행 노출 68% 유지 또는 추가 확장 검토, 성장/리스크 자산 베타 우호
 
 ### 🔻 Bear Case
 - 조건: SEW WATCH/ALERT/DEADMAN 재발 / HY OAS 4% 상회 또는 급등 / VIX 22 이상 또는 급등 전환 / 상관관계 붕괴 심화 / Divergence 비정렬 전환
-- 전략: 실행 노출 85%에서 추가 축소, 방어/현금 비중 확대 및 고베타 자산 감축
+- 전략: 실행 노출 68%에서 추가 축소, 방어/현금 비중 확대 및 고베타 자산 감축
 
 ---
 
@@ -240,24 +240,25 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **판정:** **NEUTRAL**
 - **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
 
-### 🧠 13) Narrative Engine (v2.1 + Risk Budget Smoothing)
-- **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
-- **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
+### 🧠 13) Narrative Engine (v3.0 + Cluster Risk Budget)
+- **정의:** 구조·정책·유동성·크레딧·심리·수급을 cluster 방식으로 통합해 최종 리스크를 판단
+- **추가 이유:** 같은 방향 신호를 중복 가산하지 않고, 기관형 방식으로 안정적인 예산 산출
 
 - **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.120 / US10YΔ -0.063 (정상)
 - **Sentiment (Fear&Greed):** 60.42773809708038 (NEUTRAL)
-- **Credit Calm:** True
+- **Macro Cluster:** 2 (강한 우호)
+- **Credit Cluster:** 안정
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** RISK-ON (완화 기대·리스크 선호) (Cap: 85)
 
-- **Raw Budget:** **85**
+- **Raw Budget:** **68**
 - **Prev Budget:** **N/A**
-- **Smoothed Budget:** **85**
+- **Smoothed Budget:** **68**
 - **Final Cap Applied:** **85**
 
-- **🎯 Final Risk Action:** **INCREASE**
-- **Risk Budget (0~100):** **85**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 수급=1.53 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **🎯 Final Risk Action:** **HOLD**
+- **Risk Budget (0~100):** **68**
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 매크로클러스터=강한 우호 / 유동성=증가/중간 / 크레딧=안정 / 수급=1.53 ⚠️ 수급 다소 과열 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
@@ -272,12 +273,12 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **정의:** Risk Budget을 실제 익스포저로 변환 (Positions & Deadman Switch)
 - **추가 이유:** 수급 과열(POS_Z)이나 급격한 쏠림 발생 시 강제 시스템 셧다운
 
-- **Risk Budget:** 85 | **Phase Cap:** 85
+- **Risk Budget:** 68 | **Phase Cap:** 85
 - **VIX Level:** 17.48 (NORMAL) | **Change:** -2.56%
 - **Final Multiplier:** 1.00x (Vol x Pos)
 - **Slope Intensity:** 0.0000 (Stable)
 
-- **📊 Recommended Exposure:** **85%**
+- **📊 Recommended Exposure:** **68%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
@@ -328,15 +329,15 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - Financials: NEGATIVE_DIVERGENCE
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
-- **Total Target Exposure:** **85.0%** (from Filter 15)
+- **Total Target Exposure:** **68.0%** (from Filter 15)
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Industrials | +3.7 | ALIGNED | **29.7%** | STRONG BUY |
-| Technology | +4.5 | ALIGNED | **36.1%** | STRONG BUY |
-| Consumer Discretionary | +1.7 | ALIGNED | **13.6%** | ACCUMULATE |
-| Financials | +1 | NEGATIVE_DIVERGENCE | **5.6%** | HOLD |
-| **Cash & Hedge** | - | - | **15.0%** | DEFENSIVE |
+| Industrials | +3.7 | ALIGNED | **23.7%** | STRONG BUY |
+| Technology | +4.5 | ALIGNED | **28.9%** | STRONG BUY |
+| Consumer Discretionary | +1.7 | ALIGNED | **10.9%** | ACCUMULATE |
+| Financials | +1 | NEGATIVE_DIVERGENCE | **4.5%** | HOLD |
+| **Cash & Hedge** | - | - | **32.0%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 - **Divergence Adjustment:** Financials penalized in weight sizing
@@ -345,10 +346,10 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Industrials | XLI | 29.7% | PRIMARY |
-| Technology | XLK | 36.1% | PRIMARY |
-| Consumer Discretionary | XLY | 13.6% | ADD |
-| Financials | XLF | 5.6% | SMALL |
+| Industrials | XLI | 23.7% | PRIMARY |
+| Technology | XLK | 28.9% | PRIMARY |
+| Consumer Discretionary | XLY | 10.9% | ADD |
+| Financials | XLF | 4.5% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -380,8 +381,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.46499194466929
-- **Z-Score (5d):** 1.0342140081515485
+- **Z-Score (1d):** 1.4649914327269966
+- **Z-Score (5d):** 1.0342127177371345
 
 ### EEM
 - **Crash?** False
@@ -398,8 +399,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391267247618508
-- **Z-Score (5d):** 1.1100981392930533
+- **Z-Score (1d):** 1.5391266347816683
+- **Z-Score (5d):** 1.1100984237667042
 
 ### EWJ
 - **Crash?** False
