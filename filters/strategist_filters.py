@@ -2468,25 +2468,20 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
-
 def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     """
-    Narrative Engine v2.1 (Phase-Respecting Risk Budget + Smoothing)
+    Narrative Engine v3.0 (Cluster-based Risk Budget)
 
-    Structure + Sentiment + Credit + Liquidity + Phase
-    → Final Risk Action + Risk Budget (0~100)
-
-    핵심 업그레이드:
-    - Phase별 Risk Budget 상한(cap) 적용
-    - Liquidity를 pct(방향) + level bucket(HIGH/MID/LOW) 2축으로 반영
-    - Structural v2 cap 반영
-    - NEW: Budget smoothing + max step 제한으로 30↔85 같은 급변 완화
+    구조·정책·유동성·크레딧·심리·수급을
+    cluster 방식으로 묶어 최종 Risk Budget 산출
     """
+
+    from pathlib import Path
+    import json
 
     # --------------------------------------------------
     # Helpers
     # --------------------------------------------------
-
     def _to_float(x) -> Optional[float]:
         if x is None:
             return None
@@ -2530,7 +2525,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
     hy_oas = market_data.get("HY_OAS", {}) or {}
     hy_oas_today = _to_float(hy_oas.get("today"))
-    credit_calm: Optional[bool] = None
+    credit_calm = None
     if hy_oas_today is not None:
         credit_calm = hy_oas_today < 4.0
 
@@ -2557,10 +2552,8 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         pos_z = 0.0
 
     # --------------------------------------------------
-    # 2️⃣ Raw Risk Budget Core
+    # 2️⃣ Base Budget
     # --------------------------------------------------
-
-    # Base from sentiment
     if sent_state == "FEAR":
         budget = 35
     elif sent_state == "GREED":
@@ -2570,60 +2563,95 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     else:
         budget = 50
 
-    # Structure tilt
+    # --------------------------------------------------
+    # 3️⃣ Macro Cluster (정책+유동성+구조를 한 번에 평가)
+    # --------------------------------------------------
+    macro_cluster = 0
+    macro_cluster_kr = "중립"
+
+    # policy
     if not mixed:
         if easing and not tightening:
-            budget += 10
+            macro_cluster += 1
         elif tightening and not easing:
-            budget -= 10
+            macro_cluster -= 1
 
-    # Credit tilt
-    if credit_calm is True:
-        budget += 10
-    elif credit_calm is False:
-        budget -= 10
-
-    # Liquidity tilt (Direction + Level)
+    # liquidity direction
     if liq_dir_tag == "UP":
-        budget += 10
+        macro_cluster += 1
     elif liq_dir_tag == "DOWN":
-        budget -= 10
+        macro_cluster -= 1
 
+    # liquidity level
     if liq_level_bucket == "HIGH":
-        budget += 5
+        macro_cluster += 0.5
     elif liq_level_bucket == "LOW":
-        budget -= 5
+        macro_cluster -= 0.5
 
-    # --------------------------------------------------
-    # 2.5️⃣ Structural v2 Penalty / Alert
-    # --------------------------------------------------
+    # structural penalty
     struct_v2_kr = "정상"
     struct_alert = ""
     v2_cap = 100
 
     if "SYSTEMIC" in struct_v2:
-        # 기존 -20 / cap 30은 너무 과격해서 완화
-        budget -= 15
+        macro_cluster -= 2.0
         struct_v2_kr = "시스템위기"
         struct_alert = "🚨 시스템 불신 감지"
         v2_cap = 45
     elif "STAGFLATION" in struct_v2:
-        budget -= 12
+        macro_cluster -= 1.5
         struct_v2_kr = "스태그플레이션"
         struct_alert = "⚠️ 에너지 비용 전이"
         v2_cap = 50
     elif "GLOBAL FINANCIAL TIGHTENING" in struct_v2:
-        budget -= 8
+        macro_cluster -= 1.0
         struct_v2_kr = "글로벌긴축"
     elif "WEAK DEMAND" in struct_v2:
-        budget -= 8
+        macro_cluster -= 1.0
         struct_v2_kr = "수요둔화"
     elif "COST-PUSH" in struct_v2:
-        budget -= 6
+        macro_cluster -= 0.5
         struct_v2_kr = "비용압박"
 
+    # macro cluster → budget 반영
+    if macro_cluster >= 2.0:
+        budget += 12
+        macro_cluster_kr = "강한 우호"
+    elif macro_cluster >= 1.0:
+        budget += 8
+        macro_cluster_kr = "우호"
+    elif macro_cluster <= -2.0:
+        budget -= 15
+        macro_cluster_kr = "강한 비우호"
+    elif macro_cluster <= -1.0:
+        budget -= 8
+        macro_cluster_kr = "비우호"
+
     # --------------------------------------------------
-    # 3️⃣ Phase Cap
+    # 4️⃣ Credit Cluster
+    # --------------------------------------------------
+    if credit_calm is True:
+        budget += 5
+        credit_cluster_kr = "안정"
+    elif credit_calm is False:
+        budget -= 8
+        credit_cluster_kr = "불안"
+    else:
+        credit_cluster_kr = "N/A"
+
+    # --------------------------------------------------
+    # 5️⃣ Positioning Overlay
+    # --------------------------------------------------
+    pos_alert = ""
+    if pos_z >= 2.0:
+        budget -= 8
+        pos_alert = " ⚠️ 수급 과열 감지"
+    elif pos_z >= 1.5:
+        budget -= 4
+        pos_alert = " ⚠️ 수급 다소 과열"
+
+    # --------------------------------------------------
+    # 6️⃣ Phase Cap
     # --------------------------------------------------
     cap = 100
     if phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
@@ -2638,16 +2666,13 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     final_cap = min(cap, v2_cap)
 
     # --------------------------------------------------
-    # 3.5️⃣ Raw Budget 저장
+    # 7️⃣ Raw Budget
     # --------------------------------------------------
     raw_budget = _clamp(int(round(budget)), 0, 100)
 
     # --------------------------------------------------
-    # 4️⃣ NEW: Budget Smoothing Layer
+    # 8️⃣ Smoothing
     # --------------------------------------------------
-    # 목적:
-    # - 같은 날/유사한 입력에서 30 ↔ 85 급변 방지
-    # - 전일 값을 기준으로 부드럽게 이동
     state_path = Path("insights/last_risk_budget.json")
 
     prev_budget = None
@@ -2664,13 +2689,11 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         except Exception:
             prev_budget = None
 
-    # smoothing
     if prev_budget is not None:
         smoothed_budget = int(round(0.7 * prev_budget + 0.3 * raw_budget))
     else:
         smoothed_budget = raw_budget
 
-    # max step 제한
     MAX_STEP = 15
     if prev_budget is not None:
         delta = smoothed_budget - prev_budget
@@ -2679,11 +2702,16 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         elif delta < -MAX_STEP:
             smoothed_budget = prev_budget - MAX_STEP
 
-    # cap 적용
-    budget = min(smoothed_budget, final_cap)
+    # soft normalization
+    budget = smoothed_budget
+    if budget > 80:
+        budget = 80 + (budget - 80) * 0.5
+
+    # final cap + clamp
+    budget = min(int(round(budget)), final_cap)
     budget = _clamp(budget, 0, 100)
 
-    # 저장
+    # save
     state_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         with open(state_path, "w", encoding="utf-8") as f:
@@ -2691,10 +2719,11 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     except Exception:
         pass
 
+    market_data["PREV_RISK_BUDGET"] = budget
     market_data["RISK_BUDGET"] = budget
 
     # --------------------------------------------------
-    # 5️⃣ Final Action
+    # 9️⃣ Final Action
     # --------------------------------------------------
     if budget >= 70:
         action = "INCREASE"
@@ -2705,16 +2734,14 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     else:
         action = "HOLD"
 
-    pos_alert = ""
     if pos_z >= 2.0:
         if action == "INCREASE":
             action = "HOLD (POS_OVERHEATED)"
         elif action == "HOLD":
             action = "REDUCE (POS_OVERHEATED)"
-        pos_alert = " ⚠️ 수급 과열 감지"
 
     # --------------------------------------------------
-    # 6️⃣ Narrative Line
+    # 🔟 Narrative
     # --------------------------------------------------
     struct_tag = "MIXED"
     if not mixed:
@@ -2725,18 +2752,17 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
     struct_tag_final = f"{struct_tag}({struct_v2_kr})" if struct_v2_kr != "정상" else struct_tag
 
-    credit_tag = "안정" if credit_calm is True else ("불안" if credit_calm is False else "N/A")
     liq_dir_kr = {"UP": "증가", "DOWN": "감소", "FLAT": "보합", "N/A": "N/A"}[liq_dir_tag]
     liq_lvl_kr = {"HIGH": "높음", "MID": "중간", "LOW": "낮음", "N/A": "N/A"}.get(liq_level_bucket, "N/A")
     liq_tag = f"{liq_dir_kr}/{liq_lvl_kr}"
 
     narrative = (
-        f"구조={struct_tag_final} / 심리={sent_state} / 유동성={liq_tag} / "
-        f"크레딧={credit_tag} / 수급={pos_z:.2f}{pos_alert} → Phase={phase}"
+        f"구조={struct_tag_final} / 심리={sent_state} / 매크로클러스터={macro_cluster_kr} / "
+        f"유동성={liq_tag} / 크레딧={credit_cluster_kr} / 수급={pos_z:.2f}{pos_alert} → Phase={phase}"
     )
 
     # --------------------------------------------------
-    # 6.5️⃣ Final State Object
+    # 11️⃣ Final State
     # --------------------------------------------------
     final_state = {
         "phase": phase,
@@ -2747,35 +2773,31 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         "raw_budget": raw_budget,
         "prev_budget": prev_budget,
         "smoothed_budget": smoothed_budget,
-
         "structure_tag": struct_tag,
         "policy_bias_line": policy_bias_line,
-
         "sentiment_fear_greed": fear,
         "sentiment_state": sent_state,
-
         "credit_calm": credit_calm,
         "hy_oas_today": hy_oas_today,
-
         "liquidity_dir": liq_dir_tag,
         "liquidity_level_bucket": liq_level_bucket,
         "net_liq_pct_change": net_liq_pct,
-
         "narrative_line": narrative,
     }
     market_data["FINAL_STATE"] = final_state
 
     # --------------------------------------------------
-    # 7️⃣ Output
+    # 12️⃣ Output
     # --------------------------------------------------
     lines = []
-    lines.append("### 🧠 13) Narrative Engine (v2.1 + Risk Budget Smoothing)")
-    lines.append("- **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정")
-    lines.append("- **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문")
+    lines.append("### 🧠 13) Narrative Engine (v3.0 + Cluster Risk Budget)")
+    lines.append("- **정의:** 구조·정책·유동성·크레딧·심리·수급을 cluster 방식으로 통합해 최종 리스크를 판단")
+    lines.append("- **추가 이유:** 같은 방향 신호를 중복 가산하지 않고, 기관형 방식으로 안정적인 예산 산출")
     lines.append("")
     lines.append(f"- **Structure Bias:** {policy_bias_line} ({struct_v2_kr})")
     lines.append(f"- **Sentiment (Fear&Greed):** {fear if fear is not None else 'N/A'} ({sent_state})")
-    lines.append(f"- **Credit Calm:** {credit_calm}")
+    lines.append(f"- **Macro Cluster:** {macro_cluster} ({macro_cluster_kr})")
+    lines.append(f"- **Credit Cluster:** {credit_cluster_kr}")
     lines.append(f"- **Liquidity (NET_LIQ):** {liq_dir_tag} ({liq_level_bucket})")
     lines.append(f"- **Phase:** {phase} (Cap: {cap})")
 
@@ -2793,6 +2815,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Narrative:** {narrative}")
 
     return "\n".join(lines)
+
     
 def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
     """
