@@ -2675,9 +2675,9 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
 
 def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     """
-    Narrative Engine v3.0 (Cluster-based Risk Budget)
+    Narrative Engine v3.1 (Cluster-based Risk Budget + Drift Tilt)
 
-    구조·정책·유동성·크레딧·심리·수급을
+    구조·정책·유동성·크레딧·심리·수급·드리프트를
     cluster 방식으로 묶어 최종 Risk Budget 산출
     """
 
@@ -2755,6 +2755,10 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
     if pos_z is None:
         pos_z = 0.0
+
+    drift_score = market_data.get("DRIFT_SCORE", 0) or 0
+    drift_state = str(market_data.get("DRIFT_STATE", "") or "")
+    sew_state = str(market_data.get("SEW_STATUS", "STABLE") or "STABLE").upper()
 
     # --------------------------------------------------
     # 2️⃣ Base Budget
@@ -2854,6 +2858,24 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     elif pos_z >= 1.5:
         budget -= 4
         pos_alert = " ⚠️ 수급 다소 과열"
+
+    # --------------------------------------------------
+    # 5.5️⃣ Drift Tilt (초기 흐름 반영)
+    # --------------------------------------------------
+    drift_tilt = 0
+    drift_note = "N/A"
+
+    # shock monitor가 안정적이고, 수급 과열이 심하지 않을 때만 drift 반영
+    if drift_score >= 3 and sew_state == "STABLE" and pos_z < 1.8:
+        drift_tilt = 3
+        budget += drift_tilt
+        drift_note = "초기 흐름 우호 (+3)"
+    elif drift_score >= 2 and sew_state == "STABLE" and pos_z < 1.5:
+        drift_tilt = 2
+        budget += drift_tilt
+        drift_note = "약한 초기 흐름 (+2)"
+    elif drift_score >= 3 and pos_z >= 1.8:
+        drift_note = "흐름은 강하나 과열 경계로 미반영"
 
     # --------------------------------------------------
     # 6️⃣ Phase Cap
@@ -2963,7 +2985,8 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
     narrative = (
         f"구조={struct_tag_final} / 심리={sent_state} / 매크로클러스터={macro_cluster_kr} / "
-        f"유동성={liq_tag} / 크레딧={credit_cluster_kr} / 수급={pos_z:.2f}{pos_alert} → Phase={phase}"
+        f"유동성={liq_tag} / 크레딧={credit_cluster_kr} / 드리프트={drift_note} / "
+        f"수급={pos_z:.2f}{pos_alert} → Phase={phase}"
     )
 
     # --------------------------------------------------
@@ -2987,6 +3010,9 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         "liquidity_dir": liq_dir_tag,
         "liquidity_level_bucket": liq_level_bucket,
         "net_liq_pct_change": net_liq_pct,
+        "drift_score": drift_score,
+        "drift_state": drift_state,
+        "drift_tilt": drift_tilt,
         "narrative_line": narrative,
     }
     market_data["FINAL_STATE"] = final_state
@@ -2995,8 +3021,8 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     # 12️⃣ Output
     # --------------------------------------------------
     lines = []
-    lines.append("### 🧠 13) Narrative Engine (v3.0 + Cluster Risk Budget)")
-    lines.append("- **정의:** 구조·정책·유동성·크레딧·심리·수급을 cluster 방식으로 통합해 최종 리스크를 판단")
+    lines.append("### 🧠 13) Narrative Engine (v3.1 + Cluster Risk Budget + Drift Tilt)")
+    lines.append("- **정의:** 구조·정책·유동성·크레딧·심리·수급·드리프트를 cluster 방식으로 통합해 최종 리스크를 판단")
     lines.append("- **추가 이유:** 같은 방향 신호를 중복 가산하지 않고, 기관형 방식으로 안정적인 예산 산출")
     lines.append("")
     lines.append(f"- **Structure Bias:** {policy_bias_line} ({struct_v2_kr})")
@@ -3004,6 +3030,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Macro Cluster:** {macro_cluster} ({macro_cluster_kr})")
     lines.append(f"- **Credit Cluster:** {credit_cluster_kr}")
     lines.append(f"- **Liquidity (NET_LIQ):** {liq_dir_tag} ({liq_level_bucket})")
+    lines.append(f"- **Drift:** score={drift_score} / state={drift_state} / tilt={drift_tilt}")
     lines.append(f"- **Phase:** {phase} (Cap: {cap})")
 
     if struct_alert:
