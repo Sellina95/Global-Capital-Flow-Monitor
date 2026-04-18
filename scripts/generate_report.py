@@ -1339,15 +1339,11 @@ def generate_daily_report() -> None:
         .tail(10)
         .to_string(index=False)
     )
-    print("\n" + "=" * 50)
-    print(f"!!! [BEFORE BUILD] CSV DXY (today_idx): {df.iloc[today_idx].get('DXY')}")
-    print("=" * 50 + "\n")
+
 
     market_data = build_market_data(df, today_idx)
-
-    print("\n" + "=" * 50)
-    print(f"!!! [AFTER BUILD] MarketData DXY: {market_data.get('DXY', {}).get('today')}")
-    print("=" * 50 + "\n")
+ 
+    
 
     # -----------------------------
     # 2) Detect stale / market closed
@@ -1386,6 +1382,7 @@ def generate_daily_report() -> None:
 
     # Wall-Street Sentiment Proxy
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
+    market_data = attach_drift_data_layer(market_data) or market_data
 
     # Regime change monitor
     regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
