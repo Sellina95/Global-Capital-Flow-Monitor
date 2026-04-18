@@ -32,7 +32,7 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **WAITING / RANGE (대기·박스권)** → **RISK-ON (완화 기대·리스크 선호)**
+- **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
 
 ---
 
@@ -234,13 +234,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
 - **Today snapshot:** US10Y(4.246), DXY(98.100), VIX(17.48)
 
-### 🏗️ 12) Structural Filter (v2)
+### 🏗️ 12) Structural Filter (v3)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
 - **핵심 신호:** US10Y(↓) / DXY(↓) / GOLD(↑) / VIX(↓) / WTI(↓)
+- **Meaningful Move Check:** DXY=-0.12217750467380029 / GOLD=1.5087599111024859 / US10Y=-1.4620608483606938 / VIX=-2.564108016318143 / WTI=-11.447886458755653
 - **판정:** **NEUTRAL**
 - **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
 
-### 🧠 13) Narrative Engine (v2 + Risk Budget)
+### 🧠 13) Narrative Engine (v2.1 + Risk Budget Smoothing)
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
@@ -249,6 +250,11 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** RISK-ON (완화 기대·리스크 선호) (Cap: 85)
+
+- **Raw Budget:** **85**
+- **Prev Budget:** **N/A**
+- **Smoothed Budget:** **85**
+- **Final Cap Applied:** **85**
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **85**
@@ -375,8 +381,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.4649994968560816
-- **Z-Score (5d):** 1.0342155163365685
+- **Z-Score (1d):** 1.464991739768457
+- **Z-Score (5d):** 1.0342141182826374
 
 ### EEM
 - **Crash?** False
@@ -393,8 +399,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391272040399357
-- **Z-Score (5d):** 1.1100982800263728
+- **Z-Score (1d):** 1.5391266347816683
+- **Z-Score (5d):** 1.1100984237667042
 
 ### EWJ
 - **Crash?** False
