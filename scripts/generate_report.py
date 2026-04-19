@@ -29,6 +29,7 @@ from filters.strategist_filters import (
     sector_correlation_break_state,
     attach_drift_data_layer, 
     pseudo_gamma_filter,
+    institutional_flow_engine_filter,
 )
 
 from scripts.data_processing import (
