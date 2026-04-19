@@ -1502,17 +1502,22 @@ def generate_daily_report() -> None:
             is_deadman_activated = True
 
     # -------------------------
-    # 8.5) FINAL_STATE 강제 동기화 (🔥 phase/risk_budget fix)
+    # 8.5) FINAL_S
     # -------------------------
     if "FINAL_STATE" not in market_data or not isinstance(market_data.get("FINAL_STATE"), dict):
         market_data["FINAL_STATE"] = {}
     
-    # phase 강제 주입
-    current_phase = market_data.get("MARKET_REGIME") or regime_result.get("current_regime") or "N/A"
-    market_data["FINAL_STATE"]["phase"] = current_phase
+    # phase가 비어있을 때만 채움
+    if not market_data["FINAL_STATE"].get("phase") or market_data["FINAL_STATE"].get("phase") == "N/A":
+        fallback_phase = (
+            market_data.get("MARKET_REGIME")
+            or regime_result.get("current_regime")
+            or "N/A"
+        )
+        market_data["FINAL_STATE"]["phase"] = fallback_phase
     
-    # risk_budget 강제 주입
-    if market_data["FINAL_STATE"].get("risk_budget") in [None, "", "N/A"]:
+    # risk_budget도 동일
+    if not market_data["FINAL_STATE"].get("risk_budget") or market_data["FINAL_STATE"].get("risk_budget") == "N/A":
         market_data["FINAL_STATE"]["risk_budget"] = recommended_exposure
     
     print("[DEBUG][FINAL_STATE FIXED] FINAL_STATE =", market_data["FINAL_STATE"])
