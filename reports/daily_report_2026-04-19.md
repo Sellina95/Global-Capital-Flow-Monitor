@@ -187,18 +187,26 @@ No significant correlation break detected.
 
 No significant sector-level correlation break detected.
 
-### ⚡ 7.3) Pseudo Gamma Filter
-- **정의:** 옵션 데이터 없이 시장의 감마 상태 추론
+### 🏦 Institutional Flow Engine (v1)
+- **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
-- **Gamma State:** 🟡 TRANSITION
-- **Bias:** 초기 방향성 형성 / 감마 전환 구간
-- **Strategy:** 포지션 확대 신중 / 초기 진입 구간
+- **Flow Score:** 6
+- **Flow State:** **⚡ BUILDING**
+- **Confidence:** **MEDIUM-HIGH**
+- **Interpretation:** 기관성 흐름 형성 가능성
+- **Action Bias:** **WATCHLIST**
 
-- **Drift Score:** 4 (🔥 STRONG TREND (방향성 자금 흐름 감지))
-- **VIX:** 17.479999542236328
+- **Drift:** 🔥 STRONG TREND (방향성 자금 흐름 감지) / DISINFLATION_RISK_ON / 🟢 EARLY FLOW WITHOUT SHOCK
+- **Gamma:** UNKNOWN / NONE
 - **SEW:** STABLE / NORMAL
+- **Positioning (POS_Z):** 1.53
 
-- **🚀 Combo Signal:** 🟢 EARLY FLOW WITHOUT SHOCK
+- **Drivers:**
+  - Drift strong
+  - Clear flow label: DISINFLATION_RISK_ON
+  - Short-horizon pre-move cluster
+  - No shock yet
+  - Positioning somewhat stretched
 
 ### 🧩 7) Risk Exposure Filter (숨은 리스크 분석)
 - **추가 이유:** 숫자는 괜찮아 보여도 그 뒤에 숨은 리스크를 식별하기 위함
@@ -237,6 +245,19 @@ No significant sector-level correlation break detected.
 - 역사적 위기 패턴 유사도는 낮습니다. 현재는 **Taiwan_Tension** 유형과 가장 가깝지만, 전면적 지정학 쇼크보다는 제한적·국지적 리스크 모니터링 구간으로 해석됩니다.
 - **Country ETF Crash?** Yes (GLD)
 - **Extreme Country Risk:** GLD
+
+### ⚡ 7.3) Pseudo Gamma Filter
+- **정의:** 옵션 데이터 없이 시장의 감마 상태 추론
+
+- **Gamma State:** 🟡 TRANSITION
+- **Bias:** 초기 방향성 형성 / 감마 전환 구간
+- **Strategy:** 포지션 확대 신중 / 초기 진입 구간
+
+- **Drift Score:** 4 (🔥 STRONG TREND (방향성 자금 흐름 감지))
+- **VIX:** 17.479999542236328
+- **SEW:** STABLE / NORMAL
+
+- **🚀 Combo Signal:** 🟢 EARLY FLOW WITHOUT SHOCK
 
 ### 🎯 8) Incentive Filter (Wall St. Logic)
 
@@ -408,8 +429,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391267247618508
-- **Z-Score (5d):** 1.1100981392930533
+- **Z-Score (1d):** 1.5391265724409853
+- **Z-Score (5d):** 1.1100981067613784
 
 ### EWJ
 - **Crash?** False
