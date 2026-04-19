@@ -3915,7 +3915,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     phase = fetch_state_str("phase", "N/A")
     liq_dir = fetch_state_str("liquidity_dir", "N/A")
     liq_lvl = fetch_state_str("liquidity_level_bucket", "N/A")
-    credit_calm = bool(state.get("credit_calm", True))
+    credit_calm = state.get("credit_calm", None)
 
     vix_score, vix_label, vix_detail = dynamic_vix_threshold(market_data)
 
