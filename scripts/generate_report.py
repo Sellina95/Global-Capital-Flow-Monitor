@@ -1544,7 +1544,10 @@ def generate_daily_report() -> None:
         "corr66_score": corr66_state["score"],
         "geo_level": geo_level,
     }
-
+    action_result = final_action_engine(market_data)
+    market_data["FINAL_ACTION"] = action_result
+    
+    print("[DEBUG] FINAL_ACTION:", action_result)
     # -------------------------
     # 12) Final Decision 먼저 계산
     # -------------------------
