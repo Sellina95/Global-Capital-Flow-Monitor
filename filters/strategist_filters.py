@@ -4680,16 +4680,17 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     # 1. Inputs
     # -------------------------
     final_state = market_data.get("FINAL_STATE", {}) or {}
-
+    inst_flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+    
     phase = str(final_state.get("phase", "N/A")).upper()
     risk_budget = final_state.get("risk_budget", 50)
-
-    flow_score = market_data.get("FLOW_SCORE", 0)
-    flow_state = str(market_data.get("FLOW_STATE", "N/A")).upper()
-
+    
+    flow_score = inst_flow.get("score", 0)
+    flow_state = str(inst_flow.get("state", "N/A")).upper()
+    
     gamma_state = str(market_data.get("GAMMA_STATE", "UNKNOWN")).upper()
     sew_status = str(market_data.get("SEW_STATUS", "N/A")).upper()
-
+    
     pos_z = market_data.get("SP500_POS_Z", 0)
 
     action = "HOLD"
