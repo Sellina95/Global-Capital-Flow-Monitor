@@ -7,8 +7,8 @@
 > **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
 
 ### 🎯 Exposure Framework
-- **Base Exposure (전략 기준): 70%**
-- **Final Exposure (실행 기준): 70%**
+- **Base Exposure (전략 기준): 69%**
+- **Final Exposure (실행 기준): 69%**
 
 ### 📌 Interpretation
 → 구조와 리스크 오버라이드가 대체로 정렬된 상태입니다
@@ -24,8 +24,8 @@
 
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **HOLD**
-- **Final Exposure:** **70%**
-- **Base Context:** phase=N/A / narrative=HOLD / base_exposure=70%
+- **Final Exposure:** **69%**
+- **Base Context:** phase=N/A / narrative=HOLD / base_exposure=69%
 - **SEW:** STABLE / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
 - **Warning Score:** 0 (No warning)
@@ -47,8 +47,8 @@
 ---
 
 ## 🧭 So What? (Decision Layer)
-- **Strategic View:** **HOLD** *(base exposure: 70%)*
-- **Execution View:** **HOLD** *(final exposure: 70%)*
+- **Strategic View:** **HOLD** *(base exposure: 69%)*
+- **Execution View:** **HOLD** *(final exposure: 69%)*
 - **Context:** phase=N/A / liquidity=N/A-N/A / credit_calm=None / geo=NORMAL
 - **SEW / Divergence:** STABLE / NORMAL | ALIGNED / **STAY (포지션 유지)**
 - **Warning Score:** 0 (No warning)
@@ -58,20 +58,20 @@
 
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
-- **Strategic View:** HOLD (70%) | **Execution View:** HOLD (70%)
+- **Strategic View:** HOLD (69%) | **Execution View:** HOLD (69%)
 - **Context:** phase=N/A / liquidity=N/A-N/A / credit_calm=None / geo=NORMAL
 
 ### 🔹 Base Case
 - 조건: 현재 Execution View=HOLD 유지 / SEW=STABLE / Divergence=ALIGNED / 추가 경고 신호 없음
-- 전략: 실행 노출 70% 유지, 전략 기준과 실행 기준이 정렬된 상태에서 운용
+- 전략: 실행 노출 69% 유지, 전략 기준과 실행 기준이 정렬된 상태에서 운용
 
 ### 🔼 Bull Case
 - 조건: Warning Score ≤ 1 / SEW: STABLE 유지 / Divergence: ALIGNED 유지 / NET_LIQ 우호 / 크레딧 안정 지속
-- 전략: 실행 노출 70% 유지 또는 추가 확장 검토, 성장/리스크 자산 베타 우호
+- 전략: 실행 노출 69% 유지 또는 추가 확장 검토, 성장/리스크 자산 베타 우호
 
 ### 🔻 Bear Case
 - 조건: SEW WATCH/ALERT/DEADMAN 재발 / HY OAS 4% 상회 또는 급등 / VIX 22 이상 또는 급등 전환 / 상관관계 붕괴 심화 / Divergence 비정렬 전환
-- 전략: 실행 노출 70%에서 추가 축소, 방어/현금 비중 확대 및 고베타 자산 감축
+- 전략: 실행 노출 69%에서 추가 축소, 방어/현금 비중 확대 및 고베타 자산 감축
 
 ---
 
@@ -159,23 +159,20 @@
 > **[Strategic Note]:** 위 연쇄 반응이 역사적 상관관계에서 벗어날 경우, **6.5) Correlation Break Monitor**를 통해 국면 전환 여부를 정밀 판별함
 
 ### 🌊 Drift Monitor (v3)
-- **정의:** 단기 폭발이 아닌 '누적 방향성 흐름 + 단기 선행 흔적' 감지
+- **정의:** 누적 흐름 + ATR 기반 강도 감지
 
-- **SPY:** 15m=-0.035196396493941684 / 30m=0.11138059618007734 / 1H=0.11138059618007734 / 4H=-0.20520048244117017 / 1D=1.1957379599176976 / 5D=4.502099436476281
+- **SPY:** 15m=-0.035196396493941684 / 30m=0.11138059618007734 / 1H=0.05777198805994033 / 4H=-0.09708225946013505 / 1D=1.1957379599176976 / 5D=4.502099436476281
 - **WTI:** 15m=-1.1371852612227396 / 30m=-0.9355959973545547 / 1H=-0.6017571573438518 / 4H=1.5117941473842267 / 1D=-12.778546616896602 / 5D=-14.476549032942444
 - **DXY:** 15m=0.025451513817342786 / 30m=0.004070128943078899 / 1H=0.0336040198643639 / 4H=0.29507834038200453 / 1D=0.007122943085113853 / 5D=-0.4287928472861302
 - **GOLD:** 15m=0.4735823320330512 / 30m=0.2588883841432077 / 1H=0.08409594208287352 / 4H=-0.19226636006851594 / 1D=1.9684916043560596 / 5D=2.471706623958414
 
-- **Drift Score:** 4
-- **State:** **🔥 STRONG TREND (방향성 자금 흐름 감지)**
-- **Label:** **DISINFLATION_RISK_ON**
-- **SEW Combo Signal:** **🟢 EARLY FLOW WITHOUT SHOCK**
+- **Drift Score:** 3
+- **State:** **⚡ TREND FORMING**
 
 - **Drivers:**
-  - WTI 1D downside extension
+  - WTI 1D downside
   - SPY 1D continuation
   - Gold strength
-  - Short-horizon pre-move detected (15m/30m)
 
 ### ⚠ 6.5) Correlation Break Monitor
 ⚠ Market Closed / Stale Data → Correlation signals evaluated conservatively.
@@ -190,20 +187,18 @@ No significant sector-level correlation break detected.
 ### 🏦 Institutional Flow Engine (v1)
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
-- **Flow Score:** 6
-- **Flow State:** **⚡ BUILDING**
-- **Confidence:** **MEDIUM-HIGH**
-- **Interpretation:** 기관성 흐름 형성 가능성
-- **Action Bias:** **WATCHLIST**
+- **Flow Score:** 2
+- **Flow State:** **NO CLEAR FLOW**
+- **Confidence:** **LOW**
+- **Interpretation:** 기관성 축적 흔적 불충분
+- **Action Bias:** **IGNORE**
 
-- **Drift:** 🔥 STRONG TREND (방향성 자금 흐름 감지) / DISINFLATION_RISK_ON / 🟢 EARLY FLOW WITHOUT SHOCK
+- **Drift:** N/A / N/A / NONE
 - **Gamma:** UNKNOWN / NONE
 - **SEW:** STABLE / NORMAL
 - **Positioning (POS_Z):** 1.53
 
 - **Drivers:**
-  - Drift strong
-  - Clear flow label: DISINFLATION_RISK_ON
   - Short-horizon pre-move cluster
   - No shock yet
   - Positioning somewhat stretched
@@ -253,7 +248,7 @@ No significant sector-level correlation break detected.
 - **Bias:** 초기 방향성 형성 / 감마 전환 구간
 - **Strategy:** 포지션 확대 신중 / 초기 진입 구간
 
-- **Drift Score:** 4 (🔥 STRONG TREND (방향성 자금 흐름 감지))
+- **Drift Score:** 3 (⚡ TREND FORMING)
 - **VIX:** 17.479999542236328
 - **SEW:** STABLE / NORMAL
 
@@ -294,9 +289,9 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 ### 🧠 13) Narrative Engine (v3.1 + Drift)
 
-- **Risk Budget:** 70
-- **Action:** INCREASE
-- **Narrative:** 구조=Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.120 / US10YΔ -0.063 / 심리=NEUTRAL / 매크로=강한 우호 / 유동성=UP/MID / 크레딧=안정 / 드리프트=🔥 STRONG TREND (방향성 자금 흐름 감지) (DISINFLATION_RISK_ON) (+4) / 수급=1.53 ⚠️ 다소 과열 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Risk Budget:** 69
+- **Action:** HOLD
+- **Narrative:** 구조=Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.120 / US10YΔ -0.063 / 심리=NEUTRAL / 매크로=강한 우호 / 유동성=UP/MID / 크레딧=안정 / 드리프트=N/A (N/A) (+0) / 수급=1.53 ⚠️ 다소 과열 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
@@ -311,12 +306,12 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **정의:** Risk Budget을 실제 익스포저로 변환 (Positions & Deadman Switch)
 - **추가 이유:** 수급 과열(POS_Z)이나 급격한 쏠림 발생 시 강제 시스템 셧다운
 
-- **Risk Budget:** 70 | **Phase Cap:** 85
+- **Risk Budget:** 69 | **Phase Cap:** 85
 - **VIX Level:** 17.48 (NORMAL) | **Change:** -2.56%
 - **Final Multiplier:** 1.00x (Vol x Pos)
 - **Slope Intensity:** 0.0000 (Stable)
 
-- **📊 Recommended Exposure:** **70%**
+- **📊 Recommended Exposure:** **69%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
@@ -362,14 +357,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - No major theory-vs-flow divergence detected.
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
-- **Total Target Exposure:** **70.0%** (from Filter 15)
+- **Total Target Exposure:** **69.0%** (from Filter 15)
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Financials | +1 | ALIGNED | **21.9%** | STRONG BUY |
-| Industrials | +0.7 | ALIGNED | **15.3%** | ACCUMULATE |
-| Technology | +1.5 | ALIGNED | **32.8%** | STRONG BUY |
-| **Cash & Hedge** | - | - | **30.0%** | DEFENSIVE |
+| Financials | +1 | ALIGNED | **21.6%** | STRONG BUY |
+| Industrials | +0.7 | ALIGNED | **15.1%** | ACCUMULATE |
+| Technology | +1.5 | ALIGNED | **32.3%** | STRONG BUY |
+| **Cash & Hedge** | - | - | **31.0%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
@@ -377,9 +372,9 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Financials | XLF | 21.9% | PRIMARY |
-| Industrials | XLI | 15.3% | ADD |
-| Technology | XLK | 32.8% | PRIMARY |
+| Financials | XLF | 21.6% | PRIMARY |
+| Industrials | XLI | 15.1% | ADD |
+| Technology | XLK | 32.3% | PRIMARY |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -411,8 +406,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.464991739768457
-- **Z-Score (5d):** 1.0342141182826374
+- **Z-Score (1d):** 1.4649990602811471
+- **Z-Score (5d):** 1.034216121763981
 
 ### EEM
 - **Crash?** False
@@ -429,8 +424,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391265724409853
-- **Z-Score (5d):** 1.1100981067613784
+- **Z-Score (1d):** 1.5391263266370139
+- **Z-Score (5d):** 1.1100976554845727
 
 ### EWJ
 - **Crash?** False
