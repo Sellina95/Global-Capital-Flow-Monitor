@@ -1394,8 +1394,7 @@ def generate_daily_report() -> None:
     print("[DEBUG][SEW CHECK] SEW_STATUS =", market_data.get("SEW_STATUS"))
     print("[DEBUG][SEW CHECK] SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
     
-    gamma_text = pseudo_gamma_filter(market_data)
-    
+
     # Regime change monitor
     regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
 
@@ -1557,7 +1556,13 @@ def generate_daily_report() -> None:
     base_exposure_display = int(final_decision_state.get("base_exposure", recommended_exposure))
     final_exposure_display = int(final_decision_state.get("exposure", recommended_exposure))
     final_action_display = str(final_decision_state.get("action", "HOLD")).upper()
-
+    # -------------------------
+    # 12.5) SEW 값을 market_data에 주입 후 Gamma 재계산
+    # -------------------------
+    market_data["SEW_STATUS"] = final_decision_state.get("sew_status")
+    market_data["SEW_EVENT_TYPE"] = final_decision_state.get("sew_event")
+    
+    gamma_text = pseudo_gamma_filter(market_data)
     # -------------------------
     # 13) 이제서야 Summary / Decision blocks 생성
     # -------------------------
