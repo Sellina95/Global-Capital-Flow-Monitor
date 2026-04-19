@@ -2974,9 +2974,13 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
 
 
 
+
+    
+from typing import Dict, Any, Optional
+
 def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     """
-    Narrative Engine v2.1 (Restored Original Format + Drift Add-on)
+    Narrative Engine v2.2 (Restored Original Format + Drift Add-on + Realistic Scoring)
 
     Structure + Sentiment + Credit + Liquidity + Phase
     + Drift (보조 가점만)
@@ -2984,7 +2988,9 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
     원칙:
     - 기존 13번 양식 유지
+    - FINAL_STATE 정상 저장
     - Drift는 메인 엔진이 아니라 보조 신호로만 반영
+    - 점수는 기존보다 과도하게 85로 치우치지 않도록 보수화
     """
 
     # --------------------------------------------------
@@ -3097,15 +3103,15 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         elif tightening and not easing:
             budget -= 10
 
-    # Credit tilt
+    # Credit tilt (보수화)
     if credit_calm is True:
-        budget += 10
+        budget += 5
     elif credit_calm is False:
         budget -= 10
 
-    # Liquidity tilt (Direction + Level)
+    # Liquidity tilt (보수화)
     if liq_dir_tag == "UP":
-        budget += 10
+        budget += 5
     elif liq_dir_tag == "DOWN":
         budget -= 10
 
@@ -3135,12 +3141,26 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     # --------------------------------------------------
     # 2.7️⃣ Drift Adjustment (ADD ONLY)
     # --------------------------------------------------
+    drift_tilt = 0
     if drift_score >= 4:
-        budget += 5
+        drift_tilt = 5
     elif drift_score >= 2:
-        budget += 3
+        drift_tilt = 3
     elif drift_score <= -2:
-        budget -= 5
+        drift_tilt = -5
+
+    budget += drift_tilt
+
+    # --------------------------------------------------
+    # 2.8️⃣ Positioning Penalty (순서 수정 완료)
+    # --------------------------------------------------
+    pos_alert = ""
+    if pos_z >= 2.0:
+        budget -= 8
+        pos_alert = " ⚠️ 수급 과열 감지"
+    elif pos_z >= 1.5:
+        budget -= 4
+        pos_alert = " ⚠️ 수급 다소 과열"
 
     # --------------------------------------------------
     # 3️⃣ Phase Cap
@@ -3175,13 +3195,12 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     else:
         action = "HOLD"
 
-    pos_alert = ""
+    # 포지셔닝 과열 시 액션 오버라이드
     if pos_z >= 2.0:
         if action == "INCREASE":
             action = "HOLD (POS_OVERHEATED)"
         elif action == "HOLD":
             action = "REDUCE (POS_OVERHEATED)"
-        pos_alert = " ⚠️ 수급 과열 감지"
 
     # --------------------------------------------------
     # 5️⃣ Narrative Line
@@ -3232,6 +3251,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         "drift_state": drift_state,
         "drift_label": drift_label,
         "drift_combo_signal": drift_combo,
+        "drift_tilt": drift_tilt,
 
         "narrative_line": narrative,
     }
