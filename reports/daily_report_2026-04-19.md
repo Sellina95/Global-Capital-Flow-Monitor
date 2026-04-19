@@ -186,26 +186,6 @@ No significant correlation break detected.
 
 No significant sector-level correlation break detected.
 
-### 🏦 Institutional Flow Engine (v1)
-- **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
-
-- **Flow Score:** 4
-- **Flow State:** **👀 EARLY TRACE**
-- **Confidence:** **MEDIUM**
-- **Interpretation:** 흔적은 있으나 확신은 이르다
-- **Action Bias:** **MONITOR**
-
-- **Drift:** ⚡ TREND FORMING (초기 흐름 감지) / NEUTRAL / 🟢 EARLY FLOW WITHOUT SHOCK
-- **Gamma:** UNKNOWN / NONE
-- **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.53
-
-- **Drivers:**
-  - Drift building
-  - Short-horizon pre-move cluster
-  - No shock yet
-  - Positioning somewhat stretched
-
 ### 🧩 7) Risk Exposure Filter (숨은 리스크 분석)
 - **추가 이유:** 숫자는 괜찮아 보여도 그 뒤에 숨은 리스크를 식별하기 위함
 
@@ -256,6 +236,27 @@ No significant sector-level correlation break detected.
 - **SEW:** STABLE / NORMAL
 
 - **🚀 Combo Signal:** 🟢 EARLY FLOW WITHOUT SHOCK
+
+### 🏦 Institutional Flow Engine (v1)
+- **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
+
+- **Flow Score:** 5
+- **Flow State:** **⚡ BUILDING**
+- **Confidence:** **MEDIUM-HIGH**
+- **Interpretation:** 기관성 흐름 형성 가능성
+- **Action Bias:** **WATCHLIST**
+
+- **Drift:** ⚡ TREND FORMING (초기 흐름 감지) / NEUTRAL / 🟢 EARLY FLOW WITHOUT SHOCK
+- **Gamma:** 🟡 TRANSITION / 🟢 EARLY FLOW WITHOUT SHOCK
+- **SEW:** STABLE / NORMAL
+- **Positioning (POS_Z):** 1.53
+
+- **Drivers:**
+  - Drift building
+  - Short-horizon pre-move cluster
+  - Gamma transition
+  - No shock yet
+  - Positioning somewhat stretched
 
 ### 🎯 8) Incentive Filter (Wall St. Logic)
 
@@ -409,8 +410,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.4649994968560816
-- **Z-Score (5d):** 1.0342155163365685
+- **Z-Score (1d):** 1.4649990602811471
+- **Z-Score (5d):** 1.034216121763981
 
 ### EEM
 - **Crash?** False
@@ -427,8 +428,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391272040399357
-- **Z-Score (5d):** 1.1100982800263728
+- **Z-Score (1d):** 1.5391265724409853
+- **Z-Score (5d):** 1.1100981067613784
 
 ### EWJ
 - **Crash?** False
