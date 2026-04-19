@@ -4672,24 +4672,24 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
 
 def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Final Action Engine v2
+    Final Action Engine v3
+    - 문자열 정규화 포함
     - FINAL_STATE + INSTITUTIONAL_FLOW + GAMMA + SEW 통합 판단
-    - fallback 최소화: 핵심은 FINAL_STATE.phase를 정확히 받는 것
     """
 
     final_state = market_data.get("FINAL_STATE", {}) or {}
     inst_flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
 
-    phase = str(final_state.get("phase", "N/A") or "N/A").upper()
+    raw_phase = str(final_state.get("phase", "N/A") or "N/A")
+    raw_gamma = str(market_data.get("GAMMA_STATE", "UNKNOWN") or "UNKNOWN")
+    raw_sew = str(market_data.get("SEW_STATUS", "N/A") or "N/A")
+
     risk_budget = final_state.get("risk_budget", 50)
-
     flow_score = inst_flow.get("score", 0)
-    flow_state = str(inst_flow.get("state", "N/A") or "N/A").upper()
-
-    gamma_state = str(market_data.get("GAMMA_STATE", "UNKNOWN") or "UNKNOWN").upper()
-    sew_status = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
+    flow_state = str(inst_flow.get("state", "N/A") or "N/A")
 
     pos_z = market_data.get("SP500_POS_Z", 0)
+
     try:
         pos_z = float(pos_z)
     except Exception:
@@ -4705,80 +4705,126 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     except Exception:
         flow_score = 0
 
+    # -------------------------
+    # 문자열 정규화 (핵심)
+    # -------------------------
+    def normalize_text(x: str) -> str:
+        x = str(x).upper().strip()
+        x = x.replace("_", "-")
+        x = x.replace("–", "-")
+        x = x.replace("—", "-")
+        return x
+
+    phase_norm = normalize_text(raw_phase)
+    gamma_norm = normalize_text(raw_gamma)
+    sew_norm = normalize_text(raw_sew)
+
+    is_risk_on = "RISK-ON" in phase_norm or "RISK ON" in phase_norm
+    is_risk_off = "RISK-OFF" in phase_norm or "RISK OFF" in phase_norm
+
+    is_gamma_positive = "POSITIVE" in gamma_norm
+    is_gamma_transition = "TRANSITION" in gamma_norm
+    is_gamma_negative = "NEGATIVE" in gamma_norm
+
+    is_sew_stable = "STABLE" in sew_norm
+    is_sew_watch = "WATCH" in sew_norm
+    is_sew_alert = "ALERT" in sew_norm
+    is_sew_deadman = "DEADMAN" in sew_norm
+
     action = "HOLD"
     size = "NONE"
     confidence = "LOW"
     reason = []
 
     print("[DEBUG][ACTION ENGINE]")
-    print(" phase =", phase)
+    print(" raw_phase =", raw_phase)
+    print(" raw_gamma =", raw_gamma)
+    print(" raw_sew =", raw_sew)
+    print(" phase_norm =", phase_norm)
+    print(" gamma_norm =", gamma_norm)
+    print(" sew_norm =", sew_norm)
+    print(" is_risk_on =", is_risk_on)
     print(" risk_budget =", risk_budget)
     print(" flow_score =", flow_score)
     print(" flow_state =", flow_state)
-    print(" gamma_state =", gamma_state)
-    print(" sew_status =", sew_status)
     print(" pos_z =", pos_z)
 
+    # -------------------------
     # 1) Shock 최우선
-    if sew_status in ["ALERT", "DEADMAN"]:
+    # -------------------------
+    if is_sew_alert or is_sew_deadman:
         action = "REDUCE"
         size = "RISK CUT"
         confidence = "HIGH"
         reason.append("SEW shock detected")
 
+    # -------------------------
     # 2) 구조 붕괴
-    elif "NEGATIVE" in gamma_state and flow_score <= 2:
+    # -------------------------
+    elif is_gamma_negative and flow_score <= 2:
         action = "EXIT"
         size = "FULL"
         confidence = "HIGH"
         reason.append("Gamma breakdown + weak flow")
 
+    # -------------------------
     # 3) 강한 확신 구간
+    # -------------------------
     elif (
-        phase.startswith("RISK-ON")
+        is_risk_on
         and flow_score >= 7
-        and "POSITIVE" in gamma_state
-        and sew_status in ["STABLE", "WATCH"]
+        and is_gamma_positive
+        and (is_sew_stable or is_sew_watch)
     ):
         action = "ADD"
         size = "MEDIUM (30~60%)"
         confidence = "HIGH"
         reason.append("Flow strong + structure aligned")
 
+    # -------------------------
     # 4) 초기 진입 구간
+    # -------------------------
     elif (
-        phase.startswith("RISK-ON")
+        is_risk_on
         and flow_score >= 5
-        and ("TRANSITION" in gamma_state or "POSITIVE" in gamma_state)
-        and sew_status == "STABLE"
+        and (is_gamma_transition or is_gamma_positive)
+        and is_sew_stable
     ):
         action = "EARLY BUY"
         size = "SMALL (10~20%)"
         confidence = "MEDIUM"
         reason.append("Flow building + gamma turning + no shock")
 
+    # -------------------------
     # 5) 환경은 좋지만 흐름 약함
-    elif phase.startswith("RISK-ON") and flow_score < 5 and sew_status == "STABLE":
+    # -------------------------
+    elif is_risk_on and flow_score < 5 and is_sew_stable:
         action = "WAIT"
         size = "0%"
         confidence = "LOW"
         reason.append("Good environment but no strong flow yet")
 
+    # -------------------------
     # 6) Risk-off 환경
-    elif phase.startswith("RISK-OFF"):
+    # -------------------------
+    elif is_risk_off:
         action = "REDUCE"
         size = "DEFENSIVE"
         confidence = "MEDIUM"
         reason.append("Risk-off environment")
 
+    # -------------------------
     # 7) 기본값
+    # -------------------------
     else:
         action = "HOLD"
         size = "NONE"
         confidence = "LOW"
         reason.append("No actionable alignment")
 
+    # -------------------------
     # 8) 과열 override
+    # -------------------------
     if pos_z >= 2.2 and flow_score < 5:
         action = "REDUCE"
         size = "TAKE PROFIT"
@@ -4790,12 +4836,15 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "size": size,
         "confidence": confidence,
         "reason": reason,
-        "phase": phase,
+        "phase": raw_phase,
+        "phase_norm": phase_norm,
         "risk_budget": risk_budget,
         "flow_score": flow_score,
         "flow_state": flow_state,
-        "gamma_state": gamma_state,
-        "sew_status": sew_status,
+        "gamma_state": raw_gamma,
+        "gamma_norm": gamma_norm,
+        "sew_status": raw_sew,
+        "sew_norm": sew_norm,
         "pos_z": pos_z,
     }
 
