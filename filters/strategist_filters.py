@@ -4669,6 +4669,110 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
             lines.append(f"  - {r}")
 
     return "\n".join(lines)
+
+def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Final Action Engine v1
+    - Narrative + Flow + Gamma + SEW 통합 판단
+    """
+
+    # -------------------------
+    # 1. Inputs
+    # -------------------------
+    final_state = market_data.get("FINAL_STATE", {}) or {}
+
+    phase = str(final_state.get("phase", "N/A")).upper()
+    risk_budget = final_state.get("risk_budget", 50)
+
+    flow_score = market_data.get("FLOW_SCORE", 0)
+    flow_state = str(market_data.get("FLOW_STATE", "N/A")).upper()
+
+    gamma_state = str(market_data.get("GAMMA_STATE", "UNKNOWN")).upper()
+    sew_status = str(market_data.get("SEW_STATUS", "N/A")).upper()
+
+    pos_z = market_data.get("SP500_POS_Z", 0)
+
+    action = "HOLD"
+    size = "NONE"
+    confidence = "LOW"
+    reason = []
+
+    # -------------------------
+    # 2. Priority 1: Shock
+    # -------------------------
+    if sew_status in ["ALERT", "DEADMAN"]:
+        action = "REDUCE"
+        size = "RISK CUT"
+        confidence = "HIGH"
+        reason.append("SEW shock detected")
+
+    # -------------------------
+    # 3. Priority 2: Structure breakdown
+    # -------------------------
+    elif gamma_state == "NEGATIVE" and flow_score <= 2:
+        action = "EXIT"
+        size = "FULL"
+        confidence = "HIGH"
+        reason.append("Gamma breakdown + weak flow")
+
+    # -------------------------
+    # 4. ADD (확신 구간)
+    # -------------------------
+    elif (
+        phase.startswith("RISK-ON")
+        and flow_score >= 7
+        and gamma_state == "POSITIVE"
+        and sew_status in ["STABLE", "WATCH"]
+    ):
+        action = "ADD"
+        size = "MEDIUM (30~60%)"
+        confidence = "HIGH"
+        reason.append("Flow strong + structure aligned")
+
+    # -------------------------
+    # 5. EARLY BUY (지금 너 상태)
+    # -------------------------
+    elif (
+        phase.startswith("RISK-ON")
+        and flow_score >= 5
+        and gamma_state in ["TRANSITION", "POSITIVE"]
+        and sew_status == "STABLE"
+    ):
+        action = "EARLY BUY"
+        size = "SMALL (10~20%)"
+        confidence = "MEDIUM"
+        reason.append("Flow building + gamma turning + no shock")
+
+    # -------------------------
+    # 6. WAIT
+    # -------------------------
+    elif phase.startswith("RISK-ON") and flow_score < 5:
+        action = "WAIT"
+        size = "0%"
+        confidence = "LOW"
+        reason.append("Good environment but no flow")
+
+    # -------------------------
+    # 7. Overheat → Take Profit
+    # -------------------------
+    if pos_z >= 2.2 and flow_score < 5:
+        action = "REDUCE"
+        size = "TAKE PROFIT"
+        confidence = "MEDIUM"
+        reason.append("Positioning overheat")
+
+    result = {
+        "action": action,
+        "size": size,
+        "confidence": confidence,
+        "reason": reason,
+        "phase": phase,
+        "flow_score": flow_score,
+        "gamma_state": gamma_state,
+        "sew_status": sew_status,
+    }
+
+    return result
     
 
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
