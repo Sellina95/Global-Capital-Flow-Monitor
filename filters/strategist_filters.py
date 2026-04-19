@@ -2586,7 +2586,8 @@ def pseudo_gamma_filter(market_data: Dict[str, Any]) -> str:
     vix = market_data.get("VIX", {}) or {}
     vix_level = vix.get("today")
 
-    sew_state = market_data.get("SEW_STATE", "N/A")
+    sew_state = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
+    sew_event_type = str(market_data.get("SEW_EVENT_TYPE", "N/A") or "N/A").upper()
 
     gamma_state = "UNKNOWN"
     gamma_bias = ""
@@ -2655,7 +2656,7 @@ def pseudo_gamma_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
     lines.append(f"- **Drift Score:** {drift_score} ({drift_state})")
     lines.append(f"- **VIX:** {vix_level}")
-    lines.append(f"- **SEW:** {sew_state}")
+    lines.append(f"- **SEW:** {sew_state} / {sew_event_type}")
     lines.append("")
     lines.append(f"- **🚀 Combo Signal:** {combo_signal}")
 
