@@ -1793,8 +1793,6 @@ def generate_daily_report() -> None:
     lines.append("")
     lines.append("---")
     lines.append("")
-    lines.append(decision_block)
-    lines.append("")
     lines.append(scenario_block)
     lines.append("")
     lines.append("---")
