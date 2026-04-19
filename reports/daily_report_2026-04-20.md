@@ -23,16 +23,16 @@
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
 ### 🎯 Final Action Engine
-- **Action:** HOLD
-- **Size:** NONE
-- **Confidence:** LOW
+- **Action:** EARLY BUY
+- **Size:** SMALL (10~20%)
+- **Confidence:** MEDIUM
 - **Reason:**
-  - No actionable alignment
+  - Flow building + gamma turning + no shock
 
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **HOLD**
 - **Final Exposure:** **69%**
-- **Base Context:** phase=N/A / narrative=HOLD / base_exposure=69%
+- **Base Context:** phase=RISK-ON (완화 기대·리스크 선호) / narrative=HOLD / base_exposure=69%
 - **SEW:** STABLE / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
 - **Warning Score:** 0 (No warning)
@@ -56,7 +56,7 @@
 ## 🧭 So What? (Decision Layer)
 - **Strategic View:** **HOLD** *(base exposure: 69%)*
 - **Execution View:** **HOLD** *(final exposure: 69%)*
-- **Context:** phase=N/A / liquidity=N/A-N/A / credit_calm=None / geo=NORMAL
+- **Context:** phase=RISK-ON (완화 기대·리스크 선호) / liquidity=N/A-N/A / credit_calm=None / geo=NORMAL
 - **SEW / Divergence:** STABLE / NORMAL | ALIGNED / **STAY (포지션 유지)**
 - **Warning Score:** 0 (No warning)
 - **Do:** 노출은 유지하되, 베타 확대보다 선별적 포지셔닝(퀄리티) 유지
@@ -66,7 +66,7 @@
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
 - **Strategic View:** HOLD (69%) | **Execution View:** HOLD (69%)
-- **Context:** phase=N/A / liquidity=N/A-N/A / credit_calm=None / geo=NORMAL
+- **Context:** phase=RISK-ON (완화 기대·리스크 선호) / liquidity=N/A-N/A / credit_calm=None / geo=NORMAL
 
 ### 🔹 Base Case
 - 조건: 현재 Execution View=HOLD 유지 / SEW=STABLE / Divergence=ALIGNED / 추가 경고 신호 없음
@@ -417,8 +417,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.464991739768457
-- **Z-Score (5d):** 1.0342141182826374
+- **Z-Score (1d):** 1.46499194466929
+- **Z-Score (5d):** 1.0342140081515485
 
 ### EEM
 - **Crash?** False
@@ -435,8 +435,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391267247618508
-- **Z-Score (5d):** 1.1100981392930533
+- **Z-Score (1d):** 1.5391265724409853
+- **Z-Score (5d):** 1.1100981067613784
 
 ### EWJ
 - **Crash?** False
