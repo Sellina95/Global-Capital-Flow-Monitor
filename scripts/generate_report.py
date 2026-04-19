@@ -1420,11 +1420,11 @@ def generate_daily_report() -> None:
 
     print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
 
-    # War room history 저장
+        # War room history 저장
     generate_war_room_history()
 
     # -------------------------
-    # 🔥 5) SEW 먼저 로드 (핵심 수정)
+    # 5) SEW 먼저 로드
     # -------------------------
     sew_state = get_sew_state()
     sew_summary = sew_state["summary"]
@@ -1435,8 +1435,7 @@ def generate_daily_report() -> None:
     sew_extreme_count = sew_state["extreme_count"]
     sew_deadman_reason = sew_state.get("deadman_reason", "")
     sew_event_interp = interpret_sew_event(sew_event_type)
-    
-    # 기존 구조 유지
+
     market_data["SEW_STATE"] = {
         "status": sew_status,
         "summary": sew_summary,
@@ -1444,21 +1443,21 @@ def generate_daily_report() -> None:
         "deadman": sew_deadman,
         "deadman_reason": sew_deadman_reason,
     }
-    
-    # 🔥 핵심: pseudo_gamma_filter용 flat key
+
+    # flat key (Gamma / IFE / Action Engine용)
     market_data["SEW_STATUS"] = sew_status
     market_data["SEW_EVENT_TYPE"] = sew_event_type
-    
+
     # -------------------------
-    # 🔥 6) Commentary block 생성 (SEW 반영된 상태)
+    # 6) Commentary block 생성
     # -------------------------
     commentary_block = build_strategist_commentary(market_data)
-    
+
     # -------------------------
     # 7) Country ETF risk block
     # -------------------------
     country_risk_keys = sorted([k for k in market_data.keys() if k.startswith("COUNTRY_RISK_")])
-    
+
     country_risk_lines = []
     if country_risk_keys:
         country_risk_lines.append("## 🌐 Country ETF Risk Monitor")
@@ -1476,23 +1475,23 @@ def generate_daily_report() -> None:
         country_risk_lines.append("")
         country_risk_lines.append("- No country ETF risk data available.")
         country_risk_lines.append("")
-    
+
     # -------------------------
     # 8) Strategic War Room inputs
     # -------------------------
     div_full_text = divergence_monitor_filter(market_data)
     div_status = "N/A"
     div_action = "N/A"
-    
+
     for line in div_full_text.split("\n"):
         if "**Status:**" in line:
             div_status = line.split("**Status:**")[-1].strip()
         if "**Action Signal:**" in line:
             div_action = line.split("**Action Signal:**")[-1].strip()
-    
+
     recommended_exposure = 100
     is_deadman_activated = False
-    
+
     for line in commentary_block.split("\n"):
         if "Recommended Exposure:" in line:
             try:
@@ -1545,12 +1544,21 @@ def generate_daily_report() -> None:
         "corr66_score": corr66_state["score"],
         "geo_level": geo_level,
     }
+
+    # -------------------------
+    # 11.5) Final Action Engine 계산
+    # -------------------------
     action_result = final_action_engine(market_data)
     market_data["FINAL_ACTION"] = action_result
-    
     print("[DEBUG] FINAL_ACTION:", action_result)
+
+    final_action_name = action_result.get("action", "N/A")
+    final_action_size = action_result.get("size", "N/A")
+    final_action_confidence = action_result.get("confidence", "N/A")
+    final_action_reasons = action_result.get("reason", [])
+
     # -------------------------
-    # 12) Final Decision 먼저 계산
+    # 12) Final Decision 계산
     # -------------------------
     final_decision_text = war_room_final_decision_filter(market_data)
     final_decision_state = market_data.get("FINAL_DECISION", {}) or {}
@@ -1559,22 +1567,13 @@ def generate_daily_report() -> None:
     base_exposure_display = int(final_decision_state.get("base_exposure", recommended_exposure))
     final_exposure_display = int(final_decision_state.get("exposure", recommended_exposure))
     final_action_display = str(final_decision_state.get("action", "HOLD")).upper()
-    # -------------------------
-    # 12.5) SEW 값을 market_data에 주입 후 Gamma 재계산
-    # -------------------------
-    market_data["SEW_STATUS"] = final_decision_state.get("sew_status")
-    market_data["SEW_EVENT_TYPE"] = final_decision_state.get("sew_event")
-
-    # 🔥 여기로 DEBUG 이동
 
     print("[DEBUG][SEW FINAL CHECK]")
-    
     print("SEW_STATUS =", market_data.get("SEW_STATUS"))
-    
     print("SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
-    gamma_text = pseudo_gamma_filter(market_data)
+
     # -------------------------
-    # 13) 이제서야 Summary / Decision blocks 생성
+    # 13) Summary / Decision blocks 생성
     # -------------------------
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
@@ -1655,6 +1654,18 @@ def generate_daily_report() -> None:
 
     lines.append(f"- **[14번 수급 시그널]:** {div_action}")
     lines.append("")
+
+    # Final Action Engine 출력
+    lines.append("### 🎯 Final Action Engine")
+    lines.append(f"- **Action:** {final_action_name}")
+    lines.append(f"- **Size:** {final_action_size}")
+    lines.append(f"- **Confidence:** {final_action_confidence}")
+    if final_action_reasons:
+        lines.append("- **Reason:**")
+        for r in final_action_reasons:
+            lines.append(f"  - {r}")
+    lines.append("")
+
     lines.append(final_decision_text)
     lines.append("")
 
@@ -1672,7 +1683,7 @@ def generate_daily_report() -> None:
     lines.append("")
     lines.append("## 📊 Daily Macro Signals")
     lines.append("")
-
+    
     # daily core signals
     if "US10Y" in market_data and market_data["US10Y"].get("today") is not None:
         prev = market_data["US10Y"].get("prev")
