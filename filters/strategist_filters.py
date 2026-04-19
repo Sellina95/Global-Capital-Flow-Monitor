@@ -4579,6 +4579,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(sector_correlation_break_filter(market_data))
     sections.append("")
+    sections.append(pseudo_gamma_filter(market_data))
+    sections.append("")
     sections.append(risk_exposure_filter(market_data))
     sections.append("")
     sections.append(geopolitical_early_warning_filter(market_data))
