@@ -4672,8 +4672,8 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
 
 def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Final Action Engine v1
-    - Narrative + Flow + Gamma + SEW 통합 판단
+    Final Action Engine v1.1
+    - FINAL_STATE + INSTITUTIONAL_FLOW + GAMMA + SEW 통합 판단
     """
 
     # -------------------------
@@ -4681,22 +4681,48 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     # -------------------------
     final_state = market_data.get("FINAL_STATE", {}) or {}
     inst_flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
-    
-    phase = str(final_state.get("phase", "N/A")).upper()
+
+    phase = str(final_state.get("phase", "N/A") or "N/A").upper()
     risk_budget = final_state.get("risk_budget", 50)
-    
+
     flow_score = inst_flow.get("score", 0)
-    flow_state = str(inst_flow.get("state", "N/A")).upper()
-    
-    gamma_state = str(market_data.get("GAMMA_STATE", "UNKNOWN")).upper()
-    sew_status = str(market_data.get("SEW_STATUS", "N/A")).upper()
-    
+    flow_state = str(inst_flow.get("state", "N/A") or "N/A").upper()
+
+    gamma_state = str(market_data.get("GAMMA_STATE", "UNKNOWN") or "UNKNOWN").upper()
+    sew_status = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
+
     pos_z = market_data.get("SP500_POS_Z", 0)
+    try:
+        pos_z = float(pos_z)
+    except Exception:
+        pos_z = 0.0
+
+    try:
+        risk_budget = int(risk_budget)
+    except Exception:
+        risk_budget = 50
+
+    try:
+        flow_score = int(flow_score)
+    except Exception:
+        flow_score = 0
 
     action = "HOLD"
     size = "NONE"
     confidence = "LOW"
     reason = []
+
+    # -------------------------
+    # DEBUG
+    # -------------------------
+    print("[DEBUG][ACTION ENGINE]")
+    print(" phase =", phase)
+    print(" risk_budget =", risk_budget)
+    print(" flow_score =", flow_score)
+    print(" flow_state =", flow_state)
+    print(" gamma_state =", gamma_state)
+    print(" sew_status =", sew_status)
+    print(" pos_z =", pos_z)
 
     # -------------------------
     # 2. Priority 1: Shock
@@ -4710,19 +4736,19 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     # -------------------------
     # 3. Priority 2: Structure breakdown
     # -------------------------
-    elif gamma_state == "NEGATIVE" and flow_score <= 2:
+    elif "NEGATIVE" in gamma_state and flow_score <= 2:
         action = "EXIT"
         size = "FULL"
         confidence = "HIGH"
         reason.append("Gamma breakdown + weak flow")
 
     # -------------------------
-    # 4. ADD (확신 구간)
+    # 4. ADD
     # -------------------------
     elif (
         phase.startswith("RISK-ON")
         and flow_score >= 7
-        and gamma_state == "POSITIVE"
+        and "POSITIVE" in gamma_state
         and sew_status in ["STABLE", "WATCH"]
     ):
         action = "ADD"
@@ -4731,12 +4757,12 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Flow strong + structure aligned")
 
     # -------------------------
-    # 5. EARLY BUY (지금 너 상태)
+    # 5. EARLY BUY
     # -------------------------
     elif (
         phase.startswith("RISK-ON")
         and flow_score >= 5
-        and gamma_state in ["TRANSITION", "POSITIVE"]
+        and ("TRANSITION" in gamma_state or "POSITIVE" in gamma_state)
         and sew_status == "STABLE"
     ):
         action = "EARLY BUY"
@@ -4747,14 +4773,35 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     # -------------------------
     # 6. WAIT
     # -------------------------
-    elif phase.startswith("RISK-ON") and flow_score < 5:
+    elif phase.startswith("RISK-ON") and flow_score < 5 and sew_status == "STABLE":
         action = "WAIT"
         size = "0%"
         confidence = "LOW"
-        reason.append("Good environment but no flow")
+        reason.append("Good environment but no strong flow yet")
 
     # -------------------------
-    # 7. Overheat → Take Profit
+    # 7. RISK-OFF / neutral fallback
+    # -------------------------
+    elif phase.startswith("RISK-OFF"):
+        action = "REDUCE"
+        size = "DEFENSIVE"
+        confidence = "MEDIUM"
+        reason.append("Risk-off environment")
+
+    elif phase == "N/A":
+        action = "HOLD"
+        size = "NONE"
+        confidence = "LOW"
+        reason.append("Phase unavailable")
+
+    else:
+        action = "HOLD"
+        size = "NONE"
+        confidence = "LOW"
+        reason.append("No actionable alignment")
+
+    # -------------------------
+    # 8. Overheat override
     # -------------------------
     if pos_z >= 2.2 and flow_score < 5:
         action = "REDUCE"
@@ -4768,13 +4815,15 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "confidence": confidence,
         "reason": reason,
         "phase": phase,
+        "risk_budget": risk_budget,
         "flow_score": flow_score,
+        "flow_state": flow_state,
         "gamma_state": gamma_state,
         "sew_status": sew_status,
+        "pos_z": pos_z,
     }
 
     return result
-    
 
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
