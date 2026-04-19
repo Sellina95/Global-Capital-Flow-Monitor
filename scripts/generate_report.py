@@ -1384,7 +1384,7 @@ def generate_daily_report() -> None:
     # Wall-Street Sentiment Proxy
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
     market_data = attach_drift_data_layer(market_data) or market_data
-
+    gamma_text = pseudo_gamma_filter(market_data)
     # Regime change monitor
     regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
 
