@@ -7,10 +7,10 @@
 > **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
 
 ### 🎯 Exposure Framework
-- **Base Exposure (전략 기준): 69%**
-- **Final Exposure (실행 기준): 69%**
+- **Base Exposure (전략 기준): 85%**
+- **Final Exposure (실행 기준): 85%**
 
-- **Portfolio Stance:** HOLD / 69%
+- **Portfolio Stance:** INCREASE / 85%
 
 ### 📌 Interpretation
 → 구조와 리스크 오버라이드가 대체로 정렬된 상태입니다
@@ -264,11 +264,21 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **판정:** **NEUTRAL**
 - **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
 
-### 🧠 13) Narrative Engine (v3.1 + Drift)
+### 🧠 13) Narrative Engine (v2 + Risk Budget + Drift)
+- **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
+- **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Risk Budget:** 69
-- **Action:** HOLD
-- **Narrative:** 구조=Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.120 / US10YΔ -0.063 / 심리=NEUTRAL / 매크로=강한 우호 / 유동성=UP/MID / 크레딧=안정 / 드리프트=⚡ TREND FORMING (초기 흐름 감지) (NEUTRAL) (+3) / 수급=1.53 ⚠️ 다소 과열 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.120 / US10YΔ -0.063 (정상)
+- **Sentiment (Fear&Greed):** 60.42773809708038 (NEUTRAL)
+- **Credit Calm:** True
+- **Liquidity (NET_LIQ):** UP (MID)
+- **Phase:** RISK-ON (완화 기대·리스크 선호) (Cap: 85)
+- **Drift:** ⚡ TREND FORMING (초기 흐름 감지) / NEUTRAL / 🟢 EARLY FLOW WITHOUT SHOCK
+- **Drift Score:** 3
+
+- **🎯 Final Risk Action:** **INCREASE**
+- **Risk Budget (0~100):** **85**
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ TREND FORMING (초기 흐름 감지) (NEUTRAL) / 수급=1.53 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
@@ -283,12 +293,12 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **정의:** Risk Budget을 실제 익스포저로 변환 (Positions & Deadman Switch)
 - **추가 이유:** 수급 과열(POS_Z)이나 급격한 쏠림 발생 시 강제 시스템 셧다운
 
-- **Risk Budget:** 69 | **Phase Cap:** 85
+- **Risk Budget:** 85 | **Phase Cap:** 85
 - **VIX Level:** 17.48 (NORMAL) | **Change:** -2.56%
 - **Final Multiplier:** 1.00x (Vol x Pos)
 - **Slope Intensity:** 0.0000 (Stable)
 
-- **📊 Recommended Exposure:** **69%**
+- **📊 Recommended Exposure:** **85%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
@@ -339,27 +349,27 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - Financials: NEGATIVE_DIVERGENCE
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
-- **Total Target Exposure:** **69.0%** (from Filter 15)
+- **Total Target Exposure:** **85.0%** (from Filter 15)
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Industrials | +3.7 | ALIGNED | **24.1%** | STRONG BUY |
-| Technology | +4.5 | ALIGNED | **29.3%** | STRONG BUY |
-| Consumer Discretionary | +1.7 | ALIGNED | **11.1%** | ACCUMULATE |
-| Financials | +1 | NEGATIVE_DIVERGENCE | **4.6%** | HOLD |
-| **Cash & Hedge** | - | - | **31.0%** | DEFENSIVE |
+| Industrials | +3.7 | ALIGNED | **29.7%** | STRONG BUY |
+| Technology | +4.5 | ALIGNED | **36.1%** | STRONG BUY |
+| Consumer Discretionary | +1.7 | ALIGNED | **13.6%** | ACCUMULATE |
+| Financials | +1 | NEGATIVE_DIVERGENCE | **5.6%** | HOLD |
+| **Cash & Hedge** | - | - | **15.0%** | DEFENSIVE |
 
-- **Allocation Check:** Sector Weights + Cash = **100.1%**
+- **Allocation Check:** Sector Weights + Cash = **100.0%**
 - **Divergence Adjustment:** Financials penalized in weight sizing
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Industrials | XLI | 24.1% | PRIMARY |
-| Technology | XLK | 29.3% | PRIMARY |
-| Consumer Discretionary | XLY | 11.1% | ADD |
-| Financials | XLF | 4.6% | SMALL |
+| Industrials | XLI | 29.7% | PRIMARY |
+| Technology | XLK | 36.1% | PRIMARY |
+| Consumer Discretionary | XLY | 13.6% | ADD |
+| Financials | XLF | 5.6% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -373,9 +383,9 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - Unscreened speculative exposure
 
 ## 🔗 Transmission Map (Macro → Industry → Company)
-- **1-Line Conclusion:** 퀄리티 중심 차별화 + 베타 확장 가능 → **High operating leverage / cyclicals / growth optionality** 선호
+- **1-Line Conclusion:** 성장/고베타 우위 + 베타 확장 가능 → **High operating leverage / cyclicals / growth optionality** 선호
 
-- **Policy → Valuation:** 할인율 방향성 불명확 → 퀄리티 중심 차별화
+- **Policy → Valuation:** 할인율↓(멀티플 확장) → 성장/고베타 우위
 - **Liquidity → Risk Budget:** 유동성 공급(리스크 허용↑) → 베타 확장 가능
 - **Credit → Balance Sheet:** 크레딧 안정 → 시스템 리스크 제한
 
@@ -391,8 +401,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.4649994968560816
-- **Z-Score (5d):** 1.0342155163365685
+- **Z-Score (1d):** 1.4649990602811471
+- **Z-Score (5d):** 1.034216121763981
 
 ### EEM
 - **Crash?** False
@@ -409,8 +419,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391265724409853
-- **Z-Score (5d):** 1.1100981067613784
+- **Z-Score (1d):** 1.5391267247618508
+- **Z-Score (5d):** 1.1100981392930533
 
 ### EWJ
 - **Crash?** False
