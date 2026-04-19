@@ -209,6 +209,12 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
     # 저장
     market_data["DRIFT_SCORE"] = score
     market_data["DRIFT_STATE"] = state
+    market_data["DRIFT"] = {
+        "score": score,
+        "state": state,
+        "label": state,
+        "combo_signal": "NONE",
+    }
 
     return "\n".join(lines)
 # -------------------------------------------------------------------
@@ -2979,11 +2985,12 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0)) or 0.0
 
     # 🔥 Drift
-    drift = market_data.get("DRIFT", {})
-    drift_score = drift.get("score", 0)
-    drift_state = drift.get("state", "N/A")
-    drift_label = drift.get("label", "N/A")
+    drift = market_data.get("DRIFT", {}) or {}
 
+    drift_score = drift.get("score", market_data.get("DRIFT_SCORE", 0))
+    drift_state = str(drift.get("state", market_data.get("DRIFT_STATE", "N/A")) or "N/A")
+    drift_label = str(drift.get("label", drift_state) or drift_state)
+    combo_signal = str(drift.get("combo_signal", "NONE") or "NONE")
     # -----------------------------
     # 2️⃣ Base Budget
     # -----------------------------
