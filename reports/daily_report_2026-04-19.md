@@ -167,10 +167,12 @@
 - **GOLD:** 15m=0.4735823320330512 / 30m=0.2588883841432077 / 1H=0.08409594208287352 / 4H=-0.19226636006851594 / 1D=1.9684916043560596 / 5D=2.471706623958414
 
 - **Drift Score:** 3
-- **State:** **⚡ TREND FORMING**
+- **State:** **⚡ TREND FORMING (초기 흐름 감지)**
+- **Label:** NEUTRAL
+- **SEW Combo Signal:** 🟢 EARLY FLOW WITHOUT SHOCK
 
 - **Drivers:**
-  - WTI 1D downside
+  - WTI 1D downside extension
   - SPY 1D continuation
   - Gold strength
 
@@ -193,7 +195,7 @@ No significant sector-level correlation break detected.
 - **Interpretation:** 흔적은 있으나 확신은 이르다
 - **Action Bias:** **MONITOR**
 
-- **Drift:** ⚡ TREND FORMING / ⚡ TREND FORMING / NONE
+- **Drift:** ⚡ TREND FORMING (초기 흐름 감지) / NEUTRAL / 🟢 EARLY FLOW WITHOUT SHOCK
 - **Gamma:** UNKNOWN / NONE
 - **SEW:** STABLE / NORMAL
 - **Positioning (POS_Z):** 1.53
@@ -249,7 +251,7 @@ No significant sector-level correlation break detected.
 - **Bias:** 초기 방향성 형성 / 감마 전환 구간
 - **Strategy:** 포지션 확대 신중 / 초기 진입 구간
 
-- **Drift Score:** 3 (⚡ TREND FORMING)
+- **Drift Score:** 3 (⚡ TREND FORMING (초기 흐름 감지))
 - **VIX:** 17.479999542236328
 - **SEW:** STABLE / NORMAL
 
@@ -292,7 +294,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **Risk Budget:** 69
 - **Action:** HOLD
-- **Narrative:** 구조=Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.120 / US10YΔ -0.063 / 심리=NEUTRAL / 매크로=강한 우호 / 유동성=UP/MID / 크레딧=안정 / 드리프트=⚡ TREND FORMING (⚡ TREND FORMING) (+3) / 수급=1.53 ⚠️ 다소 과열 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Narrative:** 구조=Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.120 / US10YΔ -0.063 / 심리=NEUTRAL / 매크로=강한 우호 / 유동성=UP/MID / 크레딧=안정 / 드리프트=⚡ TREND FORMING (초기 흐름 감지) (NEUTRAL) (+3) / 수급=1.53 ⚠️ 다소 과열 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
@@ -407,8 +409,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.4649990588483184
-- **Z-Score (5d):** 1.0342154335477431
+- **Z-Score (1d):** 1.4649994968560816
+- **Z-Score (5d):** 1.0342155163365685
 
 ### EEM
 - **Crash?** False
@@ -425,8 +427,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391266347816683
-- **Z-Score (5d):** 1.1100984237667042
+- **Z-Score (1d):** 1.5391272040399357
+- **Z-Score (5d):** 1.1100982800263728
 
 ### EWJ
 - **Crash?** False
