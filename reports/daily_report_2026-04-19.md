@@ -187,18 +187,19 @@ No significant sector-level correlation break detected.
 ### 🏦 Institutional Flow Engine (v1)
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
-- **Flow Score:** 2
-- **Flow State:** **NO CLEAR FLOW**
-- **Confidence:** **LOW**
-- **Interpretation:** 기관성 축적 흔적 불충분
-- **Action Bias:** **IGNORE**
+- **Flow Score:** 4
+- **Flow State:** **👀 EARLY TRACE**
+- **Confidence:** **MEDIUM**
+- **Interpretation:** 흔적은 있으나 확신은 이르다
+- **Action Bias:** **MONITOR**
 
-- **Drift:** N/A / N/A / NONE
+- **Drift:** ⚡ TREND FORMING / ⚡ TREND FORMING / NONE
 - **Gamma:** UNKNOWN / NONE
 - **SEW:** STABLE / NORMAL
 - **Positioning (POS_Z):** 1.53
 
 - **Drivers:**
+  - Drift building
   - Short-horizon pre-move cluster
   - No shock yet
   - Positioning somewhat stretched
@@ -291,7 +292,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **Risk Budget:** 69
 - **Action:** HOLD
-- **Narrative:** 구조=Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.120 / US10YΔ -0.063 / 심리=NEUTRAL / 매크로=강한 우호 / 유동성=UP/MID / 크레딧=안정 / 드리프트=N/A (N/A) (+0) / 수급=1.53 ⚠️ 다소 과열 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Narrative:** 구조=Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.120 / US10YΔ -0.063 / 심리=NEUTRAL / 매크로=강한 우호 / 유동성=UP/MID / 크레딧=안정 / 드리프트=⚡ TREND FORMING (⚡ TREND FORMING) (+3) / 수급=1.53 ⚠️ 다소 과열 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
@@ -406,8 +407,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.4649990602811471
-- **Z-Score (5d):** 1.034216121763981
+- **Z-Score (1d):** 1.4649990588483184
+- **Z-Score (5d):** 1.0342154335477431
 
 ### EEM
 - **Crash?** False
@@ -424,8 +425,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391263266370139
-- **Z-Score (5d):** 1.1100976554845727
+- **Z-Score (1d):** 1.5391266347816683
+- **Z-Score (5d):** 1.1100984237667042
 
 ### EWJ
 - **Crash?** False
