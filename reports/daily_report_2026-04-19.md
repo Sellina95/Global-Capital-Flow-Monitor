@@ -22,6 +22,11 @@
 - **[15번 데드맨]:** ✅ PASS
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
+### 🎯 Final Action Engine
+- **Action:** HOLD
+- **Size:** NONE
+- **Confidence:** LOW
+
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **HOLD**
 - **Final Exposure:** **69%**
@@ -410,8 +415,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.4649990602811471
-- **Z-Score (5d):** 1.034216121763981
+- **Z-Score (1d):** 1.4649990588483184
+- **Z-Score (5d):** 1.0342154335477431
 
 ### EEM
 - **Crash?** False
@@ -428,8 +433,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391272040399357
-- **Z-Score (5d):** 1.1100982800263728
+- **Z-Score (1d):** 1.5391265724409853
+- **Z-Score (5d):** 1.1100981067613784
 
 ### EWJ
 - **Crash?** False
