@@ -10,7 +10,7 @@
 - **Base Exposure (전략 기준): 69%**
 - **Final Exposure (실행 기준): 69%**
 
-- **War Room Override:** HOLD / 69%
+- **Portfolio Stance:** HOLD / 69%
 
 ### 📌 Interpretation
 → 구조와 리스크 오버라이드가 대체로 정렬된 상태입니다
@@ -42,26 +42,9 @@
 - **달러 인덱스**: 98.100  (-0.12% vs 98.220)
 - **WTI 유가**: 82.590  (-12.78% vs 94.690)
 - **변동성 지수 (VIX)**: 17.480  (-2.56% vs 17.940)
-- **원/달러 환율**: 1465.680  (-0.57% vs 1474.060)
+- **원/달러 환율**: 1477.920  (+0.26% vs 1474.060)
 
 ---
-
-## 🗺️ Scenario Framework (Base / Bull / Bear)
-
-- **Strategic View:** HOLD (69%) | **Execution View:** HOLD (69%)
-- **Context:** phase=RISK-ON (완화 기대·리스크 선호) / liquidity=N/A-N/A / credit_calm=None / geo=NORMAL
-
-### 🔹 Base Case
-- 조건: 현재 Execution View=HOLD 유지 / SEW=STABLE / Divergence=ALIGNED / 추가 경고 신호 없음
-- 전략: 실행 노출 69% 유지, 전략 기준과 실행 기준이 정렬된 상태에서 운용
-
-### 🔼 Bull Case
-- 조건: Warning Score ≤ 1 / SEW: STABLE 유지 / Divergence: ALIGNED 유지 / NET_LIQ 우호 / 크레딧 안정 지속
-- 전략: 실행 노출 69% 유지 또는 추가 확장 검토, 성장/리스크 자산 베타 우호
-
-### 🔻 Bear Case
-- 조건: SEW WATCH/ALERT/DEADMAN 재발 / HY OAS 4% 상회 또는 급등 / VIX 22 이상 또는 급등 전환 / 상관관계 붕괴 심화 / Divergence 비정렬 전환
-- 전략: 실행 노출 69%에서 추가 축소, 방어/현금 비중 확대 및 고베타 자산 감축
 
 ---
 
@@ -135,7 +118,7 @@
 - DXY **(Mild, -0.12%)** → 달러 약세/리스크 선호
 - WTI **(Strong, -12.78%)** → 물가 부담 완화
 - VIX **(Strong, -2.56%)** → 심리 개선/리스크온
-- 원/달러(USDKRW) **(Strong, -0.57%)** → 원화 강세/수급 개선
+- 원/달러(USDKRW) **(Clear, +0.26%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Mild, +0.37%)** → 크레딧 위험선호↑
 - LQD (IG Bond ETF) **(Clear, +0.56%)** → 우량채 강세(리스크오프 성향)
 
@@ -400,8 +383,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.4649994968560816
-- **Z-Score (5d):** 1.0342155163365685
+- **Z-Score (1d):** 1.4649990602811471
+- **Z-Score (5d):** 1.034216121763981
 
 ### EEM
 - **Crash?** False
@@ -418,8 +401,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391267247618508
-- **Z-Score (5d):** 1.1100981392930533
+- **Z-Score (1d):** 1.5391265724409853
+- **Z-Score (5d):** 1.1100981067613784
 
 ### EWJ
 - **Crash?** False
