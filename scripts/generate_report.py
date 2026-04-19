@@ -1545,21 +1545,6 @@ def generate_daily_report() -> None:
         "geo_level": geo_level,
     }
 
-    # -------------------------
-    # 11.5) Final Action Engine 계산
-    # -------------------------
-    print("[DEBUG][ACTION INPUT] FINAL_STATE =", market_data.get("FINAL_STATE", {}))
-    print("[DEBUG][ACTION INPUT] INSTITUTIONAL_FLOW =", market_data.get("INSTITUTIONAL_FLOW", {}))
-    print("[DEBUG][ACTION INPUT] GAMMA_STATE =", market_data.get("GAMMA_STATE"))
-    print("[DEBUG][ACTION INPUT] SEW_STATUS =", market_data.get("SEW_STATUS"))
-    action_result = final_action_engine(market_data)
-    market_data["FINAL_ACTION"] = action_result
-    print("[DEBUG] FINAL_ACTION:", action_result)
-
-    final_action_name = action_result.get("action", "N/A")
-    final_action_size = action_result.get("size", "N/A")
-    final_action_confidence = action_result.get("confidence", "N/A")
-    final_action_reasons = action_result.get("reason", [])
 
     # -------------------------
     # 12) Final Decision 계산
@@ -1575,7 +1560,35 @@ def generate_daily_report() -> None:
     print("[DEBUG][SEW FINAL CHECK]")
     print("SEW_STATUS =", market_data.get("SEW_STATUS"))
     print("SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
-
+    # -------------------------
+    # -------------------------
+    # 12) Final Decision 계산
+    # -------------------------
+    final_decision_text = war_room_final_decision_filter(market_data)
+    final_decision_state = market_data.get("FINAL_DECISION", {}) or {}
+    print("[DEBUG] FINAL_DECISION:", final_decision_state)
+    
+    base_exposure_display = int(final_decision_state.get("base_exposure", recommended_exposure))
+    final_exposure_display = int(final_decision_state.get("exposure", recommended_exposure))
+    final_action_display = str(final_decision_state.get("action", "HOLD")).upper()
+    
+    print("[DEBUG][SEW FINAL CHECK]")
+    print("SEW_STATUS =", market_data.get("SEW_STATUS"))
+    print("SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
+    
+    # -------------------------
+    # 12.5) Final Action Engine 계산 (🔥 여기 단 한번)
+    # -------------------------
+    action_result = final_action_engine(market_data)
+    market_data["FINAL_ACTION"] = action_result
+    
+    print("[DEBUG] FINAL_ACTION:", action_result)
+    
+    final_action_name = action_result.get("action", "N/A")
+    final_action_size = action_result.get("size", "N/A")
+    final_action_confidence = action_result.get("confidence", "N/A")
+    final_action_reasons = action_result.get("reason", [])
+    
     # -------------------------
     # 13) Summary / Decision blocks 생성
     # -------------------------
