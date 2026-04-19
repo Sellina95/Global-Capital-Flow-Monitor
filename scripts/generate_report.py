@@ -1673,7 +1673,7 @@ def generate_daily_report() -> None:
     lines.append(f"- **Base Exposure (전략 기준): {base_exposure_display}%**")
     lines.append(f"- **Final Exposure (실행 기준): {final_exposure_display}%**")
     lines.append("")
-    lines.append(f"- **War Room Override:** {final_action_display} / {final_exposure_display}%")
+    lines.append(f"- **Portfolio Stance:** {final_action_display} / {final_exposure_display}%")
     lines.append("")
 
     lines.append("### 📌 Interpretation")
