@@ -2568,6 +2568,102 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
+def pseudo_gamma_filter(market_data: Dict[str, Any]) -> str:
+    """
+    7.3) Pseudo Gamma Filter (v1)
+
+    목적:
+    - 옵션 데이터 없이 시장의 감마 상태 추론
+    - Drift + VIX + SEW 기반 구조 판단
+
+    Output:
+    - POSITIVE / NEGATIVE / TRANSITION
+    """
+
+    drift_score = market_data.get("DRIFT_SCORE", 0)
+    drift_state = market_data.get("DRIFT_STATE", "N/A")
+
+    vix = market_data.get("VIX", {}) or {}
+    vix_level = vix.get("today")
+
+    sew_state = market_data.get("SEW_STATE", "N/A")
+
+    gamma_state = "UNKNOWN"
+    gamma_bias = ""
+    strategy = ""
+
+    # -------------------------
+    # 1️⃣ Positive Gamma
+    # -------------------------
+    if vix_level is not None and vix_level < 18:
+        if drift_score <= 1:
+            gamma_state = "🟢 POSITIVE GAMMA"
+            gamma_bias = "Mean-reverting / 딜러가 변동성 흡수"
+            strategy = "눌림 매수 / 추격 금지"
+
+    # -------------------------
+    # 2️⃣ Negative Gamma
+    # -------------------------
+    if vix_level is not None and vix_level >= 20:
+        if drift_score >= 3:
+            gamma_state = "🔴 NEGATIVE GAMMA"
+            gamma_bias = "Trend acceleration / 변동성 확대"
+            strategy = "추세 추종 / 빠른 대응"
+
+    # -------------------------
+    # 3️⃣ Transition Zone (핵심)
+    # -------------------------
+    if gamma_state == "UNKNOWN":
+        if drift_score >= 2:
+            gamma_state = "🟡 TRANSITION"
+            gamma_bias = "초기 방향성 형성 / 감마 전환 구간"
+            strategy = "포지션 확대 신중 / 초기 진입 구간"
+        else:
+            gamma_state = "🟢 POSITIVE GAMMA (WEAK)"
+            gamma_bias = "안정적 시장"
+            strategy = "과도한 베팅 금지"
+
+    # -------------------------
+    # 4️⃣ SEW 결합 (리얼 핵심)
+    # -------------------------
+    combo_signal = ""
+
+    if sew_state in ["ALERT", "CRISIS"]:
+        if "NEGATIVE" in gamma_state:
+            combo_signal = "🚨 SHOCK + NEGATIVE GAMMA → 폭발 구간"
+        else:
+            combo_signal = "⚠️ SHOCK but gamma unclear"
+    else:
+        if "TRANSITION" in gamma_state:
+            combo_signal = "🟢 EARLY FLOW WITHOUT SHOCK"
+        elif "POSITIVE" in gamma_state:
+            combo_signal = "🟢 STABLE FLOW"
+        else:
+            combo_signal = "🔴 TREND ACCELERATION"
+
+    # -------------------------
+    # Output
+    # -------------------------
+    lines = []
+    lines.append("### ⚡ 7.3) Pseudo Gamma Filter")
+    lines.append("- **정의:** 옵션 데이터 없이 시장의 감마 상태 추론")
+    lines.append("")
+
+    lines.append(f"- **Gamma State:** {gamma_state}")
+    lines.append(f"- **Bias:** {gamma_bias}")
+    lines.append(f"- **Strategy:** {strategy}")
+    lines.append("")
+    lines.append(f"- **Drift Score:** {drift_score} ({drift_state})")
+    lines.append(f"- **VIX:** {vix_level}")
+    lines.append(f"- **SEW:** {sew_state}")
+    lines.append("")
+    lines.append(f"- **🚀 Combo Signal:** {combo_signal}")
+
+    market_data["GAMMA_STATE"] = gamma_state
+    market_data["GAMMA_COMBO"] = combo_signal
+
+    return "\n".join(lines)
+
 # =========================
 # 8) Incentive Filter
 # =========================
