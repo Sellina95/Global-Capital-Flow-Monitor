@@ -3210,6 +3210,23 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         action = "HOLD"
 
     # -----------------------------
+    # 🔥 10.5) FINAL_STATE 생성 (핵심)
+    # -----------------------------
+    final_state = {
+        "phase": phase,
+        "risk_budget": budget,
+        "risk_action": action,
+        "liquidity_dir": liq_dir_tag,
+        "liquidity_level_bucket": liq_level_bucket,
+        "credit_calm": credit_calm,
+    }
+    
+    market_data["FINAL_STATE"] = final_state
+
+# 🔥 디버그 (딱 이거만)
+    print("[DEBUG][13 FINAL_STATE CREATED]", final_state)
+
+    # -----------------------------
     # 11️⃣ Narrative
     # -----------------------------
     narrative = (
