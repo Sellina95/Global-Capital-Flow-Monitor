@@ -1382,10 +1382,20 @@ def generate_daily_report() -> None:
     # Cosine Similarity는 country risk 이후
     market_data = attach_geo_similarity_layer(market_data) or market_data
 
-    # Wall-Street Sentiment Proxy
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
     market_data = attach_drift_data_layer(market_data) or market_data
+    
+    print("[DEBUG][SEW CHECK] keys containing SEW:")
+    for k in market_data.keys():
+        if "SEW" in str(k).upper():
+            print(" -", k, "=", market_data.get(k))
+    
+    print("[DEBUG][SEW CHECK] SEW_STATE =", market_data.get("SEW_STATE"))
+    print("[DEBUG][SEW CHECK] SEW_STATUS =", market_data.get("SEW_STATUS"))
+    print("[DEBUG][SEW CHECK] SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
+    
     gamma_text = pseudo_gamma_filter(market_data)
+    
     # Regime change monitor
     regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
 
