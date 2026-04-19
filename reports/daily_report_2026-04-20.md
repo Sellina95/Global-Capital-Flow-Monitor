@@ -10,6 +10,8 @@
 - **Base Exposure (전략 기준): 69%**
 - **Final Exposure (실행 기준): 69%**
 
+- **War Room Override:** HOLD / 69%
+
 ### 📌 Interpretation
 → 구조와 리스크 오버라이드가 대체로 정렬된 상태입니다
 → 전략 기준 노출 유지 가능
@@ -29,15 +31,6 @@
 - **Reason:**
   - Flow building + gamma turning + no shock
 
-## 🎯 Final Decision (War Room Override)
-- **Final Action:** **HOLD**
-- **Final Exposure:** **69%**
-- **Base Context:** phase=RISK-ON (완화 기대·리스크 선호) / narrative=HOLD / base_exposure=69%
-- **SEW:** STABLE / NORMAL
-- **Divergence:** ALIGNED / **STAY (포지션 유지)**
-- **Warning Score:** 0 (No warning)
-- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=HOLD 반영
-
 ### 🚩 Market Regime Status
 - **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
 
@@ -52,16 +45,6 @@
 - **원/달러 환율**: 1465.680  (-0.57% vs 1474.060)
 
 ---
-
-## 🧭 So What? (Decision Layer)
-- **Strategic View:** **HOLD** *(base exposure: 69%)*
-- **Execution View:** **HOLD** *(final exposure: 69%)*
-- **Context:** phase=RISK-ON (완화 기대·리스크 선호) / liquidity=N/A-N/A / credit_calm=None / geo=NORMAL
-- **SEW / Divergence:** STABLE / NORMAL | ALIGNED / **STAY (포지션 유지)**
-- **Warning Score:** 0 (No warning)
-- **Do:** 노출은 유지하되, 베타 확대보다 선별적 포지셔닝(퀄리티) 유지
-- **Don't:** 무분별한 테마 추격; 리스크 관리 없는 집중 포지션
-- **Triggers:** NET_LIQ 추가 하락/LOW 고착 시 노출 축소 준비
 
 ## 🗺️ Scenario Framework (Base / Bull / Bear)
 
@@ -435,8 +418,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391266347816683
-- **Z-Score (5d):** 1.1100984237667042
+- **Z-Score (1d):** 1.5391267247618508
+- **Z-Score (5d):** 1.1100981392930533
 
 ### EWJ
 - **Crash?** False
