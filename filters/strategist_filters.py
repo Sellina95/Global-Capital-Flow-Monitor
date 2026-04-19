@@ -4510,7 +4510,7 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
 
     # 1. 예시/테스트용 코드
-    sections.append("Some commentary here")
+
     if market_data.get("some_key"):
         sections.append(str({"key": "value"}))
 
