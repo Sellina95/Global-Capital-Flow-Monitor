@@ -1385,14 +1385,7 @@ def generate_daily_report() -> None:
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
     market_data = attach_drift_data_layer(market_data) or market_data
     
-    print("[DEBUG][SEW CHECK] keys containing SEW:")
-    for k in market_data.keys():
-        if "SEW" in str(k).upper():
-            print(" -", k, "=", market_data.get(k))
-    
-    print("[DEBUG][SEW CHECK] SEW_STATE =", market_data.get("SEW_STATE"))
-    print("[DEBUG][SEW CHECK] SEW_STATUS =", market_data.get("SEW_STATUS"))
-    print("[DEBUG][SEW CHECK] SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
+
     
 
     # Regime change monitor
@@ -1561,7 +1554,14 @@ def generate_daily_report() -> None:
     # -------------------------
     market_data["SEW_STATUS"] = final_decision_state.get("sew_status")
     market_data["SEW_EVENT_TYPE"] = final_decision_state.get("sew_event")
+
+    # 🔥 여기로 DEBUG 이동
+
+    print("[DEBUG][SEW FINAL CHECK]")
     
+    print("SEW_STATUS =", market_data.get("SEW_STATUS"))
+    
+    print("SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
     gamma_text = pseudo_gamma_filter(market_data)
     # -------------------------
     # 13) 이제서야 Summary / Decision blocks 생성
