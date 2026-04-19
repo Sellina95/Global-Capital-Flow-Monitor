@@ -27,7 +27,7 @@
 - **Size:** NONE
 - **Confidence:** LOW
 - **Reason:**
-  - Phase unavailable
+  - No actionable alignment
 
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **HOLD**
@@ -417,8 +417,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.464991739768457
-- **Z-Score (5d):** 1.0342141182826374
+- **Z-Score (1d):** 1.4649914327269966
+- **Z-Score (5d):** 1.0342127177371345
 
 ### EEM
 - **Crash?** False
@@ -435,8 +435,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391266347816683
-- **Z-Score (5d):** 1.1100984237667042
+- **Z-Score (1d):** 1.5391265724409853
+- **Z-Score (5d):** 1.1100981067613784
 
 ### EWJ
 - **Crash?** False
