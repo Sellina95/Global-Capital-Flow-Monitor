@@ -1548,6 +1548,10 @@ def generate_daily_report() -> None:
     # -------------------------
     # 11.5) Final Action Engine 계산
     # -------------------------
+    print("[DEBUG][ACTION INPUT] FINAL_STATE =", market_data.get("FINAL_STATE", {}))
+    print("[DEBUG][ACTION INPUT] INSTITUTIONAL_FLOW =", market_data.get("INSTITUTIONAL_FLOW", {}))
+    print("[DEBUG][ACTION INPUT] GAMMA_STATE =", market_data.get("GAMMA_STATE"))
+    print("[DEBUG][ACTION INPUT] SEW_STATUS =", market_data.get("SEW_STATUS"))
     action_result = final_action_engine(market_data)
     market_data["FINAL_ACTION"] = action_result
     print("[DEBUG] FINAL_ACTION:", action_result)
