@@ -75,7 +75,6 @@
 
 ---
 
-Some commentary here
 ## 🧭 Strategist Commentary (Seyeon’s Filters)
 
 ### 🧩 1) Market Regime Filter
@@ -197,7 +196,7 @@ No significant sector-level correlation break detected.
 
 - **Drift Score:** 4 (🔥 STRONG TREND (방향성 자금 흐름 감지))
 - **VIX:** 17.479999542236328
-- **SEW:** N/A / N/A
+- **SEW:** STABLE / NORMAL
 
 - **🚀 Combo Signal:** 🟢 EARLY FLOW WITHOUT SHOCK
 
@@ -391,8 +390,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.4649990602811471
-- **Z-Score (5d):** 1.034216121763981
+- **Z-Score (1d):** 1.464991739768457
+- **Z-Score (5d):** 1.0342141182826374
 
 ### EEM
 - **Crash?** False
@@ -409,8 +408,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391263266370139
-- **Z-Score (5d):** 1.1100976554845727
+- **Z-Score (1d):** 1.5391267247618508
+- **Z-Score (5d):** 1.1100981392930533
 
 ### EWJ
 - **Crash?** False
