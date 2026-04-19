@@ -7,10 +7,10 @@
 > **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
 
 ### 🎯 Exposure Framework
-- **Base Exposure (전략 기준): 85%**
-- **Final Exposure (실행 기준): 85%**
+- **Base Exposure (전략 기준): 74%**
+- **Final Exposure (실행 기준): 74%**
 
-- **Portfolio Stance:** INCREASE / 85%
+- **Portfolio Stance:** INCREASE / 74%
 
 ### 📌 Interpretation
 → 구조와 리스크 오버라이드가 대체로 정렬된 상태입니다
@@ -277,8 +277,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Drift Score:** 3
 
 - **🎯 Final Risk Action:** **INCREASE**
-- **Risk Budget (0~100):** **85**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ TREND FORMING (초기 흐름 감지) (NEUTRAL) / 수급=1.53 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Risk Budget (0~100):** **74**
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ TREND FORMING (초기 흐름 감지) (NEUTRAL) / 수급=1.53 ⚠️ 수급 다소 과열 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
@@ -293,12 +293,12 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **정의:** Risk Budget을 실제 익스포저로 변환 (Positions & Deadman Switch)
 - **추가 이유:** 수급 과열(POS_Z)이나 급격한 쏠림 발생 시 강제 시스템 셧다운
 
-- **Risk Budget:** 85 | **Phase Cap:** 85
+- **Risk Budget:** 74 | **Phase Cap:** 85
 - **VIX Level:** 17.48 (NORMAL) | **Change:** -2.56%
 - **Final Multiplier:** 1.00x (Vol x Pos)
 - **Slope Intensity:** 0.0000 (Stable)
 
-- **📊 Recommended Exposure:** **85%**
+- **📊 Recommended Exposure:** **74%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
@@ -349,15 +349,15 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - Financials: NEGATIVE_DIVERGENCE
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
-- **Total Target Exposure:** **85.0%** (from Filter 15)
+- **Total Target Exposure:** **74.0%** (from Filter 15)
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Industrials | +3.7 | ALIGNED | **29.7%** | STRONG BUY |
-| Technology | +4.5 | ALIGNED | **36.1%** | STRONG BUY |
-| Consumer Discretionary | +1.7 | ALIGNED | **13.6%** | ACCUMULATE |
-| Financials | +1 | NEGATIVE_DIVERGENCE | **5.6%** | HOLD |
-| **Cash & Hedge** | - | - | **15.0%** | DEFENSIVE |
+| Industrials | +3.7 | ALIGNED | **25.8%** | STRONG BUY |
+| Technology | +4.5 | ALIGNED | **31.4%** | STRONG BUY |
+| Consumer Discretionary | +1.7 | ALIGNED | **11.9%** | ACCUMULATE |
+| Financials | +1 | NEGATIVE_DIVERGENCE | **4.9%** | HOLD |
+| **Cash & Hedge** | - | - | **26.0%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 - **Divergence Adjustment:** Financials penalized in weight sizing
@@ -366,10 +366,10 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Industrials | XLI | 29.7% | PRIMARY |
-| Technology | XLK | 36.1% | PRIMARY |
-| Consumer Discretionary | XLY | 13.6% | ADD |
-| Financials | XLF | 5.6% | SMALL |
+| Industrials | XLI | 25.8% | PRIMARY |
+| Technology | XLK | 31.4% | PRIMARY |
+| Consumer Discretionary | XLY | 11.9% | ADD |
+| Financials | XLF | 4.9% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -401,8 +401,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.4649990602811471
-- **Z-Score (5d):** 1.034216121763981
+- **Z-Score (1d):** 1.46499194466929
+- **Z-Score (5d):** 1.0342140081515485
 
 ### EEM
 - **Crash?** False
@@ -419,8 +419,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391267247618508
-- **Z-Score (5d):** 1.1100981392930533
+- **Z-Score (1d):** 1.5391265724409853
+- **Z-Score (5d):** 1.1100981067613784
 
 ### EWJ
 - **Crash?** False
