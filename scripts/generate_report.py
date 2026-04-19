@@ -1422,15 +1422,41 @@ def generate_daily_report() -> None:
     generate_war_room_history()
 
     # -------------------------
-    # 5) Commentary block 먼저 생성
+    # 🔥 5) SEW 먼저 로드 (핵심 수정)
+    # -------------------------
+    sew_state = get_sew_state()
+    sew_summary = sew_state["summary"]
+    sew_status = sew_state["status"]
+    sew_event_type = sew_state["event_type"]
+    sew_deadman = sew_state["deadman"]
+    sew_spike_count = sew_state["spike_count"]
+    sew_extreme_count = sew_state["extreme_count"]
+    sew_deadman_reason = sew_state.get("deadman_reason", "")
+    sew_event_interp = interpret_sew_event(sew_event_type)
+    
+    # 기존 구조 유지
+    market_data["SEW_STATE"] = {
+        "status": sew_status,
+        "summary": sew_summary,
+        "event_type": sew_event_type,
+        "deadman": sew_deadman,
+        "deadman_reason": sew_deadman_reason,
+    }
+    
+    # 🔥 핵심: pseudo_gamma_filter용 flat key
+    market_data["SEW_STATUS"] = sew_status
+    market_data["SEW_EVENT_TYPE"] = sew_event_type
+    
+    # -------------------------
+    # 🔥 6) Commentary block 생성 (SEW 반영된 상태)
     # -------------------------
     commentary_block = build_strategist_commentary(market_data)
-
+    
     # -------------------------
-    # 6) Country ETF risk block
+    # 7) Country ETF risk block
     # -------------------------
     country_risk_keys = sorted([k for k in market_data.keys() if k.startswith("COUNTRY_RISK_")])
-
+    
     country_risk_lines = []
     if country_risk_keys:
         country_risk_lines.append("## 🌐 Country ETF Risk Monitor")
@@ -1448,23 +1474,23 @@ def generate_daily_report() -> None:
         country_risk_lines.append("")
         country_risk_lines.append("- No country ETF risk data available.")
         country_risk_lines.append("")
-
+    
     # -------------------------
-    # 7) Strategic War Room inputs
+    # 8) Strategic War Room inputs
     # -------------------------
     div_full_text = divergence_monitor_filter(market_data)
     div_status = "N/A"
     div_action = "N/A"
-
+    
     for line in div_full_text.split("\n"):
         if "**Status:**" in line:
             div_status = line.split("**Status:**")[-1].strip()
         if "**Action Signal:**" in line:
             div_action = line.split("**Action Signal:**")[-1].strip()
-
+    
     recommended_exposure = 100
     is_deadman_activated = False
-
+    
     for line in commentary_block.split("\n"):
         if "Recommended Exposure:" in line:
             try:
@@ -1473,27 +1499,6 @@ def generate_daily_report() -> None:
                 pass
         if "DEAD MAN'S SWITCH ACTIVATED" in line:
             is_deadman_activated = True
-
-    # -------------------------
-    # 8) SEW 상태 로드
-    # -------------------------
-    sew_state = get_sew_state()
-    sew_summary = sew_state["summary"]
-    sew_status = sew_state["status"]
-    sew_event_type = sew_state["event_type"]
-    sew_deadman = sew_state["deadman"]
-    sew_spike_count = sew_state["spike_count"]
-    sew_extreme_count = sew_state["extreme_count"]
-    sew_deadman_reason = sew_state.get("deadman_reason", "")
-    sew_event_interp = interpret_sew_event(sew_event_type)
-
-    market_data["SEW_STATE"] = {
-    "status": sew_status,
-    "summary": sew_summary,
-    "event_type": sew_event_type,
-    "deadman": sew_deadman,
-    "deadman_reason": sew_deadman_reason,
-}
 
     # -------------------------
     # 9) Divergence state 정제
