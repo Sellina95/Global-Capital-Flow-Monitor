@@ -309,49 +309,57 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 ### 🏭 18) Sector Allocation Engine (v3.2)
 
-**Context:** phase=N/A / T10Y2Y=0.55 (MODERATE STEEP) / VIX=17.48 (VOLATILITY NORMAL) / liquidity=N/A-N/A / credit=True
+**Context:** phase=RISK-ON (완화 기대·리스크 선호) / T10Y2Y=0.55 (MODERATE STEEP) / VIX=17.48 (VOLATILITY NORMAL) / liquidity=UP-MID / credit=True
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > MOM
 
-**Overweight:** Financials, Industrials, Technology
+**Overweight:** Industrials, Technology, Consumer Discretionary, Financials
 
-**Underweight:** Energy
+**Underweight:** Energy, Utilities
 
 **Scoreboard:**
-- Financials: +1  (+2 CURVE, -1 MOM, = +1)
-- Industrials: +1  (+1 CURVE, = +1)
-- Technology: +1  (+1 MOM, = +1)
+- Industrials: +4  (+2 LIQ, +1 CURVE, +1 PHASE, = +4)
+- Technology: +4  (+2 LIQ, +1 PHASE, +1 MOM, = +4)
+- Consumer Discretionary: +2  (+2 LIQ, = +2)
+- Financials: +1  (+1 LIQ, +2 CURVE, -2 MOM, = +1)
+- Utilities: -1  (-1 LIQ, = -1)
 - Energy: -2  (-2 MOM, = -2)
 
 **Rationale (top drivers):**
-- OW Financials: +2: 완만한 스티프닝(0.55) → 예대마진 개선
-- OW Financials: -1: Relative Strength 약세 (vs SPY) → 소외 섹터
+- OW Industrials: +2: 유동성 완화 → 경기민감 회복
 - OW Industrials: +1: 완만한 스티프닝(0.55) → 성장 기대 반영
-- OW Technology: +1: Relative Strength 강세 (vs SPY) → 자금 유입 확인
+- OW Technology: +2: 유동성 완화 → 성장주/베타 우호
+- OW Technology: +1: RISK-ON → 성장주 미세 가점
+- OW Consumer Discretionary: +2: 유동성 완화 → 소비 민감주 우호
+- OW Financials: +1: 유동성 완화 → 위험선호 회복
+- OW Financials: +2: 완만한 스티프닝(0.55) → 예대마진 개선
 - UW Energy: -2: Relative Strength 약세 (vs SPY) → 소외 섹터
 
 **Divergence Monitor (Theory vs Flow):**
-- No major theory-vs-flow divergence detected.
+- Financials: NEGATIVE_DIVERGENCE
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
 - **Total Target Exposure:** **69.0%** (from Filter 15)
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Financials | +1 | ALIGNED | **21.6%** | STRONG BUY |
-| Industrials | +0.7 | ALIGNED | **15.1%** | ACCUMULATE |
-| Technology | +1.5 | ALIGNED | **32.3%** | STRONG BUY |
+| Industrials | +3.7 | ALIGNED | **24.1%** | STRONG BUY |
+| Technology | +4.5 | ALIGNED | **29.3%** | STRONG BUY |
+| Consumer Discretionary | +1.7 | ALIGNED | **11.1%** | ACCUMULATE |
+| Financials | +1 | NEGATIVE_DIVERGENCE | **4.6%** | HOLD |
 | **Cash & Hedge** | - | - | **31.0%** | DEFENSIVE |
 
-- **Allocation Check:** Sector Weights + Cash = **100.0%**
+- **Allocation Check:** Sector Weights + Cash = **100.1%**
+- **Divergence Adjustment:** Financials penalized in weight sizing
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Financials | XLF | 21.6% | PRIMARY |
-| Industrials | XLI | 15.1% | ADD |
-| Technology | XLK | 32.3% | PRIMARY |
+| Industrials | XLI | 24.1% | PRIMARY |
+| Technology | XLK | 29.3% | PRIMARY |
+| Consumer Discretionary | XLY | 11.1% | ADD |
+| Financials | XLF | 4.6% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -365,13 +373,13 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - Unscreened speculative exposure
 
 ## 🔗 Transmission Map (Macro → Industry → Company)
-- **1-Line Conclusion:** 퀄리티 중심 차별화 + 베타 중립 → **퀄리티 + 리스크 관리형 포지셔닝** 선호
+- **1-Line Conclusion:** 퀄리티 중심 차별화 + 베타 확장 가능 → **High operating leverage / cyclicals / growth optionality** 선호
 
 - **Policy → Valuation:** 할인율 방향성 불명확 → 퀄리티 중심 차별화
-- **Liquidity → Risk Budget:** 유동성 혼조 → 베타 중립
-- **Credit → Balance Sheet:** 크레딧 혼조 → 추가 확인 필요
+- **Liquidity → Risk Budget:** 유동성 공급(리스크 허용↑) → 베타 확장 가능
+- **Credit → Balance Sheet:** 크레딧 안정 → 시스템 리스크 제한
 
-- **Sector/Company Shortcut:** Balanced / barbell
+- **Sector/Company Shortcut:** Cyclicals/Tech(상황에 따라) + Small/Mid beta
 
 ---
 
@@ -383,8 +391,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.4649990602811471
-- **Z-Score (5d):** 1.034216121763981
+- **Z-Score (1d):** 1.4649994968560816
+- **Z-Score (5d):** 1.0342155163365685
 
 ### EEM
 - **Crash?** False
