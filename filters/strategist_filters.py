@@ -2971,64 +2971,82 @@ def structural_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
+
+
+
 def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     """
-    Narrative Engine v3.1 (Cluster + Drift + Smoothing)
+    Narrative Engine v2.1 (Restored Original Format + Drift Add-on)
 
-    구조·정책·유동성·크레딧·심리·수급 + Drift
-    → 최종 Risk Budget 산출
+    Structure + Sentiment + Credit + Liquidity + Phase
+    + Drift (보조 가점만)
+    → Final Risk Action + Risk Budget (0~100)
+
+    원칙:
+    - 기존 13번 양식 유지
+    - Drift는 메인 엔진이 아니라 보조 신호로만 반영
     """
 
-    from pathlib import Path
-    import json
-
-    # -----------------------------
+    # --------------------------------------------------
     # Helpers
-    # -----------------------------
-    def _to_float(x):
-        try:
+    # --------------------------------------------------
+
+    def _to_float(x) -> Optional[float]:
+        if x is None:
+            return None
+        if isinstance(x, (int, float)):
             return float(x)
-        except:
+        try:
+            return float(str(x).replace(",", "").replace("%", ""))
+        except Exception:
             return None
 
-    def _clamp(x, lo=0, hi=100):
+    def _clamp(x: int, lo: int = 0, hi: int = 100) -> int:
         return max(lo, min(hi, int(x)))
 
-    def _sentiment_state(fear):
+    def _sentiment_state(fear: Optional[float]) -> str:
         if fear is None:
             return "N/A"
         if fear < 30:
             return "FEAR"
-        elif fear > 70:
+        if fear > 70:
             return "GREED"
         return "NEUTRAL"
 
-    def _liq_dir_tag(x):
-        if x is None:
+    def _liq_dir_tag(pct: Optional[float]) -> str:
+        if pct is None:
             return "N/A"
-        if x > 0:
+        if pct > 0:
             return "UP"
-        elif x < 0:
+        if pct < 0:
             return "DOWN"
         return "FLAT"
 
-    # -----------------------------
+    # --------------------------------------------------
     # 1️⃣ Pull Signals
-    # -----------------------------
+    # --------------------------------------------------
     struct_v2 = str(market_data.get("STRUCT_V2_STATE", "NEUTRAL")).upper()
     policy_bias_line = str(market_data.get("POLICY_BIAS_LINE", "") or "")
 
-    sentiment = market_data.get("SENTIMENT", {})
+    sentiment = market_data.get("SENTIMENT", {}) or {}
     fear = _to_float(sentiment.get("fear_greed"))
     sent_state = _sentiment_state(fear)
 
-    hy_oas = market_data.get("HY_OAS", {})
+    hy_oas = market_data.get("HY_OAS", {}) or {}
     hy_oas_today = _to_float(hy_oas.get("today"))
-    credit_calm = hy_oas_today is not None and hy_oas_today < 4.0
+    credit_calm: Optional[bool] = None
+    if hy_oas_today is not None:
+        credit_calm = hy_oas_today < 4.0
 
-    net_liq = market_data.get("NET_LIQ", {})
-    liq_dir_tag = _liq_dir_tag(_to_float(net_liq.get("pct_change")))
-    liq_level_bucket = str(net_liq.get("level_bucket", "MID")).upper()
+    net_liq = market_data.get("NET_LIQ", {}) or {}
+    net_liq_pct = _to_float(net_liq.get("pct_change"))
+    liq_dir_tag = _liq_dir_tag(net_liq_pct)
+
+    liq_level_bucket = str(
+        net_liq.get("level_bucket") or market_data.get("NET_LIQ_LEVEL_BUCKET") or "N/A"
+    ).upper()
+    if liq_level_bucket not in ("HIGH", "MID", "LOW"):
+        liq_level_bucket = "N/A"
 
     phase = market_data.get("MARKET_REGIME", "N/A")
     phase_upper = str(phase).upper()
@@ -3038,18 +3056,31 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     easing = "EASING" in policy_upper
     tightening = "TIGHTENING" in policy_upper
 
-    pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0)) or 0.0
+    pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
+    if pos_z is None:
+        pos_z = 0.0
 
-    # 🔥 Drift
+    # --------------------------------------------------
+    # 1.5️⃣ Drift (보조 신호만)
+    # --------------------------------------------------
     drift = market_data.get("DRIFT", {}) or {}
-
     drift_score = drift.get("score", market_data.get("DRIFT_SCORE", 0))
-    drift_state = str(drift.get("state", market_data.get("DRIFT_STATE", "N/A")) or "N/A")
-    drift_label = str(drift.get("label", drift_state) or drift_state)
-    combo_signal = str(drift.get("combo_signal", "NONE") or "NONE")
-    # -----------------------------
-    # 2️⃣ Base Budget
-    # -----------------------------
+    try:
+        drift_score = int(drift_score)
+    except Exception:
+        drift_score = 0
+
+    drift_state = str(
+        drift.get("state", market_data.get("DRIFT_STATE", "N/A")) or "N/A"
+    )
+    drift_label = str(drift.get("label", "N/A") or "N/A")
+    drift_combo = str(drift.get("combo_signal", "NONE") or "NONE")
+
+    # --------------------------------------------------
+    # 2️⃣ Risk Budget Core
+    # --------------------------------------------------
+
+    # Base from sentiment
     if sent_state == "FEAR":
         budget = 35
     elif sent_state == "GREED":
@@ -3059,192 +3090,175 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     else:
         budget = 50
 
-    # -----------------------------
-    # 3️⃣ Macro Cluster
-    # -----------------------------
-    macro_cluster = 0
-
+    # Structure tilt
     if not mixed:
         if easing and not tightening:
-            macro_cluster += 1
+            budget += 10
         elif tightening and not easing:
-            macro_cluster -= 1
+            budget -= 10
 
+    # Credit tilt
+    if credit_calm is True:
+        budget += 10
+    elif credit_calm is False:
+        budget -= 10
+
+    # Liquidity tilt (Direction + Level)
     if liq_dir_tag == "UP":
-        macro_cluster += 1
+        budget += 10
     elif liq_dir_tag == "DOWN":
-        macro_cluster -= 1
+        budget -= 10
 
     if liq_level_bucket == "HIGH":
-        macro_cluster += 0.5
+        budget += 5
     elif liq_level_bucket == "LOW":
-        macro_cluster -= 0.5
+        budget -= 5
 
+    # --------------------------------------------------
+    # 2.5️⃣ Structural v2 Penalty
+    # --------------------------------------------------
     struct_v2_kr = "정상"
     struct_alert = ""
     v2_cap = 100
 
     if "SYSTEMIC" in struct_v2:
-        macro_cluster -= 2
+        budget -= 20
         struct_v2_kr = "시스템위기"
-        struct_alert = "🚨 시스템 리스크"
-        v2_cap = 45
+        struct_alert = "🚨 시스템 불신 감지"
+        v2_cap = 30
     elif "STAGFLATION" in struct_v2:
-        macro_cluster -= 1.5
-        struct_v2_kr = "스태그플레이션"
-        v2_cap = 50
-
-    # 반영
-    if macro_cluster >= 2:
-        budget += 12
-        macro_cluster_kr = "강한 우호"
-    elif macro_cluster >= 1:
-        budget += 8
-        macro_cluster_kr = "우호"
-    elif macro_cluster <= -2:
         budget -= 15
-        macro_cluster_kr = "강한 비우호"
-    elif macro_cluster <= -1:
-        budget -= 8
-        macro_cluster_kr = "비우호"
-    else:
-        macro_cluster_kr = "중립"
+        struct_v2_kr = "스태그플레이션"
+        struct_alert = "⚠️ 에너지 비용 전이"
+        v2_cap = 40
 
-    # -----------------------------
-    # 4️⃣ Credit
-    # -----------------------------
-    if credit_calm:
-        budget += 5
-        credit_cluster_kr = "안정"
-    else:
-        budget -= 8
-        credit_cluster_kr = "불안"
-
-    # -----------------------------
-    # 5️⃣ Drift Tilt 🔥 핵심
-    # -----------------------------
+    # --------------------------------------------------
+    # 2.7️⃣ Drift Adjustment (ADD ONLY)
+    # --------------------------------------------------
     if drift_score >= 4:
         budget += 5
     elif drift_score >= 2:
         budget += 3
     elif drift_score <= -2:
-        budget -= 4
+        budget -= 5
 
-    # -----------------------------
-    # 6️⃣ Positioning
-    # -----------------------------
-    pos_alert = ""
-    if pos_z >= 2:
-        budget -= 8
-        pos_alert = " ⚠️ 과열"
-    elif pos_z >= 1.5:
-        budget -= 4
-        pos_alert = " ⚠️ 다소 과열"
-
-    # -----------------------------
-    # 7️⃣ Phase Cap
-    # -----------------------------
+    # --------------------------------------------------
+    # 3️⃣ Phase Cap
+    # --------------------------------------------------
     cap = 100
-    if "RISK-ON" in phase_upper:
+    if phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
+        cap = 60
+    elif phase_upper.startswith("TRANSITION") or "MIXED" in phase_upper:
+        cap = 70
+    elif phase_upper.startswith("RISK-ON"):
         cap = 85
-    elif "RISK-OFF" in phase_upper:
+    elif phase_upper.startswith("RISK-OFF"):
         cap = 35
 
+    if "SYSTEMIC" in struct_v2 or "STAGFLATION" in struct_v2:
+        cap = min(cap, 30)
+
     final_cap = min(cap, v2_cap)
-
-    # -----------------------------
-    # 8️⃣ Raw Budget
-    # -----------------------------
-    raw_budget = _clamp(budget)
-
-    # -----------------------------
-    # 9️⃣ Smoothing
-    # -----------------------------
-    path = Path("insights/last_risk_budget.json")
-
-    prev_budget = None
-    if path.exists():
-        try:
-            prev_budget = int(json.load(open(path))["risk_budget"])
-        except:
-            pass
-
-    if prev_budget is not None:
-        smoothed = int(0.7 * prev_budget + 0.3 * raw_budget)
-    else:
-        smoothed = raw_budget
-
-    # Step 제한
-    if prev_budget is not None:
-        delta = smoothed - prev_budget
-        if delta > 15:
-            smoothed = prev_budget + 15
-        elif delta < -15:
-            smoothed = prev_budget - 15
-
-    budget = smoothed
-
-    # Soft cap
-    if budget > 80:
-        budget = 80 + (budget - 80) * 0.5
-
-    budget = _clamp(min(budget, final_cap))
-
-    # 저장
-    path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        json.dump({"risk_budget": budget}, open(path, "w"))
-    except:
-        pass
-
+    budget = min(int(round(budget)), final_cap)
+    budget = _clamp(budget, 0, 100)
     market_data["RISK_BUDGET"] = budget
 
-    # -----------------------------
-    # 🔟 Action
-    # -----------------------------
+    # --------------------------------------------------
+    # 4️⃣ Final Action
+    # --------------------------------------------------
     if budget >= 70:
         action = "INCREASE"
+    elif budget <= 20:
+        action = "STRONG REDUCE"
     elif budget <= 40:
         action = "REDUCE"
     else:
         action = "HOLD"
 
-    # -----------------------------
-    # 🔥 10.5) FINAL_STATE 생성 (핵심)
-    # -----------------------------
-    final_state = {
-        "phase": phase,
-        "risk_budget": budget,
-        "risk_action": action,
-        "liquidity_dir": liq_dir_tag,
-        "liquidity_level_bucket": liq_level_bucket,
-        "credit_calm": credit_calm,
-    }
-    
-    market_data["FINAL_STATE"] = final_state
+    pos_alert = ""
+    if pos_z >= 2.0:
+        if action == "INCREASE":
+            action = "HOLD (POS_OVERHEATED)"
+        elif action == "HOLD":
+            action = "REDUCE (POS_OVERHEATED)"
+        pos_alert = " ⚠️ 수급 과열 감지"
 
-# 🔥 디버그 (딱 이거만)
-    print("[DEBUG][13 FINAL_STATE CREATED]", final_state)
+    # --------------------------------------------------
+    # 5️⃣ Narrative Line
+    # --------------------------------------------------
+    struct_tag = "MIXED"
+    if not mixed:
+        if easing and not tightening:
+            struct_tag = "EASING"
+        elif tightening and not easing:
+            struct_tag = "TIGHTENING"
 
-    # -----------------------------
-    # 11️⃣ Narrative
-    # -----------------------------
+    struct_tag_final = f"{struct_tag}({struct_v2_kr})" if struct_v2_kr != "정상" else struct_tag
+
+    credit_tag = "안정" if credit_calm is True else ("불안" if credit_calm is False else "N/A")
+    liq_dir_kr = {"UP": "증가", "DOWN": "감소", "FLAT": "보합", "N/A": "N/A"}[liq_dir_tag]
+    liq_lvl_kr = {"HIGH": "높음", "MID": "중간", "LOW": "낮음", "N/A": "N/A"}.get(liq_level_bucket, "N/A")
+    liq_tag = f"{liq_dir_kr}/{liq_lvl_kr}"
+
     narrative = (
-        f"구조={policy_bias_line} / 심리={sent_state} / "
-        f"매크로={macro_cluster_kr} / 유동성={liq_dir_tag}/{liq_level_bucket} / "
-        f"크레딧={credit_cluster_kr} / "
-        f"드리프트={drift_state} ({drift_label}) (+{drift_score}) / "
+        f"구조={struct_tag_final} / 심리={sent_state} / 유동성={liq_tag} / "
+        f"크레딧={credit_tag} / 드리프트={drift_state} ({drift_label}) / "
         f"수급={pos_z:.2f}{pos_alert} → Phase={phase}"
     )
 
-    # -----------------------------
-    # Output
-    # -----------------------------
+    # --------------------------------------------------
+    # 6.5️⃣ Final State Object
+    # --------------------------------------------------
+    final_state = {
+        "phase": phase,
+        "phase_cap": cap,
+        "risk_action": action,
+        "risk_budget": budget,
+
+        "structure_tag": struct_tag,
+        "policy_bias_line": policy_bias_line,
+
+        "sentiment_fear_greed": fear,
+        "sentiment_state": sent_state,
+
+        "credit_calm": credit_calm,
+        "hy_oas_today": hy_oas_today,
+
+        "liquidity_dir": liq_dir_tag,
+        "liquidity_level_bucket": liq_level_bucket,
+        "net_liq_pct_change": net_liq_pct,
+
+        "drift_score": drift_score,
+        "drift_state": drift_state,
+        "drift_label": drift_label,
+        "drift_combo_signal": drift_combo,
+
+        "narrative_line": narrative,
+    }
+    market_data["FINAL_STATE"] = final_state
+
+    # --------------------------------------------------
+    # 6️⃣ Output (원래 양식 복구)
+    # --------------------------------------------------
     lines = []
-    lines.append("### 🧠 13) Narrative Engine (v3.1 + Drift)")
+    lines.append("### 🧠 13) Narrative Engine (v2 + Risk Budget + Drift)")
+    lines.append("- **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정")
+    lines.append("- **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문")
     lines.append("")
-    lines.append(f"- **Risk Budget:** {budget}")
-    lines.append(f"- **Action:** {action}")
+    lines.append(f"- **Structure Bias:** {policy_bias_line} ({struct_v2_kr})")
+    lines.append(f"- **Sentiment (Fear&Greed):** {fear if fear is not None else 'N/A'} ({sent_state})")
+    lines.append(f"- **Credit Calm:** {credit_calm}")
+    lines.append(f"- **Liquidity (NET_LIQ):** {liq_dir_tag} ({liq_level_bucket})")
+    lines.append(f"- **Phase:** {phase} (Cap: {cap})")
+
+    if struct_alert:
+        lines.append(f"- **[SPECIAL ALERT]**: **{struct_alert}** (Structural Cap: {v2_cap})")
+
+    lines.append(f"- **Drift:** {drift_state} / {drift_label} / {drift_combo}")
+    lines.append(f"- **Drift Score:** {drift_score}")
+    lines.append("")
+    lines.append(f"- **🎯 Final Risk Action:** **{action}**")
+    lines.append(f"- **Risk Budget (0~100):** **{budget}**")
     lines.append(f"- **Narrative:** {narrative}")
 
     return "\n".join(lines)
