@@ -130,29 +130,41 @@ def classify_drift_label(drift_inputs: Dict[str, Any]) -> str:
 
 
 def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Drift Monitor v3 (IFE-compatible)
+    - Drift score + state + label + combo_signal까지 모두 생성
+    """
+
     drift = market_data.get("DRIFT_DATA", {}) or {}
 
     def g(asset, key):
-        return drift.get(asset, {}).get(key)
+        try:
+            return drift.get(asset, {}).get(key)
+        except Exception:
+            return None
 
+    # -----------------------------
+    # Score 계산
+    # -----------------------------
     score = 0
     reasons = []
 
-    # -----------------------------
-    # Core Drift Signals
-    # -----------------------------
+    # WTI (디스인플레이션 핵심)
     if g("WTI", "ret_1d") is not None and g("WTI", "ret_1d") <= -5:
         score += 1
-        reasons.append("WTI 1D downside")
+        reasons.append("WTI 1D downside extension")
 
+    # SPY 상승
     if g("SPY", "ret_1d") is not None and g("SPY", "ret_1d") >= 1:
         score += 1
         reasons.append("SPY 1D continuation")
 
+    # GOLD 상승
     if g("GOLD", "ret_1d") is not None and g("GOLD", "ret_1d") >= 1:
         score += 1
         reasons.append("Gold strength")
 
+    # DXY 약세
     if g("DXY", "ret_1d") is not None and g("DXY", "ret_1d") <= -0.2:
         score += 1
         reasons.append("DXY softening")
@@ -166,19 +178,67 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
 
     if g("WTI", "norm_1d") is not None and abs(g("WTI", "norm_1d")) >= 2.0:
         score += 1
-        reasons.append("WTI extreme ATR")
+        reasons.append("WTI extreme ATR move")
 
     # -----------------------------
-    # State 판단
+    # State 정의
     # -----------------------------
     if score >= 4:
-        state = "🔥 STRONG TREND"
+        state = "🔥 STRONG TREND (방향성 자금 흐름 감지)"
     elif score >= 2:
-        state = "⚡ TREND FORMING"
+        state = "⚡ TREND FORMING (초기 흐름 감지)"
     elif score == 1:
-        state = "WEAK DRIFT"
+        state = "WEAK DRIFT (노이즈 가능)"
     else:
         state = "NO DRIFT"
+
+    # -----------------------------
+    # Label 정의 (핵심)
+    # -----------------------------
+    label = "NEUTRAL"
+
+    spy = g("SPY", "ret_1d")
+    wti = g("WTI", "ret_1d")
+    dxy = g("DXY", "ret_1d")
+    gold = g("GOLD", "ret_1d")
+
+    if spy and wti and dxy:
+        if spy > 0 and wti < 0 and dxy < 0:
+            label = "DISINFLATION_RISK_ON"
+        elif spy < 0 and wti > 0 and dxy > 0:
+            label = "INFLATION_RISK_OFF"
+        elif spy < 0 and wti < 0:
+            label = "GROWTH_SCARE"
+        elif spy > 0 and wti > 0:
+            label = "REOPENING / DEMAND_BOOM"
+
+    # -----------------------------
+    # SEW 조합 신호
+    # -----------------------------
+    sew_status = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
+
+    combo_signal = "NONE"
+
+    if sew_status == "STABLE" and score >= 3:
+        combo_signal = "🟢 EARLY FLOW WITHOUT SHOCK"
+    elif sew_status in ["WATCH", "ALERT"] and score >= 3:
+        combo_signal = "🟠 FLOW + SHOCK CONFLICT / EVENT RISK"
+    elif sew_status in ["WATCH", "ALERT"] and score <= 1:
+        combo_signal = "🔴 SHOCK WITHOUT DRIFT"
+
+    # -----------------------------
+    # 저장 (🔥 이게 핵심)
+    # -----------------------------
+    market_data["DRIFT_SCORE"] = score
+    market_data["DRIFT_STATE"] = state
+
+    market_data["DRIFT"] = {
+        "data": drift,
+        "score": score,
+        "state": state,
+        "label": label,
+        "combo_signal": combo_signal,
+    }
 
     # -----------------------------
     # Output
@@ -191,30 +251,26 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
     for asset in ["SPY", "WTI", "DXY", "GOLD"]:
         a = drift.get(asset, {}) or {}
         lines.append(
-            f"- **{asset}:** 15m={a.get('ret_15m')} / 30m={a.get('ret_30m')} / "
-            f"1H={a.get('ret_1h')} / 4H={a.get('ret_4h')} / "
-            f"1D={a.get('ret_1d')} / 5D={a.get('ret_5d')}"
+            f"- **{asset}:** "
+            f"15m={a.get('ret_15m')} / "
+            f"30m={a.get('ret_30m')} / "
+            f"1H={a.get('ret_1h')} / "
+            f"4H={a.get('ret_4h')} / "
+            f"1D={a.get('ret_1d')} / "
+            f"5D={a.get('ret_5d')}"
         )
 
     lines.append("")
     lines.append(f"- **Drift Score:** {score}")
     lines.append(f"- **State:** **{state}**")
+    lines.append(f"- **Label:** {label}")
+    lines.append(f"- **SEW Combo Signal:** {combo_signal}")
 
     if reasons:
         lines.append("")
         lines.append("- **Drivers:**")
         for r in reasons:
             lines.append(f"  - {r}")
-
-    # 저장
-    market_data["DRIFT_SCORE"] = score
-    market_data["DRIFT_STATE"] = state
-    market_data["DRIFT"] = {
-        "score": score,
-        "state": state,
-        "label": state,
-        "combo_signal": "NONE",
-    }
 
     return "\n".join(lines)
 # -------------------------------------------------------------------
