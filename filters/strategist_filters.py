@@ -4504,6 +4504,183 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
     market_data["GEO_OVERLAY"] = overlay
 
     return market_data
+
+def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Institutional Flow Engine (v1)
+
+    목적:
+    - 기관성 자금 축적 흔적을 점수화
+    - 뉴스/쇼크 이전의 방향성 흐름 탐지
+    """
+
+    drift = market_data.get("DRIFT", {}) or {}
+    drift_score = drift.get("score", 0)
+    drift_state = str(drift.get("state", "N/A") or "N/A")
+    drift_label = str(drift.get("label", "N/A") or "N/A")
+    combo_signal = str(drift.get("combo_signal", "NONE") or "NONE")
+
+    gamma_state = str(market_data.get("GAMMA_STATE", "UNKNOWN") or "UNKNOWN")
+    gamma_combo = str(market_data.get("GAMMA_COMBO", "NONE") or "NONE")
+
+    sew_status = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
+    sew_event_type = str(market_data.get("SEW_EVENT_TYPE", "N/A") or "N/A").upper()
+
+    pos_z = market_data.get("SP500_POS_Z", 0.0)
+    try:
+        pos_z = float(pos_z)
+    except Exception:
+        pos_z = 0.0
+
+    drift_data = market_data.get("DRIFT_DATA", {}) or {}
+
+    def g(asset: str, key: str):
+        try:
+            return drift_data.get(asset, {}).get(key)
+        except Exception:
+            return None
+
+    spy_15m = g("SPY", "ret_15m")
+    spy_30m = g("SPY", "ret_30m")
+    wti_15m = g("WTI", "ret_15m")
+    wti_30m = g("WTI", "ret_30m")
+    gold_15m = g("GOLD", "ret_15m")
+    gold_30m = g("GOLD", "ret_30m")
+    dxy_15m = g("DXY", "ret_15m")
+    dxy_30m = g("DXY", "ret_30m")
+
+    flow_score = 0
+    reasons = []
+
+    # 1) Drift core
+    if drift_score >= 4:
+        flow_score += 3
+        reasons.append("Drift strong")
+    elif drift_score >= 3:
+        flow_score += 2
+        reasons.append("Drift building")
+    elif drift_score >= 2:
+        flow_score += 1
+        reasons.append("Drift early")
+
+    # 2) Label quality
+    if drift_label in ["DISINFLATION_RISK_ON", "SYSTEMIC_HEDGE", "TIGHTENING_PRESSURE", "OIL_SHOCK"]:
+        flow_score += 1
+        reasons.append(f"Clear flow label: {drift_label}")
+
+    # 3) Short-horizon pre-move cluster
+    short_hits = 0
+
+    if spy_15m is not None and spy_15m >= 0.25:
+        short_hits += 1
+    if spy_30m is not None and spy_30m >= 0.40:
+        short_hits += 1
+
+    if wti_15m is not None and abs(wti_15m) >= 0.60:
+        short_hits += 1
+    if wti_30m is not None and abs(wti_30m) >= 0.90:
+        short_hits += 1
+
+    if gold_15m is not None and abs(gold_15m) >= 0.30:
+        short_hits += 1
+    if gold_30m is not None and abs(gold_30m) >= 0.45:
+        short_hits += 1
+
+    if dxy_15m is not None and abs(dxy_15m) >= 0.10:
+        short_hits += 1
+    if dxy_30m is not None and abs(dxy_30m) >= 0.15:
+        short_hits += 1
+
+    if short_hits >= 3:
+        flow_score += 2
+        reasons.append("Short-horizon pre-move cluster")
+    elif short_hits >= 2:
+        flow_score += 1
+        reasons.append("Short-horizon pre-move")
+
+    # 4) Gamma context
+    if "TRANSITION" in gamma_state:
+        flow_score += 1
+        reasons.append("Gamma transition")
+    elif "NEGATIVE" in gamma_state:
+        flow_score += 1
+        reasons.append("Gamma acceleration regime")
+
+    # 5) SEW relationship
+    if sew_status == "STABLE":
+        flow_score += 1
+        reasons.append("No shock yet")
+    elif sew_status in ["WATCH", "ALERT"]:
+        flow_score -= 1
+        reasons.append("Shock already leaking into tape")
+
+    # 6) Positioning penalty
+    if pos_z >= 2.0:
+        flow_score -= 2
+        reasons.append("Positioning overheated")
+    elif pos_z >= 1.5:
+        flow_score -= 1
+        reasons.append("Positioning somewhat stretched")
+
+    # 7) Flow state
+    if flow_score >= 7:
+        flow_state = "🔥 BUILDING HARD"
+        confidence = "HIGH"
+        interpretation = "뉴스 전 방향성 자금 축적 가능성 높음"
+        action_bias = "EARLY PREP"
+    elif flow_score >= 5:
+        flow_state = "⚡ BUILDING"
+        confidence = "MEDIUM-HIGH"
+        interpretation = "기관성 흐름 형성 가능성"
+        action_bias = "WATCHLIST"
+    elif flow_score >= 3:
+        flow_state = "👀 EARLY TRACE"
+        confidence = "MEDIUM"
+        interpretation = "흔적은 있으나 확신은 이르다"
+        action_bias = "MONITOR"
+    else:
+        flow_state = "NO CLEAR FLOW"
+        confidence = "LOW"
+        interpretation = "기관성 축적 흔적 불충분"
+        action_bias = "IGNORE"
+
+    market_data["INSTITUTIONAL_FLOW"] = {
+        "score": flow_score,
+        "state": flow_state,
+        "confidence": confidence,
+        "interpretation": interpretation,
+        "action_bias": action_bias,
+        "reasons": reasons,
+        "drift_label": drift_label,
+        "combo_signal": combo_signal,
+        "gamma_state": gamma_state,
+        "gamma_combo": gamma_combo,
+        "sew_status": sew_status,
+        "sew_event_type": sew_event_type,
+    }
+
+    lines = []
+    lines.append("### 🏦 Institutional Flow Engine (v1)")
+    lines.append("- **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지")
+    lines.append("")
+    lines.append(f"- **Flow Score:** {flow_score}")
+    lines.append(f"- **Flow State:** **{flow_state}**")
+    lines.append(f"- **Confidence:** **{confidence}**")
+    lines.append(f"- **Interpretation:** {interpretation}")
+    lines.append(f"- **Action Bias:** **{action_bias}**")
+    lines.append("")
+    lines.append(f"- **Drift:** {drift_state} / {drift_label} / {combo_signal}")
+    lines.append(f"- **Gamma:** {gamma_state} / {gamma_combo}")
+    lines.append(f"- **SEW:** {sew_status} / {sew_event_type}")
+    lines.append(f"- **Positioning (POS_Z):** {pos_z}")
+
+    if reasons:
+        lines.append("")
+        lines.append("- **Drivers:**")
+        for r in reasons:
+            lines.append(f"  - {r}")
+
+    return "\n".join(lines)
     
 
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
@@ -4579,6 +4756,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(correlation_break_filter(market_data))
     sections.append("")
     sections.append(sector_correlation_break_filter(market_data))
+    sections.append("")
+    sections.append(institutional_flow_engine_filter(market_data))
     sections.append("")
     sections.append(risk_exposure_filter(market_data))
     sections.append("")
