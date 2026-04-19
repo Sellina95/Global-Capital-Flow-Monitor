@@ -4672,13 +4672,11 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
 
 def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Final Action Engine v1.1
+    Final Action Engine v2
     - FINAL_STATE + INSTITUTIONAL_FLOW + GAMMA + SEW 통합 판단
+    - fallback 최소화: 핵심은 FINAL_STATE.phase를 정확히 받는 것
     """
 
-    # -------------------------
-    # 1. Inputs
-    # -------------------------
     final_state = market_data.get("FINAL_STATE", {}) or {}
     inst_flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
 
@@ -4712,9 +4710,6 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     confidence = "LOW"
     reason = []
 
-    # -------------------------
-    # DEBUG
-    # -------------------------
     print("[DEBUG][ACTION ENGINE]")
     print(" phase =", phase)
     print(" risk_budget =", risk_budget)
@@ -4724,27 +4719,21 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     print(" sew_status =", sew_status)
     print(" pos_z =", pos_z)
 
-    # -------------------------
-    # 2. Priority 1: Shock
-    # -------------------------
+    # 1) Shock 최우선
     if sew_status in ["ALERT", "DEADMAN"]:
         action = "REDUCE"
         size = "RISK CUT"
         confidence = "HIGH"
         reason.append("SEW shock detected")
 
-    # -------------------------
-    # 3. Priority 2: Structure breakdown
-    # -------------------------
+    # 2) 구조 붕괴
     elif "NEGATIVE" in gamma_state and flow_score <= 2:
         action = "EXIT"
         size = "FULL"
         confidence = "HIGH"
         reason.append("Gamma breakdown + weak flow")
 
-    # -------------------------
-    # 4. ADD
-    # -------------------------
+    # 3) 강한 확신 구간
     elif (
         phase.startswith("RISK-ON")
         and flow_score >= 7
@@ -4756,9 +4745,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         confidence = "HIGH"
         reason.append("Flow strong + structure aligned")
 
-    # -------------------------
-    # 5. EARLY BUY
-    # -------------------------
+    # 4) 초기 진입 구간
     elif (
         phase.startswith("RISK-ON")
         and flow_score >= 5
@@ -4770,46 +4757,35 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         confidence = "MEDIUM"
         reason.append("Flow building + gamma turning + no shock")
 
-    # -------------------------
-    # 6. WAIT
-    # -------------------------
+    # 5) 환경은 좋지만 흐름 약함
     elif phase.startswith("RISK-ON") and flow_score < 5 and sew_status == "STABLE":
         action = "WAIT"
         size = "0%"
         confidence = "LOW"
         reason.append("Good environment but no strong flow yet")
 
-    # -------------------------
-    # 7. RISK-OFF / neutral fallback
-    # -------------------------
+    # 6) Risk-off 환경
     elif phase.startswith("RISK-OFF"):
         action = "REDUCE"
         size = "DEFENSIVE"
         confidence = "MEDIUM"
         reason.append("Risk-off environment")
 
-    elif phase == "N/A":
-        action = "HOLD"
-        size = "NONE"
-        confidence = "LOW"
-        reason.append("Phase unavailable")
-
+    # 7) 기본값
     else:
         action = "HOLD"
         size = "NONE"
         confidence = "LOW"
         reason.append("No actionable alignment")
 
-    # -------------------------
-    # 8. Overheat override
-    # -------------------------
+    # 8) 과열 override
     if pos_z >= 2.2 and flow_score < 5:
         action = "REDUCE"
         size = "TAKE PROFIT"
         confidence = "MEDIUM"
         reason.append("Positioning overheat")
 
-    result = {
+    return {
         "action": action,
         "size": size,
         "confidence": confidence,
@@ -4822,8 +4798,6 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "sew_status": sew_status,
         "pos_z": pos_z,
     }
-
-    return result
 
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections = []
