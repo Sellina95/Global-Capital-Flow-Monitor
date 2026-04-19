@@ -132,154 +132,73 @@ def classify_drift_label(drift_inputs: Dict[str, Any]) -> str:
 def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
     drift = market_data.get("DRIFT_DATA", {}) or {}
 
-    def g(asset: str, key: str):
-        try:
-            return drift.get(asset, {}).get(key)
-        except Exception:
-            return None
-
-    spy_15m = g("SPY", "ret_15m")
-    spy_30m = g("SPY", "ret_30m")
-    spy_1h = g("SPY", "ret_1h")
-    spy_4h = g("SPY", "ret_4h")
-    spy_1d = g("SPY", "ret_1d")
-
-    wti_15m = g("WTI", "ret_15m")
-    wti_30m = g("WTI", "ret_30m")
-    wti_1h = g("WTI", "ret_1h")
-    wti_4h = g("WTI", "ret_4h")
-    wti_1d = g("WTI", "ret_1d")
-
-    dxy_15m = g("DXY", "ret_15m")
-    dxy_30m = g("DXY", "ret_30m")
-    dxy_1d = g("DXY", "ret_1d")
-
-    gold_15m = g("GOLD", "ret_15m")
-    gold_30m = g("GOLD", "ret_30m")
-    gold_1d = g("GOLD", "ret_1d")
+    def g(asset, key):
+        return drift.get(asset, {}).get(key)
 
     score = 0
     reasons = []
 
     # -----------------------------
-    # 1) 메인 drift 로직
+    # Core Drift Signals
     # -----------------------------
+    if g("WTI", "ret_1d") is not None and g("WTI", "ret_1d") <= -5:
+        score += 1
+        reasons.append("WTI 1D downside")
 
-    # WTI downside drift
-    if wti_4h is not None and wti_4h <= -3.0:
-        score += 1
-        reasons.append("WTI 4H downside drift")
-    if wti_1d is not None and wti_1d <= -5.0:
-        score += 1
-        reasons.append("WTI 1D downside extension")
-
-    # SPY upside drift
-    if spy_4h is not None and spy_4h >= 0.8:
-        score += 1
-        reasons.append("SPY 4H upward drift")
-    if spy_1d is not None and spy_1d >= 1.0:
+    if g("SPY", "ret_1d") is not None and g("SPY", "ret_1d") >= 1:
         score += 1
         reasons.append("SPY 1D continuation")
 
-    # DXY softening
-    if dxy_1d is not None and dxy_1d <= -0.2:
-        score += 1
-        reasons.append("DXY softening")
-
-    # GOLD strength
-    if gold_1d is not None and gold_1d >= 1.0:
+    if g("GOLD", "ret_1d") is not None and g("GOLD", "ret_1d") >= 1:
         score += 1
         reasons.append("Gold strength")
 
-    # -----------------------------
-    # 2) 15m / 30m pre-move 감지
-    # -----------------------------
-    short_premove = 0
-
-    if spy_15m is not None and spy_15m >= 0.25:
-        short_premove += 1
-    if spy_30m is not None and spy_30m >= 0.40:
-        short_premove += 1
-
-    if wti_15m is not None and wti_15m <= -0.60:
-        short_premove += 1
-    if wti_30m is not None and wti_30m <= -1.00:
-        short_premove += 1
-
-    if gold_15m is not None and gold_15m >= 0.30:
-        short_premove += 1
-    if gold_30m is not None and gold_30m >= 0.50:
-        short_premove += 1
-
-    if dxy_15m is not None and dxy_15m <= -0.10:
-        short_premove += 1
-    if dxy_30m is not None and dxy_30m <= -0.20:
-        short_premove += 1
-
-    if short_premove >= 2:
+    if g("DXY", "ret_1d") is not None and g("DXY", "ret_1d") <= -0.2:
         score += 1
-        reasons.append("Short-horizon pre-move detected (15m/30m)")
+        reasons.append("DXY softening")
 
     # -----------------------------
-    # 3) state
+    # 🔥 ATR 기반 강화
+    # -----------------------------
+    if g("SPY", "norm_1d") is not None and abs(g("SPY", "norm_1d")) >= 1.5:
+        score += 1
+        reasons.append("SPY move > 1.5 ATR")
+
+    if g("WTI", "norm_1d") is not None and abs(g("WTI", "norm_1d")) >= 2.0:
+        score += 1
+        reasons.append("WTI extreme ATR")
+
+    # -----------------------------
+    # State 판단
     # -----------------------------
     if score >= 4:
-        state = "🔥 STRONG TREND (방향성 자금 흐름 감지)"
+        state = "🔥 STRONG TREND"
     elif score >= 2:
-        state = "⚡ TREND FORMING (초기 흐름 감지)"
+        state = "⚡ TREND FORMING"
     elif score == 1:
-        state = "WEAK DRIFT (노이즈 가능)"
+        state = "WEAK DRIFT"
     else:
         state = "NO DRIFT"
 
     # -----------------------------
-    # 4) SEW 조합 신호
-    # -----------------------------
-    sew_state = str(market_data.get("SEW_STATUS", "STABLE") or "STABLE").upper()
-    combo_signal = "NONE"
-
-    if sew_state == "STABLE" and score >= 3:
-        combo_signal = "🟢 EARLY FLOW WITHOUT SHOCK"
-    elif sew_state in ["WATCH", "ALERT"] and score >= 3:
-        combo_signal = "🟠 FLOW + SHOCK CONFLICT / EVENT RISK"
-    elif sew_state in ["WATCH", "ALERT"] and score <= 1:
-        combo_signal = "🔴 SHOCK WITHOUT DRIFT"
-
-    # -----------------------------
-    # 5) label
-    # -----------------------------
-    label = classify_drift_label({
-        "SPY": {"1D": spy_1d},
-        "WTI": {"1D": wti_1d},
-        "DXY": {"1D": dxy_1d},
-        "GOLD": {"1D": gold_1d},
-    })
-
-    # -----------------------------
-    # 6) output
+    # Output
     # -----------------------------
     lines = []
     lines.append("### 🌊 Drift Monitor (v3)")
-    lines.append("- **정의:** 단기 폭발이 아닌 '누적 방향성 흐름 + 단기 선행 흔적' 감지")
+    lines.append("- **정의:** 누적 흐름 + ATR 기반 강도 감지")
     lines.append("")
 
     for asset in ["SPY", "WTI", "DXY", "GOLD"]:
         a = drift.get(asset, {}) or {}
         lines.append(
-            f"- **{asset}:** "
-            f"15m={a.get('ret_15m')} / "
-            f"30m={a.get('ret_30m')} / "
-            f"1H={a.get('ret_1h')} / "
-            f"4H={a.get('ret_4h')} / "
-            f"1D={a.get('ret_1d')} / "
-            f"5D={a.get('ret_5d')}"
+            f"- **{asset}:** 15m={a.get('ret_15m')} / 30m={a.get('ret_30m')} / "
+            f"1H={a.get('ret_1h')} / 4H={a.get('ret_4h')} / "
+            f"1D={a.get('ret_1d')} / 5D={a.get('ret_5d')}"
         )
 
     lines.append("")
     lines.append(f"- **Drift Score:** {score}")
     lines.append(f"- **State:** **{state}**")
-    lines.append(f"- **Label:** **{label}**")
-    lines.append(f"- **SEW Combo Signal:** **{combo_signal}**")
 
     if reasons:
         lines.append("")
@@ -287,18 +206,9 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
         for r in reasons:
             lines.append(f"  - {r}")
 
-    # -----------------------------
-    # 7) market_data 저장
-    # -----------------------------
-    market_data["DRIFT_STATE"] = state
+    # 저장
     market_data["DRIFT_SCORE"] = score
-    market_data["DRIFT"] = {
-        "data": drift,
-        "score": score,
-        "state": state,
-        "label": label,
-        "combo_signal": combo_signal,
-    }
+    market_data["DRIFT_STATE"] = state
 
     return "\n".join(lines)
 # -------------------------------------------------------------------
@@ -2202,9 +2112,9 @@ def attach_geo_similarity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
 def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Drift v3 input layer
-    - SPY / WTI / DXY / GOLD
-    - 15m / 30m / 1H / 4H / 1D / 5D return 계산
+    Drift v3 (with ATR normalization)
+    - 15m / 30m / 1H / 4H / 1D / 5D returns
+    - ATR 기반 정규화 포함
     """
 
     import yfinance as yf
@@ -2233,19 +2143,45 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     def extract_close_series(df):
         if df is None or df.empty:
             return None
+
         try:
             if isinstance(df.columns, pd.MultiIndex):
                 close_cols = [c for c in df.columns if str(c[0]).lower() == "close"]
                 if not close_cols:
                     return None
-                s = df[close_cols].squeeze()
+                s = df[close_cols]
+                if isinstance(s, pd.DataFrame):
+                    s = s.squeeze()
             else:
                 if "Close" not in df.columns:
                     return None
                 s = df["Close"]
 
+            if isinstance(s, pd.DataFrame):
+                s = s.squeeze()
+
             s = pd.to_numeric(s, errors="coerce").dropna()
-            return s if not s.empty else None
+            if s.empty:
+                return None
+
+            return s
+        except Exception:
+            return None
+
+    def calculate_atr(df, period=14):
+        try:
+            high = df["High"]
+            low = df["Low"]
+            close = df["Close"]
+
+            tr1 = high - low
+            tr2 = (high - close.shift(1)).abs()
+            tr3 = (low - close.shift(1)).abs()
+
+            tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+            atr = tr.rolling(period).mean()
+
+            return atr
         except Exception:
             return None
 
@@ -2254,79 +2190,68 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     # -----------------------------
     for name, ticker in drift_tickers.items():
         try:
-            print(f"[DRIFT] Fetching {name} ({ticker}) ...")
-
-            # 15분봉: 최근 5일
-            intraday_15m = yf.download(
-                ticker,
-                period="5d",
-                interval="15m",
-                progress=False,
-                threads=False,
-                auto_adjust=False,
-            )
-
-            # 60분봉: 최근 7일
-            intraday_60m = yf.download(
+            intraday = yf.download(
                 ticker,
                 period="7d",
-                interval="60m",
+                interval="15m",
                 progress=False,
-                threads=False,
                 auto_adjust=False,
+                threads=False,
             )
 
-            # 일봉: 최근 3개월
             daily = yf.download(
                 ticker,
                 period="3mo",
                 interval="1d",
                 progress=False,
-                threads=False,
                 auto_adjust=False,
+                threads=False,
             )
 
-            close_15m = extract_close_series(intraday_15m)
-            close_60m = extract_close_series(intraday_60m)
-            close_d = extract_close_series(daily)
+            intraday_close = extract_close_series(intraday)
+            daily_close = extract_close_series(daily)
 
-            print(f"[DRIFT] {name} 15m rows = {0 if close_15m is None else len(close_15m)}")
-            print(f"[DRIFT] {name} 60m rows = {0 if close_60m is None else len(close_60m)}")
-            print(f"[DRIFT] {name} daily rows = {0 if close_d is None else len(close_d)}")
-
-            if close_15m is None or close_60m is None or close_d is None:
-                print(f"[DRIFT][WARN] {name} close series unavailable")
+            if intraday_close is None or daily_close is None:
                 drift_data[name] = {}
                 continue
 
-            curr = float(close_15m.iloc[-1])
+            curr = float(intraday_close.iloc[-1])
 
-            # 15m / 30m
-            m15 = float(close_15m.iloc[-2]) if len(close_15m) >= 2 else None
-            m30 = float(close_15m.iloc[-3]) if len(close_15m) >= 3 else None
+            # intraday
+            m15 = float(intraday_close.iloc[-2]) if len(intraday_close) >= 2 else None
+            m30 = float(intraday_close.iloc[-3]) if len(intraday_close) >= 3 else None
+            h1 = float(intraday_close.iloc[-5]) if len(intraday_close) >= 5 else None
+            h4 = float(intraday_close.iloc[-17]) if len(intraday_close) >= 17 else None
 
-            # 1H / 4H
-            h1 = float(close_60m.iloc[-2]) if len(close_60m) >= 2 else None
-            h4 = float(close_60m.iloc[-5]) if len(close_60m) >= 5 else None
+            # daily
+            d1 = float(daily_close.iloc[-2]) if len(daily_close) >= 2 else None
+            d5 = float(daily_close.iloc[-6]) if len(daily_close) >= 6 else None
 
-            # 1D / 5D
-            d1 = float(close_d.iloc[-2]) if len(close_d) >= 2 else None
-            d5 = float(close_d.iloc[-6]) if len(close_d) >= 6 else None
+            # ATR
+            atr_series = calculate_atr(daily)
+            atr_latest = float(atr_series.iloc[-1]) if atr_series is not None else None
+
+            def norm(ret):
+                try:
+                    if ret is None or atr_latest is None or atr_latest == 0:
+                        return None
+                    return ret / atr_latest
+                except Exception:
+                    return None
 
             drift_data[name] = {
-                "current": curr,
                 "ret_15m": safe_ret(curr, m15),
                 "ret_30m": safe_ret(curr, m30),
                 "ret_1h": safe_ret(curr, h1),
                 "ret_4h": safe_ret(curr, h4),
                 "ret_1d": safe_ret(curr, d1),
                 "ret_5d": safe_ret(curr, d5),
+                "atr": atr_latest,
+                "norm_1d": norm(safe_ret(curr, d1)),
+                "norm_5d": norm(safe_ret(curr, d5)),
             }
 
-            print(f"[DRIFT] {name} -> {drift_data[name]}")
-
-        except Exception as e:
-            print(f"[DRIFT][ERROR] {name}: {e}")
+        except Exception:
             drift_data[name] = {}
 
     market_data["DRIFT_DATA"] = drift_data
