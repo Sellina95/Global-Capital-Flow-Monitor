@@ -1615,7 +1615,7 @@ def generate_daily_report() -> None:
     # -------------------------
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
-    scenario_block = scenario_generator_filter(market_data)
+    #scenario_block = scenario_generator_filter(market_data)
     transmission_block = transmission_layer_filter(market_data)
 
     # -------------------------
@@ -1793,8 +1793,6 @@ def generate_daily_report() -> None:
     # -------------------------
     lines.append("")
     lines.append("---")
-    lines.append("")
-    lines.append(scenario_block)
     lines.append("")
     lines.append("---")
     lines.append("")
