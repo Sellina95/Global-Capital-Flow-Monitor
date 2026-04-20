@@ -4459,14 +4459,19 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
                 f"| {s} | {score_display} | {flag} | **{s_weight:.1f}%** | {action} |"
             )
 
-        allocation_lines.append(f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |")
         total_allocated = round(sum(weights.values()) + cash_weight, 1)
-        if total_alloc != 100:
-            diff = 100 - total_alloc
+
+        if total_allocated != 100:
+            diff = 100 - total_allocated
             cash_weight += diff
+        
+        # 🔥 수정된 값 기준으로 다시 계산
+        total_allocated = round(sum(weights.values()) + cash_weight, 1)
+        
+        # ✅ 이제 출력
+        allocation_lines.append(f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |")
         allocation_lines.append("")
         allocation_lines.append(f"- **Allocation Check:** Sector Weights + Cash = **{total_allocated:.1f}%**")
-
         penalized = [s for s in ow_sorted if divergence_flags.get(s) == "NEGATIVE_DIVERGENCE"]
         if penalized:
             allocation_lines.append(f"- **Divergence Adjustment:** {', '.join(penalized)} penalized in weight sizing")
