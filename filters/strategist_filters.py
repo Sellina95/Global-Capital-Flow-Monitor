@@ -3150,7 +3150,32 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         drift_tilt = -5
 
     budget += drift_tilt
-
+    
+    # -----------------------------
+    # 2.7️⃣ Flow / Gamma Alignment Boost
+    # -----------------------------
+    flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+    gamma = market_data.get("GAMMA_STATE", "N/A")
+    
+    flow_score = flow.get("score", 0)
+    flow_state = str(flow.get("state", "N/A")).upper()
+    gamma_state = str(gamma).upper()
+    
+    flow_gamma_tilt = 0
+    
+    # 정렬된 상승 초기
+    if drift_score >= 2 and flow_score >= 3 and "TRANSITION" in gamma_state:
+        flow_gamma_tilt = 3
+    
+    # 강한 상승 압력
+    elif drift_score >= 3 and flow_score >= 4 and "POSITIVE" in gamma_state:
+        flow_gamma_tilt = 5
+    
+    # 충돌 (리스크 감소)
+    elif drift_score > 0 and flow_score < 0:
+        flow_gamma_tilt = -3
+    
+    budget += flow_gamma_tilt
     # --------------------------------------------------
     # 2.8️⃣ Positioning Penalty (순서 수정 완료)
     # --------------------------------------------------
