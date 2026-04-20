@@ -25,11 +25,11 @@
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
 ### 🎯 Final Action Engine
-- **Action:** EARLY BUY
-- **Size:** SMALL (10~20%)
-- **Confidence:** MEDIUM
+- **Action:** WAIT
+- **Size:** 0%
+- **Confidence:** LOW
 - **Reason:**
-  - Flow building + gamma turning + no shock
+  - Good environment but no strong flow yet
 
 ### 🚩 Market Regime Status
 - **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
@@ -136,8 +136,8 @@
 
 - **SPY:** 15m=-0.035196396493941684 / 30m=0.11138059618007734 / 1H=0.05777198805994033 / 4H=-0.09708225946013505 / 1D=1.1957379599176976 / 5D=4.502099436476281
 - **WTI:** 15m=-1.1371852612227396 / 30m=-0.9355959973545547 / 1H=-0.6017571573438518 / 4H=1.5117941473842267 / 1D=-12.778546616896602 / 5D=-14.476549032942444
-- **DXY:** 15m=0.015252271878640755 / 30m=0.08242224035712731 / 1H=0.07529799569931939 / 4H=0.1364269938097573 / 1D=0.26198143545077546 / 5D=-0.013215907205721411
-- **GOLD:** 15m=0.06025270424463436 / 30m=0.496657026032965 / 1H=0.6331585975864584 / 4H=-1.051986753903844 / 1D=-0.8605132602191423 / 5D=1.5477375138160498
+- **DXY:** 15m=-0.0589626986083891 / 30m=-0.035593806398392935 / 1H=0.030524720093683122 / 4H=0.10691811146348318 / 1D=0.21100992420146625 / 5D=-0.06404751273756393
+- **GOLD:** 15m=0.10990656726674874 / 30m=0.30127366648409204 / 1H=0.9071885941419389 / 4H=-0.6012476779093223 / 1D=-0.6217102006209063 / 5D=1.792341467407499
 
 - **Drift Score:** 2
 - **State:** **⚡ TREND FORMING (초기 흐름 감지)**
@@ -212,20 +212,20 @@ No significant sector-level correlation break detected.
 ### 🏦 Institutional Flow Engine (v1)
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
-- **Flow Score:** 5
-- **Flow State:** **⚡ BUILDING**
-- **Confidence:** **MEDIUM-HIGH**
-- **Interpretation:** 기관성 흐름 형성 가능성
-- **Action Bias:** **WATCHLIST**
+- **Flow Score:** 4
+- **Flow State:** **👀 EARLY TRACE**
+- **Confidence:** **MEDIUM**
+- **Interpretation:** 흔적은 있으나 확신은 이르다
+- **Action Bias:** **MONITOR**
 
 - **Drift:** ⚡ TREND FORMING (초기 흐름 감지) / NEUTRAL / NONE
 - **Gamma:** 🟡 TRANSITION / 🟢 EARLY FLOW WITHOUT SHOCK
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.42
+- **Positioning (POS_Z):** 1.43
 
 - **Drivers:**
   - Drift early
-  - Short-horizon pre-move cluster
+  - Short-horizon pre-move
   - Gamma transition
   - No shock yet
 
@@ -276,14 +276,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **84**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ TREND FORMING (초기 흐름 감지) (NEUTRAL) / 수급=1.42 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ TREND FORMING (초기 흐름 감지) (NEUTRAL) / 수급=1.43 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `EASING` | **Price(Regime):** `RISK-ON` | **VIX:** `17.48`
-- **Positioning Data:** Z-Score: `1.42` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.43` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -399,8 +399,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.464991739768457
-- **Z-Score (5d):** 1.0342141182826374
+- **Z-Score (1d):** 1.4649994968560816
+- **Z-Score (5d):** 1.0342155163365685
 
 ### EEM
 - **Crash?** False
@@ -417,8 +417,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391265724409853
-- **Z-Score (5d):** 1.1100981067613784
+- **Z-Score (1d):** 1.5391267247618508
+- **Z-Score (5d):** 1.1100981392930533
 
 ### EWJ
 - **Crash?** False
