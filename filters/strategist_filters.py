@@ -4941,11 +4941,16 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
+
+    
+    # -------------------------
+ 
 def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Final Action Engine v3
+    Final Action Engine v3.1
     - 문자열 정규화 포함
     - FINAL_STATE + INSTITUTIONAL_FLOW + GAMMA + SEW 통합 판단
+    - 최소 수정: BUILDING(flow_score >= 6) 구간의 사이즈 반영 강화
     """
 
     final_state = market_data.get("FINAL_STATE", {}) or {}
@@ -5053,12 +5058,25 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Flow strong + structure aligned")
 
     # -------------------------
-        # -------------------------
-    # 4) 초기 진입 구간 (FIXED)
+    # 4) BUILDING 구간 (NEW, 최소 추가)
     # -------------------------
     elif (
         is_risk_on
-        and flow_score >= 4   # ✅ 5 → 4로 수정
+        and flow_score >= 6
+        and (is_gamma_transition or is_gamma_positive)
+        and is_sew_stable
+    ):
+        action = "ADD"
+        size = "MEDIUM (20~40%)"
+        confidence = "MEDIUM-HIGH"
+        reason.append("Flow building confirmed + gamma turning + no shock")
+
+    # -------------------------
+    # 5) 초기 진입 구간
+    # -------------------------
+    elif (
+        is_risk_on
+        and flow_score >= 4
         and (is_gamma_transition or is_gamma_positive)
         and is_sew_stable
     ):
@@ -5068,15 +5086,16 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Flow building + gamma turning + no shock")
 
     # -------------------------
-    # 5) 환경은 좋지만 흐름 약함 (FIXED)
+    # 6) 환경은 좋지만 흐름 약함
     # -------------------------
-    elif is_risk_on and flow_score < 4 and is_sew_stable:  # ✅ 5 → 4
+    elif is_risk_on and flow_score < 4 and is_sew_stable:
         action = "WAIT"
         size = "0%"
         confidence = "LOW"
         reason.append("Good environment but no strong flow yet")
+
     # -------------------------
-    # 6) Risk-off 환경
+    # 7) Risk-off 환경
     # -------------------------
     elif is_risk_off:
         action = "REDUCE"
@@ -5085,7 +5104,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Risk-off environment")
 
     # -------------------------
-    # 7) 기본값
+    # 8) 기본값
     # -------------------------
     else:
         action = "HOLD"
@@ -5094,7 +5113,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("No actionable alignment")
 
     # -------------------------
-    # 8) 과열 override
+    # 9) 과열 override
     # -------------------------
     if pos_z >= 2.2 and flow_score < 5:
         action = "REDUCE"
