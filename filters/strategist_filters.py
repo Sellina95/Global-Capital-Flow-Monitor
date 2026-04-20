@@ -4687,13 +4687,17 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
 
     return market_data
 
+
+    
+
 def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
     """
-    Institutional Flow Engine (v1)
+    Institutional Flow Engine (v2-minimal)
 
     목적:
     - 기관성 자금 축적 흔적을 점수화
     - 뉴스/쇼크 이전의 방향성 흐름 탐지
+    - 기존 로직 유지 + breadth / validation 최소 추가
     """
 
     drift = market_data.get("DRIFT", {}) or {}
@@ -4722,6 +4726,9 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
         except Exception:
             return None
 
+    # -----------------------------
+    # 기존 short-horizon inputs
+    # -----------------------------
     spy_15m = g("SPY", "ret_15m")
     spy_30m = g("SPY", "ret_30m")
     wti_15m = g("WTI", "ret_15m")
@@ -4804,6 +4811,71 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
         flow_score -= 1
         reasons.append("Positioning somewhat stretched")
 
+    # --------------------------------------------------
+    # 6.5) Validation Layer (NEW, minimal additive only)
+    # --------------------------------------------------
+    validation_score = 0
+
+    hyg_1d = g("HYG", "ret_1d")
+    lqd_1d = g("LQD", "ret_1d")
+    eem_1d = g("EEM", "ret_1d")
+    fxi_1d = g("FXI", "ret_1d")
+
+    xlk_1d = g("XLK", "ret_1d")
+    xli_1d = g("XLI", "ret_1d")
+    xlf_1d = g("XLF", "ret_1d")
+    xly_1d = g("XLY", "ret_1d")
+    xlp_1d = g("XLP", "ret_1d")
+    xlu_1d = g("XLU", "ret_1d")
+
+    # 6.5-1) Cross-asset risk participation
+    risk_participation_hits = 0
+
+    if hyg_1d is not None and hyg_1d > 0:
+        risk_participation_hits += 1
+    if eem_1d is not None and eem_1d > 0:
+        risk_participation_hits += 1
+    if fxi_1d is not None and fxi_1d > 0:
+        risk_participation_hits += 1
+
+    if risk_participation_hits >= 2:
+        validation_score += 1
+        reasons.append("Cross-asset risk participation")
+
+    # 6.5-2) Credit confirmation
+    if hyg_1d is not None and lqd_1d is not None and hyg_1d >= lqd_1d:
+        validation_score += 1
+        reasons.append("Credit confirms risk appetite")
+
+    # 6.5-3) Sector leadership breadth
+    leadership_hits = 0
+    for v in [xlk_1d, xli_1d, xlf_1d, xly_1d]:
+        if v is not None and v > 0:
+            leadership_hits += 1
+
+    if leadership_hits >= 2:
+        validation_score += 1
+        reasons.append("Leadership breadth expanding")
+
+    # 6.5-4) Cyclical vs defensive check
+    defensive_weak = 0
+    for v in [xlp_1d, xlu_1d]:
+        if v is not None and v <= 0:
+            defensive_weak += 1
+
+    cyclical_strong = 0
+    for v in [xli_1d, xly_1d, xlk_1d]:
+        if v is not None and v > 0:
+            cyclical_strong += 1
+
+    if cyclical_strong >= 2 and defensive_weak >= 1:
+        validation_score += 1
+        reasons.append("Cyclical leadership over defensives")
+
+    # Validation score는 최대 +2까지만 반영 (과적합 방지)
+    validation_boost = min(validation_score, 2)
+    flow_score += validation_boost
+
     # 7) Flow state
     if flow_score >= 7:
         flow_state = "🔥 BUILDING HARD"
@@ -4839,11 +4911,14 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
         "gamma_combo": gamma_combo,
         "sew_status": sew_status,
         "sew_event_type": sew_event_type,
+        "validation_score": validation_score,
+        "validation_boost": validation_boost,
     }
+
     print("[FLOW ENGINE FINAL]", market_data["INSTITUTIONAL_FLOW"])
 
     lines = []
-    lines.append("### 🏦 Institutional Flow Engine (v1)")
+    lines.append("### 🏦 Institutional Flow Engine (v2-minimal)")
     lines.append("- **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지")
     lines.append("")
     lines.append(f"- **Flow Score:** {flow_score}")
@@ -4856,13 +4931,13 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Gamma:** {gamma_state} / {gamma_combo}")
     lines.append(f"- **SEW:** {sew_status} / {sew_event_type}")
     lines.append(f"- **Positioning (POS_Z):** {pos_z}")
-    
+    lines.append(f"- **Validation Score:** {validation_score} (boost applied: +{validation_boost})")
+
     if reasons:
         lines.append("")
         lines.append("- **Drivers:**")
         for r in reasons:
             lines.append(f"  - {r}")
-            
 
     return "\n".join(lines)
 
