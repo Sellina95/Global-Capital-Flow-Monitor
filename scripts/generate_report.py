@@ -1729,15 +1729,6 @@ def generate_daily_report() -> None:
         war_room_summary = "구조 또는 실시간 수급에 경미한 이상징후 존재 / 모니터링 필요"
 
     # Exposure 해석문
-    # Exposure 해석문
-    final_state = market_data.get("FINAL_STATE", {}) or {}
-    exposure_interp_lines = build_strategic_interpretation(
-    market_data,
-    final_state,
-    final_action_result,
-    )
-
-    # -------------------------
     # 15) Report assembly
     # -------------------------
     lines = []
@@ -1759,12 +1750,6 @@ def generate_daily_report() -> None:
     lines.append(f"- **Portfolio Stance:** {final_action_display} / {final_exposure_display}%")
     lines.append("")
 
-    # ✅ 우리가 만든 해석
-    exposure_interp_lines = build_strategic_interpretation(...)
-    lines.append("### 📌 Interpretation")
-    lines.extend(exposure_interp_lines)
-    lines.append("")
-
     lines.append(f"- **[14번 구조·수급 괴리]:** {war_room_emoji} {div_status}")
     lines.append(f"- **[실시간 보초병(SEW)]:** {sew_status} | {sew_summary}")
     lines.append(f"- **[SEW Event Type]:** {sew_event_type}")
@@ -1780,6 +1765,20 @@ def generate_daily_report() -> None:
     lines.append(f"- **[14번 수급 시그널]:** {div_action}")
     lines.append("")
 
+    # Final Action Engine 결과 먼저 생성
+    final_action_result = final_action_engine(market_data)
+    final_state = market_data.get("FINAL_STATE", {}) or {}
+
+    exposure_interp_lines = build_strategic_interpretation(
+        market_data,
+        final_state,
+        final_action_result,
+    )
+
+    lines.append("### 📌 Interpretation")
+    lines.extend(exposure_interp_lines)
+    lines.append("")
+
     # Final Action Engine 출력
     lines.append("### 🎯 Final Action Engine")
     lines.append(f"- **Action:** {final_action_name}")
@@ -1790,8 +1789,6 @@ def generate_daily_report() -> None:
         for r in final_action_reasons:
             lines.append(f"  - {r}")
     lines.append("")
-
-    
 
     # Regime Status
     lines.append("### 🚩 Market Regime Status")
@@ -1807,6 +1804,9 @@ def generate_daily_report() -> None:
     lines.append("")
     lines.append("## 📊 Daily Macro Signals")
     lines.append("")
+   
+    # -------------------------
+    
     
     # daily core signals
     if "US10Y" in market_data and market_data["US10Y"].get("today") is not None:
