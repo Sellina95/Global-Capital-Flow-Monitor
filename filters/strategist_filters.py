@@ -3029,44 +3029,44 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         return "FLAT"
 
     # --------------------------------------------------
+    # --------------------------------------------------
     # 1️⃣ Pull Signals
     # --------------------------------------------------
     struct_v2 = str(market_data.get("STRUCT_V2_STATE", "NEUTRAL")).upper()
     policy_bias_line = str(market_data.get("POLICY_BIAS_LINE", "") or "")
-
+    
     sentiment = market_data.get("SENTIMENT", {}) or {}
     fear = _to_float(sentiment.get("fear_greed"))
     sent_state = _sentiment_state(fear)
-
+    
     hy_oas = market_data.get("HY_OAS", {}) or {}
     hy_oas_today = _to_float(hy_oas.get("today"))
     credit_calm: Optional[bool] = None
     if hy_oas_today is not None:
         credit_calm = hy_oas_today < 4.0
-
+    
     net_liq = market_data.get("NET_LIQ", {}) or {}
     net_liq_pct = _to_float(net_liq.get("pct_change"))
     liq_dir_tag = _liq_dir_tag(net_liq_pct)
-
+    
     liq_level_bucket = str(
         net_liq.get("level_bucket") or market_data.get("NET_LIQ_LEVEL_BUCKET") or "N/A"
     ).upper()
     if liq_level_bucket not in ("HIGH", "MID", "LOW"):
         liq_level_bucket = "N/A"
-
+    
     phase = market_data.get("MARKET_REGIME", "N/A")
     phase_upper = str(phase).upper()
-
+    
     policy_upper = policy_bias_line.upper()
     mixed = "MIXED" in policy_upper
     easing = "EASING" in policy_upper
     tightening = "TIGHTENING" in policy_upper
-
+    
     pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
     if pos_z is None:
         pos_z = 0.0
-
-    # --------------------------------------------------
+        # --------------------------------------------------
     # 1.5️⃣ Drift (보조 신호만)
     # --------------------------------------------------
     drift = market_data.get("DRIFT", {}) or {}
@@ -3266,45 +3266,45 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     )
 
     # --------------------------------------------------
-    # 6.5️⃣ Final State Object
     # --------------------------------------------------
+    # 6.5️⃣ Final State Object
+    # 기존 FINAL_STATE(FRED_EXTRA 등)를 보존하면서 13번 결과만 업데이트
+    # --------------------------------------------------
+    existing_final_state = market_data.get("FINAL_STATE", {}) or {}
+    
     final_state = {
-    "phase": phase,
-    "phase_cap": cap,
-    "risk_action": action,
-    "risk_budget": budget,
-
-    "structure_tag": struct_tag,
-    "policy_bias_line": policy_bias_line,
-
-    "sentiment_fear_greed": fear,
-    "sentiment_state": sent_state,
-
-    "credit_calm": credit_calm,
-    "hy_oas_today": hy_oas_today,
-
-    "liquidity_dir": liq_dir_tag,
-    "liquidity_level_bucket": liq_level_bucket,
-    "net_liq_pct_change": net_liq_pct,
-
-    # 🔥 추가 필수
-    "pos_z": pos_z,
-    "VIX": vix,
-    "T10Y2Y": t10y2y,
-
-    # 🔥 Drift Layer
-    "drift_score": drift_score,
-    "drift_state": drift_state,
-    "drift_label": drift_label,
-    "drift_combo_signal": combo_signal,
-
-    # 🔥 Budget influence
-    "drift_tilt": drift_tilt,
-    "flow_gamma_tilt": flow_gamma_tilt,
-
-    "narrative_line": narrative,
-}
-    market_data["FINAL_STATE"] = final_state
+        **existing_final_state,
+    
+        "phase": phase,
+        "phase_cap": cap,
+        "risk_action": action,
+        "risk_budget": budget,
+    
+        "structure_tag": struct_tag,
+        "policy_bias_line": policy_bias_line,
+    
+        "sentiment_fear_greed": fear,
+        "sentiment_state": sent_state,
+    
+        "credit_calm": credit_calm,
+        "hy_oas_today": hy_oas_today,
+    
+        "liquidity_dir": liq_dir_tag,
+        "liquidity_level_bucket": liq_level_bucket,
+        "net_liq_pct_change": net_liq_pct,
+    
+        "pos_z": pos_z,
+    
+        "drift_score": drift_score,
+        "drift_state": drift_state,
+        "drift_label": drift_label,
+        "drift_combo_signal": drift_combo,
+        "drift_tilt": drift_tilt,
+        "flow_gamma_tilt": flow_gamma_tilt,
+    
+        "narrative_line": narrative,
+    }
+        market_data["FINAL_STATE"] = final_state
 
     # --------------------------------------------------
     # 6️⃣ Output (원래 양식 복구)
