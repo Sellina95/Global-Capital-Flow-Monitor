@@ -60,6 +60,92 @@ KEYS = ["US10Y", "DXY", "WTI", "VIX", "USDKRW"]
 # 리포트 상단에 따로 Liquidity Snapshot 블럭을 띄울지 (Fed Plumbing Filter가 있으니 보통 False 추천)
 SHOW_LIQUIDITY_SNAPSHOT = False
 
+def build_strategic_interpretation(
+    market_data: Dict[str, Any],
+    final_state: Dict[str, Any],
+    final_action_result: Dict[str, Any],
+) -> list[str]:
+    """
+    Strategic War Room 상단 해석 문구 생성
+    - 기존 로직은 건드리지 않고 출력용 해석만 추가
+    """
+
+    flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+    flow_score = flow.get("score", 0)
+    drift_score = market_data.get("DRIFT_SCORE", 0)
+
+    gamma_state = str(market_data.get("GAMMA_STATE", "N/A") or "N/A").upper()
+    sew_status = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
+    phase = str(final_state.get("phase", "N/A") or "N/A")
+
+    final_action = str(final_action_result.get("action", "HOLD") or "HOLD").upper()
+
+    try:
+        flow_score = int(flow_score)
+    except Exception:
+        flow_score = 0
+
+    try:
+        drift_score = int(drift_score)
+    except Exception:
+        drift_score = 0
+
+    lines = []
+
+    # 1) 환경 해석
+    lines.append(
+        f"→ 금일 시장은 {phase} 환경이며 유동성 및 정책은 완화적인 상태입니다"
+    )
+
+    # 2) Flow / Drift 해석
+    if flow_score <= 3 and drift_score <= 1:
+        lines.append(
+            "→ 기관 자금 유입은 아직 확신 단계에 도달하지 않았으며 시장은 관망 구간입니다"
+        )
+    elif flow_score >= 5 and drift_score >= 2:
+        lines.append(
+            "→ 기관 자금과 가격 흐름이 정렬되며 초기 진입 가능 구간입니다"
+        )
+    elif flow_score >= 6:
+        lines.append(
+            "→ 기관 자금 흐름이 강화되며 추세 확장 가능성이 있습니다"
+        )
+    else:
+        lines.append(
+            "→ 일부 흐름은 감지되나 확신하기에는 이른 단계입니다"
+        )
+
+    # 3) Gamma / SEW 해석
+    if "POSITIVE" in gamma_state:
+        lines.append(
+            "→ 감마 환경은 안정적이며 변동성은 제한된 상태입니다"
+        )
+    elif "TRANSITION" in gamma_state:
+        lines.append(
+            "→ 감마는 전환 구간으로, 초기 방향성이 형성되는 단계입니다"
+        )
+
+    if "ALERT" in sew_status or "DEADMAN" in sew_status:
+        lines.append(
+            "→ 단기 충격 가능성이 존재하여 보수적 접근이 필요합니다"
+        )
+
+    # 4) Final Action 해석
+    if final_action == "REDUCE":
+        lines.append(
+            "→ 현재 구간에서는 신규 진입보다는 기존 포지션 관리가 우선됩니다"
+        )
+    elif final_action in ["ADD", "EARLY BUY"]:
+        lines.append(
+            "→ 구조와 수급이 정렬되며 점진적 진입이 가능한 구간입니다"
+        )
+    else:
+        lines.append(
+            "→ 명확한 방향성이 확인될 때까지 관망이 유효합니다"
+        )
+
+    return lines
+
 
 def interpret_sew_event(event_type: str) -> str:
     """
@@ -1643,16 +1729,12 @@ def generate_daily_report() -> None:
         war_room_summary = "구조 또는 실시간 수급에 경미한 이상징후 존재 / 모니터링 필요"
 
     # Exposure 해석문
-    exposure_interp_lines = []
-    if final_exposure_display < base_exposure_display:
-        exposure_interp_lines.append("→ 시장 구조상 확대 가능 환경이더라도, 현재는 리스크 오버라이드가 우선입니다")
-        exposure_interp_lines.append("→ Event / Warning / SEW 반영으로 방어적 축소 필요")
-    elif final_exposure_display > base_exposure_display:
-        exposure_interp_lines.append("→ 구조 대비 실행 레이어가 더 우호적으로 해석되었습니다")
-        exposure_interp_lines.append("→ 실시간 리스크 이상 없음 / 전략 기준보다 공격적 운용 가능")
-    else:
-        exposure_interp_lines.append("→ 구조와 리스크 오버라이드가 대체로 정렬된 상태입니다")
-        exposure_interp_lines.append("→ 전략 기준 노출 유지 가능")
+    # Exposure 해석문
+    exposure_interp_lines = build_strategic_interpretation(
+    market_data,
+    final_state,
+    final_action_result,
+    )
 
     # -------------------------
     # 15) Report assembly
@@ -1676,6 +1758,8 @@ def generate_daily_report() -> None:
     lines.append(f"- **Portfolio Stance:** {final_action_display} / {final_exposure_display}%")
     lines.append("")
 
+    # ✅ 우리가 만든 해석
+    exposure_interp_lines = build_strategic_interpretation(...)
     lines.append("### 📌 Interpretation")
     lines.extend(exposure_interp_lines)
     lines.append("")
