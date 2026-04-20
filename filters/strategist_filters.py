@@ -4820,6 +4820,9 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
         "sew_status": sew_status,
         "sew_event_type": sew_event_type,
     }
+    print("=== DRIFT_DATA SAMPLE ===")
+    print(drift_data)
+    print("=========================")
 
     lines = []
     lines.append("### 🏦 Institutional Flow Engine (v1)")
@@ -4835,12 +4838,13 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Gamma:** {gamma_state} / {gamma_combo}")
     lines.append(f"- **SEW:** {sew_status} / {sew_event_type}")
     lines.append(f"- **Positioning (POS_Z):** {pos_z}")
-
+    
     if reasons:
         lines.append("")
         lines.append("- **Drivers:**")
         for r in reasons:
             lines.append(f"  - {r}")
+            
 
     return "\n".join(lines)
 
