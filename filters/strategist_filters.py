@@ -2187,6 +2187,25 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "WTI": "CL=F",
         "DXY": "DX-Y.NYB",
         "GOLD": "GC=F",
+    
+        # Credit / Risk participation
+        "HYG": "HYG",
+        "LQD": "LQD",
+    
+        # EM / China
+        "EEM": "EEM",
+        "FXI": "FXI",
+    
+        # Sector leadership
+        "XLK": "XLK",
+        "XLI": "XLI",
+        "XLF": "XLF",
+        "XLY": "XLY",
+    
+        # Defensive comparison
+        "XLP": "XLP",
+        "XLU": "XLU",
+
     }
 
     drift_data = {}
