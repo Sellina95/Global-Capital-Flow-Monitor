@@ -25,11 +25,11 @@
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
 ### 🎯 Final Action Engine
-- **Action:** EARLY BUY
-- **Size:** SMALL (10~20%)
-- **Confidence:** MEDIUM
+- **Action:** ADD
+- **Size:** MEDIUM (20~40%)
+- **Confidence:** MEDIUM-HIGH
 - **Reason:**
-  - Flow building + gamma turning + no shock
+  - Flow building confirmed + gamma turning + no shock
 
 ### 🚩 Market Regime Status
 - **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
@@ -406,8 +406,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.4649990602811471
-- **Z-Score (5d):** 1.034216121763981
+- **Z-Score (1d):** 1.4649994968560816
+- **Z-Score (5d):** 1.0342155163365685
 
 ### EEM
 - **Crash?** False
@@ -424,8 +424,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391267247618508
-- **Z-Score (5d):** 1.1100981392930533
+- **Z-Score (1d):** 1.5391272040399357
+- **Z-Score (5d):** 1.1100982800263728
 
 ### EWJ
 - **Crash?** False
