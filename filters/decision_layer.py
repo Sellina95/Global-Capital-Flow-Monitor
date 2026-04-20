@@ -222,8 +222,8 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     except Exception:
         pos_z = 0.0
 
-    # Final Action Engine 결과를 여기서 직접 호출해서 반영
-    tactical = final_action_engine(market_data)
+    # Final Action Engine 결과는 generate_report.py에서 먼저 계산한 값을 사용
+    tactical = market_data.get("FINAL_ACTION", {}) or {}
     tactical_action = str(tactical.get("action", "HOLD") or "HOLD").upper()
     tactical_size = str(tactical.get("size", "NONE") or "NONE")
     tactical_confidence = str(tactical.get("confidence", "LOW") or "LOW")
