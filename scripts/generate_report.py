@@ -1565,19 +1565,22 @@ def generate_daily_report() -> None:
     # -------------------------
     # 8) Strategic War Room inputs
     # -------------------------
+    # -------------------------
+    # 8) Strategic War Room inputs
+    # -------------------------
     div_full_text = divergence_monitor_filter(market_data)
     div_status = "N/A"
     div_action = "N/A"
-
+    
     for line in div_full_text.split("\n"):
         if "**Status:**" in line:
             div_status = line.split("**Status:**")[-1].strip()
         if "**Action Signal:**" in line:
             div_action = line.split("**Action Signal:**")[-1].strip()
-
+    
     recommended_exposure = 100
     is_deadman_activated = False
-
+    
     for line in commentary_block.split("\n"):
         if "Recommended Exposure:" in line:
             try:
@@ -1586,14 +1589,13 @@ def generate_daily_report() -> None:
                 pass
         if "DEAD MAN'S SWITCH ACTIVATED" in line:
             is_deadman_activated = True
-
+    
     # -------------------------
-    # 8.5) FINAL_S
+    # 8.5) FINAL_STATE 보정
     # -------------------------
     if "FINAL_STATE" not in market_data or not isinstance(market_data.get("FINAL_STATE"), dict):
         market_data["FINAL_STATE"] = {}
     
-    # phase가 비어있을 때만 채움
     if not market_data["FINAL_STATE"].get("phase") or market_data["FINAL_STATE"].get("phase") == "N/A":
         fallback_phase = (
             market_data.get("MARKET_REGIME")
@@ -1602,48 +1604,47 @@ def generate_daily_report() -> None:
         )
         market_data["FINAL_STATE"]["phase"] = fallback_phase
     
-    # risk_budget도 동일
     if not market_data["FINAL_STATE"].get("risk_budget") or market_data["FINAL_STATE"].get("risk_budget") == "N/A":
         market_data["FINAL_STATE"]["risk_budget"] = recommended_exposure
     
     print("[DEBUG][FINAL_STATE FIXED] FINAL_STATE =", market_data["FINAL_STATE"])
-
+    
     # -------------------------
     # 9) Divergence state 정제
     # -------------------------
     clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
-
+    
     if "ALIGNED" in clean_div_status.upper():
         clean_div_status = "ALIGNED"
     elif "DISALIGNED" in clean_div_status.upper():
         clean_div_status = "DISALIGNED"
     else:
         clean_div_status = "N/A"
-
+    
     clean_div_action = div_action.replace("🚨", "").replace("✅", "").strip()
-
+    
     market_data["DIVERGENCE_STATE"] = {
         "status": clean_div_status,
         "action": clean_div_action,
     }
-
+    
     market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
-
+    
     # -------------------------
     # 10) 6.5 / 6.6 결과 생성
     # -------------------------
     correlation_break_text = correlation_break_filter(market_data)
     sector_corr_break_text = sector_correlation_break_filter(market_data)
-
+    
     corr65_state = correlation_break_state(market_data)
     corr66_state = sector_correlation_break_state(market_data)
-
+    
     # -------------------------
-    # 11) Warning signal states (6.5 / 6.6 / 7.2)
+    # 11) Warning signals
     # -------------------------
     geo_state = market_data.get("GEO_EW", {}) or {}
     geo_level = str(geo_state.get("level", "NORMAL")).upper()
-
+    
     market_data["WARNING_SIGNALS"] = {
         "corr65_break": corr65_state["break"],
         "corr66_break": corr66_state["break"],
@@ -1651,23 +1652,7 @@ def generate_daily_report() -> None:
         "corr66_score": corr66_state["score"],
         "geo_level": geo_level,
     }
-
-
-    # -------------------------
-    # 12) Final Decision 계산
-    # -------------------------
-    final_decision_text = war_room_final_decision_filter(market_data)
-    final_decision_state = market_data.get("FINAL_DECISION", {}) or {}
-    print("[DEBUG] FINAL_DECISION:", final_decision_state)
-
-    base_exposure_display = int(final_decision_state.get("base_exposure", recommended_exposure))
-    final_exposure_display = int(final_decision_state.get("exposure", recommended_exposure))
-    final_action_display = str(final_decision_state.get("action", "HOLD")).upper()
-
-    print("[DEBUG][SEW FINAL CHECK]")
-    print("SEW_STATUS =", market_data.get("SEW_STATUS"))
-    print("SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
-    # -------------------------
+    
     # -------------------------
     # 12) Final Decision 계산
     # -------------------------
@@ -1684,7 +1669,7 @@ def generate_daily_report() -> None:
     print("SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
     
     # -------------------------
-    # 12.5) Final Action Engine 계산 (🔥 여기 단 한번)
+    # 12.5) Final Action Engine (🔥 단 한번)
     # -------------------------
     action_result = final_action_engine(market_data)
     market_data["FINAL_ACTION"] = action_result
@@ -1697,15 +1682,14 @@ def generate_daily_report() -> None:
     final_action_reasons = action_result.get("reason", [])
     
     # -------------------------
-    # 13) Summary / Decision blocks 생성
+    # 13) 기타 블록
     # -------------------------
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
-    #scenario_block = scenario_generator_filter(market_data)
     transmission_block = transmission_layer_filter(market_data)
-
+    
     # -------------------------
-    # 14) 워룸 상태 판단
+    # 14) 워룸 상태
     # -------------------------
     is_war_room_alert = (
         is_deadman_activated
@@ -1713,10 +1697,10 @@ def generate_daily_report() -> None:
         or (clean_div_status != "ALIGNED")
         or (sew_status in ["WATCH", "ALERT", "DEADMAN"])
     )
-
+    
     war_room_emoji = "🚨" if is_war_room_alert else "✅"
     war_room_state = "ALERT" if is_war_room_alert else "STABLE"
-
+    
     if is_deadman_activated or sew_deadman:
         war_room_summary = "데드맨 스위치 발동 / 자산 보호 모드 강제 전환"
     elif clean_div_status == "ALIGNED" and sew_status == "STABLE":
@@ -1727,8 +1711,8 @@ def generate_daily_report() -> None:
         war_room_summary = "실시간 발작 감지 / 구조 또는 수급 레벨에서 즉시 점검 필요"
     else:
         war_room_summary = "구조 또는 실시간 수급에 경미한 이상징후 존재 / 모니터링 필요"
-
-    # Exposure 해석문
+    
+    # -------------------------
     # 15) Report assembly
     # -------------------------
     lines = []
@@ -1736,50 +1720,50 @@ def generate_daily_report() -> None:
     lines.append(f"**Date:** {report_date}")
     lines.append(f"**Data as of:** {data_as_of_date}")
     lines.append("")
-
-    # Strategic War Room
+    
     lines.append("## ⚡ Strategic War Room (통합 대응)")
     lines.append(f"> **시스템 상태: {war_room_emoji} {war_room_state}**")
     lines.append(f"> **판단 요약: {war_room_summary}**")
     lines.append("")
-
+    
     lines.append("### 🎯 Exposure Framework")
     lines.append(f"- **Base Exposure (전략 기준): {base_exposure_display}%**")
     lines.append(f"- **Final Exposure (실행 기준): {final_exposure_display}%**")
     lines.append("")
     lines.append(f"- **Portfolio Stance:** {final_action_display} / {final_exposure_display}%")
     lines.append("")
-
+    
     lines.append(f"- **[14번 구조·수급 괴리]:** {war_room_emoji} {div_status}")
     lines.append(f"- **[실시간 보초병(SEW)]:** {sew_status} | {sew_summary}")
     lines.append(f"- **[SEW Event Type]:** {sew_event_type}")
     lines.append(f"  → 해석: {sew_event_interp}")
     lines.append(f"- **[SEW Spike Monitor]:** Spike {sew_spike_count} / Extreme {sew_extreme_count}")
+    
     if sew_deadman_reason and sew_deadman_reason != "Normal Operation":
         lines.append(f"- **[SEW Deadman Reason]:** {sew_deadman_reason}")
+    
     if is_deadman_activated or sew_deadman:
         lines.append("- **[15번 데드맨]:** 🚨 ACTIVATED")
     else:
         lines.append("- **[15번 데드맨]:** ✅ PASS")
-
+    
     lines.append(f"- **[14번 수급 시그널]:** {div_action}")
     lines.append("")
-
-    # Final Action Engine 결과 먼저 생성
-    final_action_result = final_action_engine(market_data)
+    
+    # ✅ Interpretation
     final_state = market_data.get("FINAL_STATE", {}) or {}
-
+    
     exposure_interp_lines = build_strategic_interpretation(
         market_data,
         final_state,
-        final_action_result,
+        action_result,
     )
-
+    
     lines.append("### 📌 Interpretation")
     lines.extend(exposure_interp_lines)
     lines.append("")
-
-    # Final Action Engine 출력
+    
+    # ✅ Final Action Engine
     lines.append("### 🎯 Final Action Engine")
     lines.append(f"- **Action:** {final_action_name}")
     lines.append(f"- **Size:** {final_action_size}")
@@ -1789,23 +1773,12 @@ def generate_daily_report() -> None:
         for r in final_action_reasons:
             lines.append(f"  - {r}")
     lines.append("")
-
-    # Regime Status
-    lines.append("### 🚩 Market Regime Status")
-    if regime_result.get("status") == "DETECTED":
-        lines.append(
-            f"- **국면 전환 감지:** 🚨 **{regime_result.get('prev_regime')}** → **{regime_result.get('current_regime')}**"
-        )
-    else:
-        lines.append(f"- **현재 국면 유지:** ✅ **{regime_result.get('current_regime')}**")
-
+    
+    # ✅ War Room Final Decision (🔥 핵심)
+    lines.append(final_decision_text)
     lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append("## 📊 Daily Macro Signals")
-    lines.append("")
-   
-    # -------------------------
+       
+        # -------------------------
     
     
     # daily core signals
