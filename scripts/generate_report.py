@@ -1868,8 +1868,6 @@ def generate_daily_report() -> None:
     lines.append("")
     lines.append(exec_block)
     lines.append("")
-    lines.append(transmission_block)
-    lines.append("")
     lines.append("---")
     lines.append("")
 
