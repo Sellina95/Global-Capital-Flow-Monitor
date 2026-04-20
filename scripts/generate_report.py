@@ -1730,6 +1730,7 @@ def generate_daily_report() -> None:
 
     # Exposure 해석문
     # Exposure 해석문
+    final_state = market_data.get("FINAL_STATE", {}) or {}
     exposure_interp_lines = build_strategic_interpretation(
     market_data,
     final_state,
