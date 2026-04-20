@@ -3269,32 +3269,41 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     # 6.5️⃣ Final State Object
     # --------------------------------------------------
     final_state = {
-        "phase": phase,
-        "phase_cap": cap,
-        "risk_action": action,
-        "risk_budget": budget,
+    "phase": phase,
+    "phase_cap": cap,
+    "risk_action": action,
+    "risk_budget": budget,
 
-        "structure_tag": struct_tag,
-        "policy_bias_line": policy_bias_line,
+    "structure_tag": struct_tag,
+    "policy_bias_line": policy_bias_line,
 
-        "sentiment_fear_greed": fear,
-        "sentiment_state": sent_state,
+    "sentiment_fear_greed": fear,
+    "sentiment_state": sent_state,
 
-        "credit_calm": credit_calm,
-        "hy_oas_today": hy_oas_today,
+    "credit_calm": credit_calm,
+    "hy_oas_today": hy_oas_today,
 
-        "liquidity_dir": liq_dir_tag,
-        "liquidity_level_bucket": liq_level_bucket,
-        "net_liq_pct_change": net_liq_pct,
+    "liquidity_dir": liq_dir_tag,
+    "liquidity_level_bucket": liq_level_bucket,
+    "net_liq_pct_change": net_liq_pct,
 
-        "drift_score": drift_score,
-        "drift_state": drift_state,
-        "drift_label": drift_label,
-        "drift_combo_signal": drift_combo,
-        "drift_tilt": drift_tilt,
+    # 🔥 추가 필수
+    "pos_z": pos_z,
+    "VIX": vix,
+    "T10Y2Y": t10y2y,
 
-        "narrative_line": narrative,
-    }
+    # 🔥 Drift Layer
+    "drift_score": drift_score,
+    "drift_state": drift_state,
+    "drift_label": drift_label,
+    "drift_combo_signal": combo_signal,
+
+    # 🔥 Budget influence
+    "drift_tilt": drift_tilt,
+    "flow_gamma_tilt": flow_gamma_tilt,
+
+    "narrative_line": narrative,
+}
     market_data["FINAL_STATE"] = final_state
 
     # --------------------------------------------------
