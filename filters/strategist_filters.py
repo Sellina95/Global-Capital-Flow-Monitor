@@ -4947,10 +4947,11 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
  
 def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Final Action Engine v3.1
+    Final Action Engine v3.2
     - 문자열 정규화 포함
     - FINAL_STATE + INSTITUTIONAL_FLOW + GAMMA + SEW 통합 판단
-    - 최소 수정: BUILDING(flow_score >= 6) 구간의 사이즈 반영 강화
+    - BUILDING(flow_score >= 6) 구간의 사이즈 반영 강화
+    - Exit 로직을 기존 판단 체인 안에 통합
     """
 
     final_state = market_data.get("FINAL_STATE", {}) or {}
@@ -4982,7 +4983,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         flow_score = 0
 
     # -------------------------
-    # 문자열 정규화 (핵심)
+    # 문자열 정규화
     # -------------------------
     def normalize_text(x: str) -> str:
         x = str(x).upper().strip()
@@ -5026,25 +5027,34 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     print(" pos_z =", pos_z)
 
     # -------------------------
-    # 1) Shock 최우선
+    # 1) Shock 최우선 / 긴급 Exit
     # -------------------------
     if is_sew_alert or is_sew_deadman:
         action = "REDUCE"
         size = "RISK CUT"
         confidence = "HIGH"
-        reason.append("SEW shock detected")
+        reason.append("SEW shock → emergency exit")
 
     # -------------------------
-    # 2) 구조 붕괴
+    # 2) 구조 붕괴 Exit
     # -------------------------
-    elif is_gamma_negative and flow_score <= 2:
+    elif is_gamma_negative and flow_score <= 4:
         action = "EXIT"
         size = "FULL"
         confidence = "HIGH"
-        reason.append("Gamma breakdown + weak flow")
+        reason.append("Gamma breakdown + flow weakening")
 
     # -------------------------
-    # 3) 강한 확신 구간
+    # 3) Flow 기반 정상 Exit
+    # -------------------------
+    elif flow_score <= 3 and is_risk_on:
+        action = "REDUCE"
+        size = "PARTIAL"
+        confidence = "MEDIUM"
+        reason.append("Flow fading → institutional exit")
+
+    # -------------------------
+    # 4) 강한 확신 구간
     # -------------------------
     elif (
         is_risk_on
@@ -5058,7 +5068,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Flow strong + structure aligned")
 
     # -------------------------
-    # 4) BUILDING 구간 (NEW, 최소 추가)
+    # 5) BUILDING 구간
     # -------------------------
     elif (
         is_risk_on
@@ -5072,7 +5082,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Flow building confirmed + gamma turning + no shock")
 
     # -------------------------
-    # 5) 초기 진입 구간
+    # 6) 초기 진입 구간
     # -------------------------
     elif (
         is_risk_on
@@ -5086,7 +5096,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Flow building + gamma turning + no shock")
 
     # -------------------------
-    # 6) 환경은 좋지만 흐름 약함
+    # 7) 환경은 좋지만 흐름 약함
     # -------------------------
     elif is_risk_on and flow_score < 4 and is_sew_stable:
         action = "WAIT"
@@ -5095,7 +5105,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Good environment but no strong flow yet")
 
     # -------------------------
-    # 7) Risk-off 환경
+    # 8) Risk-off 환경
     # -------------------------
     elif is_risk_off:
         action = "REDUCE"
@@ -5104,7 +5114,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Risk-off environment")
 
     # -------------------------
-    # 8) 기본값
+    # 9) 기본값
     # -------------------------
     else:
         action = "HOLD"
@@ -5113,7 +5123,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("No actionable alignment")
 
     # -------------------------
-    # 9) 과열 override
+    # 10) 과열 override
     # -------------------------
     if pos_z >= 2.2 and flow_score < 5:
         action = "REDUCE"
