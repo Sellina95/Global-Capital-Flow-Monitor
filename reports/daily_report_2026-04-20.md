@@ -8,9 +8,9 @@
 
 ### 🎯 Exposure Framework
 - **Base Exposure (전략 기준): 75%**
-- **Final Exposure (실행 기준): 75%**
+- **Final Exposure (실행 기준): 67%**
 
-- **Portfolio Stance:** INCREASE / 75%
+- **Portfolio Stance:** HOLD / 67%
 
 - **[14번 구조·수급 괴리]:** ✅ **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
@@ -33,12 +33,20 @@
 - **Reason:**
   - Flow fading → institutional exit
 
-### 🚩 Market Regime Status
-- **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
-
----
-
-## 📊 Daily Macro Signals
+## 🎯 Final Decision (War Room Override)
+- **Final Action:** **HOLD**
+- **Final Exposure:** **67%**
+- **Base Context:** phase=RISK-ON (완화 기대·리스크 선호) / narrative=INCREASE / base_exposure=75%
+- **SEW:** STABLE / NORMAL
+- **Divergence:** ALIGNED / **STAY (포지션 유지)**
+- **Drift:** WEAK DRIFT (노이즈 가능) / REOPENING / DEMAND_BOOM / NONE / score=1
+- **Flow:** 👀 EARLY TRACE / score=3
+- **Gamma:** 🟢 POSITIVE GAMMA
+- **Tactical Action:** REDUCE / PARTIAL / MEDIUM
+- **Positioning:** pos_z=1.45
+- **Warning Score:** 0 (No warning)
+- **Tactical Why:** Flow fading → institutional exit
+- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영 → Tactical=REDUCE / Flow=👀 EARLY TRACE(3) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA → Tactical REDUCE → INCREASE 억제 / 익스포저 10% 축소
 
 - **미국 10년물 금리**: 4.246  (-1.46% vs 4.309)
 - **달러 인덱스**: 98.100  (-0.12% vs 98.220)
@@ -137,9 +145,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 15m=-0.035196396493941684 / 30m=0.11138059618007734 / 1H=0.05777198805994033 / 4H=-0.09708225946013505 / 1D=1.1957379599176976 / 5D=4.502099436476281
-- **WTI:** 15m=-0.022835038410518038 / 30m=0.057146344866065846 / 1H=0.4589805150607251 / 4H=5.114662131593639 / 1D=4.412647161560379 / 5D=-11.637059513742376
-- **DXY:** 15m=-0.004071413841966187 / 30m=-0.023413869587074476 / 1H=-0.06818351763434594 / 4H=-0.1068191308856492 / 1D=0.08970954871236891 / 5D=-0.18501494506595328
-- **GOLD:** 15m=0.010396307442772645 / 30m=-0.12044547487395363 / 1H=-0.17640710966861928 / 4H=0.3735371941517185 / 1D=-0.9819704041819977 / 5D=1.4233299888235962
+- **WTI:** 15m=-0.05740002668098709 / 30m=-0.4915412536294794 / 1H=-0.5938068343936953 / 4H=5.234528248496906 / 1D=3.8163442288247085 / 5D=-12.141702217375528
+- **DXY:** 15m=0.04276401086493742 / 30m=0.0672114602299656 / 1H=0.06415584750596448 / 4H=-0.03256311539048262 / 1D=0.15800079684789026 / 5D=-0.11691114156043847
+- **GOLD:** 15m=-0.07037824033779838 / 30m=0.3367114079383837 / 1H=0.3763483599571238 / 4H=0.02900690651712612 / 1D=-0.6196495605056751 / 5D=1.7944521636438227
 
 - **Drift Score:** 1
 - **State:** **WEAK DRIFT (노이즈 가능)**
@@ -222,7 +230,7 @@ No significant sector-level correlation break detected.
 - **Drift:** WEAK DRIFT (노이즈 가능) / REOPENING / DEMAND_BOOM / NONE
 - **Gamma:** 🟢 POSITIVE GAMMA / 🟢 STABLE FLOW
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.44
+- **Positioning (POS_Z):** 1.45
 - **Validation Score:** 3 (boost applied: +2)
 
 - **Drivers:**
@@ -278,14 +286,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **75**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=WEAK DRIFT (노이즈 가능) (REOPENING / DEMAND_BOOM) / 수급=1.44 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=WEAK DRIFT (노이즈 가능) (REOPENING / DEMAND_BOOM) / 수급=1.45 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `EASING` | **Price(Regime):** `RISK-ON` | **VIX:** `17.48`
-- **Positioning Data:** Z-Score: `1.44` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.45` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -384,15 +392,6 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 **Risk Control / Avoid:**
 - Unscreened speculative exposure
 
-## 🔗 Transmission Map (Macro → Industry → Company)
-- **1-Line Conclusion:** 성장/고베타 우위 + 베타 확장 가능 → **High operating leverage / cyclicals / growth optionality** 선호
-
-- **Policy → Valuation:** 할인율↓(멀티플 확장) → 성장/고베타 우위
-- **Liquidity → Risk Budget:** 유동성 공급(리스크 허용↑) → 베타 확장 가능
-- **Credit → Balance Sheet:** 크레딧 안정 → 시스템 리스크 제한
-
-- **Sector/Company Shortcut:** Cyclicals/Tech(상황에 따라) + Small/Mid beta
-
 ---
 
 
@@ -403,8 +402,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.464991739768457
-- **Z-Score (5d):** 1.0342141182826374
+- **Z-Score (1d):** 1.4649994968560816
+- **Z-Score (5d):** 1.0342155163365685
 
 ### EEM
 - **Crash?** False
@@ -421,8 +420,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391272040399357
-- **Z-Score (5d):** 1.1100982800263728
+- **Z-Score (1d):** 1.5391267757992029
+- **Z-Score (5d):** 1.110098133547303
 
 ### EWJ
 - **Crash?** False
