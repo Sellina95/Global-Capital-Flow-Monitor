@@ -209,25 +209,29 @@ No significant sector-level correlation break detected.
 
 - **🚀 Combo Signal:** 🟢 EARLY FLOW WITHOUT SHOCK
 
-### 🏦 Institutional Flow Engine (v1)
+### 🏦 Institutional Flow Engine (v2-minimal)
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
-- **Flow Score:** 4
-- **Flow State:** **👀 EARLY TRACE**
-- **Confidence:** **MEDIUM**
-- **Interpretation:** 흔적은 있으나 확신은 이르다
-- **Action Bias:** **MONITOR**
+- **Flow Score:** 6
+- **Flow State:** **⚡ BUILDING**
+- **Confidence:** **MEDIUM-HIGH**
+- **Interpretation:** 기관성 흐름 형성 가능성
+- **Action Bias:** **WATCHLIST**
 
 - **Drift:** ⚡ TREND FORMING (초기 흐름 감지) / NEUTRAL / NONE
 - **Gamma:** 🟡 TRANSITION / 🟢 EARLY FLOW WITHOUT SHOCK
 - **SEW:** STABLE / NORMAL
 - **Positioning (POS_Z):** 1.41
+- **Validation Score:** 3 (boost applied: +2)
 
 - **Drivers:**
   - Drift early
   - Short-horizon pre-move
   - Gamma transition
   - No shock yet
+  - Cross-asset risk participation
+  - Leadership breadth expanding
+  - Cyclical leadership over defensives
 
 ### 🎯 8) Incentive Filter (Wall St. Logic)
 
@@ -267,7 +271,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.120 / US10YΔ -0.063 (정상)
-- **Sentiment (Fear&Greed):** 60.42773809708038 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 60.46382229100798 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** RISK-ON (완화 기대·리스크 선호) (Cap: 85)
@@ -321,7 +325,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
-**Flow Overlay:** flow_score=4 / flow_state=👀 EARLY TRACE / drift_label=NEUTRAL / gamma=🟡 TRANSITION
+**Flow Overlay:** flow_score=6 / flow_state=⚡ BUILDING / drift_label=NEUTRAL / gamma=🟡 TRANSITION
 **Flow Notes:** NEUTRAL + FLOW ACTIVE → XLK/XLI 소폭 가점 | Gamma TRANSITION → 초기 리더 소폭 가점
 
 **Overweight:** Technology, Industrials, Consumer Discretionary, Financials
@@ -420,8 +424,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391263266370139
-- **Z-Score (5d):** 1.1100976554845727
+- **Z-Score (1d):** 1.5391267247618508
+- **Z-Score (5d):** 1.1100981392930533
 
 ### EWJ
 - **Crash?** False
