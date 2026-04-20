@@ -1654,35 +1654,49 @@ def generate_daily_report() -> None:
     }
     
     # -------------------------
-       # 12) Final Decision 계산
     # -------------------------
-    
-    base_exposure_display = int(final_decision_state.get("base_exposure", recommended_exposure))
-    final_exposure_display = int(final_decision_state.get("exposure", recommended_exposure))
-    final_action_display = str(final_decision_state.get("action", "HOLD")).upper()
-    
-    print("[DEBUG][SEW FINAL CHECK]")
-    print("SEW_STATUS =", market_data.get("SEW_STATUS"))
-    print("SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
-    
-    # -------------------------
-    # 12.5) Final Action Engine (🔥 단 한번)
+    # 12) Final Action Engine 먼저 계산
     # -------------------------
     action_result = final_action_engine(market_data)
     market_data["FINAL_ACTION"] = action_result
-    
+
     print("[DEBUG] FINAL_ACTION:", action_result)
-    
+
     final_action_name = action_result.get("action", "N/A")
     final_action_size = action_result.get("size", "N/A")
     final_action_confidence = action_result.get("confidence", "N/A")
     final_action_reasons = action_result.get("reason", [])
-    
+
+    print("[DEBUG][SEW FINAL CHECK]")
+    print("SEW_STATUS =", market_data.get("SEW_STATUS"))
+    print("SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
+
+    # -------------------------
+    # 12.5) Final Decision 계산
+    # -------------------------
+    final_decision_text = war_room_final_decision_filter(market_data)
+    final_decision_state = market_data.get("FINAL_DECISION", {}) or {}
+
+    print("[DEBUG] FINAL_DECISION:", final_decision_state)
+
+    try:
+        base_exposure_display = int(final_decision_state.get("base_exposure", recommended_exposure))
+    except Exception:
+        base_exposure_display = int(recommended_exposure)
+
+    try:
+        final_exposure_display = int(final_decision_state.get("exposure", recommended_exposure))
+    except Exception:
+        final_exposure_display = int(recommended_exposure)
+
+    final_action_display = str(final_decision_state.get("action", "HOLD")).upper()
+
     # -------------------------
     # 13) 기타 블록
     # -------------------------
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
+
     
     # -------------------------
     # 14) 워룸 상태
