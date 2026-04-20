@@ -4820,9 +4820,7 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
         "sew_status": sew_status,
         "sew_event_type": sew_event_type,
     }
-    print("=== DRIFT_DATA SAMPLE ===")
-    print(drift_data)
-    print("=========================")
+    print("[FLOW ENGINE FINAL]", market_data["INSTITUTIONAL_FLOW"])
 
     lines = []
     lines.append("### 🏦 Institutional Flow Engine (v1)")
