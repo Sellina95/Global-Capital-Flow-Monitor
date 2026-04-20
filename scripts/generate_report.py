@@ -92,58 +92,27 @@ def build_strategic_interpretation(
 
     lines = []
 
-    # 1) 환경 해석
-    lines.append(
-        f"→ 금일 시장은 {phase} 환경이며 유동성 및 정책은 완화적인 상태입니다"
-    )
-
-    # 2) Flow / Drift 해석
-    if flow_score <= 3 and drift_score <= 1:
-        lines.append(
-            "→ 기관 자금 유입은 아직 확신 단계에 도달하지 않았으며 시장은 관망 구간입니다"
-        )
-    elif flow_score >= 5 and drift_score >= 2:
-        lines.append(
-            "→ 기관 자금과 가격 흐름이 정렬되며 초기 진입 가능 구간입니다"
-        )
-    elif flow_score >= 6:
-        lines.append(
-            "→ 기관 자금 흐름이 강화되며 추세 확장 가능성이 있습니다"
-        )
+    lines.append(f"- 금일 시장은 **{phase} 환경**이며 유동성과 정책은 완화적 상태")
+    
+    if flow_score <= 3:
+        lines.append("- 그러나 **기관 자금 유입은 아직 확신 단계에 도달하지 못한 초기 흐름 구간**")
+    elif flow_score <= 5:
+        lines.append("- 기관 자금 흐름은 형성 중이나, 아직 확신 구간은 아님")
     else:
-        lines.append(
-            "→ 일부 흐름은 감지되나 확신하기에는 이른 단계입니다"
-        )
-
-    # 3) Gamma / SEW 해석
-    if "POSITIVE" in gamma_state:
-        lines.append(
-            "→ 감마 환경은 안정적이며 변동성은 제한된 상태입니다"
-        )
-    elif "TRANSITION" in gamma_state:
-        lines.append(
-            "→ 감마는 전환 구간으로, 초기 방향성이 형성되는 단계입니다"
-        )
-
-    if "ALERT" in sew_status or "DEADMAN" in sew_status:
-        lines.append(
-            "→ 단기 충격 가능성이 존재하여 보수적 접근이 필요합니다"
-        )
-
-    # 4) Final Action 해석
-    if final_action == "REDUCE":
-        lines.append(
-            "→ 현재 구간에서는 신규 진입보다는 기존 포지션 관리가 우선됩니다"
-        )
-    elif final_action in ["ADD", "EARLY BUY"]:
-        lines.append(
-            "→ 구조와 수급이 정렬되며 점진적 진입이 가능한 구간입니다"
-        )
+        lines.append("- 기관 자금 유입이 확신 단계에 진입한 상태")
+    
+    if drift_score <= 2:
+        lines.append("- 감마 구조는 안정적이나, **드리프트 강도가 약해 추세 신뢰도는 제한적**")
     else:
-        lines.append(
-            "→ 명확한 방향성이 확인될 때까지 관망이 유효합니다"
-        )
-
+        lines.append("- 드리프트 강도가 유의미하여 추세 지속 가능성 존재")
+    
+    if final_action_result.get("action") in ["REDUCE", "EXIT"]:
+        lines.append("- 따라서 **신규 진입보다는 기존 포지션 관리 및 일부 리스크 축소가 우선**")
+    elif final_action_result.get("action") in ["ADD", "EARLY BUY"]:
+        lines.append("- 따라서 **단계적 진입 및 리스크 확대 전략 유효**")
+    else:
+        lines.append("- 따라서 **현 수준에서 포지션 유지 및 관망 전략이 적절**")
+    
     return lines
 
 
