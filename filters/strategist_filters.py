@@ -2207,7 +2207,6 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "XLU": "XLU",
 
     }
-
     drift_data = {}
 
     # -----------------------------
