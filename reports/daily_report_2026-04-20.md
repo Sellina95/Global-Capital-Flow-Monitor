@@ -26,7 +26,7 @@
 - 감마 구조는 안정적이나, **드리프트 강도가 약해 추세 신뢰도는 제한적**
 - 따라서 **신규 진입보다는 기존 포지션 관리 및 일부 리스크 축소가 우선**
 
-### 🎯 Final Action Engine
+### 🎯 Final Action Engine(Raw Signal)
 - **Action:** REDUCE
 - **Size:** PARTIAL
 - **Confidence:** MEDIUM
@@ -43,7 +43,7 @@
 - **Flow:** 👀 EARLY TRACE / score=3
 - **Gamma:** 🟢 POSITIVE GAMMA
 - **Tactical Action:** REDUCE / PARTIAL / MEDIUM
-- **Positioning:** pos_z=1.45
+- **Positioning:** pos_z=1.47
 - **Warning Score:** 0 (No warning)
 - **Tactical Why:** Flow fading → institutional exit
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영 → Tactical=REDUCE / Flow=👀 EARLY TRACE(3) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA → Tactical REDUCE → INCREASE 억제 / 익스포저 10% 축소
@@ -148,18 +148,24 @@
 
 > **[Strategic Note]:** 위 연쇄 반응이 역사적 상관관계에서 벗어날 경우, **6.5) Correlation Break Monitor**를 통해 국면 전환 여부를 정밀 판별함
 
-### 🌊 Drift Monitor (v3)
+### 🌊 Drift Monitor (v4)
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
-- **SPY:** 15m=-0.035196396493941684 / 30m=0.11138059618007734 / 1H=0.05777198805994033 / 4H=-0.09708225946013505 / 1D=1.1957379599176976 / 5D=4.502099436476281
-- **WTI:** 15m=0.1378461952679766 / 30m=0.0803670448341176 / 1H=-0.638328013860745 / 4H=4.91034060762634 / 1D=3.959451109410428 / 5D=-12.02059289665497
-- **DXY:** 15m=-0.026443683879151525 / 30m=0.05906172109102492 / 1H=0.08351315312735696 / 4H=-0.001017024840554992 / 1D=0.17431728000336655 / 5D=-0.10063944360410026
-- **GOLD:** 15m=0.10143465086516201 / 30m=0.0952223757320736 / 1H=0.5740572436376157 / 4H=0.15949698877371077 / 1D=-0.454959181734893 / 5D=1.9631431252821852
+- **SPY:** 🟢 UP | Short-term: MIXED | 1D=+1.20% / 5D=+4.50% | Strength: MEDIUM
+- **WTI:** 🟡 REBOUND | Short-term: MIXED | 1D=+3.71% / 5D=-12.23% | Strength: HIGH
+- **DXY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.13% / 5D=-0.15% | Strength: LOW
+- **GOLD:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-0.66% / 5D=+1.75% | Strength: LOW
 
 - **Drift Score:** 1
 - **State:** **WEAK DRIFT (노이즈 가능)**
 - **Label:** REOPENING / DEMAND_BOOM
 - **SEW Combo Signal:** NONE
+
+- **Market Drift Summary:**
+  - Equity (SPY): 🟢 UP / MIXED
+  - Oil (WTI): 🟡 REBOUND / MIXED
+  - Dollar (DXY): 🟡 REBOUND / SHORT DOWN
+  - Gold (GOLD): 🟡 PULLBACK / SHORT DOWN
 
 - **Drivers:**
   - SPY 1D continuation
@@ -237,7 +243,7 @@ No significant sector-level correlation break detected.
 - **Drift:** WEAK DRIFT (노이즈 가능) / REOPENING / DEMAND_BOOM / NONE
 - **Gamma:** 🟢 POSITIVE GAMMA / 🟢 STABLE FLOW
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.45
+- **Positioning (POS_Z):** 1.47
 - **Validation Score:** 3 (boost applied: +2)
 
 - **Drivers:**
@@ -293,14 +299,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **75**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=WEAK DRIFT (노이즈 가능) (REOPENING / DEMAND_BOOM) / 수급=1.45 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=WEAK DRIFT (노이즈 가능) (REOPENING / DEMAND_BOOM) / 수급=1.47 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `EASING` | **Price(Regime):** `RISK-ON` | **VIX:** `17.48`
-- **Positioning Data:** Z-Score: `1.45` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.47` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -427,8 +433,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391267247618508
-- **Z-Score (5d):** 1.1100981392930533
+- **Z-Score (1d):** 1.5391272040399357
+- **Z-Score (5d):** 1.1100982800263728
 
 ### EWJ
 - **Crash?** False
