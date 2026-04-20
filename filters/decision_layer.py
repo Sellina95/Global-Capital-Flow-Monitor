@@ -160,10 +160,9 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
-
 def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     """
-    Final Decision Layer (War Room Override)
+    Final Decision Layer (War Room Override) - Unified Final
 
     Priority:
     1) SEW
@@ -171,7 +170,8 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     3) Divergence
     4) Narrative / FINAL_STATE
     5) Warning Score (6.5 / 6.6 / 7.2)
-    6) Exposure sizing
+    6) Tactical Overlay (Drift / Flow / Gamma / Final Action Engine)
+    7) Recovery / Exposure sizing
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
@@ -179,16 +179,59 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     div = market_data.get("DIVERGENCE_STATE", {}) or {}
     warn = market_data.get("WARNING_SIGNALS", {}) or {}
 
+    drift = market_data.get("DRIFT", {}) or {}
+    inst_flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+
+    # -------------------------
+    # Base / Narrative
+    # -------------------------
     narrative_action = str(state.get("risk_action", "HOLD")).upper()
     risk_budget = int(state.get("risk_budget", 50)) if state.get("risk_budget") is not None else 50
     phase = str(state.get("phase", "N/A"))
 
+    # -------------------------
+    # SEW / Divergence
+    # -------------------------
     sew_status = str(sew.get("status", "N/A")).upper()
     sew_event = str(sew.get("event_type", "N/A")).upper()
 
     div_status = str(div.get("status", "N/A")).upper()
     div_action = str(div.get("action", "HOLD")).upper()
 
+    # -------------------------
+    # Tactical inputs
+    # -------------------------
+    drift_state = str(drift.get("state", market_data.get("DRIFT_STATE", "N/A")) or "N/A")
+    drift_label = str(drift.get("label", "N/A") or "N/A")
+    drift_combo = str(drift.get("combo_signal", "NONE") or "NONE")
+    try:
+        drift_score = int(drift.get("score", market_data.get("DRIFT_SCORE", 0)) or 0)
+    except Exception:
+        drift_score = 0
+
+    try:
+        flow_score = int(inst_flow.get("score", 0) or 0)
+    except Exception:
+        flow_score = 0
+    flow_state = str(inst_flow.get("state", "N/A") or "N/A")
+
+    gamma_state = str(market_data.get("GAMMA_STATE", "N/A") or "N/A")
+    pos_z = market_data.get("SP500_POS_Z", 0)
+    try:
+        pos_z = float(pos_z)
+    except Exception:
+        pos_z = 0.0
+
+    # Final Action Engine 결과를 여기서 직접 호출해서 반영
+    tactical = final_action_engine(market_data)
+    tactical_action = str(tactical.get("action", "HOLD") or "HOLD").upper()
+    tactical_size = str(tactical.get("size", "NONE") or "NONE")
+    tactical_confidence = str(tactical.get("confidence", "LOW") or "LOW")
+    tactical_reasons = tactical.get("reason", []) or []
+
+    # -------------------------
+    # Exposure base
+    # -------------------------
     base_exposure = market_data.get("RECOMMENDED_EXPOSURE", risk_budget)
     try:
         base_exposure = int(base_exposure)
@@ -199,7 +242,9 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     final_exposure = base_exposure
     reason_chain = []
 
+    # -------------------------
     # 1) SEW override
+    # -------------------------
     if sew_status == "DEADMAN":
         final_action = "EXIT"
         final_exposure = 0
@@ -223,7 +268,9 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     else:
         reason_chain.append("SEW STABLE → 실시간 이상징후 없음")
 
+    # -------------------------
     # 1.5) Event Type Override
+    # -------------------------
     if sew_status != "DEADMAN":
         if sew_event == "LIQUIDATION_SHOCK":
             final_action = "EXIT"
@@ -252,7 +299,9 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         elif sew_event == "RISK_ON_SQUEEZE":
             reason_chain.append("Event: RISK_ON_SQUEEZE → 상승 압력 강화 (단, 과열 주의)")
 
+    # -------------------------
     # 2) Divergence override
+    # -------------------------
     if sew_status not in ["DEADMAN", "ALERT"]:
         if div_status != "ALIGNED":
             if final_action == "INCREASE":
@@ -268,13 +317,17 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         else:
             reason_chain.append("Divergence ALIGNED → 구조·가격·수급 정렬")
 
+    # -------------------------
     # 3) Narrative confirmation
+    # -------------------------
     if sew_status == "STABLE" and div_status == "ALIGNED":
         reason_chain.append(f"Narrative Action={narrative_action} 반영")
     else:
         reason_chain.append("상위 레이어(SEW/Divergence)가 Narrative보다 우선")
 
+    # -------------------------
     # 4) Warning signals
+    # -------------------------
     corr65_score = int(warn.get("corr65_score", 0) or 0)
     corr66_score = int(warn.get("corr66_score", 0) or 0)
     geo_level = str(warn.get("geo_level", "NORMAL")).upper()
@@ -310,12 +363,50 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         reason_chain.append("Warning Score 1 → 경미한 이상신호, 모니터링 강화")
 
     # -------------------------
-    # 5) Recovery Engine v1 (Phased Recovery)
+    # 5) Tactical Overlay (NEW, additive only)
+    # - 새 점수체계 없이 최종판단에 보조 반영
+    # -------------------------
+    reason_chain.append(
+        f"Tactical={tactical_action} / Flow={flow_state}({flow_score}) / Drift={drift_state}({drift_score}) / Gamma={gamma_state}"
+    )
+
+    # REDUCE / EXIT는 최종판단을 보수적으로 끌어내리는 역할만 수행
+    if tactical_action == "EXIT":
+        final_action = "EXIT"
+        final_exposure = 0
+        reason_chain.append("Tactical EXIT → 최종 EXIT 우선")
+
+    elif tactical_action == "REDUCE":
+        if final_action == "INCREASE":
+            final_action = "HOLD"
+            final_exposure = int(final_exposure * 0.9)
+            reason_chain.append("Tactical REDUCE → INCREASE 억제 / 익스포저 10% 축소")
+        elif final_action == "HOLD":
+            final_action = "REDUCE"
+            final_exposure = int(final_exposure * 0.9)
+            reason_chain.append("Tactical REDUCE → HOLD에서 REDUCE 전환 / 익스포저 10% 축소")
+        else:
+            final_exposure = int(final_exposure * 0.95)
+            reason_chain.append("Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소")
+
+    # ADD / EARLY BUY는 상위 리스크가 조용할 때만 보조적으로 허용
+    elif tactical_action in ["ADD", "EARLY BUY"]:
+        if sew_status == "STABLE" and div_status == "ALIGNED" and warning_score <= 1:
+            reason_chain.append(f"Tactical {tactical_action} → 상위 리스크 안정 구간, 확장 신호 확인")
+        else:
+            reason_chain.append(f"Tactical {tactical_action} → 상위 리스크 조건 미충족, 최종판단에는 보수 반영")
+
+    else:
+        reason_chain.append("Tactical HOLD/MONITOR → 최종판단 변경 없음")
+
+    # -------------------------
+    # 6) Recovery Engine v1 (Phased Recovery)
     # -------------------------
     if (
         warning_score <= 1
         and sew_status == "STABLE"
         and div_status == "ALIGNED"
+        and tactical_action not in ["REDUCE", "EXIT"]
     ):
         if final_exposure < base_exposure:
             gap = base_exposure - final_exposure
@@ -331,7 +422,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
             )
 
     # -------------------------
-    # 5.5) Recovery Debug
+    # 6.5) Recovery Debug
     # -------------------------
     market_data["RECOVERY_DEBUG"] = {
         "sew_ok": sew_status == "STABLE",
@@ -350,7 +441,16 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Base Context:** phase={phase} / narrative={narrative_action} / base_exposure={base_exposure}%")
     lines.append(f"- **SEW:** {sew_status} / {sew_event}")
     lines.append(f"- **Divergence:** {div_status} / {div_action}")
+    lines.append(f"- **Drift:** {drift_state} / {drift_label} / {drift_combo} / score={drift_score}")
+    lines.append(f"- **Flow:** {flow_state} / score={flow_score}")
+    lines.append(f"- **Gamma:** {gamma_state}")
+    lines.append(f"- **Tactical Action:** {tactical_action} / {tactical_size} / {tactical_confidence}")
+    lines.append(f"- **Positioning:** pos_z={pos_z:.2f}")
     lines.append(f"- **Warning Score:** {warning_score} ({', '.join(warning_notes) if warning_notes else 'No warning'})")
+
+    if tactical_reasons:
+        lines.append(f"- **Tactical Why:** {' / '.join(tactical_reasons)}")
+
     lines.append(f"- **Why:** " + " → ".join(reason_chain))
 
     market_data["FINAL_DECISION"] = {
@@ -366,6 +466,17 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         "phase": phase,
         "narrative_action": narrative_action,
         "reason_chain": reason_chain,
+        "drift_score": drift_score,
+        "drift_state": drift_state,
+        "drift_label": drift_label,
+        "flow_score": flow_score,
+        "flow_state": flow_state,
+        "gamma_state": gamma_state,
+        "tactical_action": tactical_action,
+        "tactical_size": tactical_size,
+        "tactical_confidence": tactical_confidence,
+        "tactical_reasons": tactical_reasons,
+        "pos_z": pos_z,
     }
 
     return "\n".join(lines)
