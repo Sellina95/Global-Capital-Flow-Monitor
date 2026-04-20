@@ -2335,6 +2335,8 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
             drift_data[name] = {}
 
     market_data["DRIFT_DATA"] = drift_data
+    
+    print("[DRIFT_DATA KEYS]", sorted(drift_data.keys()))
     return market_data
 
 def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
