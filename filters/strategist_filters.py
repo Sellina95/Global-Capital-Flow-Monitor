@@ -3304,7 +3304,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     
         "narrative_line": narrative,
     }
-        market_data["FINAL_STATE"] = final_state
+    market_data["FINAL_STATE"] = final_state
 
     # --------------------------------------------------
     # 6️⃣ Output (원래 양식 복구)
