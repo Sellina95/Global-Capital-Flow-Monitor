@@ -32,7 +32,7 @@
   - Flow building + gamma turning + no shock
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **EVENT-WATCHING (이벤트 관망)** → **RISK-ON (완화 기대·리스크 선호)**
+- **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
 
 ---
 
@@ -136,8 +136,8 @@
 
 - **SPY:** 15m=-0.035196396493941684 / 30m=0.11138059618007734 / 1H=0.05777198805994033 / 4H=-0.09708225946013505 / 1D=1.1957379599176976 / 5D=4.502099436476281
 - **WTI:** 15m=-1.1371852612227396 / 30m=-0.9355959973545547 / 1H=-0.6017571573438518 / 4H=1.5117941473842267 / 1D=-12.778546616896602 / 5D=-14.476549032942444
-- **DXY:** 15m=0.021371092604671738 / 30m=0.027474359528745218 / 1H=0.019336835802774566 / 4H=0.08043165115576567 / 1D=0.2059158839408104 / 5D=-0.06912757096512179
-- **GOLD:** 15m=0.062366175120232015 / 30m=0.008308968643944148 / 1H=0.612454111360794 / 4H=-0.8915762487763046 / 1D=0.5830213339137025 / 5D=1.0793990507539153
+- **DXY:** 15m=0.02238802436320686 / 30m=0.02340519413657205 / 1H=0.003050205450350063 / 4H=0.13139710921696857 / 1D=0.20693469199293268 / 5D=-0.06811155931960577
+- **GOLD:** 15m=0.545195694981726 / 30m=0.5809174524605609 / 1H=0.8020901505235711 / 4H=-1.2757705940416364 / 1D=0.5830213339137025 / 5D=1.0793990507539153
 
 - **Drift Score:** 2
 - **State:** **⚡ TREND FORMING (초기 흐름 감지)**
@@ -212,20 +212,20 @@ No significant sector-level correlation break detected.
 ### 🏦 Institutional Flow Engine (v1)
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
-- **Flow Score:** 4
-- **Flow State:** **👀 EARLY TRACE**
-- **Confidence:** **MEDIUM**
-- **Interpretation:** 흔적은 있으나 확신은 이르다
-- **Action Bias:** **MONITOR**
+- **Flow Score:** 5
+- **Flow State:** **⚡ BUILDING**
+- **Confidence:** **MEDIUM-HIGH**
+- **Interpretation:** 기관성 흐름 형성 가능성
+- **Action Bias:** **WATCHLIST**
 
 - **Drift:** ⚡ TREND FORMING (초기 흐름 감지) / NEUTRAL / NONE
 - **Gamma:** 🟡 TRANSITION / 🟢 EARLY FLOW WITHOUT SHOCK
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.42
+- **Positioning (POS_Z):** 1.43
 
 - **Drivers:**
   - Drift early
-  - Short-horizon pre-move
+  - Short-horizon pre-move cluster
   - Gamma transition
   - No shock yet
 
@@ -276,14 +276,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **84**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ TREND FORMING (초기 흐름 감지) (NEUTRAL) / 수급=1.42 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ TREND FORMING (초기 흐름 감지) (NEUTRAL) / 수급=1.43 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `EASING` | **Price(Regime):** `RISK-ON` | **VIX:** `17.48`
-- **Positioning Data:** Z-Score: `1.42` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.43` (>2.2 시 Run) | Gamma: `1.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -321,7 +321,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
-**Flow Overlay:** flow_score=4 / flow_state=👀 EARLY TRACE / drift_label=NEUTRAL / gamma=🟡 TRANSITION
+**Flow Overlay:** flow_score=5 / flow_state=⚡ BUILDING / drift_label=NEUTRAL / gamma=🟡 TRANSITION
 **Flow Notes:** NEUTRAL + FLOW ACTIVE → XLK/XLI 소폭 가점 | Gamma TRANSITION → 초기 리더 소폭 가점
 
 **Overweight:** Technology, Industrials, Consumer Discretionary, Financials
@@ -358,9 +358,9 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 | Industrials | +4.2 | ALIGNED | **29.2%** | STRONG BUY |
 | Consumer Discretionary | +1.7 | ALIGNED | **11.8%** | ACCUMULATE |
 | Financials | +1 | NEGATIVE_DIVERGENCE | **4.9%** | HOLD |
-| **Cash & Hedge** | - | - | **16.0%** | DEFENSIVE |
+| **Cash & Hedge** | - | - | **15.9%** | DEFENSIVE |
 
-- **Allocation Check:** Sector Weights + Cash = **100.1%**
+- **Allocation Check:** Sector Weights + Cash = **100.0%**
 - **Divergence Adjustment:** Financials penalized in weight sizing
 
 ### 🧬 19) Execution Layer (ETF Mapping)
@@ -402,8 +402,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.464991739768457
-- **Z-Score (5d):** 1.0342141182826374
+- **Z-Score (1d):** 1.4649990602811471
+- **Z-Score (5d):** 1.034216121763981
 
 ### EEM
 - **Crash?** False
@@ -420,8 +420,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5391272040399357
-- **Z-Score (5d):** 1.1100982800263728
+- **Z-Score (1d):** 1.5391266347816683
+- **Z-Score (5d):** 1.1100984237667042
 
 ### EWJ
 - **Crash?** False
