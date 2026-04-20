@@ -1787,7 +1787,30 @@ def generate_daily_report() -> None:
     # ✅ War Room Final Decision (🔥 핵심)
     lines.append(final_decision_text)
     lines.append("")
-       
+
+ 
+    
+    # -------------------------
+    # 🚩 Market Regime Status (여기 넣기)
+    # -------------------------
+    lines.append("### 🚩 Market Regime Status")
+    if regime_result.get("status") == "DETECTED":
+        lines.append(
+            f"- **국면 전환 감지:** 🚨 **{regime_result.get('prev_regime')}** → **{regime_result.get('current_regime')}**"
+        )
+    else:
+        lines.append(f"- **현재 국면 유지:** ✅ **{regime_result.get('current_regime')}**")
+    
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    
+    # -------------------------
+    # 📊 Daily Macro Signals (여기 넣기)
+    # -------------------------
+    lines.append("## 📊 Daily Macro Signals")
+    lines.append("")
+    
         # -------------------------
     
     
