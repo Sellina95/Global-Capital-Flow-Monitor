@@ -3151,41 +3151,56 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
     budget += drift_tilt
     
-    # -----------------------------
-    # 2.7️⃣ Flow / Gamma Alignment Boost
-    # -----------------------------
-    flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
-    gamma = market_data.get("GAMMA_STATE", "N/A")
-    
-    flow_score = flow.get("score", 0)
-    flow_state = str(flow.get("state", "N/A")).upper()
-    gamma_state = str(gamma).upper()
-    
-    flow_gamma_tilt = 0
-    
-    # 정렬된 상승 초기
-    if drift_score >= 2 and flow_score >= 3 and "TRANSITION" in gamma_state:
-        flow_gamma_tilt = 3
-    
-    # 강한 상승 압력
-    elif drift_score >= 3 and flow_score >= 4 and "POSITIVE" in gamma_state:
-        flow_gamma_tilt = 5
-    
-    # 충돌 (리스크 감소)
-    elif drift_score > 0 and flow_score < 0:
-        flow_gamma_tilt = -3
-    
-    budget += flow_gamma_tilt
-    # --------------------------------------------------
-    # 2.8️⃣ Positioning Penalty (순서 수정 완료)
-    # --------------------------------------------------
-    pos_alert = ""
-    if pos_z >= 2.0:
-        budget -= 8
-        pos_alert = " ⚠️ 수급 과열 감지"
-    elif pos_z >= 1.5:
-        budget -= 4
-        pos_alert = " ⚠️ 수급 다소 과열"
+   # --------------------------------------------------
+# 2.7️⃣ Drift Adjustment (ADD ONLY)
+# --------------------------------------------------
+drift_tilt = 0
+if drift_score >= 4:
+    drift_tilt = 5
+elif drift_score >= 2:
+    drift_tilt = 3
+elif drift_score <= -2:
+    drift_tilt = -5
+
+budget += drift_tilt
+
+# --------------------------------------------------
+# 2.75️⃣ Flow / Gamma Alignment Boost (ADD ONLY)
+# --------------------------------------------------
+flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+gamma_state = str(market_data.get("GAMMA_STATE", "N/A") or "N/A").upper()
+
+flow_score = flow.get("score", 0)
+try:
+    flow_score = int(flow_score)
+except Exception:
+    flow_score = 0
+
+flow_gamma_tilt = 0
+
+# 상승 초기 정렬: Drift + Flow + Gamma TRANSITION
+if drift_score >= 2 and flow_score >= 3 and "TRANSITION" in gamma_state:
+    flow_gamma_tilt = 3
+
+# 더 강한 상승 압력: Drift + Flow 강하고 Gamma POSITIVE
+elif drift_score >= 3 and flow_score >= 4 and "POSITIVE" in gamma_state:
+    flow_gamma_tilt = 5
+
+# 하락/충돌 상황은 아직 보수적으로 0 처리
+# (지금은 시스템 안정화가 우선이라 과한 감점 넣지 않음)
+
+budget += flow_gamma_tilt
+
+# --------------------------------------------------
+# 2.8️⃣ Positioning Penalty
+# --------------------------------------------------
+pos_alert = ""
+if pos_z >= 2.0:
+    budget -= 8
+    pos_alert = " ⚠️ 수급 과열 감지"
+elif pos_z >= 1.5:
+    budget -= 4
+    pos_alert = " ⚠️ 수급 다소 과열"
 
     # --------------------------------------------------
     # 3️⃣ Phase Cap
