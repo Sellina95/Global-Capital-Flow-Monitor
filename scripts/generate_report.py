@@ -1743,7 +1743,7 @@ def generate_daily_report() -> None:
     lines.append("")
     
     # ✅ Final Action Engine
-    lines.append("### 🎯 Final Action Engine")
+    lines.append("### 🎯 Final Action Engine(Raw Signal)")
     lines.append(f"- **Action:** {final_action_name}")
     lines.append(f"- **Size:** {final_action_size}")
     lines.append(f"- **Confidence:** {final_action_confidence}")
