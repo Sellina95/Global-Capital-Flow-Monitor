@@ -131,8 +131,9 @@ def classify_drift_label(drift_inputs: Dict[str, Any]) -> str:
 
 def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
     """
-    Drift Monitor v3 (IFE-compatible)
-    - Drift score + state + label + combo_signal까지 모두 생성
+    Drift Monitor v4 (visualized)
+    - 기존 점수 계산 로직 유지
+    - 출력만 방향 / 단기 정렬 / 강도 중심으로 개선
     """
 
     drift = market_data.get("DRIFT_DATA", {}) or {}
@@ -144,7 +145,7 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
             return None
 
     # -----------------------------
-    # Score 계산
+    # Score 계산 (기존 유지)
     # -----------------------------
     score = 0
     reasons = []
@@ -170,7 +171,7 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
         reasons.append("DXY softening")
 
     # -----------------------------
-    # 🔥 ATR 기반 강화
+    # ATR 기반 강화 (기존 유지)
     # -----------------------------
     if g("SPY", "norm_1d") is not None and abs(g("SPY", "norm_1d")) >= 1.5:
         score += 1
@@ -181,7 +182,7 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
         reasons.append("WTI extreme ATR move")
 
     # -----------------------------
-    # State 정의
+    # State 정의 (기존 유지)
     # -----------------------------
     if score >= 4:
         state = "🔥 STRONG TREND (방향성 자금 흐름 감지)"
@@ -193,7 +194,7 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
         state = "NO DRIFT"
 
     # -----------------------------
-    # Label 정의 (핵심)
+    # Label 정의 (기존 유지)
     # -----------------------------
     label = "NEUTRAL"
 
@@ -213,7 +214,7 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
             label = "REOPENING / DEMAND_BOOM"
 
     # -----------------------------
-    # SEW 조합 신호
+    # SEW 조합 신호 (기존 유지)
     # -----------------------------
     sew_status = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
 
@@ -227,7 +228,7 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
         combo_signal = "🔴 SHOCK WITHOUT DRIFT"
 
     # -----------------------------
-    # 저장 (🔥 이게 핵심)
+    # 저장 (기존 유지)
     # -----------------------------
     market_data["DRIFT_SCORE"] = score
     market_data["DRIFT_STATE"] = state
@@ -241,30 +242,101 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
     }
 
     # -----------------------------
+    # 시각화용 helper
+    # -----------------------------
+    def fmt(x):
+        try:
+            if x is None:
+                return "N/A"
+            return f"{float(x):+.2f}%"
+        except Exception:
+            return "N/A"
+
+    def short_alignment(asset: str) -> str:
+        vals = [
+            g(asset, "ret_15m"),
+            g(asset, "ret_30m"),
+            g(asset, "ret_1h"),
+            g(asset, "ret_4h"),
+        ]
+        vals = [v for v in vals if v is not None]
+
+        if not vals:
+            return "N/A"
+
+        up = sum(1 for v in vals if v > 0)
+        down = sum(1 for v in vals if v < 0)
+
+        if up >= 3:
+            return "SHORT UP"
+        if down >= 3:
+            return "SHORT DOWN"
+        return "MIXED"
+
+    def trend_direction(asset: str) -> str:
+        d1 = g(asset, "ret_1d")
+        d5 = g(asset, "ret_5d")
+
+        if d1 is None or d5 is None:
+            return "N/A"
+
+        if d1 > 0 and d5 > 0:
+            return "🟢 UP"
+        if d1 < 0 and d5 < 0:
+            return "🔴 DOWN"
+        if d1 > 0 and d5 < 0:
+            return "🟡 REBOUND"
+        if d1 < 0 and d5 > 0:
+            return "🟡 PULLBACK"
+        return "⚪ SIDEWAYS"
+
+    def strength_label(asset: str) -> str:
+        d1 = g(asset, "ret_1d")
+        d5 = g(asset, "ret_5d")
+
+        vals = [abs(v) for v in [d1, d5] if v is not None]
+        if not vals:
+            return "N/A"
+
+        strength = sum(vals) / len(vals)
+
+        if strength >= 5:
+            return "HIGH"
+        if strength >= 2:
+            return "MEDIUM"
+        return "LOW"
+
+    def asset_summary(asset: str) -> str:
+        direction = trend_direction(asset)
+        short = short_alignment(asset)
+        strength = strength_label(asset)
+        d1 = fmt(g(asset, "ret_1d"))
+        d5 = fmt(g(asset, "ret_5d"))
+        return f"- **{asset}:** {direction} | Short-term: {short} | 1D={d1} / 5D={d5} | Strength: {strength}"
+
+    # -----------------------------
     # Output
     # -----------------------------
     lines = []
-    lines.append("### 🌊 Drift Monitor (v3)")
+    lines.append("### 🌊 Drift Monitor (v4)")
     lines.append("- **정의:** 누적 흐름 + ATR 기반 강도 감지")
     lines.append("")
 
     for asset in ["SPY", "WTI", "DXY", "GOLD"]:
-        a = drift.get(asset, {}) or {}
-        lines.append(
-            f"- **{asset}:** "
-            f"15m={a.get('ret_15m')} / "
-            f"30m={a.get('ret_30m')} / "
-            f"1H={a.get('ret_1h')} / "
-            f"4H={a.get('ret_4h')} / "
-            f"1D={a.get('ret_1d')} / "
-            f"5D={a.get('ret_5d')}"
-        )
+        lines.append(asset_summary(asset))
 
     lines.append("")
     lines.append(f"- **Drift Score:** {score}")
     lines.append(f"- **State:** **{state}**")
     lines.append(f"- **Label:** {label}")
     lines.append(f"- **SEW Combo Signal:** {combo_signal}")
+
+    lines.append("")
+    lines.append("- **Market Drift Summary:**")
+    lines.append(f"  - Equity (SPY): {trend_direction('SPY')} / {short_alignment('SPY')}")
+    lines.append(f"  - Oil (WTI): {trend_direction('WTI')} / {short_alignment('WTI')}")
+    lines.append(f"  - Dollar (DXY): {trend_direction('DXY')} / {short_alignment('DXY')}")
+    lines.append(f"  - Gold (GOLD): {trend_direction('GOLD')} / {short_alignment('GOLD')}")
 
     if reasons:
         lines.append("")
