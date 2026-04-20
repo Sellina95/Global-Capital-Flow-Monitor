@@ -4882,11 +4882,12 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Flow strong + structure aligned")
 
     # -------------------------
-    # 4) 초기 진입 구간
+        # -------------------------
+    # 4) 초기 진입 구간 (FIXED)
     # -------------------------
     elif (
         is_risk_on
-        and flow_score >= 5
+        and flow_score >= 4   # ✅ 5 → 4로 수정
         and (is_gamma_transition or is_gamma_positive)
         and is_sew_stable
     ):
@@ -4896,14 +4897,13 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Flow building + gamma turning + no shock")
 
     # -------------------------
-    # 5) 환경은 좋지만 흐름 약함
+    # 5) 환경은 좋지만 흐름 약함 (FIXED)
     # -------------------------
-    elif is_risk_on and flow_score < 5 and is_sew_stable:
+    elif is_risk_on and flow_score < 4 and is_sew_stable:  # ✅ 5 → 4
         action = "WAIT"
         size = "0%"
         confidence = "LOW"
         reason.append("Good environment but no strong flow yet")
-
     # -------------------------
     # 6) Risk-off 환경
     # -------------------------
