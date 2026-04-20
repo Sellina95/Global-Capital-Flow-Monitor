@@ -1654,11 +1654,8 @@ def generate_daily_report() -> None:
     }
     
     # -------------------------
-    # 12) Final Decision 계산
+       # 12) Final Decision 계산
     # -------------------------
-    final_decision_text = war_room_final_decision_filter(market_data)
-    final_decision_state = market_data.get("FINAL_DECISION", {}) or {}
-    print("[DEBUG] FINAL_DECISION:", final_decision_state)
     
     base_exposure_display = int(final_decision_state.get("base_exposure", recommended_exposure))
     final_exposure_display = int(final_decision_state.get("exposure", recommended_exposure))
@@ -1686,7 +1683,6 @@ def generate_daily_report() -> None:
     # -------------------------
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
-    transmission_block = transmission_layer_filter(market_data)
     
     # -------------------------
     # 14) 워룸 상태
