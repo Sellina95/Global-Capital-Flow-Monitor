@@ -569,6 +569,9 @@ def load_fred_data_from_csv() -> pd.DataFrame:
     return df[["date"] + target_cols].ffill()
 
 def load_positioning_df() -> pd.DataFrame:
+    """
+    Positioning Data (CFTC, Gamma, CTA) CSV를 로드합니다.
+    """
     csv_path = DATA_DIR / "positioning_data.csv"
     cols = [
         "date",
@@ -594,9 +597,13 @@ def load_positioning_df() -> pd.DataFrame:
     if df.empty or "date" not in df.columns:
         return pd.DataFrame(columns=cols)
 
+    for col in cols:
+        if col not in df.columns:
+            df[col] = pd.NA
+
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
-    return df
+    return df[cols]
 
 
 # -------------------------
@@ -1056,6 +1063,9 @@ def attach_expectation_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     return market_data
 
 def attach_positioning_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    market_data에 포지셔닝 데이터를 주입합니다.
+    """
     if market_data is None:
         market_data = {}
 
