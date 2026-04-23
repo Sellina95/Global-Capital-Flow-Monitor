@@ -18,12 +18,16 @@ def save_paper_portfolio(weights: Dict[str, float], cash_weight: float, exposure
 
     # 1) 기존 파일 로드
     if os.path.exists(filepath):
-        df = pd.read_csv(filepath)
+        try:
+            df = pd.read_csv(filepath)
+        except Exception:
+            df = pd.DataFrame()
     else:
         df = pd.DataFrame()
 
-    # 2) 같은 날짜 기존 row 제거 (덮어쓰기용)
+    # 2) 같은 날짜 기존 row 제거 (오버라이트용)
     if not df.empty and "date" in df.columns:
+        df["date"] = df["date"].astype(str)
         df = df[df["date"] != today].copy()
 
     # 3) 새 row 생성
@@ -35,7 +39,7 @@ def save_paper_portfolio(weights: Dict[str, float], cash_weight: float, exposure
     new_row["CASH"] = round(float(cash_weight), 2)
     new_row["total_exposure"] = round(float(exposure), 2)
 
-    # 4) append
+    # 4) 새 row 추가
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
 
     # 5) 컬럼 정리
@@ -50,7 +54,9 @@ def save_paper_portfolio(weights: Dict[str, float], cash_weight: float, exposure
 
     # 6) 날짜순 정렬
     if "date" in df.columns:
-        df = df.sort_values("date").reset_index(drop=True)
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+        df["date"] = df["date"].dt.strftime("%Y-%m-%d")
 
     # 7) 저장
     os.makedirs("data", exist_ok=True)
