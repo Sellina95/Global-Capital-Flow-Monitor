@@ -1,38 +1,38 @@
 {
-  "timestamp": "2026-04-23 13:14:49",
-  "status": "STABLE",
+  "timestamp": "2026-04-23 13:34:23",
+  "status": "DEADMAN",
   "event_type": "NORMAL",
-  "spike_count": 0,
-  "extreme_count": 0,
-  "recommended_exposure": 85,
-  "deadman": false,
-  "summary": "✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)",
-  "deadman_reason": "Normal Operation",
+  "spike_count": 2,
+  "extreme_count": 3,
+  "recommended_exposure": 0,
+  "deadman": true,
+  "summary": "🚨 데드맨 스위치 발동 (익스포저 0% / 자산 보호 모드)",
+  "deadman_reason": "🚨 DEAD MAN'S SWITCH: Real-time Vol Spike Detected",
   "assets": {
     "SPY": {
-      "zscore": 0.44,
-      "state": "NORMAL",
-      "pct_change": 0.11
+      "zscore": -3.84,
+      "state": "EXTREME",
+      "pct_change": -0.12
     },
     "QQQ": {
-      "zscore": -0.48,
-      "state": "NORMAL",
-      "pct_change": 0.13
+      "zscore": -3.54,
+      "state": "EXTREME",
+      "pct_change": -0.17
     },
     "VIX": {
-      "zscore": -0.07,
-      "state": "NORMAL",
-      "pct_change": 0.73
+      "zscore": -2.75,
+      "state": "ALERT",
+      "pct_change": -0.1
     },
     "DXY": {
-      "zscore": 1.96,
-      "state": "WATCH",
-      "pct_change": 0.04
+      "zscore": 3.45,
+      "state": "ALERT",
+      "pct_change": 0.15
     },
     "WTI": {
-      "zscore": 0.93,
-      "state": "NORMAL",
-      "pct_change": 0.15
+      "zscore": 4.09,
+      "state": "EXTREME",
+      "pct_change": 1.64
     }
   }
 }
