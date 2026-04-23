@@ -17,7 +17,12 @@ def load_latest_portfolio(filepath: str = PORTFOLIO_LOG_PATH) -> Optional[pd.Ser
         print(f"❌ Portfolio log not found: {filepath}")
         return None
 
-    df = pd.read_csv(filepath)
+    try:
+        df = pd.read_csv(filepath)
+    except Exception as e:
+        print(f"❌ Failed to read portfolio log: {e}")
+        return None
+
     if df.empty:
         print(f"❌ Portfolio log is empty: {filepath}")
         return None
@@ -27,7 +32,7 @@ def load_latest_portfolio(filepath: str = PORTFOLIO_LOG_PATH) -> Optional[pd.Ser
         return None
 
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df = df.dropna(subset=["date"]).sort_values("date")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
     if df.empty:
         print("❌ No valid dated rows in portfolio log")
@@ -129,13 +134,11 @@ def calculate_portfolio_return(
 
         ticker_returns[ticker] = ret_pct
 
-        # weight는 % 단위 (예: 22.4), ret_pct도 % 단위
-        # contribution도 % 수익률 단위가 되도록 100으로 나눔
+        # weight는 % 단위, ret_pct도 % 단위
         contrib = (weight / 100.0) * ret_pct
         weighted_contribs[ticker] = contrib
         portfolio_return += contrib
 
-    # cash 수익률은 0으로 가정
     weighted_contribs["CASH"] = 0.0
 
     return {
@@ -163,7 +166,7 @@ def save_performance_row(
 ) -> None:
     """
     계산 결과를 performance CSV에 저장
-    같은 portfolio_date가 이미 있으면 덮어쓰기
+    - 같은 portfolio_date가 이미 있으면 기존 row를 삭제하고 최신 값으로 덮어쓴다.
     """
     row = {
         "date": portfolio_date,
@@ -188,22 +191,28 @@ def save_performance_row(
     new_df = pd.DataFrame([row])
 
     if os.path.exists(output_path):
-        old_df = pd.read_csv(output_path)
-        if "date" in old_df.columns:
+        try:
+            old_df = pd.read_csv(output_path)
+        except Exception:
+            old_df = pd.DataFrame()
+
+        if not old_df.empty and "date" in old_df.columns:
+            old_df["date"] = old_df["date"].astype(str)
             old_df = old_df[old_df["date"] != portfolio_date].copy()
+
         out_df = pd.concat([old_df, new_df], ignore_index=True)
     else:
         out_df = new_df
 
     if "date" in out_df.columns:
         out_df["date"] = pd.to_datetime(out_df["date"], errors="coerce")
-        out_df = out_df.sort_values("date").reset_index(drop=True)
+        out_df = out_df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
         out_df["date"] = out_df["date"].dt.strftime("%Y-%m-%d")
 
     os.makedirs("data", exist_ok=True)
     out_df.to_csv(output_path, index=False)
 
-    print(f"✅ Performance saved: {portfolio_date}")
+    print(f"✅ Performance saved/updated: {portfolio_date}")
     print(f"✅ File path: {output_path}")
 
 
@@ -212,7 +221,10 @@ def main() -> None:
     if latest_row is None:
         return
 
+    # ✅ 현재 시스템 기준:
+    # paper_portfolio_log.csv의 날짜를 그대로 성과 CSV의 날짜로 사용
     portfolio_date = pd.to_datetime(latest_row["date"]).strftime("%Y-%m-%d")
+
     ticker_weights, cash_weight = extract_ticker_weights(latest_row)
 
     if not ticker_weights:
