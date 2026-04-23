@@ -145,6 +145,25 @@ def interpret_sew_event(event_type: str) -> str:
 
     return mapping.get(event_type, "해석 불가")
 
+
+def get_today_deadman_log(log_path="insights/alerts.log"):
+    from datetime import datetime
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    if not os.path.exists(log_path):
+        return None
+
+    with open(log_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    for line in reversed(lines):
+        if today in line and "SEW=DEADMAN" in line:
+            return line.strip()
+
+    return None
+
+
 def get_sew_state(filepath: str = "insights/sew_state.json") -> dict:
     default = {
         "timestamp": None,
@@ -1727,7 +1746,14 @@ def generate_daily_report() -> None:
     lines.append("## ⚡ Strategic War Room (통합 대응)")
     lines.append(f"> **시스템 상태: {war_room_emoji} {war_room_state}**")
     lines.append(f"> **판단 요약: {war_room_summary}**")
-    lines.append("")
+    deadman_log = get_today_deadman_log()
+
+    if deadman_log:
+        lines.append("")
+        lines.append("### 🚨 Intraday Deadman Trigger Detected")
+        lines.append(f"- {deadman_log}")
+        lines.append("👉 해석: 장중 변동성 급등 → 시스템 강제 리스크 차단 발생")
+        lines.append("")
     
     lines.append("### 🎯 Exposure Framework")
     lines.append(f"- **Base Exposure (전략 기준): {base_exposure_display}%**")
