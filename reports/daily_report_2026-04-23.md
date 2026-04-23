@@ -6,6 +6,10 @@
 > **시스템 상태: ✅ STABLE**
 > **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
 
+### 🚨 Intraday Deadman Trigger Detected
+- [2026-04-23 13:34:23] ALERT | SEW=DEADMAN | EVENT=NORMAL | Exp=0% | 🚨 DEAD MAN'S SWITCH: Real-time Vol Spike Detected | spike=2 extreme=3 | corr_break=NO | z={'SPY': -3.842101201462975, 'QQQ': -3.540016381580944, 'VIX': -2.752108564241275, 'DXY': 3.445310122449805, 'WTI': 4.090744202858731}
+👉 해석: 장중 변동성 급등 → 시스템 강제 리스크 차단 발생
+
 ### 🎯 Exposure Framework
 - **Base Exposure (전략 기준): 51%**
 - **Final Exposure (실행 기준): 51%**
@@ -113,9 +117,9 @@
 ### 🌡️ 4.2) High Yield Spread Filter (HY OAS)
 - **질문:** 시장 공포의 ‘온도’는 올라가고 있나, 내려가고 있나?
 - **추가 이유:** HYG/LQD가 ‘방향’이라면, HY Spread는 ‘강도(얼마나 무서워하는지)’를 보여줌
-- **Spread as of:** 2026-04-21 (FRED latest)
-- **HY_OAS level:** 2.85% → **COOL (낮은 공포)**
-- **방향(전일 대비):** HY_OAS(↓) / -0.70%
+- **Spread as of:** 2026-04-22 (FRED latest)
+- **HY_OAS level:** 2.84% → **COOL (낮은 공포)**
+- **방향(전일 대비):** HY_OAS(↓) / -0.35%
 - **판정:** **CREDIT CALM**
 - **근거:** HY 스프레드 낮음 → 크레딧 스트레스 제한 / 스프레드가 좁혀지는 중 → 공포 온도 완화
 - **Note:** HY OAS는 매일 갱신되지 않을 수 있어, ‘최근 available 값’을 반영함
@@ -151,10 +155,10 @@
 ### 🌊 Drift Monitor (v4)
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
-- **SPY:** 🟡 PULLBACK | Short-term: MIXED | 1D=-0.13% / 5D=+1.22% | Strength: LOW
-- **WTI:** 🟡 REBOUND | Short-term: MIXED | 1D=+1.08% / 5D=-0.77% | Strength: LOW
-- **DXY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.12% / 5D=+0.49% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: MIXED | 1D=+0.25% / 5D=-0.86% | Strength: LOW
+- **SPY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.06% / 5D=+1.30% | Strength: LOW
+- **WTI:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.53% / 5D=-1.31% | Strength: LOW
+- **DXY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.03% / 5D=+0.40% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.30% / 5D=-0.80% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -162,10 +166,10 @@
 - **SEW Combo Signal:** NONE
 
 - **Market Drift Summary:**
-  - Equity (SPY): 🟡 PULLBACK / MIXED
-  - Oil (WTI): 🟡 REBOUND / MIXED
+  - Equity (SPY): 🟡 PULLBACK / SHORT UP
+  - Oil (WTI): 🟡 REBOUND / SHORT DOWN
   - Dollar (DXY): 🟢 UP / SHORT DOWN
-  - Gold (GOLD): 🟡 REBOUND / MIXED
+  - Gold (GOLD): 🟡 REBOUND / SHORT UP
 
 ### ⚠ 6.5) Correlation Break Monitor
 No significant correlation break detected.
@@ -189,12 +193,12 @@ No significant sector-level correlation break detected.
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.084
+- **Cosine Similarity Score:** -0.190
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.084
-  - China_Trade_2018: 0.071
-  - Red_Sea: -0.104
+  - Taiwan_Tension: -0.190
+  - China_Trade_2018: -0.237
+  - Red_Sea: -0.292
 - **Top Drivers:**
   - USDCNH: z_used=+0.45 (z1d=+0.34, z5d=+0.62, raw_w=0.18, norm_w=0.14) → contrib=+0.06
   - EEM: z_used=-0.70 (z1d=+0.94, z5d=+0.33, raw_w=0.10, norm_w=0.08) → contrib=-0.05
@@ -206,8 +210,7 @@ No significant sector-level correlation break detected.
 **Trade Information:**
 - 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
 - 역사적 위기 패턴 유사도는 낮습니다. 현재는 **Taiwan_Tension** 유형과 가장 가깝지만, 전면적 지정학 쇼크보다는 제한적·국지적 리스크 모니터링 구간으로 해석됩니다.
-- **Country ETF Crash?** Yes (EWJ)
-- **Extreme Country Risk:** EWJ
+- **Country ETF Crash?** No (BND, EEM, EIS, EMB, EWJ, FXI, GLD, SPY, VXX)
 
 ### ⚡ 7.3) Pseudo Gamma Filter
 - **정의:** 옵션 데이터 없이 시장의 감마 상태 추론
@@ -279,7 +282,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.180 / US10YΔ +0.002 (정상)
-- **Sentiment (Fear&Greed):** 56.9186316036015 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 59.56760726839175 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** TRANSITION / MIXED (전환·혼조) (Cap: 70)
@@ -295,7 +298,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `TIGHTENING` | **Price(Regime):** `MIXED` | **VIX:** `18.92`
-- **Positioning Data:** Z-Score: `1.53` (>1.8 시 Run) | Gamma: `2.19` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.53` (>1.8 시 Run) | Gamma: `2.21` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -403,53 +406,53 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.1761063988221137
-- **Z-Score (5d):** 0.2570328892818823
+- **Z-Score (1d):** 0.1766117487833412
+- **Z-Score (5d):** 0.25729611706406824
 
 ### EEM
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5844737592484073
-- **Z-Score (5d):** -0.025432673660759797
+- **Z-Score (1d):** -0.4504055596779469
+- **Z-Score (5d):** 0.04256179192005773
 
 ### EIS
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.4260782904372041
-- **Z-Score (5d):** 0.2730967019154952
+- **Z-Score (1d):** 0.5082688318652516
+- **Z-Score (5d):** 0.3141641052832132
 
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.1418708512008838
-- **Z-Score (5d):** 0.3040557240349523
+- **Z-Score (1d):** -0.10966297793235716
+- **Z-Score (5d):** 0.31955489487786115
 
 ### EWJ
-- **Crash?** True
-- **Risk Level:** EXTREME
-- **Z-Score (1d):** -0.15721890450787854
-- **Z-Score (5d):** -0.717361656920621
+- **Crash?** False
+- **Risk Level:** NORMAL
+- **Z-Score (1d):** -0.08377619013494168
+- **Z-Score (5d):** -0.6822108315466204
 
 ### FXI
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.6267942750940528
-- **Z-Score (5d):** -0.43207182958956214
+- **Z-Score (1d):** -0.5123131120055763
+- **Z-Score (5d):** -0.377837900832461
 
 ### GLD
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.10075411918700172
-- **Z-Score (5d):** -0.23495665907797955
+- **Z-Score (1d):** -0.03401312192204799
+- **Z-Score (5d):** -0.20179750492883392
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.1854622360356058
-- **Z-Score (5d):** 0.45828119090186736
+- **Z-Score (1d):** -0.09348904571576226
+- **Z-Score (5d):** 0.5005469921725404
 
 ### VXX
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.1077508713382601
-- **Z-Score (5d):** 0.062347167011001944
+- **Z-Score (1d):** -0.02730921601717881
+- **Z-Score (5d):** -0.021035719036598902
