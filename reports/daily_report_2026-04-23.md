@@ -43,11 +43,11 @@
 - **Base Context:** phase=TRANSITION / MIXED (전환·혼조) / narrative=HOLD / base_exposure=51%
 - **SEW:** STABLE / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
-- **Drift:** NO DRIFT / INFLATION_RISK_OFF / NONE / score=0
+- **Drift:** NO DRIFT / REOPENING / DEMAND_BOOM / NONE / score=0
 - **Flow:** NO CLEAR FLOW / score=0
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK)
 - **Tactical Action:** HOLD / NONE / LOW
-- **Positioning:** pos_z=1.53
+- **Positioning:** pos_z=1.54
 - **Warning Score:** 0 (No warning)
 - **Tactical Why:** No actionable alignment
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=HOLD 반영 → Tactical=HOLD / Flow=NO CLEAR FLOW(0) / Drift=NO DRIFT(0) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Tactical HOLD/MONITOR → 최종판단 변경 없음
@@ -155,20 +155,20 @@
 ### 🌊 Drift Monitor (v4)
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
-- **SPY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.08% / 5D=+1.28% | Strength: LOW
-- **WTI:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.51% / 5D=-1.33% | Strength: LOW
-- **DXY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.03% / 5D=+0.41% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.35% / 5D=-0.76% | Strength: LOW
+- **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.06% / 5D=+1.42% | Strength: LOW
+- **WTI:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.38% / 5D=-1.46% | Strength: LOW
+- **DXY:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-0.00% / 5D=+0.37% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.38% / 5D=-0.73% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
-- **Label:** INFLATION_RISK_OFF
+- **Label:** REOPENING / DEMAND_BOOM
 - **SEW Combo Signal:** NONE
 
 - **Market Drift Summary:**
-  - Equity (SPY): 🟡 PULLBACK / SHORT UP
+  - Equity (SPY): 🟢 UP / SHORT UP
   - Oil (WTI): 🟡 REBOUND / SHORT DOWN
-  - Dollar (DXY): 🟢 UP / SHORT DOWN
+  - Dollar (DXY): 🟡 PULLBACK / SHORT DOWN
   - Gold (GOLD): 🟡 REBOUND / SHORT UP
 
 ### ⚠ 6.5) Correlation Break Monitor
@@ -193,12 +193,12 @@ No significant sector-level correlation break detected.
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.084
+- **Cosine Similarity Score:** -0.190
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.084
-  - China_Trade_2018: 0.071
-  - Red_Sea: -0.104
+  - Taiwan_Tension: -0.190
+  - China_Trade_2018: -0.237
+  - Red_Sea: -0.292
 - **Top Drivers:**
   - USDCNH: z_used=+0.45 (z1d=+0.34, z5d=+0.62, raw_w=0.18, norm_w=0.14) → contrib=+0.06
   - EEM: z_used=-0.70 (z1d=+0.94, z5d=+0.33, raw_w=0.10, norm_w=0.08) → contrib=-0.05
@@ -210,8 +210,7 @@ No significant sector-level correlation break detected.
 **Trade Information:**
 - 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
 - 역사적 위기 패턴 유사도는 낮습니다. 현재는 **Taiwan_Tension** 유형과 가장 가깝지만, 전면적 지정학 쇼크보다는 제한적·국지적 리스크 모니터링 구간으로 해석됩니다.
-- **Country ETF Crash?** Yes (EWJ)
-- **Extreme Country Risk:** EWJ
+- **Country ETF Crash?** No (BND, EEM, EIS, EMB, EWJ, FXI, GLD, SPY, VXX)
 
 ### ⚡ 7.3) Pseudo Gamma Filter
 - **정의:** 옵션 데이터 없이 시장의 감마 상태 추론
@@ -235,10 +234,10 @@ No significant sector-level correlation break detected.
 - **Interpretation:** 기관성 축적 흔적 불충분
 - **Action Bias:** **IGNORE**
 
-- **Drift:** NO DRIFT / INFLATION_RISK_OFF / NONE
+- **Drift:** NO DRIFT / REOPENING / DEMAND_BOOM / NONE
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK) / 🟢 STABLE FLOW
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.53
+- **Positioning (POS_Z):** 1.54
 - **Validation Score:** 0 (boost applied: +0)
 
 - **Drivers:**
@@ -287,19 +286,19 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** TRANSITION / MIXED (전환·혼조) (Cap: 70)
-- **Drift:** NO DRIFT / INFLATION_RISK_OFF / NONE
+- **Drift:** NO DRIFT / REOPENING / DEMAND_BOOM / NONE
 - **Drift Score:** 0
 
 - **🎯 Final Risk Action:** **HOLD**
 - **Risk Budget (0~100):** **51**
-- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=NO DRIFT (INFLATION_RISK_OFF) / 수급=1.53 ⚠️ 수급 다소 과열 → Phase=TRANSITION / MIXED (전환·혼조)
+- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=NO DRIFT (REOPENING / DEMAND_BOOM) / 수급=1.54 ⚠️ 수급 다소 과열 → Phase=TRANSITION / MIXED (전환·혼조)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `TIGHTENING` | **Price(Regime):** `MIXED` | **VIX:** `18.92`
-- **Positioning Data:** Z-Score: `1.53` (>1.8 시 Run) | Gamma: `2.22` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.54` (>1.8 시 Run) | Gamma: `2.23` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -337,7 +336,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
-**Flow Overlay:** flow_score=0 / flow_state=NO CLEAR FLOW / drift_label=INFLATION_RISK_OFF / gamma=🟢 POSITIVE GAMMA (WEAK)
+**Flow Overlay:** flow_score=0 / flow_state=NO CLEAR FLOW / drift_label=REOPENING / DEMAND_BOOM / gamma=🟢 POSITIVE GAMMA (WEAK)
 
 **Overweight:** Technology, Industrials, Consumer Discretionary, Financials
 
@@ -407,53 +406,53 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.10016451361343745
-- **Z-Score (5d):** 0.21747750152112047
+- **Z-Score (1d):** 0.27844086801130435
+- **Z-Score (5d):** 0.31034573144071526
 
 ### EEM
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.463399528645684
-- **Z-Score (5d):** 0.03598208015741416
+- **Z-Score (1d):** -0.40272643510123124
+- **Z-Score (5d):** 0.06668760548699271
 
 ### EIS
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5082688318652516
-- **Z-Score (5d):** 0.3141641052832132
+- **Z-Score (1d):** 0.5492967443410393
+- **Z-Score (5d):** 0.3346861729770975
 
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.09893108274529043
-- **Z-Score (5d):** 0.324717610465718
+- **Z-Score (1d):** 0.008474696961143667
+- **Z-Score (5d):** 0.376352305165905
 
 ### EWJ
-- **Crash?** True
-- **Risk Level:** EXTREME
-- **Z-Score (1d):** -0.12717961615154616
-- **Z-Score (5d):** -0.7029878049696149
+- **Crash?** False
+- **Risk Level:** NORMAL
+- **Z-Score (1d):** -0.020328692862736582
+- **Z-Score (5d):** -0.6518181903947399
 
 ### FXI
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5329453901790104
-- **Z-Score (5d):** -0.3876035237588153
+- **Z-Score (1d):** -0.44972193096651497
+- **Z-Score (5d):** -0.348232711567351
 
 ### GLD
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.07414694120241552
-- **Z-Score (5d):** -0.2217378581078626
+- **Z-Score (1d):** -0.008708510706942386
+- **Z-Score (5d):** -0.1892236844337139
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.14852650812799448
-- **Z-Score (5d):** 0.4752634365921209
+- **Z-Score (1d):** -0.019598365992414258
+- **Z-Score (5d):** 0.5344559776819869
 
 ### VXX
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.05651312274167392
-- **Z-Score (5d):** -0.039064950667321
+- **Z-Score (1d):** -0.07111284382327249
+- **Z-Score (5d):** -0.04807848332962765
