@@ -40,13 +40,13 @@
 - **SEW:** STABLE / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
 - **Drift:** WEAK DRIFT (노이즈 가능) / REOPENING / DEMAND_BOOM / NONE / score=1
-- **Flow:** 👀 EARLY TRACE / score=3
+- **Flow:** NO CLEAR FLOW / score=2
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK)
 - **Tactical Action:** HOLD / NONE / LOW
 - **Positioning:** pos_z=0.00
 - **Warning Score:** 0 (No warning)
 - **Tactical Why:** No actionable alignment
-- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=HOLD 반영 → Tactical=HOLD / Flow=👀 EARLY TRACE(3) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Tactical HOLD/MONITOR → 최종판단 변경 없음
+- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=HOLD 반영 → Tactical=HOLD / Flow=NO CLEAR FLOW(2) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Tactical HOLD/MONITOR → 최종판단 변경 없음
 
 ### 🚩 Market Regime Status
 - **현재 국면 유지:** ✅ **TRANSITION / MIXED (전환·혼조)**
@@ -152,9 +152,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+1.01% / 5D=+1.61% | Strength: LOW
-- **WTI:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+1.06% / 5D=-0.78% | Strength: LOW
-- **DXY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.16% / 5D=+0.54% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.40% / 5D=-0.71% | Strength: LOW
+- **WTI:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.31% / 5D=-1.52% | Strength: LOW
+- **DXY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.13% / 5D=+0.50% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: MIXED | 1D=+0.36% / 5D=-0.75% | Strength: LOW
 
 - **Drift Score:** 1
 - **State:** **WEAK DRIFT (노이즈 가능)**
@@ -165,7 +165,7 @@
   - Equity (SPY): 🟢 UP / SHORT UP
   - Oil (WTI): 🟡 REBOUND / SHORT UP
   - Dollar (DXY): 🟢 UP / SHORT UP
-  - Gold (GOLD): 🟡 REBOUND / SHORT UP
+  - Gold (GOLD): 🟡 REBOUND / MIXED
 
 - **Drivers:**
   - SPY 1D continuation
@@ -227,11 +227,11 @@ No significant sector-level correlation break detected.
 ### 🏦 Institutional Flow Engine (v2-minimal)
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
-- **Flow Score:** 3
-- **Flow State:** **👀 EARLY TRACE**
-- **Confidence:** **MEDIUM**
-- **Interpretation:** 흔적은 있으나 확신은 이르다
-- **Action Bias:** **MONITOR**
+- **Flow Score:** 2
+- **Flow State:** **NO CLEAR FLOW**
+- **Confidence:** **LOW**
+- **Interpretation:** 기관성 축적 흔적 불충분
+- **Action Bias:** **IGNORE**
 
 - **Drift:** WEAK DRIFT (노이즈 가능) / REOPENING / DEMAND_BOOM / NONE
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK) / 🟢 STABLE FLOW
@@ -240,7 +240,6 @@ No significant sector-level correlation break detected.
 - **Validation Score:** 1 (boost applied: +1)
 
 - **Drivers:**
-  - Short-horizon pre-move
   - No shock yet
   - Cross-asset risk participation
 
@@ -337,7 +336,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
-**Flow Overlay:** flow_score=3 / flow_state=👀 EARLY TRACE / drift_label=REOPENING / DEMAND_BOOM / gamma=🟢 POSITIVE GAMMA (WEAK)
+**Flow Overlay:** flow_score=2 / flow_state=NO CLEAR FLOW / drift_label=REOPENING / DEMAND_BOOM / gamma=🟢 POSITIVE GAMMA (WEAK)
 
 **Overweight:** Technology, Industrials, Consumer Discretionary, Financials
 
@@ -407,8 +406,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.39278225979900755
-- **Z-Score (5d):** -0.15695184092855552
+- **Z-Score (1d):** 0.392782313701412
+- **Z-Score (5d):** -0.15695179602661669
 
 ### EEM
 - **Crash?** False
@@ -425,8 +424,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.514449665592132
-- **Z-Score (5d):** 0.028456199408479817
+- **Z-Score (1d):** 0.5144497399965803
+- **Z-Score (5d):** 0.028456195623338332
 
 ### EWJ
 - **Crash?** False
