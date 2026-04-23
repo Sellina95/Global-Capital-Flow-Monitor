@@ -1444,6 +1444,13 @@ def generate_daily_report() -> None:
     # -----------------------------
     market_data = attach_liquidity_layer(market_data) or market_data
     market_data = attach_positioning_layer(market_data) or market_data
+    print("[DEBUG][POSITIONING AFTER ATTACH]")
+    print("SP500_POS_Z =", market_data.get("SP500_POS_Z"))
+    print("US10Y_POS_Z =", market_data.get("US10Y_POS_Z"))
+    print("DXY_POS_Z =", market_data.get("DXY_POS_Z"))
+    print("DEALER_GAMMA_BIAS =", market_data.get("DEALER_GAMMA_BIAS"))
+    print("CTA_MOMENTUM_SCORE =", market_data.get("CTA_MOMENTUM_SCORE"))
+    print("_POS_ASOF =", market_data.get("_POS_ASOF"))
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_sovereign_spread_layer(market_data) or market_data
