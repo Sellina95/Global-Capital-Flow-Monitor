@@ -1,6 +1,6 @@
 # 🌍 Global Capital Flow – Daily Brief
 **Date:** 2026-04-24
-**Data as of:** 2026-04-24
+**Data as of:** 2026-04-23
 
 ## ⚡ Strategic War Room (통합 대응)
 > **시스템 상태: ✅ STABLE**
@@ -42,23 +42,23 @@
 - **Flow:** NO CLEAR FLOW / score=2
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK)
 - **Tactical Action:** REDUCE / DEFENSIVE / MEDIUM
-- **Positioning:** pos_z=1.50
+- **Positioning:** pos_z=1.48
 - **Warning Score:** 2 (6.6 섹터 상관관계 붕괴)
 - **Tactical Why:** Risk-off environment
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=REDUCE 반영 → Warning Score 2 → 익스포저 15% haircut → Tactical=REDUCE / Flow=NO CLEAR FLOW(2) / Drift=NO DRIFT(0) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **TRANSITION / MIXED (전환·혼조)** → **RISK-OFF (긴축/불안·리스크 회피)**
+- **현재 국면 유지:** ✅ **RISK-OFF (긴축/불안·리스크 회피)**
 
 ---
 
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.323  (+0.68% vs 4.294)
-- **달러 인덱스**: 98.876  (+0.29% vs 98.590)
-- **WTI 유가**: 96.660  (+3.98% vs 92.960)
+- **달러 인덱스**: 98.800  (+0.21% vs 98.590)
+- **WTI 유가**: 95.850  (+3.11% vs 92.960)
 - **변동성 지수 (VIX)**: 19.310  (+2.06% vs 18.920)
-- **원/달러 환율**: 1482.280  (-0.24% vs 1485.800)
+- **원/달러 환율**: 1477.960  (-0.53% vs 1485.800)
 
 ---
 
@@ -90,7 +90,7 @@
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(↑) / DXY(↑) / VIX(↑)
-- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.286 / US10YΔ +0.029**
+- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.210 / US10YΔ +0.029**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY TIGHTENING (긴축)**
@@ -131,10 +131,10 @@
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Strong, +0.68%)** → 완화 기대 약화/금리 부담
-- DXY **(Clear, +0.29%)** → 달러 강세/신흥국 부담
-- WTI **(Strong, +3.98%)** → 인플레 재자극 가능성
+- DXY **(Clear, +0.21%)** → 달러 강세/신흥국 부담
+- WTI **(Strong, +3.11%)** → 인플레 재자극 가능성
 - VIX **(Clear, +2.06%)** → 심리 악화/리스크오프
-- 원/달러(USDKRW) **(Clear, -0.24%)** → 원화 강세/수급 개선
+- 원/달러(USDKRW) **(Strong, -0.53%)** → 원화 강세/수급 개선
 - HYG (High Yield ETF) **(Mild, -0.16%)** → 크레딧 스트레스↑
 - LQD (IG Bond ETF) **(Mild, -0.27%)** → 우량채 약세(리스크온 성향)
 
@@ -151,9 +151,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.39% / 5D=+0.97% | Strength: LOW
-- **WTI:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.85% / 5D=+15.28% | Strength: HIGH
-- **DXY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.07% / 5D=+0.79% | Strength: LOW
-- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.40% / 5D=-3.52% | Strength: LOW
+- **WTI:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.69% / 5D=+15.10% | Strength: HIGH
+- **DXY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.07% / 5D=+0.78% | Strength: LOW
+- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.47% / 5D=-3.60% | Strength: MEDIUM
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -186,21 +186,21 @@ So What?
 - **유가 상승(WTI↑)** → 인플레 압력/실질소득 부담 가능
 
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
-- **Geo Stress Score (z-composite):** **+0.23**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **+0.13**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
-- **3D Avg Score:** +0.04
-- **Geo Momentum:** +0.19 *(Status: FLAT)*
+- **3D Avg Score:** +0.01
+- **Geo Momentum:** +0.12 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** China_Trade_2018
-- **Cosine Similarity Score:** 0.652
+- **Cosine Similarity Score:** 0.586
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - China_Trade_2018: 0.652
-  - Taiwan_Tension: 0.615
-  - Ukraine_2022: 0.458
+  - China_Trade_2018: 0.586
+  - Taiwan_Tension: 0.527
+  - Ukraine_2022: 0.428
 - **Top Drivers:**
-  - USDCNH: z_used=+1.07 (z1d=+1.05, z5d=+1.10, raw_w=0.18, norm_w=0.14) → contrib=+0.15
+  - USDCNH: z_used=+0.45 (z1d=+0.32, z5d=+0.65, raw_w=0.18, norm_w=0.14) → contrib=+0.06
   - EMB: z_used=+0.56 (z1d=-0.93, z5d=+0.00, raw_w=0.12, norm_w=0.09) → contrib=+0.05
   - EEM: z_used=+0.65 (z1d=-0.94, z5d=-0.21, raw_w=0.10, norm_w=0.08) → contrib=+0.05
   - VIX: z_used=+0.25 (z1d=+0.17, z5d=+0.38, raw_w=0.18, norm_w=0.14) → contrib=+0.03
@@ -209,7 +209,7 @@ So What?
 
 **Trade Information:**
 - 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.
-- 과거 위기 패턴과 부분적으로 유사합니다. 현재 시장은 **China_Trade_2018** 계열의 초기 징후를 일부 보이고 있어, 관련 자산군과 지역 노출을 점검할 필요가 있습니다.
+- 역사적 위기 패턴 유사도는 낮습니다. 현재는 **China_Trade_2018** 유형과 가장 가깝지만, 전면적 지정학 쇼크보다는 제한적·국지적 리스크 모니터링 구간으로 해석됩니다.
 - **Country ETF Crash?** Yes (EWJ)
 - **Extreme Country Risk:** EWJ
 
@@ -238,18 +238,16 @@ So What?
 - **Drift:** NO DRIFT / INFLATION_RISK_OFF / NONE
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK) / 🟢 STABLE FLOW
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.5
+- **Positioning (POS_Z):** 1.48
 - **Validation Score:** 1 (boost applied: +1)
 
 - **Drivers:**
-  - Short-horizon pre-move
   - No shock yet
-  - Positioning somewhat stretched
   - Credit confirms risk appetite
 
 ### 🎯 8) Incentive Filter (Wall St. Logic)
 
-**핵심 신호:** 장단기차(51.00bp) | 실질금리(1.92%) | DXY(98.88)
+**핵심 신호:** 장단기차(51.00bp) | 실질금리(1.92%) | DXY(98.80)
 *(as of: RealRate: 2026-04-24 / FRED last available)*
 
 Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화 과정)
@@ -271,12 +269,12 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.323), DXY(98.876), VIX(19.31)
+- **Today snapshot:** US10Y(4.323), DXY(98.800), VIX(19.31)
 
 ### 🏗️ 12) Structural Filter (v3)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
 - **핵심 신호:** US10Y(↑) / DXY(↑) / GOLD(↓) / VIX(↑) / WTI(↑)
-- **Meaningful Move Check:** DXY=0.2900934409336726 / GOLD=-1.007928057316429 / US10Y=0.6753564146644189 / VIX=2.0613075479692635 / WTI=3.9802115039550814
+- **Meaningful Move Check:** DXY=0.21301016499425757 / GOLD=-0.5789731081616482 / US10Y=0.6753564146644189 / VIX=2.0613075479692635 / WTI=3.108863401582328
 - **판정:** **GLOBAL FINANCIAL TIGHTENING (글로벌 긴축 구조)**
 - **근거:** 금리↑ + 달러↑가 모두 의미 있는 수준으로 나타나 글로벌 자본 조달 비용 압박
 
@@ -284,8 +282,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.286 / US10YΔ +0.029 (정상)
-- **Sentiment (Fear&Greed):** 59.56760726839175 (NEUTRAL)
+- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.210 / US10YΔ +0.029 (정상)
+- **Sentiment (Fear&Greed):** 56.95335847804273 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** DOWN (MID)
 - **Phase:** RISK-OFF (긴축/불안·리스크 회피) (Cap: 35)
@@ -294,14 +292,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **REDUCE**
 - **Risk Budget (0~100):** **35**
-- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=감소/중간 / 크레딧=안정 / 드리프트=NO DRIFT (INFLATION_RISK_OFF) / 수급=1.50 ⚠️ 수급 다소 과열 → Phase=RISK-OFF (긴축/불안·리스크 회피)
+- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=감소/중간 / 크레딧=안정 / 드리프트=NO DRIFT (INFLATION_RISK_OFF) / 수급=1.48 → Phase=RISK-OFF (긴축/불안·리스크 회피)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `TIGHTENING` | **Price(Regime):** `RISK-OFF` | **VIX:** `19.31`
-- **Positioning Data:** Z-Score: `1.50` (>1.8 시 Run) | Gamma: `2.27` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.48` (>1.8 시 Run) | Gamma: `2.27` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -423,8 +421,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.6874239429137498
-- **Z-Score (5d):** -0.19442920472854525
+- **Z-Score (1d):** -0.6874269561381411
+- **Z-Score (5d):** -0.19442922782359515
 
 ### EEM
 - **Crash?** False
@@ -441,8 +439,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.992760203308429
-- **Z-Score (5d):** -0.1100446566932307
+- **Z-Score (1d):** -0.992760755846727
+- **Z-Score (5d):** -0.11004480627831782
 
 ### EWJ
 - **Crash?** True
