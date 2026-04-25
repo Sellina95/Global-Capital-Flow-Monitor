@@ -48,7 +48,7 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=HOLD 반영 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=REDUCE / Flow=👀 EARLY TRACE(3) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Tactical REDUCE → HOLD에서 REDUCE 전환 / 익스포저 10% 축소
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **RISK-OFF (긴축/불안·리스크 회피)** → **RISK-ON (완화 기대·리스크 선호)**
+- **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
 
 ---
 
@@ -444,8 +444,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5544616552907057
-- **Z-Score (5d):** -0.5678464855747487
+- **Z-Score (1d):** 0.5544612671227062
+- **Z-Score (5d):** -0.5678462830432105
 
 ### EWJ
 - **Crash?** True
