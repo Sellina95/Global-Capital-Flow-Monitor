@@ -3,9 +3,10 @@ from typing import Dict, Any
 
 def decision_layer_filter(market_data: Dict[str, Any]) -> str:
     """
-    So What? Decision Layer (v3)
+    So What? Decision Layer (v3.1)
     - Strategic View (FINAL_STATE)와 Execution View (FINAL_DECISION)를 분리해서 보여줌
     - War Room 최종 판단을 보고서 하단 So What에 일관되게 반영
+    - EARLY TRACE / Risk-On 초기 흐름을 institutional exit로 오해하지 않도록 문구 보정
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
@@ -49,6 +50,16 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
     div_status = str(final_decision.get("div_status", "N/A")).upper()
     div_action = str(final_decision.get("div_action", "HOLD")).upper()
 
+    drift_state = str(final_decision.get("drift_state", "N/A")).upper()
+    drift_label = str(final_decision.get("drift_label", "N/A")).upper()
+    flow_state = str(final_decision.get("flow_state", "N/A")).upper()
+    flow_score = final_decision.get("flow_score", 0)
+
+    try:
+        flow_score = int(flow_score)
+    except Exception:
+        flow_score = 0
+
     # -------------------------
     # Style / Factor hints
     # -------------------------
@@ -86,14 +97,34 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
         warning_score += 2
         warning_notes.append("7.2 지정학 위기(CRISIS)")
 
+    risk_on_early_flow = (
+        "RISK-ON" in phase.upper()
+        and (
+            "EARLY" in flow_state
+            or "TRACE" in flow_state
+            or flow_score == 3
+        )
+        and "DISINFLATION_RISK_ON" in drift_label
+        and sew_status == "STABLE"
+        and div_status == "ALIGNED"
+        and warning_score <= 1
+    )
+
     # -------------------------
     # Actionable guidance
     # -------------------------
     do, dont, triggers = [], [], []
 
-    # execution_action 기준으로 작성
-    if execution_action == "INCREASE":
-        do.append("전략·실행 판단이 모두 확장 쪽에 정렬된 상태로, 베타를 단계적으로 확대")
+    if risk_on_early_flow:
+        do.append("Risk-On 초기 흐름이 감지된 상태로, 무리한 축소보다 기존 노출 유지")
+        do.append("리더 섹터와 Positive Divergence 섹터를 중심으로 선별적 관찰")
+        dont.append("EARLY TRACE를 기관 이탈로 오해한 과도한 REDUCE")
+        dont.append("방어 섹터 몰빵")
+        triggers.append("Flow Score 5 이상 또는 Drift 강화 시 단계적 확대 검토")
+        triggers.append("SEW WATCH/ALERT 또는 Divergence 비정렬 전환 시 방어 재검토")
+
+    elif execution_action in ["INCREASE", "ADD", "EARLY BUY"]:
+        do.append("전략·실행 판단이 확장 쪽에 정렬된 상태로, 베타를 단계적으로 확대")
         do.append("퀄리티(현금흐름/재무안정) 중심으로 리스크 자산 비중 확대")
         triggers.append("VIX 급등 또는 HY OAS 확대 시 즉시 방어")
         dont.append("무분별한 테마 추격")
@@ -138,6 +169,7 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Execution View:** **{execution_action}** *(final exposure: {final_exposure}%)*")
     lines.append(f"- **Context:** phase={phase} / liquidity={liq_dir}-{liq_lvl} / credit_calm={credit_calm} / geo={warn_geo_level}")
     lines.append(f"- **SEW / Divergence:** {sew_status} / {sew_event} | {div_status} / {div_action}")
+    lines.append(f"- **Flow / Drift:** {flow_state}({flow_score}) / {drift_state} / {drift_label}")
 
     if warning_score > 0:
         lines.append(f"- **Warning Score:** {warning_score} ({', '.join(warning_notes)})")
@@ -146,6 +178,9 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
 
     if style_hint:
         lines.append("- **Style Hints:** " + " / ".join(style_hint))
+
+    if risk_on_early_flow:
+        lines.append("- **Early Flow Note:** EARLY TRACE는 기관 이탈이 아니라 초기 유입 흔적으로 해석")
 
     lines.append("- **Do:** " + "; ".join(do))
     lines.append("- **Don't:** " + "; ".join(dont))
@@ -160,18 +195,23 @@ def decision_layer_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
+
 def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     """
-    Final Decision Layer (War Room Override) - Unified Final
+    Final Decision Layer (War Room Override) - Unified Final v3.1
 
     Priority:
     1) SEW
     2) Event Type
     3) Divergence
     4) Narrative / FINAL_STATE
-    5) Warning Score (6.5 / 6.6 / 7.2)
-    6) Tactical Overlay (Drift / Flow / Gamma / Final Action Engine)
+    5) Warning Score
+    6) Tactical Overlay
     7) Recovery / Exposure sizing
+
+    Patch:
+    - Risk-On + EARLY TRACE + DISINFLATION_RISK_ON + SEW STABLE + Divergence ALIGNED
+      조합에서는 Tactical REDUCE를 그대로 받아 HOLD → REDUCE로 강등하지 않음.
     """
 
     state = market_data.get("FINAL_STATE", {}) or {}
@@ -202,8 +242,14 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     # Tactical inputs
     # -------------------------
     drift_state = str(drift.get("state", market_data.get("DRIFT_STATE", "N/A")) or "N/A")
-    drift_label = str(drift.get("label", "N/A") or "N/A")
+    drift_label = str(
+        drift.get("label")
+        or market_data.get("DRIFT_LABEL")
+        or state.get("drift_label")
+        or "N/A"
+    )
     drift_combo = str(drift.get("combo_signal", "NONE") or "NONE")
+
     try:
         drift_score = int(drift.get("score", market_data.get("DRIFT_SCORE", 0)) or 0)
     except Exception:
@@ -213,16 +259,17 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         flow_score = int(inst_flow.get("score", 0) or 0)
     except Exception:
         flow_score = 0
+
     flow_state = str(inst_flow.get("state", "N/A") or "N/A")
 
     gamma_state = str(market_data.get("GAMMA_STATE", "N/A") or "N/A")
     pos_z = market_data.get("SP500_POS_Z", 0)
+
     try:
         pos_z = float(pos_z)
     except Exception:
         pos_z = 0.0
 
-    # Final Action Engine 결과는 generate_report.py에서 먼저 계산한 값을 사용
     tactical = market_data.get("FINAL_ACTION", {}) or {}
     tactical_action = str(tactical.get("action", "HOLD") or "HOLD").upper()
     tactical_size = str(tactical.get("size", "NONE") or "NONE")
@@ -256,7 +303,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         reason_chain.append("SEW ALERT → 실시간 발작 감지, 익스포저 30% 축소")
 
     elif sew_status == "WATCH":
-        if narrative_action == "INCREASE":
+        if narrative_action in ["INCREASE", "ADD", "EARLY BUY"]:
             final_action = "HOLD"
             final_exposure = base_exposure
             reason_chain.append("SEW WATCH → 증가 보류, HOLD 유지")
@@ -283,13 +330,13 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
             reason_chain.append("Event: MACRO_UNWIND → 자금 언와인딩 → 익스포저 축소")
 
         elif sew_event == "TECH_DELEVERAGING":
-            if final_action == "INCREASE":
+            if final_action in ["INCREASE", "ADD", "EARLY BUY"]:
                 final_action = "HOLD"
             final_exposure = int(final_exposure * 0.75)
             reason_chain.append("Event: TECH_DELEVERAGING → 기술주 디레버리징 → 보수적 대응")
 
         elif sew_event == "POSITION_UNWIND_RISK":
-            if final_action == "INCREASE":
+            if final_action in ["INCREASE", "ADD", "EARLY BUY"]:
                 final_action = "HOLD"
             reason_chain.append("Event: POSITION_UNWIND_RISK → 포지션 과열 → 증가 억제")
 
@@ -304,10 +351,10 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     if sew_status not in ["DEADMAN", "ALERT"]:
         if div_status != "ALIGNED":
-            if final_action == "INCREASE":
+            if final_action in ["INCREASE", "ADD", "EARLY BUY"]:
                 final_action = "HOLD"
                 final_exposure = int(final_exposure * 0.8)
-                reason_chain.append("Divergence 비정렬 → INCREASE 억제, HOLD로 하향")
+                reason_chain.append("Divergence 비정렬 → 확장 억제, HOLD로 하향")
             elif final_action == "HOLD":
                 final_action = "REDUCE"
                 final_exposure = int(final_exposure * 0.8)
@@ -348,7 +395,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         warning_notes.append("7.2 지정학 위기(CRISIS)")
 
     if warning_score >= 3:
-        if final_action == "INCREASE":
+        if final_action in ["INCREASE", "ADD", "EARLY BUY"]:
             final_action = "HOLD"
         elif final_action == "HOLD":
             final_action = "REDUCE"
@@ -363,44 +410,80 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         reason_chain.append("Warning Score 1 → 경미한 이상신호, 모니터링 강화")
 
     # -------------------------
-    # 5) Tactical Overlay (NEW, additive only)
-    # - 새 점수체계 없이 최종판단에 보조 반영
+    # 4.5) Risk-On Early Flow Guard
+    # -------------------------
+    phase_upper = phase.upper()
+    flow_upper = flow_state.upper()
+    drift_label_upper = drift_label.upper()
+
+    risk_on_early_flow = (
+        "RISK-ON" in phase_upper
+        and (
+            "EARLY" in flow_upper
+            or "TRACE" in flow_upper
+            or flow_score == 3
+        )
+        and "DISINFLATION_RISK_ON" in drift_label_upper
+        and sew_status == "STABLE"
+        and div_status == "ALIGNED"
+        and warning_score <= 1
+    )
+
+    # -------------------------
+    # 5) Tactical Overlay
     # -------------------------
     reason_chain.append(
         f"Tactical={tactical_action} / Flow={flow_state}({flow_score}) / Drift={drift_state}({drift_score}) / Gamma={gamma_state}"
     )
 
-    # REDUCE / EXIT는 최종판단을 보수적으로 끌어내리는 역할만 수행
     if tactical_action == "EXIT":
         final_action = "EXIT"
         final_exposure = 0
         reason_chain.append("Tactical EXIT → 최종 EXIT 우선")
 
     elif tactical_action == "REDUCE":
-        if final_action == "INCREASE":
+        if risk_on_early_flow:
+            reason_chain.append(
+                "Risk-On + EARLY TRACE + DISINFLATION_RISK_ON + SEW STABLE + Divergence ALIGNED → Tactical REDUCE 무시, 최소 HOLD 유지"
+            )
+            if final_action == "REDUCE":
+                final_action = "HOLD"
+                final_exposure = base_exposure
+
+        elif final_action in ["INCREASE", "ADD", "EARLY BUY"]:
             final_action = "HOLD"
             final_exposure = int(final_exposure * 0.9)
-            reason_chain.append("Tactical REDUCE → INCREASE 억제 / 익스포저 10% 축소")
+            reason_chain.append("Tactical REDUCE → 확장 억제 / 익스포저 10% 축소")
+
         elif final_action == "HOLD":
             final_action = "REDUCE"
             final_exposure = int(final_exposure * 0.9)
             reason_chain.append("Tactical REDUCE → HOLD에서 REDUCE 전환 / 익스포저 10% 축소")
+
         else:
             final_exposure = int(final_exposure * 0.95)
             reason_chain.append("Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소")
 
-    # ADD / EARLY BUY는 상위 리스크가 조용할 때만 보조적으로 허용
-    elif tactical_action in ["ADD", "EARLY BUY"]:
+    elif tactical_action in ["ADD", "EARLY BUY", "INCREASE"]:
         if sew_status == "STABLE" and div_status == "ALIGNED" and warning_score <= 1:
             reason_chain.append(f"Tactical {tactical_action} → 상위 리스크 안정 구간, 확장 신호 확인")
+            if final_action == "REDUCE":
+                final_action = "HOLD"
+                reason_chain.append("Tactical 확장 신호 → REDUCE에서 HOLD로 복귀")
         else:
             reason_chain.append(f"Tactical {tactical_action} → 상위 리스크 조건 미충족, 최종판단에는 보수 반영")
 
     else:
-        reason_chain.append("Tactical HOLD/MONITOR → 최종판단 변경 없음")
+        if risk_on_early_flow:
+            reason_chain.append("Risk-On Early Flow → HOLD 유지, 과도한 축소 금지")
+            if final_action == "REDUCE":
+                final_action = "HOLD"
+                final_exposure = base_exposure
+        else:
+            reason_chain.append("Tactical HOLD/MONITOR → 최종판단 변경 없음")
 
     # -------------------------
-    # 6) Recovery Engine v1 (Phased Recovery)
+    # 6) Recovery Engine v1
     # -------------------------
     if (
         warning_score <= 1
@@ -430,10 +513,14 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         "warning_ok": warning_score <= 1,
         "base_exposure": base_exposure,
         "final_exposure_before_clamp": final_exposure,
+        "risk_on_early_flow": risk_on_early_flow,
     }
 
     final_exposure = max(0, min(100, final_exposure))
 
+    # -------------------------
+    # Text assembly
+    # -------------------------
     lines = []
     lines.append("## 🎯 Final Decision (War Room Override)")
     lines.append(f"- **Final Action:** **{final_action}**")
@@ -447,6 +534,9 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Tactical Action:** {tactical_action} / {tactical_size} / {tactical_confidence}")
     lines.append(f"- **Positioning:** pos_z={pos_z:.2f}")
     lines.append(f"- **Warning Score:** {warning_score} ({', '.join(warning_notes) if warning_notes else 'No warning'})")
+
+    if risk_on_early_flow:
+        lines.append("- **Early Flow Guard:** ACTIVE")
 
     if tactical_reasons:
         lines.append(f"- **Tactical Why:** {' / '.join(tactical_reasons)}")
@@ -477,6 +567,7 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
         "tactical_confidence": tactical_confidence,
         "tactical_reasons": tactical_reasons,
         "pos_z": pos_z,
+        "risk_on_early_flow": risk_on_early_flow,
     }
 
     return "\n".join(lines)
