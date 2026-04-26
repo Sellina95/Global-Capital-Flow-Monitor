@@ -4092,7 +4092,7 @@ def build_tactical_allocation(
     if total_score_sum <= 0:
         return {
             "weights": {},
-            "cash_weight": round(100.0 - total_exposure, 1),
+            "cash_weight": round(100.0 - final_exposure, 1),
             "total_score_sum": 0,
         }
 
@@ -4644,7 +4644,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         score=score,
         ow_sorted=ow_sorted,
         divergence_flags=divergence_flags,
-        total_exposure=final_exposure,
+        final_exposure=final_exposure,
         deleveraging_required=deleveraging_required,  # 🔥 추가
     )
     
