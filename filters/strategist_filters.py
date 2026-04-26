@@ -3990,7 +3990,7 @@ def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
         return (0, "VOLATILITY NORMAL", f"absolute mode: VIX {current_vix:.1f}")
 
 def build_tactical_allocation(
-    score: Dict[str, int],
+    score: Dict[str, float],
     ow_sorted: list,
     divergence_flags: Dict[str, str],
     total_exposure: float,
@@ -4021,10 +4021,12 @@ def build_tactical_allocation(
     # 2) Divergence 반영
     for sector in list(weights.keys()):
         flag = divergence_flags.get(sector, "ALIGNED")
+
         if flag == "NEGATIVE_DIVERGENCE":
-            weights[sector] *= 0.7
+            weights[sector] *= 0.65
+
         elif flag == "POSITIVE_DIVERGENCE":
-            weights[sector] *= 1.1
+            weights[sector] *= 1.25
 
     # 3) 다시 total_exposure 안으로 정규화
     adjusted_sum = sum(weights.values())
@@ -4043,7 +4045,6 @@ def build_tactical_allocation(
         "cash_weight": cash_weight,
         "total_score_sum": total_score_sum,
     }
-from typing import Dict, Any, List
 
 def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     """
