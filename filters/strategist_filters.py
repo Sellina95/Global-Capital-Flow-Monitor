@@ -3553,7 +3553,13 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     # 14번 포지셔닝 데이터 + 기울기(Slope) 추출
     pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
-    pos_slope = _to_float(market_data.get("POS_SLOPE", 0.0)) 
+    pos_slope = _to_float(market_data.get("POS_SLOPE"))
+
+    if pos_slope is None:
+        pos_slope = get_recent_pos_slope()
+        market_data["POS_SLOPE"] = pos_slope
+        
+  
     gamma = _to_float(market_data.get("DEALER_GAMMA_BIAS", 1.0))
     cta = _to_float(market_data.get("CTA_MOMENTUM_SCORE", 1.0))
 
