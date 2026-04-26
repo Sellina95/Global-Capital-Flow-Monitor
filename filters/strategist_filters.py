@@ -4510,28 +4510,33 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # 18.5) Execution Weight Allocation Logic
     # -------------------------
+    # -------------------------
+    # 18.5) Execution Weight Allocation Logic
+    # -------------------------
     final_exposure = float(market_data.get("PREV_EXPOSURE", 50.0))
-
+    
     corr_msg = correlation_break_filter(market_data)
     is_corr_break = bool(corr_msg)
-
+    
     if is_corr_break:
-            # 🔧 score가 corr/divergence 조정 후 바뀌었으므로 정렬 재계산
-    ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
-    uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
         if "Technology" in score:
             score["Technology"] += 0.5
-
+    
         for s in ["Industrials", "Consumer Discretionary"]:
             if s in score:
                 score[s] -= 0.3
-
+    
+    # 🔧 score가 corr/divergence 조정 후 바뀌었으므로 정렬 재계산
+    ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
+    uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
+    
     alloc_result = build_tactical_allocation(
         score=score,
         ow_sorted=ow_sorted,
         divergence_flags=divergence_flags,
         total_exposure=final_exposure,
     )
+   
 
     weights = alloc_result["weights"]
     cash_weight = alloc_result["cash_weight"]
