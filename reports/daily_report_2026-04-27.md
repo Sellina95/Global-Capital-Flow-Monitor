@@ -387,34 +387,34 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Technology | +4 | ALIGNED | **14.7%** | ACCUMULATE |
-| Industrials | +2.2 | ALIGNED | **9.5%** | HOLD |
-| Consumer Staples | +2 | ALIGNED | **8.6%** | HOLD |
-| Health Care | +2 | ALIGNED | **8.6%** | HOLD |
-| Utilities | +1 | ALIGNED | **3.0%** | HOLD |
-| Communication Services | +0.5 | ALIGNED | **1.5%** | HOLD |
-| **Cash & Hedge** | - | - | **54.1%** | DEFENSIVE |
+| Technology | +4 | ALIGNED | **15.7%** | ACCUMULATE |
+| Industrials | +2.2 | ALIGNED | **8.6%** | HOLD |
+| Consumer Staples | +2 | ALIGNED | **7.9%** | HOLD |
+| Health Care | +2 | ALIGNED | **7.9%** | HOLD |
+| Utilities | +1 | ALIGNED | **3.9%** | HOLD |
+| Communication Services | +0.5 | ALIGNED | **2.0%** | HOLD |
+| **Cash & Hedge** | - | - | **54.0%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Score → Risk Sector → Current Weight
-1. Technology (risk_score=1.5, score=4.0, weight=14.7%, div=ALIGNED)
-2. Communication Services (risk_score=1.0, score=0.5, weight=1.5%, div=ALIGNED)
-3. Utilities (risk_score=0.5, score=1.0, weight=3.0%, div=ALIGNED)
-4. Industrials (risk_score=0.0, score=2.2, weight=9.5%, div=ALIGNED)
-5. Consumer Staples (risk_score=-0.5, score=2.0, weight=8.6%, div=ALIGNED)
+1. Technology (risk_score=1.5, score=4.0, weight=15.7%, div=ALIGNED)
+2. Communication Services (risk_score=1.0, score=0.5, weight=2.0%, div=ALIGNED)
+3. Utilities (risk_score=0.5, score=1.0, weight=3.9%, div=ALIGNED)
+4. Industrials (risk_score=0.0, score=2.2, weight=8.6%, div=ALIGNED)
+5. Consumer Staples (risk_score=-0.5, score=2.0, weight=7.9%, div=ALIGNED)
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Technology | XLK | 14.7% | ADD |
-| Industrials | XLI | 9.5% | SMALL |
-| Consumer Staples | XLP | 8.6% | SMALL |
-| Health Care | XLV | 8.6% | SMALL |
-| Utilities | XLU | 3.0% | SMALL |
-| Communication Services | XLC | 1.5% | SMALL |
+| Technology | XLK | 15.7% | ADD |
+| Industrials | XLI | 8.6% | SMALL |
+| Consumer Staples | XLP | 7.9% | SMALL |
+| Health Care | XLV | 7.9% | SMALL |
+| Utilities | XLU | 3.9% | SMALL |
+| Communication Services | XLC | 2.0% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -442,8 +442,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.6407215209122609
-- **Z-Score (5d):** -0.6091446112868141
+- **Z-Score (1d):** 0.6407210387573039
+- **Z-Score (5d):** -0.6091448767656652
 
 ### EEM
 - **Crash?** False
