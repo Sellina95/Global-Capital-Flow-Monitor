@@ -3654,7 +3654,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         exposure = 0 
 
     exposure = min(exposure, cap)
-    exposure = max(0, exposure - 10)  # TEST ONLY: force deleveraging
+    #exposure = max(0, exposure - 10)  # TEST ONLY: force deleveraging
     exposure = _clamp(exposure)
     market_data["PREV_EXPOSURE"] = exposure
 
