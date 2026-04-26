@@ -4080,15 +4080,12 @@ def build_tactical_allocation(
 ) -> Dict[str, Any]:
     """
     18.5) Tactical Asset Allocation Builder - Final Stable Version
-
-    역할:
-    1) 15번에서 내려온 total_exposure 안에서 섹터 비중 계산
-    2) Divergence 반영
-    3) 디레버리징 상황이면 위험 섹터 haircut 적용
-    4) 최종적으로 total_exposure 안으로 재정규화
+    - 15번 total_exposure 기준으로 기본 비중 계산
+    - Divergence 반영
+    - deleveraging_required=True일 때 위험 섹터 haircut 적용
+    - 최종적으로 total_exposure 안으로 재정규화
     """
 
-    # 1) 양수 점수 섹터만 사용
     positive_scores = {
         sector: float(score[sector])
         for sector in ow_sorted
@@ -4105,35 +4102,33 @@ def build_tactical_allocation(
             "total_score_sum": 0,
         }
 
-    # 2) 기본 비중 계산
+    # 1) 기본 비중 계산
     for sector, s_score in positive_scores.items():
         weights[sector] = (s_score / total_score_sum) * total_exposure
 
-    # 3) Divergence 반영
+    # 2) Divergence 반영
     for sector in list(weights.keys()):
         flag = divergence_flags.get(sector, "ALIGNED")
 
         if flag == "NEGATIVE_DIVERGENCE":
             weights[sector] *= 0.65
-
         elif flag == "POSITIVE_DIVERGENCE":
             weights[sector] *= 1.25
 
-    # 4) 디레버리징 상황일 때 위험 섹터 추가 haircut
+    # 3) 디레버리징 상황이면 위험 섹터 haircut
     if deleveraging_required:
+        print("[DEBUG][BUILD ALLOCATION] Deleveraging haircut applied")
+
         for sector in list(weights.keys()):
             flag = divergence_flags.get(sector, "ALIGNED")
             sector_score = float(score.get(sector, 0))
 
-            # 1순위: 명백한 수급 악화
             if flag == "NEGATIVE_DIVERGENCE":
                 weights[sector] *= 0.50
 
-            # 2순위: 낮은 점수 섹터
             elif sector_score <= 1:
                 weights[sector] *= 0.70
 
-            # 3순위: 고베타 / 장기 성장 / 금리 민감 섹터
             elif sector in [
                 "Technology",
                 "Consumer Discretionary",
@@ -4142,7 +4137,6 @@ def build_tactical_allocation(
             ]:
                 weights[sector] *= 0.85
 
-            # 방어 섹터는 상대적으로 보존
             elif sector in [
                 "Consumer Staples",
                 "Health Care",
@@ -4150,14 +4144,14 @@ def build_tactical_allocation(
             ]:
                 weights[sector] *= 1.00
 
-    # 5) total_exposure 안으로 재정규화
+    # 4) total_exposure 안으로 재정규화
     adjusted_sum = sum(weights.values())
 
     if adjusted_sum > 0:
         for sector in list(weights.keys()):
             weights[sector] = (weights[sector] / adjusted_sum) * total_exposure
 
-    # 6) 반올림
+    # 5) 반올림
     for sector in list(weights.keys()):
         weights[sector] = round(weights[sector], 1)
 
@@ -4638,8 +4632,10 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # 18.5) Execution Weight Allocation Logic
     # -------------------------
-    final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
+    # -------------------------
 
+    #final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
+    final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
     try:
         from portfolio.save_portfolio import load_previous_exposure
         prev_exposure = load_previous_exposure()
@@ -4652,8 +4648,6 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     print("prev_exposure =", prev_exposure)
     print("final_exposure =", final_exposure)
     print("deleveraging_required =", deleveraging_required)
-
-    
     
     corr_msg = correlation_break_filter(market_data)
     is_corr_break = bool(corr_msg)
@@ -4666,19 +4660,17 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             if s in score:
                 score[s] -= 0.3
     
-    # 🔧 score가 corr/divergence 조정 후 바뀌었으므로 정렬 재계산
+    # score 조정 후 정렬 재계산
     ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
     uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
-
+    
     alloc_result = build_tactical_allocation(
         score=score,
         ow_sorted=ow_sorted,
         divergence_flags=divergence_flags,
-        # ✅ 맞는 코드
         total_exposure=final_exposure,
-        deleveraging_required=deleveraging_required,  # 🔥 추가
+        deleveraging_required=deleveraging_required,
     )
-    
    
 
     weights = alloc_result["weights"]
