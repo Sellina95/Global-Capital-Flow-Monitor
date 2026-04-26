@@ -4036,10 +4036,8 @@ def build_tactical_allocation(
 
         if flag == "NEGATIVE_DIVERGENCE":
             weights[sector] *= 0.65
-
         elif flag == "POSITIVE_DIVERGENCE":
             weights[sector] *= 1.25
-
     # 3) 다시 total_exposure 안으로 정규화
     adjusted_sum = sum(weights.values())
     if adjusted_sum > 0:
@@ -4359,7 +4357,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             })
 
         elif theo <= 0 and mom > 0:
-            # 🔥 v3.4: Positive Divergence는 단순 관찰이 아니라 최소 실행 후보로 올림
+            # 🔥 Positive Divergence는 관찰이 아니라 최소 실행 후보로 상향
             score[s] += 1
             divergence_flags[s] = "POSITIVE_DIVERGENCE"
             drivers[s].append({
@@ -4368,6 +4366,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
                 "bucket": "MOM",
                 "priority": PRIORITY["MOM"],
             })
+
 
         else:
             divergence_flags[s] = "ALIGNED"
