@@ -4667,7 +4667,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     allocation_lines.append("### 💰 18.5) Tactical Asset Allocation (Execution Weight)")
     #allocation_lines.append(f"- **Total Target Exposure:** **{final_exposure}%** (from Filter 15)")
     allocation_lines.append(f"- **Strategic Exposure (15):** **{final_exposure}%**")
-    allocation_lines.append(f"- **Execution Exposure (18.5):** **{total_exposure}%**")
+    #allocation_lines.append(f"- **Execution Exposure (18.5):** **{total_exposure}%**")
     allocation_lines.append("")
 
     if total_score_sum > 0:
