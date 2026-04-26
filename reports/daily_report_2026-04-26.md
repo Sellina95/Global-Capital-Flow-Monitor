@@ -325,7 +325,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Risk Budget:** 56 | **Phase Cap:** 85
 - **VIX Level:** 18.71 (NORMAL) | **Change:** -3.11%
 - **Final Multiplier:** 1.00x (Vol x Pos)
-- **Slope Intensity:** 0.0000 (Stable)
+- **Slope Intensity:** 0.0800 (Stable)
 
 - **📊 Recommended Exposure:** **56%**
 
@@ -355,29 +355,29 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 **Flow Overlay:** flow_score=4 / flow_state=👀 EARLY TRACE / drift_label=DISINFLATION_RISK_ON / gamma=🟢 POSITIVE GAMMA (WEAK)
 **Flow Notes:** DISINFLATION_RISK_ON → XLK/XLY/XLC 가점 | Gamma POSITIVE → 리더 섹터 가점
 
-**Overweight:** Consumer Staples, Health Care, Industrials, Technology, Utilities, Communication Services
+**Overweight:** Technology, Industrials, Consumer Staples, Health Care, Utilities, Communication Services
 
 **Underweight:** Energy, Real Estate
 
 **Scoreboard:**
-- Consumer Staples: +3  (+3 LIQ, = +3)
-- Health Care: +3  (+3 LIQ, = +3)
+- Technology: +3.5  (-2 LIQ, +1 PHASE, +2.5 FLOW, +2 MOM, = +3.5)
 - Industrials: +2.5  (+1 CURVE, +1 PHASE, +0.5 FLOW, = +2.5)
-- Technology: +2.5  (-3 LIQ, +1 PHASE, +2.5 FLOW, +2 MOM, = +2.5)
+- Consumer Staples: +2  (+2 LIQ, = +2)
+- Health Care: +2  (+2 LIQ, = +2)
 - Utilities: +1  (+1 LIQ, = +1)
 - Communication Services: +0.5  (+0.5 FLOW, = +0.5)
+- Real Estate: -1.5  (-1.5 LIQ, = -1.5)
 - Energy: -2  (-2 MOM, = -2)
-- Real Estate: -2  (-2 LIQ, = -2)
 
 **Rationale (top drivers):**
-- OW Consumer Staples: +3: 유동성 긴축 → 방어적 필수소비 선호
-- OW Health Care: +3: 유동성 긴축 → 안정적 현금흐름 선호
-- OW Industrials: +1: 완만한 스티프닝(0.53) → 성장 기대 반영
-- OW Industrials: +1: RISK-ON → 경기민감 미세 가점
 - OW Technology: +1: RISK-ON → 성장주 미세 가점
 - OW Technology: +1.5: Flow Overlay → DISINFLATION_RISK_ON 수혜
+- OW Industrials: +1: 완만한 스티프닝(0.53) → 성장 기대 반영
+- OW Industrials: +1: RISK-ON → 경기민감 미세 가점
+- OW Consumer Staples: +2: 유동성 긴축 → 방어적 필수소비 선호
+- OW Health Care: +2: 유동성 긴축 → 안정적 현금흐름 선호
 - UW Energy: -2: Relative Strength 약세 (vs SPY) → 소외 섹터
-- UW Real Estate: -2: 유동성 긴축 → 조달비용 상승 부담
+- UW Real Estate: -1.5: 유동성 긴축 → 조달비용 상승 부담
 
 **Divergence Monitor (Theory vs Flow):**
 - No major theory-vs-flow divergence detected.
@@ -387,13 +387,13 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Consumer Staples | +3 | ALIGNED | **13.2%** | ACCUMULATE |
-| Health Care | +3 | ALIGNED | **13.2%** | ACCUMULATE |
-| Industrials | +2.2 | ALIGNED | **9.7%** | HOLD |
-| Technology | +3 | ALIGNED | **13.2%** | ACCUMULATE |
-| Utilities | +1 | ALIGNED | **4.4%** | HOLD |
-| Communication Services | +0.5 | ALIGNED | **2.2%** | HOLD |
-| **Cash & Hedge** | - | - | **44.1%** | DEFENSIVE |
+| Technology | +4 | ALIGNED | **19.1%** | ACCUMULATE |
+| Industrials | +2.2 | ALIGNED | **10.5%** | ACCUMULATE |
+| Consumer Staples | +2 | ALIGNED | **9.6%** | HOLD |
+| Health Care | +2 | ALIGNED | **9.6%** | HOLD |
+| Utilities | +1 | ALIGNED | **4.8%** | HOLD |
+| Communication Services | +0.5 | ALIGNED | **2.4%** | HOLD |
+| **Cash & Hedge** | - | - | **44.0%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
@@ -401,12 +401,12 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Consumer Staples | XLP | 13.2% | ADD |
-| Health Care | XLV | 13.2% | ADD |
-| Industrials | XLI | 9.7% | SMALL |
-| Technology | XLK | 13.2% | ADD |
-| Utilities | XLU | 4.4% | SMALL |
-| Communication Services | XLC | 2.2% | SMALL |
+| Technology | XLK | 19.1% | ADD |
+| Industrials | XLI | 10.5% | ADD |
+| Consumer Staples | XLP | 9.6% | SMALL |
+| Health Care | XLV | 9.6% | SMALL |
+| Utilities | XLU | 4.8% | SMALL |
+| Communication Services | XLC | 2.4% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -434,8 +434,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.6407178686871231
-- **Z-Score (5d):** -0.6091449789286061
+- **Z-Score (1d):** 0.640718621999978
+- **Z-Score (5d):** -0.6091436659078373
 
 ### EEM
 - **Crash?** False
@@ -452,8 +452,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5544612454120478
-- **Z-Score (5d):** -0.5678462306363101
+- **Z-Score (1d):** 0.5544616552907057
+- **Z-Score (5d):** -0.5678464855747487
 
 ### EWJ
 - **Crash?** True
