@@ -6,10 +6,10 @@
 > **시스템 상태: ✅ STABLE**
 > **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
 ### 🎯 Exposure Framework
-- **Base Exposure (전략 기준): 56%**
-- **Final Exposure (실행 기준): 56%**
+- **Base Exposure (전략 기준): 46%**
+- **Final Exposure (실행 기준): 46%**
 
-- **Portfolio Stance:** HOLD / 56%
+- **Portfolio Stance:** HOLD / 46%
 
 - **[14번 구조·수급 괴리]:** ✅ **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
@@ -34,8 +34,8 @@
 
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **HOLD**
-- **Final Exposure:** **56%**
-- **Base Context:** phase=RISK-ON (완화 기대·리스크 선호) / narrative=HOLD / base_exposure=56%
+- **Final Exposure:** **46%**
+- **Base Context:** phase=RISK-ON (완화 기대·리스크 선호) / narrative=HOLD / base_exposure=46%
 - **SEW:** STABLE / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
 - **Drift:** WEAK DRIFT (노이즈 가능) / DISINFLATION_RISK_ON / NONE / score=1
@@ -327,7 +327,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Final Multiplier:** 1.00x (Vol x Pos)
 - **Slope Intensity:** 0.0800 (Stable)
 
-- **📊 Recommended Exposure:** **56%**
+- **📊 Recommended Exposure:** **46%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
@@ -383,38 +383,38 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - No major theory-vs-flow divergence detected.
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
-- **Strategic Exposure (15):** **56.0%**
+- **Strategic Exposure (15):** **46.0%**
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Technology | +4 | ALIGNED | **19.1%** | ACCUMULATE |
-| Industrials | +2.2 | ALIGNED | **10.5%** | ACCUMULATE |
-| Consumer Staples | +2 | ALIGNED | **9.6%** | HOLD |
-| Health Care | +2 | ALIGNED | **9.6%** | HOLD |
-| Utilities | +1 | ALIGNED | **4.8%** | HOLD |
-| Communication Services | +0.5 | ALIGNED | **2.4%** | HOLD |
-| **Cash & Hedge** | - | - | **44.0%** | DEFENSIVE |
+| Technology | +4 | ALIGNED | **14.7%** | ACCUMULATE |
+| Industrials | +2.2 | ALIGNED | **9.5%** | HOLD |
+| Consumer Staples | +2 | ALIGNED | **8.6%** | HOLD |
+| Health Care | +2 | ALIGNED | **8.6%** | HOLD |
+| Utilities | +1 | ALIGNED | **3.0%** | HOLD |
+| Communication Services | +0.5 | ALIGNED | **1.5%** | HOLD |
+| **Cash & Hedge** | - | - | **54.1%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Score → Risk Sector → Current Weight
-1. Technology (risk_score=1.5, score=4.0, weight=19.1%, div=ALIGNED)
-2. Communication Services (risk_score=1.0, score=0.5, weight=2.4%, div=ALIGNED)
-3. Utilities (risk_score=0.5, score=1.0, weight=4.8%, div=ALIGNED)
-4. Industrials (risk_score=0.5, score=2.2, weight=10.5%, div=ALIGNED)
-5. Consumer Staples (risk_score=-0.5, score=2.0, weight=9.6%, div=ALIGNED)
+1. Technology (risk_score=1.5, score=4.0, weight=14.7%, div=ALIGNED)
+2. Communication Services (risk_score=1.0, score=0.5, weight=1.5%, div=ALIGNED)
+3. Utilities (risk_score=0.5, score=1.0, weight=3.0%, div=ALIGNED)
+4. Industrials (risk_score=0.0, score=2.2, weight=9.5%, div=ALIGNED)
+5. Consumer Staples (risk_score=-0.5, score=2.0, weight=8.6%, div=ALIGNED)
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Technology | XLK | 19.1% | ADD |
-| Industrials | XLI | 10.5% | ADD |
-| Consumer Staples | XLP | 9.6% | SMALL |
-| Health Care | XLV | 9.6% | SMALL |
-| Utilities | XLU | 4.8% | SMALL |
-| Communication Services | XLC | 2.4% | SMALL |
+| Technology | XLK | 14.7% | ADD |
+| Industrials | XLI | 9.5% | SMALL |
+| Consumer Staples | XLP | 8.6% | SMALL |
+| Health Care | XLV | 8.6% | SMALL |
+| Utilities | XLU | 3.0% | SMALL |
+| Communication Services | XLC | 1.5% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -442,8 +442,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.6407210387573039
-- **Z-Score (5d):** -0.6091448767656652
+- **Z-Score (1d):** 0.6407215209122609
+- **Z-Score (5d):** -0.6091446112868141
 
 ### EEM
 - **Crash?** False
