@@ -4001,6 +4001,74 @@ def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
     else:
         return (0, "VOLATILITY NORMAL", f"absolute mode: VIX {current_vix:.1f}")
 
+def rank_deleveraging_priority(
+    score: Dict[str, float],
+    weights: Dict[str, float],
+    divergence_flags: Dict[str, str],
+    momentum_scores: Dict[str, float] = None,
+) -> list:
+    """
+    Deleveraging Priority Engine v1
+    - 노출도를 줄여야 할 때 어떤 섹터부터 줄일지 우선순위 산출
+    - 아직 실제 weight를 깎지는 않고, '순위'만 만든다.
+    """
+
+    if momentum_scores is None:
+        momentum_scores = {}
+
+    priority_rows = []
+
+    for sector, weight in weights.items():
+        s_score = float(score.get(sector, 0.0))
+        div_flag = divergence_flags.get(sector, "ALIGNED")
+
+        # 기본 위험 점수
+        risk_score = 0.0
+
+        # 1) Divergence 우선
+        if div_flag == "NEGATIVE_DIVERGENCE":
+            risk_score += 4.0
+        elif div_flag == "POSITIVE_DIVERGENCE":
+            risk_score -= 1.0
+
+        # 2) 낮은 score 우선 감축
+        if s_score < 0:
+            risk_score += 3.0
+        elif s_score == 0:
+            risk_score += 2.0
+        elif s_score <= 1:
+            risk_score += 1.0
+
+        # 3) 고위험 섹터 가산
+        if sector in ["Technology", "Consumer Discretionary", "Real Estate"]:
+            risk_score += 1.0
+
+        # 4) 방어 섹터는 감축 우선순위 낮춤
+        if sector in ["Consumer Staples", "Health Care", "Utilities"]:
+            risk_score -= 0.5
+
+        # 5) 비중이 큰 섹터는 감축 후보
+        if weight >= 20:
+            risk_score += 1.0
+        elif weight >= 10:
+            risk_score += 0.5
+
+        priority_rows.append({
+            "sector": sector,
+            "weight": weight,
+            "score": s_score,
+            "divergence": div_flag,
+            "risk_score": round(risk_score, 2),
+        })
+
+    # risk_score 높은 순 = 먼저 줄일 대상
+    priority_rows = sorted(
+        priority_rows,
+        key=lambda x: (-x["risk_score"], x["score"], -x["weight"])
+    )
+
+    return priority_rows
+
 def build_tactical_allocation(
     score: Dict[str, float],
     ow_sorted: list,
@@ -4554,6 +4622,14 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     cash_weight = alloc_result["cash_weight"]
     total_score_sum = alloc_result["total_score_sum"]
 
+    # 🔥 Deleveraging Priority Preview
+    delev_priority = rank_deleveraging_priority(
+    score=score,
+    weights=weights,
+    divergence_flags=divergence_flags,
+    momentum_scores=momentum_data,
+    )
+
     allocation_lines = []
     allocation_lines.append("### 💰 18.5) Tactical Asset Allocation (Execution Weight)")
     allocation_lines.append(f"- **Total Target Exposure:** **{final_exposure}%** (from Filter 15)")
@@ -4591,6 +4667,19 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         allocation_lines.append(f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |")
         allocation_lines.append("")
         allocation_lines.append(f"- **Allocation Check:** Sector Weights + Cash = **{total_allocated:.1f}%**")
+        allocation_lines.append("")
+        allocation_lines.append("**Deleveraging Priority Preview:**")
+        allocation_lines.append("- 기준: Divergence → Score → Risk Sector → Current Weight")
+        
+        for i, row in enumerate(delev_priority[:5], start=1):
+            allocation_lines.append(
+                f"{i}. {row['sector']} "
+                f"(risk_score={row['risk_score']}, "
+                f"score={row['score']}, "
+                f"weight={row['weight']:.1f}%, "
+                f"div={row['divergence']})"
+            )
+        
         penalized = [s for s in ow_sorted if divergence_flags.get(s) == "NEGATIVE_DIVERGENCE"]
         if penalized:
             allocation_lines.append(f"- **Divergence Adjustment:** {', '.join(penalized)} penalized in weight sizing")
