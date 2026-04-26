@@ -4526,7 +4526,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # 18.5) Execution Weight Allocation Logic
     # -------------------------
-    final_exposure = float(market_data.get("PREV_EXPOSURE", 50.0))
+    final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
     
     corr_msg = correlation_break_filter(market_data)
     is_corr_break = bool(corr_msg)
