@@ -4190,25 +4190,29 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Consumer Discretionary", 1, f"{vix_label} → 경기민감 소비 회복 ({vix_detail})", "VOL")
         add_score("Utilities", -1, f"{vix_label} → 방어주 상대매력 둔화 ({vix_detail})", "VOL")
 
+   
     # -------------------------
     # B) LIQUIDITY
     # -------------------------
     liq_tight = (liq_dir == "DOWN") or (liq_lvl == "LOW")
     liq_easy = (liq_dir == "UP") and (liq_lvl in ("MID", "HIGH"))
 
+    # 🔧 v3.4: Liquidity는 중요하지만 단독으로 섹터를 지배하지 않도록 완화
     if liq_tight:
-        add_score("Consumer Staples", 3, "유동성 긴축 → 방어적 필수소비 선호", "LIQ")
-        add_score("Health Care", 3, "유동성 긴축 → 안정적 현금흐름 선호", "LIQ")
+        add_score("Consumer Staples", 2, "유동성 긴축 → 방어적 필수소비 선호", "LIQ")
+        add_score("Health Care", 2, "유동성 긴축 → 안정적 현금흐름 선호", "LIQ")
         add_score("Utilities", 1, "유동성 긴축 → 방어주 버퍼", "LIQ")
-        add_score("Technology", -3, "유동성 긴축 → 고밸류에이션 부담", "LIQ")
-        add_score("Real Estate", -2, "유동성 긴축 → 조달비용 상승 부담", "LIQ")
+        add_score("Technology", -2, "유동성 긴축 → 고밸류에이션 부담", "LIQ")
+        add_score("Real Estate", -1.5, "유동성 긴축 → 조달비용 상승 부담", "LIQ")
         add_score("Consumer Discretionary", -1, "유동성 긴축 → 경기민감 소비 부담", "LIQ")
+
     elif liq_easy:
         add_score("Technology", 2, "유동성 완화 → 성장주/베타 우호", "LIQ")
-        add_score("Industrials", 2, "유동성 완화 → 경기민감 회복", "LIQ")
-        add_score("Consumer Discretionary", 2, "유동성 완화 → 소비 민감주 우호", "LIQ")
+        add_score("Industrials", 1.5, "유동성 완화 → 경기민감 회복", "LIQ")
+        add_score("Consumer Discretionary", 1.5, "유동성 완화 → 소비 민감주 우호", "LIQ")
         add_score("Financials", 1, "유동성 완화 → 위험선호 회복", "LIQ")
         add_score("Utilities", -1, "유동성 완화 → 방어주 상대매력 저하", "LIQ")
+
 
     # -------------------------
     # C) CURVE
@@ -4320,6 +4324,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Technology", 0.5, "Gamma Overlay → TRANSITION, 초기 리더 형성", "FLOW")
         flow_overlay_notes.append("Gamma TRANSITION → 초기 리더 소폭 가점")
 
+
     # -------------------------
     # H) Theory vs Flow Divergence Adjustment
     # -------------------------
@@ -4341,17 +4346,19 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             })
 
         elif theo <= 0 and mom > 0:
+            # 🔥 v3.4: Positive Divergence는 단순 관찰이 아니라 최소 실행 후보로 올림
+            score[s] += 1
             divergence_flags[s] = "POSITIVE_DIVERGENCE"
             drivers[s].append({
-                "pts": 0,
-                "why": "이론 대비 실제 자금 유입 확인 → 반전 가능성 관찰",
+                "pts": 1,
+                "why": "이론 대비 실제 자금 유입 확인 → 최소 관찰 비중 후보로 상향",
                 "bucket": "MOM",
                 "priority": PRIORITY["MOM"],
             })
 
         else:
             divergence_flags[s] = "ALIGNED"
-
+   
     # -------------------------
     # I) Conflict Resolver
     # -------------------------
@@ -4509,6 +4516,9 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     is_corr_break = bool(corr_msg)
 
     if is_corr_break:
+            # 🔧 score가 corr/divergence 조정 후 바뀌었으므로 정렬 재계산
+    ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
+    uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
         if "Technology" in score:
             score["Technology"] += 0.5
 
