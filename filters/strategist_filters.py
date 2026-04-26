@@ -4070,16 +4070,17 @@ def rank_deleveraging_priority(
     return priority_rows
 
 def build_tactical_allocation(
-    score: Dict[str, int],
+    score: Dict[str, float],
     ow_sorted: list,
     divergence_flags: Dict[str, str],
     total_exposure: float,
-    deleveraging_required: bool = False,  # 🔥 추가
+    deleveraging_required: bool = False,
 ) -> Dict[str, Any]:
     """
     18.5) Tactical Asset Allocation Builder
     - 양수 점수 섹터만 대상으로 비중 계산
     - Divergence 반영
+    - Deleveraging 상황에서는 위험 섹터를 우선 축소
     - 총 노출도(total_exposure) 안에서 정규화
     """
 
@@ -4088,7 +4089,6 @@ def build_tactical_allocation(
 
     weights = {}
 
-    total_exposure = 30  # 강제 테스트
     if total_score_sum <= 0:
         return {
             "weights": {},
@@ -4100,43 +4100,6 @@ def build_tactical_allocation(
     for sector, s_score in positive_scores.items():
         weights[sector] = (s_score / total_score_sum) * total_exposure
 
-    # -------------------------
-    # 🔥 2.5) Deleveraging 적용 (Exposure 감소 시)
-    # -------------------------
-    
-    prev_exposure = float(total_exposure)  # 현재는 동일 값이라 placeholder
-    target_exposure = float(total_exposure)
-    
-    # 👉 나중에 여기 market_data에서 PREV_EXPOSURE 받아오면 더 정교해짐
-    
-    if target_exposure < prev_exposure:
-    
-        reduction_needed = prev_exposure - target_exposure
-    
-        # 우선순위 계산
-        priority = rank_deleveraging_priority(
-            score=score,
-            weights=weights,
-            divergence_flags=divergence_flags
-        )
-    
-        for row in priority:
-            sector = row["sector"]
-    
-            if reduction_needed <= 0:
-                break
-    
-            current_weight = weights.get(sector, 0)
-    
-            if current_weight <= 0:
-                continue
-    
-            # 최대 줄일 수 있는 양
-            cut_amount = min(current_weight, reduction_needed)
-    
-            weights[sector] -= cut_amount
-            reduction_needed -= cut_amount
-
     # 2) Divergence 반영
     for sector in list(weights.keys()):
         flag = divergence_flags.get(sector, "ALIGNED")
@@ -4146,30 +4109,28 @@ def build_tactical_allocation(
         elif flag == "POSITIVE_DIVERGENCE":
             weights[sector] *= 1.25
 
-    # 🔥 디레버리징 우선순위 적용
+    # 3) 디레버리징 상황일 때 위험 섹터 추가 축소
     if deleveraging_required:
         for sector in list(weights.keys()):
             flag = divergence_flags.get(sector, "ALIGNED")
+            sector_score = score.get(sector, 0)
 
-        # 1순위: NEGATIVE_DIVERGENCE → 강제 축소
-        if flag == "NEGATIVE_DIVERGENCE":
-            weights[sector] *= 0.5
+            if flag == "NEGATIVE_DIVERGENCE":
+                weights[sector] *= 0.50
 
-        # 2순위: 저점수 섹터 축소
-        elif score.get(sector, 0) <= 1:
-            weights[sector] *= 0.7
+            elif sector_score <= 1:
+                weights[sector] *= 0.70
 
-        # 3순위: 리스크 섹터 (Tech 등) 소폭 축소
-        elif sector in ["Technology", "Communication Services"]:
-            weights[sector] *= 0.85
-    
-    # 3) 다시 total_exposure 안으로 정규화
+            elif sector in ["Technology", "Consumer Discretionary", "Communication Services", "Real Estate"]:
+                weights[sector] *= 0.85
+
+    # 4) 다시 total_exposure 안으로 정규화
     adjusted_sum = sum(weights.values())
     if adjusted_sum > 0:
         for sector in weights:
             weights[sector] = (weights[sector] / adjusted_sum) * total_exposure
 
-    # 4) 반올림
+    # 5) 반올림
     for sector in weights:
         weights[sector] = round(weights[sector], 1)
 
