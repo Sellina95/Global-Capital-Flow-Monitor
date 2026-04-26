@@ -4087,6 +4087,7 @@ def build_tactical_allocation(
 
     weights = {}
 
+    total_exposure = 30  # 강제 테스트
     if total_score_sum <= 0:
         return {
             "weights": {},
@@ -4097,6 +4098,43 @@ def build_tactical_allocation(
     # 1) 기본 비중 계산
     for sector, s_score in positive_scores.items():
         weights[sector] = (s_score / total_score_sum) * total_exposure
+
+    # -------------------------
+    # 🔥 2.5) Deleveraging 적용 (Exposure 감소 시)
+    # -------------------------
+    
+    prev_exposure = float(total_exposure)  # 현재는 동일 값이라 placeholder
+    target_exposure = float(total_exposure)
+    
+    # 👉 나중에 여기 market_data에서 PREV_EXPOSURE 받아오면 더 정교해짐
+    
+    if target_exposure < prev_exposure:
+    
+        reduction_needed = prev_exposure - target_exposure
+    
+        # 우선순위 계산
+        priority = rank_deleveraging_priority(
+            score=score,
+            weights=weights,
+            divergence_flags=divergence_flags
+        )
+    
+        for row in priority:
+            sector = row["sector"]
+    
+            if reduction_needed <= 0:
+                break
+    
+            current_weight = weights.get(sector, 0)
+    
+            if current_weight <= 0:
+                continue
+    
+            # 최대 줄일 수 있는 양
+            cut_amount = min(current_weight, reduction_needed)
+    
+            weights[sector] -= cut_amount
+            reduction_needed -= cut_amount
 
     # 2) Divergence 반영
     for sector in list(weights.keys()):
