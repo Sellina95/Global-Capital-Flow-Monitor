@@ -20,17 +20,17 @@
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
 ### 📌 Interpretation
-- 금일 시장은 **RISK-ON (완화 기대·리스크 선호) 환경**이며 유동성과 정책은 완화적 상태
-- 기관 자금 흐름은 형성 중이나, 아직 확신 구간은 아님
-- 감마 구조는 안정적이나, **드리프트 강도가 약해 추세 신뢰도는 제한적**
-- 따라서 **단계적 진입 및 리스크 확대 전략 유효**
+- 금일 시장은 **RISK-ON (완화 기대·리스크 선호) 환경**입니다.
+- 기관성 자금 유입은 **EARLY TRACE(초기 흔적)** 단계로, 이탈 신호가 아니라 초기 관찰 구간입니다.
+- 드리프트 강도는 아직 약해 추세 신뢰도는 제한적입니다.
+- 따라서 **리스크 축소보다는 기존 노출 유지와 리더 섹터 중심의 선별적 확대 관찰이 적절**합니다.
 
 ### 🎯 Final Action Engine(Raw Signal)
-- **Action:** EARLY BUY
-- **Size:** SMALL (10~20%)
+- **Action:** HOLD
+- **Size:** MAINTAIN
 - **Confidence:** MEDIUM
 - **Reason:**
-  - Flow building + gamma turning + no shock
+  - Early institutional trace → hold exposure, not exit
 
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **HOLD**
@@ -41,14 +41,15 @@
 - **Drift:** WEAK DRIFT (노이즈 가능) / DISINFLATION_RISK_ON / NONE / score=1
 - **Flow:** 👀 EARLY TRACE / score=4
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK)
-- **Tactical Action:** EARLY BUY / SMALL (10~20%) / MEDIUM
+- **Tactical Action:** HOLD / MAINTAIN / MEDIUM
 - **Positioning:** pos_z=1.64
 - **Warning Score:** 1 (6.6 섹터 상관관계 붕괴)
-- **Tactical Why:** Flow building + gamma turning + no shock
-- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=HOLD 반영 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=EARLY BUY / Flow=👀 EARLY TRACE(4) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Tactical EARLY BUY → 상위 리스크 안정 구간, 확장 신호 확인
+- **Early Flow Guard:** ACTIVE
+- **Tactical Why:** Early institutional trace → hold exposure, not exit
+- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=HOLD 반영 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=HOLD / Flow=👀 EARLY TRACE(4) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Risk-On Early Flow → HOLD 유지, 과도한 축소 금지
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **WAITING / RANGE (대기·박스권)** → **RISK-ON (완화 기대·리스크 선호)**
+- **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
 
 ---
 
@@ -433,8 +434,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.6407208541993912
-- **Z-Score (5d):** -0.6091450896296323
+- **Z-Score (1d):** 0.6407178686871231
+- **Z-Score (5d):** -0.6091449789286061
 
 ### EEM
 - **Crash?** False
@@ -451,8 +452,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5544616001295559
-- **Z-Score (5d):** -0.5678461210560781
+- **Z-Score (1d):** 0.5544612454120478
+- **Z-Score (5d):** -0.5678462306363101
 
 ### EWJ
 - **Crash?** True
