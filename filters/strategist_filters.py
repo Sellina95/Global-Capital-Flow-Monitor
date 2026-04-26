@@ -3683,7 +3683,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     lines.append("")
     lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
-
+    market_data["RECOMMENDED_EXPOSURE"] = exposure
     return "\n".join(lines)
         
 def style_tilt_filter(market_data: Dict[str, Any]) -> str:
