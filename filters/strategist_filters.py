@@ -5017,13 +5017,14 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
     
     # -------------------------
  
+
+
 def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Final Action Engine v3.2
-    - 문자열 정규화 포함
+    Final Action Engine v3.3
     - FINAL_STATE + INSTITUTIONAL_FLOW + GAMMA + SEW 통합 판단
-    - BUILDING(flow_score >= 6) 구간의 사이즈 반영 강화
-    - Exit 로직을 기존 판단 체인 안에 통합
+    - EARLY TRACE를 institutional exit로 오해하지 않도록 수정
+    - Risk-On + Early Trace 구간은 REDUCE가 아니라 HOLD/MONITOR로 처리
     """
 
     final_state = market_data.get("FINAL_STATE", {}) or {}
@@ -5036,7 +5037,6 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     risk_budget = final_state.get("risk_budget", 50)
     flow_score = inst_flow.get("score", 0)
     flow_state = str(inst_flow.get("state", "N/A") or "N/A")
-
     pos_z = market_data.get("SP500_POS_Z", 0)
 
     try:
@@ -5054,9 +5054,6 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     except Exception:
         flow_score = 0
 
-    # -------------------------
-    # 문자열 정규화
-    # -------------------------
     def normalize_text(x: str) -> str:
         x = str(x).upper().strip()
         x = x.replace("_", "-")
@@ -5067,6 +5064,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     phase_norm = normalize_text(raw_phase)
     gamma_norm = normalize_text(raw_gamma)
     sew_norm = normalize_text(raw_sew)
+    flow_norm = normalize_text(flow_state)
 
     is_risk_on = "RISK-ON" in phase_norm or "RISK ON" in phase_norm
     is_risk_off = "RISK-OFF" in phase_norm or "RISK OFF" in phase_norm
@@ -5080,6 +5078,12 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     is_sew_alert = "ALERT" in sew_norm
     is_sew_deadman = "DEADMAN" in sew_norm
 
+    is_early_trace = (
+        "EARLY" in flow_norm
+        or "TRACE" in flow_norm
+        or flow_score == 3
+    )
+
     action = "HOLD"
     size = "NONE"
     confidence = "LOW"
@@ -5092,64 +5096,48 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     print(" phase_norm =", phase_norm)
     print(" gamma_norm =", gamma_norm)
     print(" sew_norm =", sew_norm)
+    print(" flow_norm =", flow_norm)
     print(" is_risk_on =", is_risk_on)
     print(" risk_budget =", risk_budget)
     print(" flow_score =", flow_score)
     print(" flow_state =", flow_state)
+    print(" is_early_trace =", is_early_trace)
     print(" pos_z =", pos_z)
 
-    # -------------------------
-    # 1) Shock 최우선 / 긴급 Exit
-    # -------------------------
+    # 1) Shock 최우선
     if is_sew_alert or is_sew_deadman:
         action = "REDUCE"
         size = "RISK CUT"
         confidence = "HIGH"
-        reason.append("SEW shock → emergency exit")
+        reason.append("SEW shock → emergency risk cut")
 
-    # -------------------------
     # 2) 구조 붕괴 Exit
-    # -------------------------
     elif is_gamma_negative and flow_score <= 4:
         action = "EXIT"
         size = "FULL"
         confidence = "HIGH"
         reason.append("Gamma breakdown + flow weakening")
 
-    
-    # -------------------------
-    # 3) Risk-On but flow not confirmed
-    # -------------------------
+    # 3) Risk-On but no confirmed flow
     elif is_risk_on and flow_score <= 2:
         action = "WAIT"
         size = "0%"
         confidence = "LOW"
         reason.append("Risk-On environment but institutional flow not confirmed")
 
-    # -------------------------
-    # 3.5) Risk-On early trace
-    # -------------------------
-         
-    elif is_risk_on and flow_score <= 2:
-        action = "WAIT"
-        size = "0%"
-        confidence = "LOW"
-        reason.append("Risk-On environment but institutional flow not confirmed")
-
+    # 4) Risk-On early trace
     elif (
         is_risk_on
-        and (flow_score == 3 or is_early_trace)
-        and is_gamma_positive
-        and is_sew_stable
+        and is_early_trace
+        and (is_gamma_positive or is_gamma_transition)
+        and (is_sew_stable or is_sew_watch)
     ):
         action = "HOLD"
         size = "MAINTAIN"
         confidence = "MEDIUM"
         reason.append("Early institutional trace → hold exposure, not exit")
 
-
-    # 4) 강한 확신 구간
-    # -------------------------
+    # 5) 강한 확신 구간
     elif (
         is_risk_on
         and flow_score >= 7
@@ -5161,9 +5149,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         confidence = "HIGH"
         reason.append("Flow strong + structure aligned")
 
-    # -------------------------
-    # 5) BUILDING 구간
-    # -------------------------
+    # 6) BUILDING 구간
     elif (
         is_risk_on
         and flow_score >= 6
@@ -5175,9 +5161,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         confidence = "MEDIUM-HIGH"
         reason.append("Flow building confirmed + gamma turning + no shock")
 
-    # -------------------------
-    # 6) 초기 진입 구간
-    # -------------------------
+    # 7) 초기 진입 구간
     elif (
         is_risk_on
         and flow_score >= 4
@@ -5189,36 +5173,28 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         confidence = "MEDIUM"
         reason.append("Flow building + gamma turning + no shock")
 
-    # -------------------------
-    # 7) 환경은 좋지만 흐름 약함
-    # -------------------------
+    # 8) Risk-On인데 흐름 약함
     elif is_risk_on and flow_score < 4 and is_sew_stable:
         action = "WAIT"
         size = "0%"
         confidence = "LOW"
         reason.append("Good environment but no strong flow yet")
 
-    # -------------------------
-    # 8) Risk-off 환경
-    # -------------------------
+    # 9) Risk-Off 환경
     elif is_risk_off:
         action = "REDUCE"
         size = "DEFENSIVE"
         confidence = "MEDIUM"
         reason.append("Risk-off environment")
 
-    # -------------------------
-    # 9) 기본값
-    # -------------------------
+    # 10) 기본값
     else:
         action = "HOLD"
         size = "NONE"
         confidence = "LOW"
         reason.append("No actionable alignment")
 
-    # -------------------------
-    # 10) 과열 override
-    # -------------------------
+    # 11) 과열 override
     if pos_z >= 2.2 and flow_score < 5:
         action = "REDUCE"
         size = "TAKE PROFIT"
@@ -5235,11 +5211,13 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "risk_budget": risk_budget,
         "flow_score": flow_score,
         "flow_state": flow_state,
+        "flow_norm": flow_norm,
         "gamma_state": raw_gamma,
         "gamma_norm": gamma_norm,
         "sew_status": raw_sew,
         "sew_norm": sew_norm,
         "pos_z": pos_z,
+        "is_early_trace": is_early_trace,
     }
 
 def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
