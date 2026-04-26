@@ -40,6 +40,7 @@ from scripts.data_processing import (
 from scripts.fetch_expectation_data import fetch_expectation_data
 from scripts.fetch_sentiment import fetch_cnn_fear_greed
 from scripts.risk_alerts import check_regime_change_and_alert
+from scripts.fetch_positioning_data import get_recent_pos_slope
 
 
 
@@ -1478,6 +1479,12 @@ def generate_daily_report() -> None:
     # -----------------------------
     market_data = attach_liquidity_layer(market_data) or market_data
     market_data = attach_positioning_layer(market_data) or market_data
+    
+    # ✅ POS_SLOPE 주입: 15번 실행 전에 반드시 들어가야 함
+    market_data["POS_SLOPE"] = get_recent_pos_slope("data/positioning_data.csv")
+    print("[DEBUG][POS_SLOPE ATTACHED]")
+    print("POS_SLOPE =", market_data.get("POS_SLOPE"))
+    
     print("[DEBUG][POSITIONING AFTER ATTACH]")
     print("SP500_POS_Z =", market_data.get("SP500_POS_Z"))
     print("US10Y_POS_Z =", market_data.get("US10Y_POS_Z"))
@@ -1485,6 +1492,7 @@ def generate_daily_report() -> None:
     print("DEALER_GAMMA_BIAS =", market_data.get("DEALER_GAMMA_BIAS"))
     print("CTA_MOMENTUM_SCORE =", market_data.get("CTA_MOMENTUM_SCORE"))
     print("_POS_ASOF =", market_data.get("_POS_ASOF"))
+  
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_sovereign_spread_layer(market_data) or market_data
