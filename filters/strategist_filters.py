@@ -4070,10 +4070,11 @@ def rank_deleveraging_priority(
     return priority_rows
 
 def build_tactical_allocation(
-    score: Dict[str, float],
+    score: Dict[str, int],
     ow_sorted: list,
     divergence_flags: Dict[str, str],
     total_exposure: float,
+    deleveraging_required: bool = False,  # 🔥 추가
 ) -> Dict[str, Any]:
     """
     18.5) Tactical Asset Allocation Builder
@@ -4144,6 +4145,24 @@ def build_tactical_allocation(
             weights[sector] *= 0.65
         elif flag == "POSITIVE_DIVERGENCE":
             weights[sector] *= 1.25
+
+    # 🔥 디레버리징 우선순위 적용
+    if deleveraging_required:
+        for sector in list(weights.keys()):
+            flag = divergence_flags.get(sector, "ALIGNED")
+
+        # 1순위: NEGATIVE_DIVERGENCE → 강제 축소
+        if flag == "NEGATIVE_DIVERGENCE":
+            weights[sector] *= 0.5
+
+        # 2순위: 저점수 섹터 축소
+        elif score.get(sector, 0) <= 1:
+            weights[sector] *= 0.7
+
+        # 3순위: 리스크 섹터 (Tech 등) 소폭 축소
+        elif sector in ["Technology", "Communication Services"]:
+            weights[sector] *= 0.85
+    
     # 3) 다시 total_exposure 안으로 정규화
     adjusted_sum = sum(weights.values())
     if adjusted_sum > 0:
@@ -4632,6 +4651,12 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # 18.5) Execution Weight Allocation Logic
     # -------------------------
     final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
+    prev_exposure = float(market_data.get("PREV_EXPOSURE", final_exposure))
+
+    # 🔥 디레버리징 트리거
+    deleveraging_required = final_exposure < prev_exposure
+
+
     
     corr_msg = correlation_break_filter(market_data)
     is_corr_break = bool(corr_msg)
@@ -4647,13 +4672,15 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # 🔧 score가 corr/divergence 조정 후 바뀌었으므로 정렬 재계산
     ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
     uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
-    
+
     alloc_result = build_tactical_allocation(
-        score=score,
-        ow_sorted=ow_sorted,
-        divergence_flags=divergence_flags,
-        total_exposure=final_exposure,
+    score=score,
+    ow_sorted=ow_sorted,
+    divergence_flags=divergence_flags,
+    total_exposure=final_exposure,
+    deleveraging_required=deleveraging_required,  # 🔥 추가
     )
+    
    
 
     weights = alloc_result["weights"]
@@ -4670,7 +4697,9 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
 
     allocation_lines = []
     allocation_lines.append("### 💰 18.5) Tactical Asset Allocation (Execution Weight)")
-    allocation_lines.append(f"- **Total Target Exposure:** **{final_exposure}%** (from Filter 15)")
+    #allocation_lines.append(f"- **Total Target Exposure:** **{final_exposure}%** (from Filter 15)")
+    allocation_lines.append(f"- **Strategic Exposure (15):** **{final_exposure}%**")
+    allocation_lines.append(f"- **Execution Exposure (18.5):** **{total_exposure}%**")
     allocation_lines.append("")
 
     if total_score_sum > 0:
