@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional, List, Tuple
 from scripts.data_processing import download_all_etfs_and_save
 from scripts.data_processing import load_etf_data_from_csv
 from sklearn.metrics.pairwise import cosine_similarity
+from portfolio.save_portfolio import save_paper_portfolio
 
 import numpy as np
 from pathlib import Path
@@ -4612,7 +4613,13 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # 18.5) Execution Weight Allocation Logic
     # -------------------------
     final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
-    prev_exposure = float(market_data.get("PREV_EXPOSURE", final_exposure))
+
+    try:
+        from portfolio.save_portfolio import load_previous_exposure
+        prev_exposure = load_previous_exposure()
+    except Exception:
+        prev_exposure = final_exposure
+    
     deleveraging_required = final_exposure < prev_exposure
     
     print("[DEBUG][18.5 DELEVERAGING]")
@@ -4620,10 +4627,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     print("final_exposure =", final_exposure)
     print("deleveraging_required =", deleveraging_required)
 
-    # 🔥 디레버리징 트리거
-    deleveraging_required = final_exposure < prev_exposure
-
-
+    
     
     corr_msg = correlation_break_filter(market_data)
     is_corr_break = bool(corr_msg)
