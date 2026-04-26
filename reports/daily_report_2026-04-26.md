@@ -383,17 +383,17 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - No major theory-vs-flow divergence detected.
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
-- **Total Target Exposure:** **56.0%** (from Filter 15)
+- **Total Target Exposure:** **50.0%** (from Filter 15)
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Technology | +4 | ALIGNED | **19.1%** | ACCUMULATE |
-| Industrials | +2.2 | ALIGNED | **10.5%** | ACCUMULATE |
-| Consumer Staples | +2 | ALIGNED | **9.6%** | HOLD |
-| Health Care | +2 | ALIGNED | **9.6%** | HOLD |
-| Utilities | +1 | ALIGNED | **4.8%** | HOLD |
-| Communication Services | +0.5 | ALIGNED | **2.4%** | HOLD |
-| **Cash & Hedge** | - | - | **44.0%** | DEFENSIVE |
+| Technology | +4 | ALIGNED | **17.1%** | ACCUMULATE |
+| Industrials | +2.2 | ALIGNED | **9.4%** | HOLD |
+| Consumer Staples | +2 | ALIGNED | **8.5%** | HOLD |
+| Health Care | +2 | ALIGNED | **8.5%** | HOLD |
+| Utilities | +1 | ALIGNED | **4.3%** | HOLD |
+| Communication Services | +0.5 | ALIGNED | **2.1%** | HOLD |
+| **Cash & Hedge** | - | - | **50.1%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
@@ -401,12 +401,12 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Technology | XLK | 19.1% | ADD |
-| Industrials | XLI | 10.5% | ADD |
-| Consumer Staples | XLP | 9.6% | SMALL |
-| Health Care | XLV | 9.6% | SMALL |
-| Utilities | XLU | 4.8% | SMALL |
-| Communication Services | XLC | 2.4% | SMALL |
+| Technology | XLK | 17.1% | ADD |
+| Industrials | XLI | 9.4% | SMALL |
+| Consumer Staples | XLP | 8.5% | SMALL |
+| Health Care | XLV | 8.5% | SMALL |
+| Utilities | XLU | 4.3% | SMALL |
+| Communication Services | XLC | 2.1% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -434,8 +434,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.640718621999978
-- **Z-Score (5d):** -0.6091436659078373
+- **Z-Score (1d):** 0.6407215209122609
+- **Z-Score (5d):** -0.6091446112868141
 
 ### EEM
 - **Crash?** False
@@ -452,8 +452,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5544616552907057
-- **Z-Score (5d):** -0.5678464855747487
+- **Z-Score (1d):** 0.554461345640231
+- **Z-Score (5d):** -0.5678461916313637
 
 ### EWJ
 - **Crash?** True
