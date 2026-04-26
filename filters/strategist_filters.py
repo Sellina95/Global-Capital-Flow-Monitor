@@ -5116,16 +5116,38 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         confidence = "HIGH"
         reason.append("Gamma breakdown + flow weakening")
 
+    
     # -------------------------
-    # 3) Flow 기반 정상 Exit
+    # 3) Risk-On but flow not confirmed
     # -------------------------
-    elif flow_score <= 3 and is_risk_on:
-        action = "REDUCE"
-        size = "PARTIAL"
-        confidence = "MEDIUM"
-        reason.append("Flow fading → institutional exit")
+    elif is_risk_on and flow_score <= 2:
+        action = "WAIT"
+        size = "0%"
+        confidence = "LOW"
+        reason.append("Risk-On environment but institutional flow not confirmed")
 
     # -------------------------
+    # 3.5) Risk-On early trace
+    # -------------------------
+         
+    elif is_risk_on and flow_score <= 2:
+        action = "WAIT"
+        size = "0%"
+        confidence = "LOW"
+        reason.append("Risk-On environment but institutional flow not confirmed")
+
+    elif (
+        is_risk_on
+        and (flow_score == 3 or is_early_trace)
+        and is_gamma_positive
+        and is_sew_stable
+    ):
+        action = "HOLD"
+        size = "MAINTAIN"
+        confidence = "MEDIUM"
+        reason.append("Early institutional trace → hold exposure, not exit")
+
+
     # 4) 강한 확신 구간
     # -------------------------
     elif (
