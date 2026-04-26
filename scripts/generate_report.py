@@ -65,18 +65,24 @@ def build_strategic_interpretation(
     final_state: Dict[str, Any],
     final_action_result: Dict[str, Any],
 ) -> list[str]:
-    """
-    Strategic War Room 상단 해석 문구 생성
-    - 기존 로직은 건드리지 않고 출력용 해석만 추가
-    """
 
     flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
     flow_score = flow.get("score", 0)
-    drift_score = market_data.get("DRIFT_SCORE", 0)
+    flow_state = str(flow.get("state", "N/A") or "N/A").upper()
+
+    drift = market_data.get("DRIFT", {}) or {}
+    drift_label = str(
+        drift.get("label")
+        or market_data.get("DRIFT_LABEL")
+        or final_state.get("drift_label")
+        or "N/A"
+    ).upper()
+
+    drift_score = market_data.get("DRIFT_SCORE", drift.get("score", 0))
 
     gamma_state = str(market_data.get("GAMMA_STATE", "N/A") or "N/A").upper()
     sew_status = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
-    phase = str(final_state.get("phase", "N/A") or "N/A")
+    phase = str(final_state.get("phase", "N/A") or "N/A").upper()
 
     final_action = str(final_action_result.get("action", "HOLD") or "HOLD").upper()
 
@@ -90,31 +96,40 @@ def build_strategic_interpretation(
     except Exception:
         drift_score = 0
 
+    risk_on_early_flow = (
+        "RISK-ON" in phase
+        and flow_score >= 3
+        and "DISINFLATION_RISK_ON" in drift_label
+        and "DEADMAN" not in sew_status
+        and "ALERT" not in sew_status
+    )
+
     lines = []
 
-    lines.append(f"- 금일 시장은 **{phase} 환경**이며 유동성과 정책은 완화적 상태")
-    
-    if flow_score <= 3:
-        lines.append("- 그러나 **기관 자금 유입은 아직 확신 단계에 도달하지 못한 초기 흐름 구간**")
-    elif flow_score <= 5:
-        lines.append("- 기관 자금 흐름은 형성 중이나, 아직 확신 구간은 아님")
-    else:
-        lines.append("- 기관 자금 유입이 확신 단계에 진입한 상태")
-    
-    if drift_score <= 2:
-        lines.append("- 감마 구조는 안정적이나, **드리프트 강도가 약해 추세 신뢰도는 제한적**")
-    else:
-        lines.append("- 드리프트 강도가 유의미하여 추세 지속 가능성 존재")
-    
-    if final_action_result.get("action") in ["REDUCE", "EXIT"]:
-        lines.append("- 따라서 **신규 진입보다는 기존 포지션 관리 및 일부 리스크 축소가 우선**")
-    elif final_action_result.get("action") in ["ADD", "EARLY BUY"]:
-        lines.append("- 따라서 **단계적 진입 및 리스크 확대 전략 유효**")
-    else:
-        lines.append("- 따라서 **현 수준에서 포지션 유지 및 관망 전략이 적절**")
-    
-    return lines
+    lines.append(f"- 금일 시장은 **{phase} 환경**입니다.")
 
+    if flow_score <= 2:
+        lines.append("- 기관성 자금 흐름은 아직 뚜렷하지 않아, 공격적 확장에는 신중함이 필요합니다.")
+    elif flow_score <= 4:
+        lines.append("- 기관성 자금 유입은 **EARLY TRACE(초기 흔적)** 단계로, 이탈 신호가 아니라 초기 관찰 구간입니다.")
+    else:
+        lines.append("- 기관성 자금 유입이 비교적 뚜렷하게 형성되는 구간입니다.")
+
+    if drift_score <= 2:
+        lines.append("- 드리프트 강도는 아직 약해 추세 신뢰도는 제한적입니다.")
+    else:
+        lines.append("- 드리프트 강도가 유의미하여 추세 지속 가능성이 존재합니다.")
+
+    if risk_on_early_flow:
+        lines.append("- 따라서 **리스크 축소보다는 기존 노출 유지와 리더 섹터 중심의 선별적 확대 관찰이 적절**합니다.")
+    elif final_action in ["REDUCE", "EXIT"]:
+        lines.append("- 따라서 **신규 진입보다는 기존 포지션 관리 및 일부 리스크 축소가 우선**입니다.")
+    elif final_action in ["ADD", "EARLY BUY", "INCREASE"]:
+        lines.append("- 따라서 **단계적 진입 및 리스크 확대 전략이 유효**합니다.")
+    else:
+        lines.append("- 따라서 **현 수준에서 포지션 유지 및 관망 전략이 적절**합니다.")
+
+    return lines
 
 def interpret_sew_event(event_type: str) -> str:
     """
