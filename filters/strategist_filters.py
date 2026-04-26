@@ -4613,6 +4613,12 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
     prev_exposure = float(market_data.get("PREV_EXPOSURE", final_exposure))
+    deleveraging_required = final_exposure < prev_exposure
+    
+    print("[DEBUG][18.5 DELEVERAGING]")
+    print("prev_exposure =", prev_exposure)
+    print("final_exposure =", final_exposure)
+    print("deleveraging_required =", deleveraging_required)
 
     # 🔥 디레버리징 트리거
     deleveraging_required = final_exposure < prev_exposure
@@ -4635,11 +4641,11 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
 
     alloc_result = build_tactical_allocation(
-    score=score,
-    ow_sorted=ow_sorted,
-    divergence_flags=divergence_flags,
-    total_exposure=final_exposure,
-    deleveraging_required=deleveraging_required,  # 🔥 추가
+        score=score,
+        ow_sorted=ow_sorted,
+        divergence_flags=divergence_flags,
+        total_exposure=final_exposure,
+        deleveraging_required=deleveraging_required,  # 🔥 추가
     )
     
    
