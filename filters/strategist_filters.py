@@ -4645,7 +4645,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         ow_sorted=ow_sorted,
         divergence_flags=divergence_flags,
         # ✅ 맞는 코드
-        total_exposure=final_exposure
+        total_exposure=final_exposure,
         deleveraging_required=deleveraging_required,  # 🔥 추가
     )
     
