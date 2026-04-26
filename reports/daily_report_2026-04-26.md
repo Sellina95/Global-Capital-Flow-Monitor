@@ -397,6 +397,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
+**Deleveraging Priority Preview:**
+- 기준: Divergence → Score → Risk Sector → Current Weight
+1. Technology (risk_score=1.5, score=4.0, weight=19.1%, div=ALIGNED)
+2. Communication Services (risk_score=1.0, score=0.5, weight=2.4%, div=ALIGNED)
+3. Utilities (risk_score=0.5, score=1.0, weight=4.8%, div=ALIGNED)
+4. Industrials (risk_score=0.5, score=2.2, weight=10.5%, div=ALIGNED)
+5. Consumer Staples (risk_score=-0.5, score=2.0, weight=9.6%, div=ALIGNED)
+
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action |
@@ -452,8 +460,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5544612336722654
-- **Z-Score (5d):** -0.567845975517454
+- **Z-Score (1d):** 0.5544612454120478
+- **Z-Score (5d):** -0.5678462306363101
 
 ### EWJ
 - **Crash?** True
