@@ -5,6 +5,30 @@ import os
 from datetime import datetime
 
 
+def get_recent_pos_slope(csv_path="data/positioning_data.csv", column_name="SP500_POS_Z") -> float:
+    try:
+        if not os.path.exists(csv_path):
+            return 0.0
+
+        df = pd.read_csv(csv_path)
+
+        if column_name not in df.columns:
+            return 0.0
+
+        vals = pd.to_numeric(df[column_name], errors="coerce").dropna().tail(3).tolist()
+
+        if len(vals) >= 3:
+            return float((vals[-1] - vals[-3]) / 2)
+
+        if len(vals) == 2:
+            return float(vals[-1] - vals[-2])
+
+        return 0.0
+
+    except Exception:
+        return 0.0
+
+
 def get_reliable_z_score(ticker_list, period="1y"):
     """
     FALLBACK 로직: 리스트 내 티커들을 순차적으로 시도하여
