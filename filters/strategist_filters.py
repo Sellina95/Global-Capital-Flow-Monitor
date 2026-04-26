@@ -4079,20 +4079,24 @@ def build_tactical_allocation(
     deleveraging_required: bool = False,
 ) -> Dict[str, Any]:
     """
-    18.5) Tactical Asset Allocation Builder (FINAL)
+    18.5) Tactical Asset Allocation Builder - Final Stable Version
 
-    ✔ 기본 비중 계산
-    ✔ Divergence 반영
-    ✔ 디레버리징 시:
-        - 나쁜 섹터부터 먼저 제거
-        - 남은 섹터만 재정규화
+    역할:
+    1) 15번에서 내려온 total_exposure 안에서 섹터 비중 계산
+    2) Divergence 반영
+    3) 디레버리징 상황이면 위험 섹터 haircut 적용
+    4) 최종적으로 total_exposure 안으로 재정규화
     """
 
-    # -------------------------
-    # 1) 기본 비중 계산
-    # -------------------------
-    positive_scores = {s: score[s] for s in ow_sorted if score.get(s, 0) > 0}
+    # 1) 양수 점수 섹터만 사용
+    positive_scores = {
+        sector: float(score[sector])
+        for sector in ow_sorted
+        if float(score.get(sector, 0)) > 0
+    }
+
     total_score_sum = sum(positive_scores.values())
+    weights: Dict[str, float] = {}
 
     if total_score_sum <= 0:
         return {
@@ -4101,73 +4105,61 @@ def build_tactical_allocation(
             "total_score_sum": 0,
         }
 
-    weights = {
-        sector: (s_score / total_score_sum) * total_exposure
-        for sector, s_score in positive_scores.items()
-    }
+    # 2) 기본 비중 계산
+    for sector, s_score in positive_scores.items():
+        weights[sector] = (s_score / total_score_sum) * total_exposure
 
-    # -------------------------
-    # 2) Divergence 반영
-    # -------------------------
+    # 3) Divergence 반영
     for sector in list(weights.keys()):
         flag = divergence_flags.get(sector, "ALIGNED")
 
         if flag == "NEGATIVE_DIVERGENCE":
             weights[sector] *= 0.65
+
         elif flag == "POSITIVE_DIVERGENCE":
-            weights[sector] *= 1.15
+            weights[sector] *= 1.25
 
-    # -------------------------
-    # 3) 디레버리징 (핵심 로직)
-    # -------------------------
+    # 4) 디레버리징 상황일 때 위험 섹터 추가 haircut
     if deleveraging_required:
+        for sector in list(weights.keys()):
+            flag = divergence_flags.get(sector, "ALIGNED")
+            sector_score = float(score.get(sector, 0))
 
-        # 🎯 우선순위 정렬
-        def risk_rank(s):
-            flag = divergence_flags.get(s, "ALIGNED")
-            base = 0
-
+            # 1순위: 명백한 수급 악화
             if flag == "NEGATIVE_DIVERGENCE":
-                base += 3
-            elif score.get(s, 0) <= 1:
-                base += 2
-            elif s in ["Technology", "Consumer Discretionary", "Communication Services"]:
-                base += 1
+                weights[sector] *= 0.50
 
-            return base
+            # 2순위: 낮은 점수 섹터
+            elif sector_score <= 1:
+                weights[sector] *= 0.70
 
-        # 🔥 위험 높은 순서로 정렬
-        sorted_sectors = sorted(weights.keys(), key=lambda s: (-risk_rank(s), -weights[s]))
+            # 3순위: 고베타 / 장기 성장 / 금리 민감 섹터
+            elif sector in [
+                "Technology",
+                "Consumer Discretionary",
+                "Communication Services",
+                "Real Estate",
+            ]:
+                weights[sector] *= 0.85
 
-        # 🔥 줄여야 할 총량 계산
-        current_total = sum(weights.values())
-        reduction_target = current_total - total_exposure
+            # 방어 섹터는 상대적으로 보존
+            elif sector in [
+                "Consumer Staples",
+                "Health Care",
+                "Utilities",
+            ]:
+                weights[sector] *= 1.00
 
-        for s in sorted_sectors:
-            if reduction_target <= 0:
-                break
+    # 5) total_exposure 안으로 재정규화
+    adjusted_sum = sum(weights.values())
 
-            cut = min(weights[s], reduction_target * 0.7)
+    if adjusted_sum > 0:
+        for sector in list(weights.keys()):
+            weights[sector] = (weights[sector] / adjusted_sum) * total_exposure
 
-            weights[s] -= cut
-            reduction_target -= cut
-
-    # -------------------------
-    # 4) 재정규화 (핵심 수정)
-    # -------------------------
-    current_sum = sum(weights.values())
-
-    if current_sum > 0:
-        scale_factor = total_exposure / current_sum
-
-        for s in weights:
-            weights[s] *= scale_factor
-
-    # -------------------------
-    # 5) 반올림
-    # -------------------------
-    for s in weights:
-        weights[s] = round(weights[s], 1)
+    # 6) 반올림
+    for sector in list(weights.keys()):
+        weights[sector] = round(weights[sector], 1)
 
     cash_weight = round(100.0 - total_exposure, 1)
 
@@ -4176,7 +4168,6 @@ def build_tactical_allocation(
         "cash_weight": cash_weight,
         "total_score_sum": total_score_sum,
     }
-
 
 def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     """
