@@ -5,6 +5,46 @@ from typing import Dict
 import pandas as pd
 
 
+def load_previous_exposure(filepath: str = "data/paper_portfolio_log.csv") -> float:
+    """
+    paper_portfolio_log.csv에서 가장 최근 저장된 total_exposure를 읽는다.
+    - 오늘 row는 제외하고, 직전 거래/리포트 날짜의 exposure를 반환
+    - 없으면 50.0 반환
+    """
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    if not os.path.exists(filepath):
+        return 50.0
+
+    try:
+        df = pd.read_csv(filepath)
+    except Exception:
+        return 50.0
+
+    if df.empty or "date" not in df.columns or "total_exposure" not in df.columns:
+        return 50.0
+
+    df["date"] = df["date"].astype(str)
+
+    # 오늘 row는 제외해야 진짜 prev_exposure가 됨
+    df = df[df["date"] != today].copy()
+
+    if df.empty:
+        return 50.0
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date")
+
+    if df.empty:
+        return 50.0
+
+    val = df.iloc[-1].get("total_exposure")
+
+    try:
+        return float(val)
+    except Exception:
+        return 50.0
+
 def save_paper_portfolio(weights: Dict[str, float], cash_weight: float, exposure: float) -> None:
     """
     페이퍼 포트폴리오를 CSV에 저장한다.
