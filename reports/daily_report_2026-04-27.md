@@ -151,9 +151,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.78% / 5D=+0.54% | Strength: LOW
-- **WTI:** 🟢 UP | Short-term: SHORT UP | 1D=+1.93% / 5D=+7.38% | Strength: MEDIUM
-- **DXY:** 🟡 PULLBACK | Short-term: MIXED | 1D=-0.01% / 5D=+0.46% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.10% / 5D=-1.66% | Strength: LOW
+- **WTI:** 🟢 UP | Short-term: MIXED | 1D=+1.81% / 5D=+7.25% | Strength: MEDIUM
+- **DXY:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-0.04% / 5D=+0.42% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: MIXED | 1D=+0.14% / 5D=-1.62% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -162,9 +162,9 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT UP
-  - Oil (WTI): 🟢 UP / SHORT UP
-  - Dollar (DXY): 🟡 PULLBACK / MIXED
-  - Gold (GOLD): 🟡 REBOUND / SHORT DOWN
+  - Oil (WTI): 🟢 UP / MIXED
+  - Dollar (DXY): 🟡 PULLBACK / SHORT DOWN
+  - Gold (GOLD): 🟡 REBOUND / MIXED
 
 ### ⚠ 6.5) Correlation Break Monitor
 ⚠ Market Closed / Stale Data → Correlation signals evaluated conservatively.
@@ -292,7 +292,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.290 / US10YΔ -0.013 (정상)
-- **Sentiment (Fear&Greed):** 58.977980203468434 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 59.01334680834019 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** DOWN (MID)
 - **Phase:** RISK-ON (완화 기대·리스크 선호) (Cap: 85)
@@ -380,31 +380,32 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Consumer Staples | +2 | ALIGNED | **0.0%** | HOLD |
-| Health Care | +2 | ALIGNED | **1.3%** | HOLD |
-| Industrials | +1.7 | ALIGNED | **11.6%** | ACCUMULATE |
-| Technology | +1.5 | ALIGNED | **10.2%** | ACCUMULATE |
-| Utilities | +1 | ALIGNED | **6.8%** | HOLD |
+| Consumer Staples | +2 | ALIGNED | **6.8%** | HOLD |
+| Health Care | +2 | ALIGNED | **6.8%** | HOLD |
+| Industrials | +1.7 | ALIGNED | **5.8%** | HOLD |
+| Technology | +1.5 | ALIGNED | **7.1%** | HOLD |
+| Utilities | +1 | ALIGNED | **3.4%** | HOLD |
 | **Cash & Hedge** | - | - | **70.1%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Momentum → Score → Current Weight
-1. Industrials (priority_score=2.3, score=1.7, weight=11.6%, div=ALIGNED, mom=0)
-2. Technology (priority_score=0.66, score=1.5, weight=10.2%, div=ALIGNED, mom=2)
-3. Utilities (priority_score=0.11, score=1, weight=6.8%, div=ALIGNED, mom=0)
-4. Consumer Staples (priority_score=-0.6, score=2, weight=0.0%, div=ALIGNED, mom=0)
-5. Health Care (priority_score=-0.6, score=2, weight=1.3%, div=ALIGNED, mom=0)
+1. Consumer Staples (priority_score=-0.19, score=2, weight=6.8%, div=ALIGNED, mom=0)
+2. Health Care (priority_score=-0.19, score=2, weight=6.8%, div=ALIGNED, mom=0)
+3. Utilities (priority_score=-0.3, score=1, weight=3.4%, div=ALIGNED, mom=0)
+4. Industrials (priority_score=-0.51, score=1.7, weight=5.8%, div=ALIGNED, mom=0)
+5. Technology (priority_score=-0.89, score=1.5, weight=7.1%, div=ALIGNED, mom=2)
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Health Care | XLV | 1.3% | SMALL |
-| Industrials | XLI | 11.6% | ADD |
-| Technology | XLK | 10.2% | ADD |
-| Utilities | XLU | 6.8% | SMALL |
+| Consumer Staples | XLP | 6.8% | SMALL |
+| Health Care | XLV | 6.8% | SMALL |
+| Industrials | XLI | 5.8% | SMALL |
+| Technology | XLK | 7.1% | SMALL |
+| Utilities | XLU | 3.4% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -432,8 +433,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.6407210387573039
-- **Z-Score (5d):** -0.6091448767656652
+- **Z-Score (1d):** 0.6407208541993912
+- **Z-Score (5d):** -0.6091450896296323
 
 ### EEM
 - **Crash?** False
@@ -450,8 +451,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5544612671227062
-- **Z-Score (5d):** -0.5678462830432105
+- **Z-Score (1d):** 0.554461345640231
+- **Z-Score (5d):** -0.5678461916313637
 
 ### EWJ
 - **Crash?** True
