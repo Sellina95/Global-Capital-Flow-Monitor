@@ -4671,9 +4671,19 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             if s in score:
                 score[s] -= 0.3
 
-    # score 조정 후 정렬 재계산
+       # score 조정 후 정렬 재계산
     ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
     uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
+
+    # -------------------------
+    # Momentum 준비
+    # -------------------------
+    momentum_scores = market_data.get("MOMENTUM_SCORES", {}) or {}
+
+    sector_momentum = {
+        sector: momentum_scores.get(ticker_map.get(sector, ""), 0)
+        for sector in ow_sorted
+    }
 
     alloc_result = build_tactical_allocation(
         score=score,
@@ -4690,30 +4700,6 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     total_score_sum = alloc_result["total_score_sum"]
 
     # -------------------------
-    # Momentum 준비
-    # -------------------------
-    ticker_map = {
-        "Technology": "XLK",
-        "Financials": "XLF",
-        "Energy": "XLE",
-        "Industrials": "XLI",
-        "Materials": "XLB",
-        "Consumer Discretionary": "XLY",
-        "Consumer Staples": "XLP",
-        "Health Care": "XLV",
-        "Utilities": "XLU",
-        "Real Estate": "XLRE",
-        "Communication Services": "XLC"
-    }
-
-    momentum_scores = market_data.get("MOMENTUM_SCORES", {}) or {}
-
-    sector_momentum = {
-        sector: momentum_scores.get(ticker_map.get(sector, ""), 0)
-        for sector in weights.keys()
-    }
-
-    # -------------------------
     # Deleveraging Priority
     # -------------------------
     delev_priority = rank_deleveraging_priority(
@@ -4722,7 +4708,6 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         divergence_flags=divergence_flags,
         momentum_scores=sector_momentum,
     )
-
     # -------------------------
     # Report 출력
     # -------------------------
