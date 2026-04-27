@@ -5,6 +5,62 @@ import os
 from datetime import datetime
 
 
+def save_trade_log(
+    prev_weights: dict,
+    target_weights: dict,
+    filepath: str = "data/trade_log.csv",
+) -> None:
+    """
+    이전 ETF 비중과 현재 목표 ETF 비중을 비교해 BUY/SELL/HOLD 로그 저장
+    """
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    rows = []
+
+    all_etfs = sorted(set(prev_weights.keys()) | set(target_weights.keys()))
+
+    for etf in all_etfs:
+        prev_w = float(prev_weights.get(etf, 0.0) or 0.0)
+        target_w = float(target_weights.get(etf, 0.0) or 0.0)
+        diff_w = round(target_w - prev_w, 2)
+
+        if diff_w > 0:
+            action = "BUY"
+        elif diff_w < 0:
+            action = "SELL"
+        else:
+            action = "HOLD"
+
+        rows.append({
+            "date": today,
+            "etf": etf,
+            "prev_weight": round(prev_w, 2),
+            "target_weight": round(target_w, 2),
+            "trade_weight": diff_w,
+            "action": action,
+        })
+
+    new_df = pd.DataFrame(rows)
+
+    if os.path.exists(filepath):
+        try:
+            old_df = pd.read_csv(filepath)
+            if not old_df.empty and "date" in old_df.columns:
+                old_df["date"] = old_df["date"].astype(str)
+                old_df = old_df[old_df["date"] != today].copy()
+            df = pd.concat([old_df, new_df], ignore_index=True)
+        except Exception:
+            df = new_df
+    else:
+        df = new_df
+
+    os.makedirs("data", exist_ok=True)
+    df.to_csv(filepath, index=False)
+
+    print(f"✅ Trade log saved/updated: {today}")
+    print(f"✅ File path: {filepath}")
+
+
 def get_recent_pos_slope(csv_path="data/positioning_data.csv", column_name="SP500_POS_Z") -> float:
     try:
         if not os.path.exists(csv_path):
