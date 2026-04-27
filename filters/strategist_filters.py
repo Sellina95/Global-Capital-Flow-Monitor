@@ -15,6 +15,99 @@ import math
 # Helpers
 # =========================
 
+def rank_deleveraging_priority(
+    score: Dict[str, float],
+    weights: Dict[str, float],
+    divergence_flags: Dict[str, str],
+    momentum_data: Dict[str, float],   # 🔥 추가
+) -> List[Dict[str, Any]]:
+    """
+    Deleveraging Priority Engine (Final)
+
+    Priority Order:
+    1. Divergence (수급 이상)
+    2. Momentum (RS 꺾임)
+    3. Score (매크로 약함)
+    4. Overweight (비중 과다)
+    """
+
+    priority_list = []
+
+    # 기준 weight 평균 (리밸런싱용)
+    avg_weight = sum(weights.values()) / len(weights) if weights else 0
+
+    for sector, w in weights.items():
+
+        # -------------------------
+        # 1️⃣ Divergence Score
+        # -------------------------
+        div_flag = divergence_flags.get(sector, "ALIGNED")
+
+        if div_flag == "NEGATIVE_DIVERGENCE":
+            divergence_score = 3
+        elif div_flag == "POSITIVE_DIVERGENCE":
+            divergence_score = -1
+        else:
+            divergence_score = 0
+
+        # -------------------------
+        # 2️⃣ Momentum Score
+        # -------------------------
+        mom = momentum_data.get(sector, 0)
+
+        if mom < 0:
+            momentum_score = abs(mom) * 1.5   # 하락 강할수록 먼저 제거
+        else:
+            momentum_score = -mom * 0.5       # 상승이면 보호
+
+        # -------------------------
+        # 3️⃣ Score Penalty
+        # -------------------------
+        s = score.get(sector, 0)
+
+        if s <= 0:
+            score_penalty = abs(s) * 1.2
+        else:
+            score_penalty = -s * 0.3
+
+        # -------------------------
+        # 4️⃣ Overweight Score
+        # -------------------------
+        overweight = w - avg_weight
+
+        if overweight > 0:
+            overweight_score = overweight * 0.5
+        else:
+            overweight_score = 0
+
+        # -------------------------
+        # 🔥 Total Priority Score
+        # -------------------------
+        priority_score = (
+            divergence_score
+            + momentum_score
+            + score_penalty
+            + overweight_score
+        )
+
+        priority_list.append({
+            "sector": sector,
+            "priority_score": round(priority_score, 2),
+            "div": div_flag,
+            "mom": mom,
+            "score": s,
+            "weight": w,
+        })
+
+    # 🔥 높은 순서 = 먼저 잘림
+    priority_list = sorted(
+        priority_list,
+        key=lambda x: x["priority_score"],
+        reverse=True
+    )
+
+    return priority_list
+
 def detect_flow_signal(market_data):
 
     sew = market_data.get("SEW_STATE", "NORMAL")
@@ -4677,14 +4770,36 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     cash_weight = alloc_result["cash_weight"]
     total_score_sum = alloc_result["total_score_sum"]
 
-    # 🔥 Deleveraging Priority Preview
-    delev_priority = rank_deleveraging_priority(
-    score=score,
-    weights=weights,
-    divergence_flags=divergence_flags,
-    momentum_scores=momentum_data,
+    # sector → ticker 매핑 필요
+    ticker_map = {
+        "Technology": "XLK",
+        "Financials": "XLF",
+        "Energy": "XLE",
+        "Industrials": "XLI",
+        "Materials": "XLB",
+        "Consumer Discretionary": "XLY",
+        "Consumer Staples": "XLP",
+        "Health Care": "XLV",
+        "Utilities": "XLU",
+        "Real Estate": "XLRE",
+        "Communication Services": "XLC"
+    }
+    
+    momentum_scores = market_data.get("MOMENTUM_SCORES", {})
+    
+    # ticker → sector 변환
+    sector_momentum = {
+        sector: momentum_scores.get(ticker_map.get(sector, ""), 0)
+        for sector in weights.keys()
+    }
+    
+    priority = rank_deleveraging_priority(
+        score=score,
+        weights=weights,
+        divergence_flags=divergence_flags,
+        momentum_data=sector_momentum,   # 🔥 핵심
     )
-
+    
     allocation_lines = []
     allocation_lines.append("### 💰 18.5) Tactical Asset Allocation (Execution Weight)")
     #allocation_lines.append(f"- **Total Target Exposure:** **{final_exposure}%** (from Filter 15)")
