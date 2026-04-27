@@ -51,7 +51,7 @@ def apply_transaction_cost(trade_df: pd.DataFrame) -> pd.DataFrame:
         cost = 0.05  # 기본 0.05%
 
         if row["action"] == "SELL":
-            cost += 0.1  # 세금 포함
+            cost += 0.1  # 매도 세금
 
         return round(cost, 2)
 
@@ -103,6 +103,7 @@ def save_trade_log(
     # 비용 계산 적용
     df_today = apply_slippage_to_trades(df_today, market_data)
     df_today = apply_transaction_cost(df_today)
+    print("🔥 DEBUG COLUMNS:", df_today.columns)
     df_today["total_cost_pct"] = (
         df_today["slippage_pct"] + df_today["transaction_cost_pct"]
     ).round(2)
