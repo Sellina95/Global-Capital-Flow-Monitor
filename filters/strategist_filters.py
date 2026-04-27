@@ -4110,9 +4110,10 @@ def build_tactical_allocation(
 
     # 1) 기본 비중 계산
     for sector, s_score in positive_scores.items():
-        base_exposure = prev_exposure if deleveraging_required else total_exposure
-
-        weights[sector] = (s_score / total_score_sum) * base_exposure
+        if deleveraging_required and prev_exposure is not None:
+            base_exposure = prev_exposure
+        else:
+            base_exposure = total_exposure
 
     # 2) Divergence 반영
     for sector in list(weights.keys()):
@@ -4678,6 +4679,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         divergence_flags=divergence_flags,
         total_exposure=final_exposure,
         deleveraging_required=deleveraging_required,
+        prev_exposure=prev_exposure, 
     )
 
     weights = alloc_result["weights"]
