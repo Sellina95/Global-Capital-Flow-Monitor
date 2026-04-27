@@ -244,10 +244,4 @@ jobs:
           git commit -m "chore: auto-update daily report and war room data [skip ci]"
           git push
           
-      - name: Commit and Push State Update
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add insights/last_regime_state.json # 상태 저장 파일 경로 확인 필요!
-          git commit -m "chore: update regime state [skip ci]" || echo "No changes to commit"
-          git push
+    
