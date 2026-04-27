@@ -4708,6 +4708,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         prev_exposure = final_exposure
 
     deleveraging_required = final_exposure < prev_exposure
+    leveraging_required = final_exposure > prev_exposure
+    print("leveraging_required =", leveraging_required)
 
     print("[DEBUG][18.5 DELEVERAGING]")
     print("prev_exposure =", prev_exposure)
@@ -4792,6 +4794,30 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         momentum_scores=sector_momentum,
     )
     # -------------------------
+    # Leveraging Priority Preview
+    # -------------------------
+    lev_priority = sorted(
+        [
+            {
+                "sector": sector,
+                "priority_score": (
+                    score.get(sector, 0)
+                    + max(sector_momentum.get(sector, 0), 0) * 1.5
+                    + (1 if divergence_flags.get(sector) == "POSITIVE_DIVERGENCE" else 0)
+                    - (1 if divergence_flags.get(sector) == "NEGATIVE_DIVERGENCE" else 0)
+                ),
+                "score": score.get(sector, 0),
+                "weight": weights.get(sector, 0),
+                "div": divergence_flags.get(sector, "ALIGNED"),
+                "mom": sector_momentum.get(sector, 0),
+            }
+            for sector in weights.keys()
+        ],
+        key=lambda x: x["priority_score"],
+        reverse=True,
+    )    
+    
+    # -------------------------
     # Report 출력
     # -------------------------
     allocation_lines = []
@@ -4832,6 +4858,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         allocation_lines.append("")
 
         # Priority 출력
+            allocation_lines.append("")
         allocation_lines.append("**Deleveraging Priority Preview:**")
         allocation_lines.append("- 기준: Divergence → Momentum → Score → Current Weight")
 
@@ -4847,6 +4874,23 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
                 )
         else:
             allocation_lines.append("- No deleveraging priority data available.")
+
+        allocation_lines.append("")
+        allocation_lines.append("**Leveraging Priority Preview:**")
+        allocation_lines.append("- 기준: Score → Momentum → Positive Divergence")
+
+        if lev_priority:
+            for i, row in enumerate(lev_priority[:5], start=1):
+                allocation_lines.append(
+                    f"{i}. {row['sector']} "
+                    f"(priority_score={row['priority_score']:.2f}, "
+                    f"score={row['score']}, "
+                    f"weight={row['weight']:.1f}%, "
+                    f"div={row['div']}, "
+                    f"mom={row['mom']})"
+                )
+        else:
+            allocation_lines.append("- No leveraging priority data available.")
 
         penalized = [s for s in ow_sorted if divergence_flags.get(s) == "NEGATIVE_DIVERGENCE"]
         if penalized:
