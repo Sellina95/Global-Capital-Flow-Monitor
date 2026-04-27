@@ -151,8 +151,8 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.78% / 5D=+0.54% | Strength: LOW
-- **WTI:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.67% / 5D=+6.05% | Strength: MEDIUM
-- **DXY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.18% / 5D=+0.29% | Strength: LOW
+- **WTI:** 🟢 UP | Short-term: MIXED | 1D=+0.85% / 5D=+6.24% | Strength: MEDIUM
+- **DXY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.19% / 5D=+0.28% | Strength: LOW
 - **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.11% / 5D=-1.86% | Strength: LOW
 
 - **Drift Score:** 0
@@ -162,7 +162,7 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT UP
-  - Oil (WTI): 🟢 UP / SHORT DOWN
+  - Oil (WTI): 🟢 UP / MIXED
   - Dollar (DXY): 🟡 PULLBACK / SHORT UP
   - Gold (GOLD): 🔴 DOWN / SHORT DOWN
 
@@ -460,8 +460,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5544616001295559
-- **Z-Score (5d):** -0.5678461210560781
+- **Z-Score (1d):** 0.5544616552907057
+- **Z-Score (5d):** -0.5678464855747487
 
 ### EWJ
 - **Crash?** True
