@@ -45,6 +45,51 @@ def load_previous_exposure(filepath: str = "data/paper_portfolio_log.csv") -> fl
     except Exception:
         return 50.0
 
+def load_previous_weights(filepath: str = "data/paper_portfolio_log.csv") -> dict:
+    """
+    오늘 row를 제외하고 직전 ETF weights를 가져온다.
+    """
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    if not os.path.exists(filepath):
+        return {}
+
+    try:
+        df = pd.read_csv(filepath)
+    except Exception:
+        return {}
+
+    if df.empty or "date" not in df.columns:
+        return {}
+
+    df["date"] = df["date"].astype(str)
+    df = df[df["date"] != today].copy()
+
+    if df.empty:
+        return {}
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date")
+
+    if df.empty:
+        return {}
+
+    last = df.iloc[-1].to_dict()
+
+    ignore_cols = {"date", "CASH", "total_exposure"}
+    weights = {}
+
+    for k, v in last.items():
+        if k in ignore_cols:
+            continue
+        try:
+            if pd.notna(v):
+                weights[k] = float(v)
+        except Exception:
+            continue
+
+    return weights
+
 def save_paper_portfolio(weights: Dict[str, float], cash_weight: float, exposure: float) -> None:
     """
     페이퍼 포트폴리오를 CSV에 저장한다.
