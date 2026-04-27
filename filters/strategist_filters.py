@@ -4681,7 +4681,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         divergence_flags=divergence_flags,
         total_exposure=final_exposure,
         deleveraging_required=deleveraging_required,
-        prev_exposure=prev_exposure, 
+        prev_exposure=prev_exposure,
+        momentum_scores=sector_momentum,
     )
 
     weights = alloc_result["weights"]
