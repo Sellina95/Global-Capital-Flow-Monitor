@@ -9,7 +9,7 @@ import numpy as np
 from pathlib import Path
 
 import pandas as pd
-import math
+import mathxf
 
 # =========================
 # Helpers
@@ -4109,7 +4109,9 @@ def build_tactical_allocation(
 
     # 1) 기본 비중 계산
     for sector, s_score in positive_scores.items():
-        weights[sector] = (s_score / total_score_sum) * total_exposure
+        base_exposure = prev_exposure if deleveraging_required else total_exposure
+
+        weights[sector] = (s_score / total_score_sum) * base_exposure
 
     # 2) Divergence 반영
     for sector in list(weights.keys()):
