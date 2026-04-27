@@ -4924,6 +4924,9 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         save_trade_log(
             prev_weights=prev_etf_weights,
             target_weights=etf_weights,
+            market_data=market_data,  # 🔥 추가
+
+
         )
         
         save_paper_portfolio(
