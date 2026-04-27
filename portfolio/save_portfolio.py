@@ -6,6 +6,43 @@ import pandas as pd
 
 
 
+def apply_slippage_to_trades(
+    trade_df: pd.DataFrame,
+    market_data: dict,
+) -> pd.DataFrame:
+    """
+    Trade Log에 슬리피지 반영
+    """
+
+    vix = float(market_data.get("VIX", 20))
+
+    def calc_slippage(row):
+        slip = 0.1  # base 0.1%
+
+        # 🔥 VIX 기반 (시장 발작)
+        if vix > 30:
+            slip += 0.4
+        elif vix > 25:
+            slip += 0.3
+        elif vix > 20:
+            slip += 0.1
+
+        # 🔥 유동성 낮은 ETF
+        low_liq = ["XLU", "XLRE"]
+        if row["etf"] in low_liq:
+            slip += 0.2
+
+        # 🔥 거래 규모
+        if abs(row["trade_weight"]) > 5:
+            slip += 0.2
+
+        return round(slip, 2)
+
+    trade_df["slippage_pct"] = trade_df.apply(calc_slippage, axis=1)
+
+    return trade_df
+
+
 def save_trade_log(
     prev_weights: dict,
     target_weights: dict,
@@ -55,7 +92,12 @@ def save_trade_log(
     else:
         df = new_df
 
-    os.makedirs("data", exist_ok=True)
+    os.makedirs("data", exist_ok=True)\
+        # 🔥 슬리피지 적용
+    from portfolio.save_portfolio import apply_slippage_to_trades
+    
+    df = apply_slippage_to_trades(df, {})
+    
     df.to_csv(filepath, index=False)
 
     print(f"✅ Trade log saved/updated: {today}")
