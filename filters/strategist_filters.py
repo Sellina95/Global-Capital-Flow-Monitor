@@ -18,7 +18,7 @@ import math
 def rank_deleveraging_priority(
     score: Dict[str, float],
     weights: Dict[str, float],
-    divergence_flags: Dict[str, str],
+                divergence_flags: Dict[str, str],
     momentum_scores: Dict[str, float] = None,
 ) -> List[Dict[str, Any]]:
 
@@ -4701,153 +4701,152 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # 18.5) Execution Weight Allocation Logic
     # -------------------------
     # -------------------------
+    # 18.5) Execution Weight Allocation Logic
     # -------------------------
-# 18.5) Execution Weight Allocation Logic
-# -------------------------
 
-final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
+    final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
 
-try:
-    from portfolio.save_portfolio import load_previous_exposure
-    prev_exposure = load_previous_exposure()
-except Exception:
-    prev_exposure = final_exposure
+    try:
+        from portfolio.save_portfolio import load_previous_exposure
+        prev_exposure = load_previous_exposure()
+    except Exception:
+        prev_exposure = final_exposure
 
-deleveraging_required = final_exposure < prev_exposure
+    deleveraging_required = final_exposure < prev_exposure
 
-print("[DEBUG][18.5 DELEVERAGING]")
-print("prev_exposure =", prev_exposure)
-print("final_exposure =", final_exposure)
-print("deleveraging_required =", deleveraging_required)
+    print("[DEBUG][18.5 DELEVERAGING]")
+    print("prev_exposure =", prev_exposure)
+    print("final_exposure =", final_exposure)
+    print("deleveraging_required =", deleveraging_required)
 
-corr_msg = correlation_break_filter(market_data)
-is_corr_break = bool(corr_msg)
+    corr_msg = correlation_break_filter(market_data)
+    is_corr_break = bool(corr_msg)
 
-if is_corr_break:
-    if "Technology" in score:
-        score["Technology"] += 0.5
+    if is_corr_break:
+        if "Technology" in score:
+            score["Technology"] += 0.5
 
-    for s in ["Industrials", "Consumer Discretionary"]:
-        if s in score:
-            score[s] -= 0.3
+        for s in ["Industrials", "Consumer Discretionary"]:
+            if s in score:
+                score[s] -= 0.3
 
-# score 조정 후 정렬 재계산
-ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
-uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
+    # score 조정 후 정렬 재계산
+    ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
+    uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
 
-alloc_result = build_tactical_allocation(
-    score=score,
-    ow_sorted=ow_sorted,
-    divergence_flags=divergence_flags,
-    total_exposure=final_exposure,
-    deleveraging_required=deleveraging_required,
-)
+    alloc_result = build_tactical_allocation(
+        score=score,
+        ow_sorted=ow_sorted,
+        divergence_flags=divergence_flags,
+        total_exposure=final_exposure,
+        deleveraging_required=deleveraging_required,
+    )
 
-weights = alloc_result["weights"]
-cash_weight = alloc_result["cash_weight"]
-total_score_sum = alloc_result["total_score_sum"]
+    weights = alloc_result["weights"]
+    cash_weight = alloc_result["cash_weight"]
+    total_score_sum = alloc_result["total_score_sum"]
 
-# -------------------------
-# Momentum 준비
-# -------------------------
-ticker_map = {
-    "Technology": "XLK",
-    "Financials": "XLF",
-    "Energy": "XLE",
-    "Industrials": "XLI",
-    "Materials": "XLB",
-    "Consumer Discretionary": "XLY",
-    "Consumer Staples": "XLP",
-    "Health Care": "XLV",
-    "Utilities": "XLU",
-    "Real Estate": "XLRE",
-    "Communication Services": "XLC"
-}
+    # -------------------------
+    # Momentum 준비
+    # -------------------------
+    ticker_map = {
+        "Technology": "XLK",
+        "Financials": "XLF",
+        "Energy": "XLE",
+        "Industrials": "XLI",
+        "Materials": "XLB",
+        "Consumer Discretionary": "XLY",
+        "Consumer Staples": "XLP",
+        "Health Care": "XLV",
+        "Utilities": "XLU",
+        "Real Estate": "XLRE",
+        "Communication Services": "XLC"
+    }
 
-momentum_scores = market_data.get("MOMENTUM_SCORES", {}) or {}
+    momentum_scores = market_data.get("MOMENTUM_SCORES", {}) or {}
 
-sector_momentum = {
-    sector: momentum_scores.get(ticker_map.get(sector, ""), 0)
-    for sector in weights.keys()
-}
+    sector_momentum = {
+        sector: momentum_scores.get(ticker_map.get(sector, ""), 0)
+        for sector in weights.keys()
+    }
 
-# -------------------------
-# 🔥 Deleveraging Priority (완전 통일)
-# -------------------------
-delev_priority = rank_deleveraging_priority(
-    score=score,
-    weights=weights,
-    divergence_flags=divergence_flags,
-    momentum_scores=sector_momentum,
-)
+    # -------------------------
+    # Deleveraging Priority
+    # -------------------------
+    delev_priority = rank_deleveraging_priority(
+        score=score,
+        weights=weights,
+        divergence_flags=divergence_flags,
+        momentum_scores=sector_momentum,
+    )
 
-# -------------------------
-# Report 출력
-# -------------------------
-allocation_lines = []
-allocation_lines.append("### 💰 18.5) Tactical Asset Allocation (Execution Weight)")
-allocation_lines.append(f"- **Strategic Exposure (15):** **{final_exposure}%**")
-allocation_lines.append("")
-
-if total_score_sum > 0:
-    allocation_lines.append("| Sector | Score | Divergence | **Weight in Portfolio** | **Action** |")
-    allocation_lines.append("| :--- | :---: | :---: | :---: | :--- |")
-
-    for s in ow_sorted:
-        if s not in weights:
-            continue
-
-        s_score = score[s]
-        s_weight = weights[s]
-        flag = divergence_flags.get(s, "ALIGNED")
-
-        action = "STRONG BUY" if s_weight >= 20 else ("ACCUMULATE" if s_weight >= 10 else "HOLD")
-        score_display = f"+{int(s_score)}" if float(s_score).is_integer() else f"{s_score:+.1f}"
-
-        allocation_lines.append(
-            f"| {s} | {score_display} | {flag} | **{s_weight:.1f}%** | {action} |"
-        )
-
-    total_allocated = round(sum(weights.values()) + cash_weight, 1)
-
-    if total_allocated != 100:
-        diff = 100 - total_allocated
-        cash_weight += diff
-
-    total_allocated = round(sum(weights.values()) + cash_weight, 1)
-
-    allocation_lines.append(f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |")
-    allocation_lines.append("")
-    allocation_lines.append(f"- **Allocation Check:** Sector Weights + Cash = **{total_allocated:.1f}%**")
+    # -------------------------
+    # Report 출력
+    # -------------------------
+    allocation_lines = []
+    allocation_lines.append("### 💰 18.5) Tactical Asset Allocation (Execution Weight)")
+    allocation_lines.append(f"- **Strategic Exposure (15):** **{final_exposure}%**")
     allocation_lines.append("")
 
-    # -------------------------
-    # 🔥 Priority 출력 (최종)
-    # -------------------------
-    allocation_lines.append("**Deleveraging Priority Preview:**")
-    allocation_lines.append("- 기준: Divergence → Momentum → Score → Current Weight")
+    if total_score_sum > 0:
+        allocation_lines.append("| Sector | Score | Divergence | **Weight in Portfolio** | **Action** |")
+        allocation_lines.append("| :--- | :---: | :---: | :---: | :--- |")
 
-    if delev_priority:
-        for i, row in enumerate(delev_priority[:5], start=1):
+        for s in ow_sorted:
+            if s not in weights:
+                continue
+
+            s_score = score[s]
+            s_weight = weights[s]
+            flag = divergence_flags.get(s, "ALIGNED")
+
+            action = "STRONG BUY" if s_weight >= 20 else ("ACCUMULATE" if s_weight >= 10 else "HOLD")
+            score_display = f"+{int(s_score)}" if float(s_score).is_integer() else f"{s_score:+.1f}"
+
             allocation_lines.append(
-                f"{i}. {row['sector']} "
-                f"(priority_score={row['priority_score']}, "
-                f"score={row['score']}, "
-                f"weight={row['weight']:.1f}%, "
-                f"div={row['div']}, "
-                f"mom={row['mom']})"
+                f"| {s} | {score_display} | {flag} | **{s_weight:.1f}%** | {action} |"
             )
+
+        total_allocated = round(sum(weights.values()) + cash_weight, 1)
+
+        if total_allocated != 100:
+            diff = 100 - total_allocated
+            cash_weight += diff
+
+        total_allocated = round(sum(weights.values()) + cash_weight, 1)
+
+        allocation_lines.append(f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |")
+        allocation_lines.append("")
+        allocation_lines.append(f"- **Allocation Check:** Sector Weights + Cash = **{total_allocated:.1f}%**")
+        allocation_lines.append("")
+
+        # Priority 출력
+        allocation_lines.append("**Deleveraging Priority Preview:**")
+        allocation_lines.append("- 기준: Divergence → Momentum → Score → Current Weight")
+
+        if delev_priority:
+            for i, row in enumerate(delev_priority[:5], start=1):
+                allocation_lines.append(
+                    f"{i}. {row['sector']} "
+                    f"(priority_score={row['priority_score']}, "
+                    f"score={row['score']}, "
+                    f"weight={row['weight']:.1f}%, "
+                    f"div={row['div']}, "
+                    f"mom={row['mom']})"
+                )
+        else:
+            allocation_lines.append("- No deleveraging priority data available.")
+
+        penalized = [s for s in ow_sorted if divergence_flags.get(s) == "NEGATIVE_DIVERGENCE"]
+        if penalized:
+            allocation_lines.append(
+                f"- **Divergence Adjustment:** {', '.join(penalized)} penalized in weight sizing"
+            )
+
     else:
-        allocation_lines.append("- No deleveraging priority data available.")
+        allocation_lines.append("⚠️ 양수 점수를 받은 섹터가 없습니다. 현금 비중을 확대하십시오.")
 
-    penalized = [s for s in ow_sorted if divergence_flags.get(s) == "NEGATIVE_DIVERGENCE"]
-    if penalized:
-        allocation_lines.append(f"- **Divergence Adjustment:** {', '.join(penalized)} penalized in weight sizing")
-
-else:
-    allocation_lines.append("⚠️ 양수 점수를 받은 섹터가 없습니다. 현금 비중을 확대하십시오.")
-
-lines.append("\n" + "\n".join(allocation_lines))
+    lines.append("\n" + "\n".join(allocation_lines))
 
     # -------------------------
     # 19) Execution Layer (ETF Mapping)
