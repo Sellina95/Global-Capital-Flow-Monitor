@@ -4082,6 +4082,7 @@ def build_tactical_allocation(
     divergence_flags: Dict[str, str],
     total_exposure: float,
     deleveraging_required: bool = False,
+    prev_exposure = None,   # 🔥 추가
 ) -> Dict[str, Any]:
     """
     18.5) Tactical Asset Allocation Builder - Final Stable Version
