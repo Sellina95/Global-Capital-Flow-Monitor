@@ -1,0 +1,7 @@
+date,etf,prev_weight,target_weight,trade_weight,action
+2026-04-27,XLC,2.4,0.0,-2.4,SELL
+2026-04-27,XLI,10.5,14.5,4.0,BUY
+2026-04-27,XLK,19.1,12.8,-6.3,SELL
+2026-04-27,XLP,9.6,17.1,7.5,BUY
+2026-04-27,XLU,4.8,8.5,3.7,BUY
+2026-04-27,XLV,9.6,17.1,7.5,BUY
