@@ -4912,10 +4912,20 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # Portfolio Logging (Paper Trading)
     # -------------------------
     try:
-        from portfolio.save_portfolio import save_paper_portfolio
-
+        from portfolio.save_portfolio import (
+            save_paper_portfolio,
+            load_previous_weights,
+            save_trade_log,
+        )
+    
+        prev_etf_weights = load_previous_weights()
         etf_weights = {item["etf"]: item["weight"] for item in etf_plan}
-
+        
+        save_trade_log(
+            prev_weights=prev_etf_weights,
+            target_weights=etf_weights,
+        )
+        
         save_paper_portfolio(
             weights=etf_weights,
             cash_weight=cash_weight,
