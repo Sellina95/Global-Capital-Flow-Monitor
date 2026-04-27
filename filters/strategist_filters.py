@@ -4858,7 +4858,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         allocation_lines.append("")
 
         # Priority 출력
-            allocation_lines.append("")
+        allocation_lines.append("")
         allocation_lines.append("**Deleveraging Priority Preview:**")
         allocation_lines.append("- 기준: Divergence → Momentum → Score → Current Weight")
 
