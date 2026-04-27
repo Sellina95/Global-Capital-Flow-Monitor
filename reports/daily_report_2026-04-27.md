@@ -151,9 +151,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.78% / 5D=+0.54% | Strength: LOW
-- **WTI:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.82% / 5D=+6.20% | Strength: MEDIUM
-- **DXY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.19% / 5D=+0.28% | Strength: LOW
-- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.11% / 5D=-1.86% | Strength: LOW
+- **WTI:** 🟢 UP | Short-term: MIXED | 1D=+0.73% / 5D=+6.12% | Strength: MEDIUM
+- **DXY:** 🟡 PULLBACK | Short-term: MIXED | 1D=-0.19% / 5D=+0.28% | Strength: LOW
+- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.09% / 5D=-1.84% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -162,8 +162,8 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT UP
-  - Oil (WTI): 🟢 UP / SHORT DOWN
-  - Dollar (DXY): 🟡 PULLBACK / SHORT UP
+  - Oil (WTI): 🟢 UP / MIXED
+  - Dollar (DXY): 🟡 PULLBACK / MIXED
   - Gold (GOLD): 🔴 DOWN / SHORT DOWN
 
 ### ⚠ 6.5) Correlation Break Monitor
@@ -308,7 +308,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `EASING` | **Price(Regime):** `RISK-ON` | **VIX:** `18.71`
-- **Positioning Data:** Z-Score: `1.63` (>2.2 시 Run) | Gamma: `9.05` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.63` (>2.2 시 Run) | Gamma: `3.95` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -442,8 +442,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.6407178686871231
-- **Z-Score (5d):** -0.6091449789286061
+- **Z-Score (1d):** 0.6407208541993912
+- **Z-Score (5d):** -0.6091450896296323
 
 ### EEM
 - **Crash?** False
@@ -460,8 +460,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5544616552907057
-- **Z-Score (5d):** -0.5678464855747487
+- **Z-Score (1d):** 0.5544612336722654
+- **Z-Score (5d):** -0.567845975517454
 
 ### EWJ
 - **Crash?** True
