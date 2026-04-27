@@ -19,28 +19,16 @@ def rank_deleveraging_priority(
     score: Dict[str, float],
     weights: Dict[str, float],
     divergence_flags: Dict[str, str],
-    momentum_scores: Dict[str, float] = None,  # 🔥 추가
+    momentum_scores: Dict[str, float] = None,
 ) -> List[Dict[str, Any]]:
-    """
-    Deleveraging Priority Engine (Final)
-
-    Priority Order:
-    1. Divergence (수급 이상)
-    2. Momentum (RS 꺾임)
-    3. Score (매크로 약함)
-    4. Overweight (비중 과다)
-    """
 
     priority_list = []
 
-    # 기준 weight 평균 (리밸런싱용)
     avg_weight = sum(weights.values()) / len(weights) if weights else 0
 
     for sector, w in weights.items():
 
-        # -------------------------
-        # 1️⃣ Divergence Score
-        # -------------------------
+        # 1️⃣ Divergence
         div_flag = divergence_flags.get(sector, "ALIGNED")
 
         if div_flag == "NEGATIVE_DIVERGENCE":
@@ -50,19 +38,15 @@ def rank_deleveraging_priority(
         else:
             divergence_score = 0
 
-        # -------------------------
-        # 2️⃣ Momentum Score
-        # -------------------------
-        mom = momentum_data.get(sector, 0)
+        # 2️⃣ Momentum
+        mom = momentum_scores.get(sector, 0) if momentum_scores else 0
 
         if mom < 0:
-            momentum_score = abs(mom) * 1.5   # 하락 강할수록 먼저 제거
+            momentum_score = abs(mom) * 1.5
         else:
-            momentum_score = -mom * 0.5       # 상승이면 보호
+            momentum_score = -mom * 0.5
 
-        # -------------------------
-        # 3️⃣ Score Penalty
-        # -------------------------
+        # 3️⃣ Score
         s = score.get(sector, 0)
 
         if s <= 0:
@@ -70,9 +54,7 @@ def rank_deleveraging_priority(
         else:
             score_penalty = -s * 0.3
 
-        # -------------------------
-        # 4️⃣ Overweight Score
-        # -------------------------
+        # 4️⃣ Overweight
         overweight = w - avg_weight
 
         if overweight > 0:
@@ -80,9 +62,6 @@ def rank_deleveraging_priority(
         else:
             overweight_score = 0
 
-        # -------------------------
-        # 🔥 Total Priority Score
-        # -------------------------
         priority_score = (
             divergence_score
             + momentum_score
@@ -99,7 +78,6 @@ def rank_deleveraging_priority(
             "weight": w,
         })
 
-    # 🔥 높은 순서 = 먼저 잘림
     priority_list = sorted(
         priority_list,
         key=lambda x: x["priority_score"],
