@@ -109,10 +109,20 @@ def save_trade_log(
     # 비용 계산 적용
     df_today = apply_slippage_to_trades(df_today, market_data)
     df_today = apply_transaction_cost(df_today)
+    
     print("🔥 DEBUG COLUMNS:", df_today.columns)
     df_today["total_cost_pct"] = (
         df_today["slippage_pct"] + df_today["transaction_cost_pct"]
     ).round(2)
+    
+    df_today["trade_cost_impact_pct"] = (
+        df_today["trade_weight"].abs() * df_today["total_cost_pct"] / 100
+    ).round(4)
+
+    # 🔥 총 거래 비용 계산
+    total_cost_impact = df_today["trade_cost_impact_pct"].sum().round(4)
+    
+    print(f"💸 Total Trade Cost Impact: {total_cost_impact}%")
 
     # 기존 파일 있으면 오늘 row 제거 후 병합
     if os.path.exists(filepath):
