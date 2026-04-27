@@ -151,9 +151,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.78% / 5D=+0.54% | Strength: LOW
-- **WTI:** 🟢 UP | Short-term: MIXED | 1D=+0.73% / 5D=+6.12% | Strength: MEDIUM
-- **DXY:** 🟡 PULLBACK | Short-term: MIXED | 1D=-0.19% / 5D=+0.28% | Strength: LOW
-- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.09% / 5D=-1.84% | Strength: LOW
+- **WTI:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.67% / 5D=+6.05% | Strength: MEDIUM
+- **DXY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.18% / 5D=+0.29% | Strength: LOW
+- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.11% / 5D=-1.86% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -162,8 +162,8 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT UP
-  - Oil (WTI): 🟢 UP / MIXED
-  - Dollar (DXY): 🟡 PULLBACK / MIXED
+  - Oil (WTI): 🟢 UP / SHORT DOWN
+  - Dollar (DXY): 🟡 PULLBACK / SHORT UP
   - Gold (GOLD): 🔴 DOWN / SHORT DOWN
 
 ### ⚠ 6.5) Correlation Break Monitor
@@ -442,8 +442,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.6407208541993912
-- **Z-Score (5d):** -0.6091450896296323
+- **Z-Score (1d):** 0.6407210387573039
+- **Z-Score (5d):** -0.6091448767656652
 
 ### EEM
 - **Crash?** False
@@ -460,8 +460,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5544612336722654
-- **Z-Score (5d):** -0.567845975517454
+- **Z-Score (1d):** 0.5544616001295559
+- **Z-Score (5d):** -0.5678461210560781
 
 ### EWJ
 - **Crash?** True
