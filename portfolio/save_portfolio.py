@@ -123,6 +123,12 @@ def save_trade_log(
     total_cost_impact = df_today["trade_cost_impact_pct"].sum().round(4)
     
     print(f"💸 Total Trade Cost Impact: {total_cost_impact}%")
+    MIN_ALPHA_THRESHOLD = 0.15  # 기준 (임시)
+
+    if total_cost_impact > MIN_ALPHA_THRESHOLD:
+        print("🚫 SKIP TRADE: 비용이 기대수익보다 클 가능성")
+    else:
+        print("✅ EXECUTE TRADE: 비용 감수 가능")
 
     # 기존 파일 있으면 오늘 row 제거 후 병합
     if os.path.exists(filepath):
