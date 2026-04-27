@@ -14,7 +14,13 @@ def apply_slippage_to_trades(
     Trade Log에 슬리피지 반영
     """
 
-    vix = float(market_data.get("VIX", 20))
+
+    vix_node = market_data.get("VIX", 20)
+
+    if isinstance(vix_node, dict):
+        vix = float(vix_node.get("today", 20) or 20)
+    else:
+        vix = float(vix_node or 20)
 
     def calc_slippage(row):
         slip = 0.1  # base 0.1%
