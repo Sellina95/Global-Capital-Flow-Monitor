@@ -4109,12 +4109,16 @@ def build_tactical_allocation(
         }
 
     # 1) 기본 비중 계산
+    # 🔥 먼저 한 번만 결정
+    if deleveraging_required and prev_exposure is not None:
+        base_exposure = prev_exposure
+    else:
+        base_exposure = total_exposure
+    
+    # 1) 기본 비중 계산
     for sector, s_score in positive_scores.items():
-        if deleveraging_required and prev_exposure is not None:
-            base_exposure = prev_exposure
-        else:
-            base_exposure = total_exposure
-
+        weights[sector] = (s_score / total_score_sum) * base_exposure
+    
     # 2) Divergence 반영
     for sector in list(weights.keys()):
         flag = divergence_flags.get(sector, "ALIGNED")
