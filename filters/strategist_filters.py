@@ -4753,35 +4753,35 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     cash_weight = alloc_result["cash_weight"]
     total_score_sum = alloc_result["total_score_sum"]
 
-# -------------------------
-# Rebalancing Threshold
-# -------------------------
-if not deleveraging_required:
-    try:
-        from portfolio.save_portfolio import load_previous_weights
-        prev_etf_weights = load_previous_weights()
-    except Exception:
-        prev_etf_weights = {}
-
-    prev_sector_weights = {
-        sector: prev_etf_weights.get(ticker_map.get(sector, ""), None)
-        for sector in weights.keys()
-    }
-
-    weights, rebalance_actions = apply_rebalance_threshold(
-        weights=weights,
-        prev_sector_weights=prev_sector_weights,
-        hold_threshold=2.0,
-        rebalance_threshold=5.0,
-    )
-
-    cash_weight = round(100.0 - sum(weights.values()), 1)
-
-else:
-    rebalance_actions = {
-        sector: "DELEVERAGE"
-        for sector in weights.keys()
-    }
+    # -------------------------
+    # Rebalancing Threshold
+    # -------------------------
+    if not deleveraging_required:
+        try:
+            from portfolio.save_portfolio import load_previous_weights
+            prev_etf_weights = load_previous_weights()
+        except Exception:
+            prev_etf_weights = {}
+    
+        prev_sector_weights = {
+            sector: prev_etf_weights.get(ticker_map.get(sector, ""), None)
+            for sector in weights.keys()
+        }
+    
+        weights, rebalance_actions = apply_rebalance_threshold(
+            weights=weights,
+            prev_sector_weights=prev_sector_weights,
+            hold_threshold=2.0,
+            rebalance_threshold=5.0,
+        )
+    
+        cash_weight = round(100.0 - sum(weights.values()), 1)
+    
+    else:
+        rebalance_actions = {
+            sector: "DELEVERAGE"
+            for sector in weights.keys()
+        }
     # -------------------------
     # Deleveraging Priority
     # -------------------------
