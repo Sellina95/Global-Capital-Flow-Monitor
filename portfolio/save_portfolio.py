@@ -42,10 +42,28 @@ def apply_slippage_to_trades(
 
     return trade_df
 
+def apply_transaction_cost(trade_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    거래 수수료 + 세금 반영
+    """
+
+    def calc_cost(row):
+        cost = 0.05  # 기본 0.05%
+
+        if row["action"] == "SELL":
+            cost += 0.1  # 세금 포함
+
+        return round(cost, 2)
+
+    trade_df["transaction_cost_pct"] = trade_df.apply(calc_cost, axis=1)
+
+    return trade_df
+
 
 def save_trade_log(
     prev_weights: dict,
     target_weights: dict,
+    market_data: dict, 
     filepath: str = "data/trade_log.csv",
 ):
     """
@@ -79,6 +97,15 @@ def save_trade_log(
         })
 
     new_df = pd.DataFrame(rows)
+
+    # 🔥 여기부터 추가
+    
+    df = new_df.copy()
+    
+    df = apply_slippage_to_trades(df, market_data)
+    df = apply_transaction_cost(df)
+    
+    df["total_cost_pct"] = df["slippage_pct"] + df["transaction_cost_pct"]
 
     if os.path.exists(filepath):
         try:
