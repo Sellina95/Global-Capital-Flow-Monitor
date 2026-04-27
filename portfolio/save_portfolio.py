@@ -63,11 +63,12 @@ def apply_transaction_cost(trade_df: pd.DataFrame) -> pd.DataFrame:
 def save_trade_log(
     prev_weights: dict,
     target_weights: dict,
-    market_data: dict, 
+    market_data: dict,
     filepath: str = "data/trade_log.csv",
 ):
     """
     이전 ETF 비중 vs 현재 목표 비중 비교해서 BUY/SELL/HOLD 로그 생성
+    + slippage / transaction cost / total cost 반영
     """
 
     today = datetime.now().strftime("%Y-%m-%d")
@@ -96,38 +97,37 @@ def save_trade_log(
             "action": action,
         })
 
-    new_df = pd.DataFrame(rows)
+    # 오늘 거래 로그 생성
+    df_today = pd.DataFrame(rows)
 
-    # 🔥 여기부터 추가
-    
-    df = new_df.copy()
-    
-    df = apply_slippage_to_trades(df, market_data)
-    df = apply_transaction_cost(df)
-    
-    df["total_cost_pct"] = df["slippage_pct"] + df["transaction_cost_pct"]
+    # 비용 계산 적용
+    df_today = apply_slippage_to_trades(df_today, market_data)
+    df_today = apply_transaction_cost(df_today)
+    df_today["total_cost_pct"] = (
+        df_today["slippage_pct"] + df_today["transaction_cost_pct"]
+    ).round(2)
 
+    # 기존 파일 있으면 오늘 row 제거 후 병합
     if os.path.exists(filepath):
         try:
             old_df = pd.read_csv(filepath)
+
             if not old_df.empty and "date" in old_df.columns:
                 old_df["date"] = old_df["date"].astype(str)
                 old_df = old_df[old_df["date"] != today].copy()
-            df = pd.concat([old_df, new_df], ignore_index=True)
-        except Exception:
-            df = new_df
-    else:
-        df = new_df
 
-    os.makedirs("data", exist_ok=True)\
-        # 🔥 슬리피지 적용
-    from portfolio.save_portfolio import apply_slippage_to_trades
-    
-    df = apply_slippage_to_trades(df, {})
-    
+            df = pd.concat([old_df, df_today], ignore_index=True)
+
+        except Exception:
+            df = df_today
+    else:
+        df = df_today
+
+    os.makedirs("data", exist_ok=True)
     df.to_csv(filepath, index=False)
 
     print(f"✅ Trade log saved/updated: {today}")
+    print(f"✅ File path: {filepath}")
 
 
 def load_previous_exposure(filepath: str = "data/paper_portfolio_log.csv") -> float:
