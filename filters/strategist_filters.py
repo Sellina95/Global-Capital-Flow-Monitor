@@ -4129,29 +4129,38 @@ def build_tactical_allocation(
             weights[sector] *= 1.25
 
     # 3) 디레버리징: priority_score 높은 섹터부터 실제 컷
-    if deleveraging_required and prev_exposure is not None:
-        reduction_needed = max(0.0, float(prev_exposure) - float(total_exposure))
+    # -------------------------
+# 3) 디레버리징 (컷 제한 버전)
+# -------------------------
+if deleveraging_required and prev_exposure is not None:
+    reduction_needed = max(0.0, float(prev_exposure) - float(total_exposure))
 
-        priority_rows = rank_deleveraging_priority(
-            score=score,
-            weights=weights,
-            divergence_flags=divergence_flags,
-            momentum_scores=momentum_scores,
-        )
+    priority_rows = rank_deleveraging_priority(
+        score=score,
+        weights=weights,
+        divergence_flags=divergence_flags,
+        momentum_scores=momentum_scores,
+    )
 
-        for row in priority_rows:
-            if reduction_needed <= 0:
-                break
+    MAX_CUT_RATIO = 0.5   # 🔥 여기만 조절 (0.5 = 최대 50% 컷)
 
-            sector = row["sector"]
-            current_weight = weights.get(sector, 0.0)
+    for row in priority_rows:
+        if reduction_needed <= 0:
+            break
 
-            if current_weight <= 0:
-                continue
+        sector = row["sector"]
+        current_weight = weights.get(sector, 0.0)
 
-            cut_amount = min(current_weight, reduction_needed)
-            weights[sector] = current_weight - cut_amount
-            reduction_needed -= cut_amount
+        if current_weight <= 0:
+            continue
+
+        # 🔥 최대 컷 제한
+        max_cut = current_weight * MAX_CUT_RATIO
+
+        cut_amount = min(max_cut, reduction_needed)
+
+        weights[sector] = current_weight - cut_amount
+        reduction_needed -= cut_amount
 
     # 4) 최종 노출이 total_exposure를 초과하면 비례 압축
     current_sum = sum(weights.values())
