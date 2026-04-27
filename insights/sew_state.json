@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-27 10:54:00",
+  "timestamp": "2026-04-27 11:09:28",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -20,9 +20,9 @@
       "pct_change": 0.08
     },
     "VIX": {
-      "zscore": -0.91,
+      "zscore": 0.21,
       "state": "NORMAL",
-      "pct_change": -0.26
+      "pct_change": -0.21
     },
     "DXY": {
       "zscore": -0.77,
