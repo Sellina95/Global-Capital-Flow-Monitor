@@ -19,7 +19,7 @@ def rank_deleveraging_priority(
     score: Dict[str, float],
     weights: Dict[str, float],
     divergence_flags: Dict[str, str],
-    momentum_data: Dict[str, float],   # 🔥 추가
+    momentum_scores: Dict[str, float] = None,  # 🔥 추가
 ) -> List[Dict[str, Any]]:
     """
     Deleveraging Priority Engine (Final)
@@ -4794,10 +4794,10 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     }
     
     priority = rank_deleveraging_priority(
-        score=score,
-        weights=weights,
-        divergence_flags=divergence_flags,
-        momentum_data=sector_momentum,   # 🔥 핵심
+    score=score,
+    weights=weights,
+    divergence_flags=divergence_flags,
+    momentum_scores=sector_momentum,
     )
     
     allocation_lines = []
