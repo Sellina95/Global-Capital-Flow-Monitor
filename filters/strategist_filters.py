@@ -4699,7 +4699,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
 
     final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
-    #final_exposure = 30 # test only
+    final_exposure = 70 # test only
 
     try:
         from portfolio.save_portfolio import load_previous_exposure
