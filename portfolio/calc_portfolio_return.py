@@ -156,12 +156,48 @@ def fetch_benchmark_return(ticker: str = "SPY") -> float:
     ret = fetch_1d_return(ticker)
     return round(ret if ret is not None else 0.0, 4)
 
+def load_trade_cost_for_date(
+    portfolio_date: str,
+    filepath: str = "data/trade_log.csv",
+) -> float:
+    """
+    해당 날짜 trade_log에서 총 거래 비용(trade_cost_impact_pct) 합산
+    """
+    if not os.path.exists(filepath):
+        return 0.0
+
+    try:
+        df = pd.read_csv(filepath)
+    except Exception:
+        return 0.0
+
+    if df.empty or "date" not in df.columns:
+        return 0.0
+
+    df["date"] = df["date"].astype(str)
+
+    if "trade_cost_impact_pct" not in df.columns:
+        return 0.0
+
+    day_df = df[df["date"] == portfolio_date].copy()
+
+    if day_df.empty:
+        return 0.0
+
+    total_cost = pd.to_numeric(
+        day_df["trade_cost_impact_pct"], errors="coerce"
+    ).fillna(0).sum()
+
+    return round(float(total_cost), 4)
 
 def save_performance_row(
     portfolio_date: str,
     ticker_weights: Dict[str, float],
     result: Dict[str, float],
     benchmark_return: float,
+    trade_cost_impact: float,
+    net_portfolio_return: float,
+    net_alpha_vs_spy: float,
     output_path: str = OUTPUT_PATH,
 ) -> None:
     """
@@ -169,11 +205,16 @@ def save_performance_row(
     - 같은 portfolio_date가 이미 있으면 기존 row를 삭제하고 최신 값으로 덮어쓴다.
     """
     row = {
-        "date": portfolio_date,
-        "portfolio_return_pct": result["portfolio_return_pct"],
-        "benchmark_return_pct": benchmark_return,
-        "alpha_vs_spy_pct": round(result["portfolio_return_pct"] - benchmark_return, 4),
-        "cash_weight": result["cash_weight"],
+    "date": portfolio_date,
+    "portfolio_return_pct": result["portfolio_return_pct"],
+    "benchmark_return_pct": benchmark_return,
+    "alpha_vs_spy_pct": round(result["portfolio_return_pct"] - benchmark_return, 4),
+
+    "trade_cost_impact_pct": trade_cost_impact,
+    "net_portfolio_return_pct": net_portfolio_return,
+    "net_alpha_vs_spy_pct": net_alpha_vs_spy,
+
+    "cash_weight": result["cash_weight"],
     }
 
     # ETF 비중 저장
@@ -237,12 +278,19 @@ def main() -> None:
 
     result = calculate_portfolio_return(ticker_weights, cash_weight)
     benchmark_return = fetch_benchmark_return("SPY")
+    trade_cost_impact = load_trade_cost_for_date(portfolio_date)
+    net_portfolio_return = round(result["portfolio_return_pct"] - trade_cost_impact, 4)
+    net_alpha_vs_spy = round(net_portfolio_return - benchmark_return, 4)
+    
 
     print("")
     print("=== Portfolio Return Summary ===")
     print(f"Portfolio 1D Return: {result['portfolio_return_pct']:.4f}%")
     print(f"SPY 1D Return: {benchmark_return:.4f}%")
     print(f"Alpha vs SPY: {result['portfolio_return_pct'] - benchmark_return:.4f}%")
+    print(f"Trade Cost Impact: -{trade_cost_impact:.4f}%")
+    print(f"Net Portfolio Return: {net_portfolio_return:.4f}%")
+    print(f"Net Alpha vs SPY: {net_alpha_vs_spy:.4f}%")
     print("")
 
     print("=== ETF Returns ===")
@@ -255,12 +303,16 @@ def main() -> None:
         print(f"{ticker}: {contrib:.4f}%")
 
     save_performance_row(
-        portfolio_date=portfolio_date,
-        ticker_weights=ticker_weights,
-        result=result,
-        benchmark_return=benchmark_return,
+    portfolio_date=portfolio_date,
+    ticker_weights=ticker_weights,
+    result=result,
+    benchmark_return=benchmark_return,
+    trade_cost_impact=trade_cost_impact,
+    net_portfolio_return=net_portfolio_return,
+    net_alpha_vs_spy=net_alpha_vs_spy,
     )
 
+   
 
 if __name__ == "__main__":
     main()
