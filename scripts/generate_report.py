@@ -1438,17 +1438,17 @@ def generate_daily_report() -> None:
         core_cols=["US10Y", "DXY", "WTI", "VIX", "USDKRW"],
         min_valid_count=4,
     )
-    
-    # 🔥 DATE GUARD: KST 기준 오늘 날짜 row는 리포트 기준 데이터로 사용 금지
-	kst_today = pd.Timestamp.now(tz="Asia/Seoul").date()
-	selected_date = pd.to_datetime(df.iloc[today_idx]["date"]).date()
 
-	if selected_date >= kst_today and today_idx > 0:
-    	print(
-        	f"[DEBUG][DATE GUARD] selected_date={selected_date} "
-        	f">= kst_today={kst_today}. Shift to previous row."
-    	)
-    	today_idx -= 1
+    # 🔥 DATE GUARD: KST 기준 오늘 날짜 row는 리포트 기준 데이터로 사용 금지
+    kst_today = pd.Timestamp.now(tz="Asia/Seoul").date()
+    selected_date = pd.to_datetime(df.iloc[today_idx]["date"]).date()
+
+    if selected_date >= kst_today and today_idx > 0:
+        print(
+            f"[DEBUG][DATE GUARD] selected_date={selected_date} "
+            f">= kst_today={kst_today}. Shift to previous row."
+        )
+        today_idx -= 1
 
     data_as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
     report_date = pd.Timestamp.now(tz="Asia/Seoul").strftime("%Y-%m-%d")
