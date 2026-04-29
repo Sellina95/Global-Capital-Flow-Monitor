@@ -1452,7 +1452,18 @@ def generate_daily_report() -> None:
 
     data_as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
     report_date = pd.Timestamp.now(tz="Asia/Seoul").strftime("%Y-%m-%d")
+    expected_as_of_date = (
+        pd.Timestamp.now(tz="Asia/Seoul") - pd.tseries.offsets.BDay(1)
+    ).strftime("%Y-%m-%d")
 
+    if data_as_of_date < expected_as_of_date:
+        print(
+            f"[ERROR][STALE DATA GUARD] data_as_of_date={data_as_of_date} "
+            f"< expected_as_of_date={expected_as_of_date}. "
+            f"Previous market data is not ready yet. Stop report generation."
+        )
+        return
+        
     print("[DEBUG] effective today_idx =", today_idx)
     print("[DEBUG] report_date (KST) =", report_date)
     print("[DEBUG] data_as_of_date =", data_as_of_date)
