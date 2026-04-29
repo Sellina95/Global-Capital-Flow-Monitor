@@ -81,44 +81,8 @@ def _normalize_to_market_date(ts) -> Optional[str]:
 # -------------------------
 # 데이터 파싱
 # -------------------------
-def _safe_last_close_and_date(df: pd.DataFrame) -> Tuple[Optional[float], Optional[str]]:
-    if df is None or df.empty:
-        return None, None
 
-    try:
-        if isinstance(df.columns, pd.MultiIndex):
-            close_cols = [c for c in df.columns if str(c[0]).lower() == "close"]
-            if not close_cols:
-                return None, None
-
-            close_block = df[close_cols].dropna(how="all")
-            if close_block.empty:
-                return None, None
-
-            last_valid_idx = close_block.dropna(how="all").index[-1]
-            last_row = close_block.loc[last_valid_idx].dropna()
-            if last_row.empty:
-                return None, None
-
-            value = float(last_row.iloc[-1])
-            asof_date = _normalize_to_market_date(last_valid_idx)
-            return value, asof_date
-
-        close_col = "Close" if "Close" in df.columns else None
-        if not close_col:
-            return None, None
-
-        close = pd.to_numeric(df[close_col], errors="coerce").dropna()
-        if close.empty:
-            return None, None
-
-        last_valid_idx = close.index[-1]
-        value = float(close.iloc[-1])
-        asof_date = _normalize_to_market_date(last_valid_idx)
-        return value, asof_date
-
-    except Exception:
-        return None, None
+              
 
 
 # -------------------------
@@ -128,11 +92,27 @@ def fetch_macro_data() -> Tuple[Dict[str, float], Optional[str]]:
     results: Dict[str, float] = {}
     market_date_candidates: List[str] = []
 
+    now_ny = pd.Timestamp.now(tz=NY)
+    expected_market_date = (now_ny - pd.tseries.offsets.BDay(1)).strftime("%Y-%m-%d")
+
+    print(f"[DEBUG] now_ny={now_ny}")
+    print(f"[DEBUG] expected_market_date={expected_market_date}")
+
     def _fetch(ticker: str):
         try:
-            df = yf.download(ticker, period="30d", interval="1d", progress=False)
-            return _safe_last_close_and_date(df)
-        except:
+            df = yf.download(
+                ticker,
+                period="30d",
+                interval="1d",
+                progress=False,
+                auto_adjust=False,
+                threads=False,
+            )
+            return _safe_last_close_and_date(
+                df,
+                max_market_date=expected_market_date,
+            )
+        except Exception:
             return None, None
 
     for name, ticker in INDICATORS.items():
@@ -152,15 +132,7 @@ def fetch_macro_data() -> Tuple[Dict[str, float], Optional[str]]:
         if asof_date and name in MARKET_DATE_KEYS:
             market_date_candidates.append(asof_date)
 
-    # 🔥 핵심: max → mode
-    market_date = None
-    if market_date_candidates:
-        s = pd.Series(market_date_candidates, dtype="string")
-        mode_vals = s.mode()
-        if not mode_vals.empty:
-            market_date = str(mode_vals.iloc[0])
-        else:
-            market_date = str(s.iloc[-1])
+    market_date = expected_market_date
 
     print(f"[DEBUG] market_date_candidates={market_date_candidates}")
     print(f"[DEBUG] final market_date={market_date}")
