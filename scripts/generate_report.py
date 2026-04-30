@@ -1431,7 +1431,15 @@ def generate_daily_report() -> None:
     # 1) 기존 매크로 데이터 로드
     # -----------------------------
     df = load_macro_df()
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
     df = merge_sovereign_spreads_into_macro_df(df)
+
+    # 🔥 MERGE 후 재정렬
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
     today_idx = _find_effective_market_idx(
         df,
