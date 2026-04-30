@@ -48,7 +48,7 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=REDUCE 반영 → Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut → Tactical=REDUCE / Flow=NO CLEAR FLOW(2) / Drift=NO DRIFT(0) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **TRANSITION / MIXED (전환·혼조)** → **RISK-OFF (긴축/불안·리스크 회피)**
+- **현재 국면 유지:** ✅ **RISK-OFF (긴축/불안·리스크 회피)**
 
 ---
 
@@ -151,9 +151,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.02% / 5D=+0.05% | Strength: LOW
-- **WTI:** 🟢 UP | Short-term: SHORT DOWN | 1D=+2.19% / 5D=+13.95% | Strength: HIGH
-- **DXY:** 🟢 UP | Short-term: MIXED | 1D=+0.13% / 5D=+0.25% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.54% / 5D=-2.88% | Strength: LOW
+- **WTI:** 🟢 UP | Short-term: SHORT DOWN | 1D=+1.88% / 5D=+13.60% | Strength: HIGH
+- **DXY:** 🟢 UP | Short-term: MIXED | 1D=+0.12% / 5D=+0.24% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.62% / 5D=-2.80% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -442,8 +442,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.6563837437439928
-- **Z-Score (5d):** -1.2848375598397819
+- **Z-Score (1d):** -1.656390235725177
+- **Z-Score (5d):** -1.284837822389487
 
 ### EEM
 - **Crash?** False
@@ -460,8 +460,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.9785056472918989
-- **Z-Score (5d):** -0.9633761199913013
+- **Z-Score (1d):** -0.9785054559486986
+- **Z-Score (5d):** -0.9633761650818735
 
 ### EWJ
 - **Crash?** False
