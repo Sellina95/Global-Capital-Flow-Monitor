@@ -81,7 +81,79 @@ def _normalize_to_market_date(ts) -> Optional[str]:
 # -------------------------
 # 데이터 파싱
 # -------------------------
+def _safe_last_close_and_date(
+    df: pd.DataFrame,
+    max_market_date: Optional[str] = None,
+) -> Tuple[Optional[float], Optional[str]]:
+    if df is None or df.empty:
+        return None, None
 
+    try:
+        max_dt = pd.to_datetime(max_market_date).date() if max_market_date else None
+
+        if isinstance(df.columns, pd.MultiIndex):
+            close_cols = [c for c in df.columns if str(c[0]).lower() == "close"]
+            if not close_cols:
+                return None, None
+
+            close_block = df[close_cols].dropna(how="all")
+            if close_block.empty:
+                return None, None
+
+            valid_rows = []
+
+            for idx in close_block.index:
+                asof = _normalize_to_market_date(idx)
+                if asof is None:
+                    continue
+
+                asof_dt = pd.to_datetime(asof).date()
+                if max_dt is not None and asof_dt > max_dt:
+                    continue
+
+                row = close_block.loc[idx].dropna()
+                if row.empty:
+                    continue
+
+                valid_rows.append((idx, row, asof))
+
+            if not valid_rows:
+                return None, None
+
+            _, last_row, asof_date = valid_rows[-1]
+            value = float(last_row.iloc[-1])
+            return value, asof_date
+
+        close_col = "Close" if "Close" in df.columns else None
+        if not close_col:
+            return None, None
+
+        close = pd.to_numeric(df[close_col], errors="coerce").dropna()
+        if close.empty:
+            return None, None
+
+        valid_items = []
+
+        for idx, value in close.items():
+            asof = _normalize_to_market_date(idx)
+            if asof is None:
+                continue
+
+            asof_dt = pd.to_datetime(asof).date()
+            if max_dt is not None and asof_dt > max_dt:
+                continue
+
+            valid_items.append((idx, float(value), asof))
+
+        if not valid_items:
+            return None, None
+
+        _, value, asof_date = valid_items[-1]
+        return value, asof_date
+
+    except Exception as e:
+        print(f"⚠️ _safe_last_close_and_date failed: {e}")
+        return None, None
               
 
 
