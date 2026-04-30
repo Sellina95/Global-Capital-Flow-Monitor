@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-30 05:27:47",
+  "timestamp": "2026-04-30 05:41:05",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 1,
@@ -10,14 +10,14 @@
   "deadman_reason": "Normal Operation",
   "assets": {
     "SPY": {
-      "zscore": 1.04,
+      "zscore": 1.05,
       "state": "NORMAL",
       "pct_change": 0.09
     },
     "QQQ": {
-      "zscore": 1.42,
+      "zscore": 1.45,
       "state": "NORMAL",
-      "pct_change": 0.14
+      "pct_change": 0.15
     },
     "VIX": {
       "zscore": 3.23,
