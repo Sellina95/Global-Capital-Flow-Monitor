@@ -43,6 +43,11 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_macro_data.py
 
+      - name: Debug macro_data after fetch
+        run: |
+          echo "== macro_data tail after fetch =="
+          tail -n 5 data/macro_data.csv || true
+
       - name: Fetch liquidity data
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
@@ -83,6 +88,11 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/repair_macro_csv.py
 
+      - name: Debug macro_data after first repair
+        run: |
+          echo "== macro_data tail after first repair =="
+          tail -n 5 data/macro_data.csv || true
+
       - name: Debug macro_data header
         run: |
           head -n 1 data/macro_data.csv || true
@@ -96,6 +106,11 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/repair_macro_csv.py
+
+      - name: Debug macro_data before report
+        run: |
+          echo "== macro_data tail before report =="
+          tail -n 5 data/macro_data.csv || true
 
       - name: Backfill Geo history
         if: ${{ github.event_name == 'workflow_dispatch' }}
