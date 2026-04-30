@@ -184,7 +184,8 @@ def fetch_macro_data() -> Tuple[Dict[str, float], Optional[str]]:
                 df,
                 max_market_date=expected_market_date,
             )
-        except Exception:
+        except Exception as e:
+            print(f"⚠️ Fetch failed for {ticker}: {e}")
             return None, None
 
     for name, ticker in INDICATORS.items():
