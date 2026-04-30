@@ -153,6 +153,24 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python portfolio/calc_portfolio_return.py
+    
+    
+      - name: Debug macro core before report
+        run: |
+          echo "== macro core tail before report =="
+          python - <<'PY'
+          import pandas as pd
+
+          df = pd.read_csv("data/macro_data.csv")
+
+          cols = ["date", "US10Y", "DXY", "WTI", "VIX", "USDKRW"]
+
+          for c in cols:
+              if c not in df.columns:
+                  print(f"❌ Missing column: {c}")
+
+          print(df[cols].tail(10).to_string(index=False))
+          PY
 
       - name: Run report generator
         env:
