@@ -144,6 +144,12 @@ def fetch_macro_data() -> Tuple[Dict[str, float], Optional[str]]:
 # CSV 저장
 # -------------------------
 def append_to_csv(values: Dict[str, float], market_date: Optional[str]) -> None:
+    """
+    macro_data.csv에 market_date 기준으로 1일 1row 저장.
+    - 같은 market_date가 있으면 append가 아니라 overwrite
+    - date 기준 정렬
+    - 수동 재실행해도 동일 market_date row만 갱신
+    """
     run_dt = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
     row_date = market_date if market_date else datetime.now(KST).strftime("%Y-%m-%d")
 
@@ -153,26 +159,63 @@ def append_to_csv(values: Dict[str, float], market_date: Optional[str]) -> None:
     df_row = pd.DataFrame([row])
 
     if not CSV_PATH.exists():
+        df_row["date"] = pd.to_datetime(df_row["date"], errors="coerce")
+        df_row = df_row.sort_values("date").reset_index(drop=True)
+        df_row["date"] = df_row["date"].dt.strftime("%Y-%m-%d")
         df_row.to_csv(CSV_PATH, index=False)
+        print(f"✅ Saved row for {row_date} (new file)")
         return
 
     df_existing = pd.read_csv(CSV_PATH)
 
-    # 🔥 미래 날짜 방지
-    if "date" in df_existing.columns and not df_existing.empty:
-        latest = pd.to_datetime(df_existing["date"], errors="coerce").max()
-        if pd.notna(latest):
-            if pd.to_datetime(row_date) > latest + pd.Timedelta(days=1):
-                print("⚠️ Future date blocked → using latest existing date")
-                row_date = latest.strftime("%Y-%m-%d")
-                df_row["date"] = row_date
+    # date 컬럼 없으면 새 파일처럼 재생성
+    if "date" not in df_existing.columns:
+        df_row.to_csv(CSV_PATH, index=False)
+        print(f"✅ Saved row for {row_date} (date column rebuilt)")
+        return
 
-    # update or append
-    df_existing = df_existing[df_existing["date"] != row_date]
+    # 🔥 date 정규화
+    df_existing["date"] = pd.to_datetime(df_existing["date"], errors="coerce")
+    df_row["date"] = pd.to_datetime(df_row["date"], errors="coerce")
+
+    # 깨진 날짜 row 제거
+    df_existing = df_existing.dropna(subset=["date"]).copy()
+    df_row = df_row.dropna(subset=["date"]).copy()
+
+    if df_row.empty:
+        print("❌ New macro row has invalid date. Skip save.")
+        return
+
+    row_date_dt = df_row["date"].iloc[0]
+    row_date_str = row_date_dt.strftime("%Y-%m-%d")
+
+    # 🔥 미래 날짜 방지: 최신 기존 날짜보다 1영업일 이상 과도하게 앞서면 차단
+    if not df_existing.empty:
+        latest = df_existing["date"].max()
+        if pd.notna(latest):
+            if row_date_dt > latest + pd.tseries.offsets.BDay(1):
+                print(
+                    f"⚠️ Future date blocked: row_date={row_date_str}, "
+                    f"latest_existing={latest.strftime('%Y-%m-%d')}"
+                )
+                return
+
+    # 🔥 같은 market_date는 overwrite only
+    df_existing = df_existing[df_existing["date"] != row_date_dt].copy()
+
     df_updated = pd.concat([df_existing, df_row], ignore_index=True)
+
+    # 🔥 날짜 기준 정렬
+    df_updated["date"] = pd.to_datetime(df_updated["date"], errors="coerce")
+    df_updated = df_updated.dropna(subset=["date"]).copy()
+    df_updated = df_updated.sort_values("date").reset_index(drop=True)
+
+    # 저장 전 문자열 복원
+    df_updated["date"] = df_updated["date"].dt.strftime("%Y-%m-%d")
+
     df_updated.to_csv(CSV_PATH, index=False)
 
-    print(f"✅ Saved row for {row_date}")
+    print(f"✅ Saved row for {row_date_str} (overwrite-safe, sorted)")
 
 
 # -------------------------
