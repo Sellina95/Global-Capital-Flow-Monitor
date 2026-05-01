@@ -6,10 +6,10 @@
 > **시스템 상태: ✅ STABLE**
 > **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
 ### 🎯 Exposure Framework
-- **Base Exposure (전략 기준): 69%**
-- **Final Exposure (실행 기준): 69%**
+- **Base Exposure (전략 기준): 72%**
+- **Final Exposure (실행 기준): 72%**
 
-- **Portfolio Stance:** INCREASE / 69%
+- **Portfolio Stance:** INCREASE / 72%
 
 - **[14번 구조·수급 괴리]:** ✅ **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
@@ -21,34 +21,35 @@
 
 ### 📌 Interpretation
 - 금일 시장은 **RISK-ON (완화 기대·리스크 선호) 환경**입니다.
-- 기관성 자금 흐름은 아직 뚜렷하지 않아, 공격적 확장에는 신중함이 필요합니다.
+- 기관성 자금 유입은 **EARLY TRACE(초기 흔적)** 단계로, 이탈 신호가 아니라 초기 관찰 구간입니다.
 - 드리프트 강도는 아직 약해 추세 신뢰도는 제한적입니다.
-- 따라서 **현 수준에서 포지션 유지 및 관망 전략이 적절**합니다.
+- 따라서 **리스크 축소보다는 기존 노출 유지와 리더 섹터 중심의 선별적 확대 관찰이 적절**합니다.
 
 ### 🎯 Final Action Engine(Raw Signal)
-- **Action:** WAIT
-- **Size:** 0%
-- **Confidence:** LOW
+- **Action:** HOLD
+- **Size:** MAINTAIN
+- **Confidence:** MEDIUM
 - **Reason:**
-  - Risk-On environment but institutional flow not confirmed
+  - Early institutional trace → hold exposure, not exit
 
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **INCREASE**
-- **Final Exposure:** **69%**
-- **Base Context:** phase=RISK-ON (완화 기대·리스크 선호) / narrative=INCREASE / base_exposure=69%
+- **Final Exposure:** **72%**
+- **Base Context:** phase=RISK-ON (완화 기대·리스크 선호) / narrative=INCREASE / base_exposure=72%
 - **SEW:** STABLE / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
-- **Drift:** NO DRIFT / REOPENING / DEMAND_BOOM / NONE / score=0
-- **Flow:** NO CLEAR FLOW / score=2
+- **Drift:** NO DRIFT / DISINFLATION_RISK_ON / NONE / score=0
+- **Flow:** 👀 EARLY TRACE / score=3
 - **Gamma:** 🟢 POSITIVE GAMMA
-- **Tactical Action:** WAIT / 0% / LOW
-- **Positioning:** pos_z=1.78
+- **Tactical Action:** HOLD / MAINTAIN / MEDIUM
+- **Positioning:** pos_z=1.77
 - **Warning Score:** 0 (No warning)
-- **Tactical Why:** Risk-On environment but institutional flow not confirmed
-- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영 → Tactical=WAIT / Flow=NO CLEAR FLOW(2) / Drift=NO DRIFT(0) / Gamma=🟢 POSITIVE GAMMA → Tactical HOLD/MONITOR → 최종판단 변경 없음
+- **Early Flow Guard:** ACTIVE
+- **Tactical Why:** Early institutional trace → hold exposure, not exit
+- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=INCREASE 반영 → Tactical=HOLD / Flow=👀 EARLY TRACE(3) / Drift=NO DRIFT(0) / Gamma=🟢 POSITIVE GAMMA → Risk-On Early Flow → HOLD 유지, 과도한 축소 금지
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **RISK-OFF (긴축/불안·리스크 회피)** → **RISK-ON (완화 기대·리스크 선호)**
+- **현재 국면 유지:** ✅ **RISK-ON (완화 기대·리스크 선호)**
 
 ---
 
@@ -151,20 +152,20 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: MIXED | 1D=+0.96% / 5D=+1.40% | Strength: LOW
-- **WTI:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.23% / 5D=+11.56% | Strength: HIGH
-- **DXY:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.10% / 5D=-0.33% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.27% / 5D=-2.01% | Strength: LOW
+- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-0.70% / 5D=+10.52% | Strength: HIGH
+- **DXY:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.11% / 5D=-0.55% | Strength: LOW
+- **GOLD:** 🔴 DOWN | Short-term: SHORT UP | 1D=-0.60% / 5D=-2.87% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
-- **Label:** REOPENING / DEMAND_BOOM
+- **Label:** DISINFLATION_RISK_ON
 - **SEW Combo Signal:** NONE
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / MIXED
-  - Oil (WTI): 🟢 UP / SHORT DOWN
-  - Dollar (DXY): 🟡 REBOUND / SHORT UP
-  - Gold (GOLD): 🟡 REBOUND / SHORT DOWN
+  - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
+  - Dollar (DXY): 🔴 DOWN / SHORT DOWN
+  - Gold (GOLD): 🔴 DOWN / SHORT UP
 
 ### ⚠ 6.5) Correlation Break Monitor
 No significant correlation break detected.
@@ -223,19 +224,20 @@ No significant sector-level correlation break detected.
 ### 🏦 Institutional Flow Engine (v2-minimal)
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
-- **Flow Score:** 2
-- **Flow State:** **NO CLEAR FLOW**
-- **Confidence:** **LOW**
-- **Interpretation:** 기관성 축적 흔적 불충분
-- **Action Bias:** **IGNORE**
+- **Flow Score:** 3
+- **Flow State:** **👀 EARLY TRACE**
+- **Confidence:** **MEDIUM**
+- **Interpretation:** 흔적은 있으나 확신은 이르다
+- **Action Bias:** **MONITOR**
 
-- **Drift:** NO DRIFT / REOPENING / DEMAND_BOOM / NONE
+- **Drift:** NO DRIFT / DISINFLATION_RISK_ON / NONE
 - **Gamma:** 🟢 POSITIVE GAMMA / 🟢 STABLE FLOW
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.78
+- **Positioning (POS_Z):** 1.77
 - **Validation Score:** 3 (boost applied: +2)
 
 - **Drivers:**
+  - Clear flow label: DISINFLATION_RISK_ON
   - No shock yet
   - Positioning somewhat stretched
   - Cross-asset risk participation
@@ -271,7 +273,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### 🏗️ 12) Structural Filter (v3)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
 - **핵심 신호:** US10Y(↓) / DXY(↓) / GOLD(↑) / VIX(↓) / WTI(↓)
-- **Meaningful Move Check:** DXY=-0.849167360937497 / GOLD=1.5290855630886377 / US10Y=-0.6337681423146222 / VIX=-10.20733721853805 / WTI=-1.6934857832211005
+- **Meaningful Move Check:** DXY=-0.849167360937497 / GOLD=1.5290855630886377 / US10Y=-0.633778935368817 / VIX=-10.20733721853805 / WTI=-1.6934857832211005
 - **판정:** **NEUTRAL**
 - **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
 
@@ -280,23 +282,23 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.840 / US10YΔ -0.028 (정상)
-- **Sentiment (Fear&Greed):** 67.96768287887964 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 67.89145161645767 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** RISK-ON (완화 기대·리스크 선호) (Cap: 85)
-- **Drift:** NO DRIFT / REOPENING / DEMAND_BOOM / NONE
+- **Drift:** NO DRIFT / DISINFLATION_RISK_ON / NONE
 - **Drift Score:** 0
 
 - **🎯 Final Risk Action:** **INCREASE**
 - **Risk Budget (0~100):** **71**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=NO DRIFT (REOPENING / DEMAND_BOOM) / 수급=1.78 ⚠️ 수급 다소 과열 → Phase=RISK-ON (완화 기대·리스크 선호)
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=NO DRIFT (DISINFLATION_RISK_ON) / 수급=1.77 ⚠️ 수급 다소 과열 → Phase=RISK-ON (완화 기대·리스크 선호)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `EASING` | **Price(Regime):** `RISK-ON` | **VIX:** `16.89`
-- **Positioning Data:** Z-Score: `1.78` (>2.2 시 Run) | Gamma: `0.00` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.77` (>2.2 시 Run) | Gamma: `0.96` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -306,11 +308,10 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **Risk Budget:** 71 | **Phase Cap:** 85
 - **VIX Level:** 16.89 (NORMAL) | **Change:** -10.21%
-- **Final Multiplier:** 0.89x (Vol x Pos)
-- **Positioning Brake:** 적용됨 | ⚠️ Low Gamma(0.00)
-- **Slope Intensity:** 0.1250 (Stable)
+- **Final Multiplier:** 1.05x (Vol x Pos)
+- **Slope Intensity:** 0.1200 (Stable)
 
-- **📊 Recommended Exposure:** **69%**
+- **📊 Recommended Exposure:** **72%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
@@ -335,7 +336,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
-**Flow Overlay:** flow_score=2 / flow_state=NO CLEAR FLOW / drift_label=REOPENING / DEMAND_BOOM / gamma=🟢 POSITIVE GAMMA
+**Flow Overlay:** flow_score=3 / flow_state=👀 EARLY TRACE / drift_label=DISINFLATION_RISK_ON / gamma=🟢 POSITIVE GAMMA
 
 **Overweight:** Technology, Industrials, Consumer Discretionary, Financials, Real Estate
 
@@ -363,45 +364,45 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - No major theory-vs-flow divergence detected.
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
-- **Strategic Exposure (15):** **69.0%**
+- **Strategic Exposure (15):** **72.0%**
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Technology | +5.5 | ALIGNED | **31.9%** | REBALANCE |
-| Industrials | +3.2 | ALIGNED | **18.6%** | REBALANCE |
-| Consumer Discretionary | +1.2 | ALIGNED | **7.0%** | NEW |
-| Financials | +1 | ALIGNED | **5.8%** | NEW |
-| Real Estate | +1 | ALIGNED | **5.8%** | NEW |
-| **Cash & Hedge** | - | - | **30.9%** | DEFENSIVE |
+| Technology | +5.5 | ALIGNED | **33.3%** | REBALANCE |
+| Industrials | +3.2 | ALIGNED | **19.4%** | REBALANCE |
+| Consumer Discretionary | +1.2 | ALIGNED | **7.3%** | NEW |
+| Financials | +1 | ALIGNED | **6.1%** | NEW |
+| Real Estate | +1 | ALIGNED | **6.1%** | NEW |
+| **Cash & Hedge** | - | - | **27.8%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Momentum → Score → Current Weight
-1. Technology (priority_score=6.39, score=5.5, weight=31.9%, div=ALIGNED, mom=2)
-2. Financials (priority_score=2.7, score=1, weight=5.8%, div=ALIGNED, mom=-2)
-3. Industrials (priority_score=1.43, score=3.2, weight=18.6%, div=ALIGNED, mom=0)
-4. Consumer Discretionary (priority_score=-0.36, score=1.2, weight=7.0%, div=ALIGNED, mom=0)
-5. Real Estate (priority_score=-0.8, score=1, weight=5.8%, div=ALIGNED, mom=1)
+1. Technology (priority_score=6.78, score=5.5, weight=33.3%, div=ALIGNED, mom=2)
+2. Financials (priority_score=2.7, score=1, weight=6.1%, div=ALIGNED, mom=-2)
+3. Industrials (priority_score=1.52, score=3.2, weight=19.4%, div=ALIGNED, mom=0)
+4. Consumer Discretionary (priority_score=-0.36, score=1.2, weight=7.3%, div=ALIGNED, mom=0)
+5. Real Estate (priority_score=-0.8, score=1, weight=6.1%, div=ALIGNED, mom=1)
 
 **Leveraging Priority Preview:**
 - 기준: Score → Momentum → Positive Divergence
-1. Technology (priority_score=8.50, score=5.5, weight=31.9%, div=ALIGNED, mom=2)
-2. Industrials (priority_score=3.20, score=3.2, weight=18.6%, div=ALIGNED, mom=0)
-3. Real Estate (priority_score=2.50, score=1, weight=5.8%, div=ALIGNED, mom=1)
-4. Consumer Discretionary (priority_score=1.20, score=1.2, weight=7.0%, div=ALIGNED, mom=0)
-5. Financials (priority_score=1.00, score=1, weight=5.8%, div=ALIGNED, mom=-2)
+1. Technology (priority_score=8.50, score=5.5, weight=33.3%, div=ALIGNED, mom=2)
+2. Industrials (priority_score=3.20, score=3.2, weight=19.4%, div=ALIGNED, mom=0)
+3. Real Estate (priority_score=2.50, score=1, weight=6.1%, div=ALIGNED, mom=1)
+4. Consumer Discretionary (priority_score=1.20, score=1.2, weight=7.3%, div=ALIGNED, mom=0)
+5. Financials (priority_score=1.00, score=1, weight=6.1%, div=ALIGNED, mom=-2)
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Technology | XLK | 31.9% | PRIMARY |
-| Industrials | XLI | 18.6% | ADD |
-| Consumer Discretionary | XLY | 7.0% | SMALL |
-| Financials | XLF | 5.8% | SMALL |
-| Real Estate | XLRE | 5.8% | SMALL |
+| Technology | XLK | 33.3% | PRIMARY |
+| Industrials | XLI | 19.4% | ADD |
+| Consumer Discretionary | XLY | 7.3% | SMALL |
+| Financials | XLF | 6.1% | SMALL |
+| Real Estate | XLRE | 6.1% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -424,8 +425,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5489951014575573
-- **Z-Score (5d):** -0.6433980970624966
+- **Z-Score (1d):** 0.5489927695994749
+- **Z-Score (5d):** -0.643398411960361
 
 ### EEM
 - **Crash?** False
