@@ -149,12 +149,6 @@ jobs:
           echo "== sew_state.json =="
           cat insights/sew_state.json || true
 
-      - name: Run portfolio return calc
-        run: |
-          export PYTHONPATH="$GITHUB_WORKSPACE"
-          python portfolio/calc_portfolio_return.py
-    
-    
       - name: Debug macro core before report
         run: |
           echo "== macro core tail before report =="
@@ -162,7 +156,6 @@ jobs:
           import pandas as pd
 
           df = pd.read_csv("data/macro_data.csv")
-
           cols = ["date", "US10Y", "DXY", "WTI", "VIX", "USDKRW"]
 
           for c in cols:
@@ -195,6 +188,7 @@ jobs:
 
           if [ $PY_EXIT_CODE -ne 0 ]; then
             echo "❌ 파이썬 스크립트 실행 중 에러가 발생했습니다!"
+            exit $PY_EXIT_CODE
           fi
 
           echo "=== [STEP 2] latest report file 상태 확인 ==="
@@ -206,6 +200,23 @@ jobs:
           else
             echo "❌ 리포트 파일이 생성되지 않았습니다."
           fi
+
+      - name: Debug portfolio log after report
+        run: |
+          echo "== paper_portfolio_log tail after report =="
+          tail -n 5 data/paper_portfolio_log.csv || true
+          echo "== trade_log tail after report =="
+          tail -n 10 data/trade_log.csv || true
+
+      - name: Run portfolio return calc
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python portfolio/calc_portfolio_return.py
+
+      - name: Debug portfolio performance after calc
+        run: |
+          echo "== paper_portfolio_performance tail after calc =="
+          tail -n 5 data/paper_portfolio_performance.csv || true
 
       - name: Debug report head
         run: |
