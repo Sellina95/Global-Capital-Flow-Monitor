@@ -3376,18 +3376,6 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         struct_alert = "⚠️ 에너지 비용 전이"
         v2_cap = 40
 
-    # --------------------------------------------------
-    # 2.7️⃣ Drift Adjustment (ADD ONLY)
-    # --------------------------------------------------
-    drift_tilt = 0
-    if drift_score >= 4:
-        drift_tilt = 5
-    elif drift_score >= 2:
-        drift_tilt = 3
-    elif drift_score <= -2:
-        drift_tilt = -5
-
-    budget += drift_tilt
     
    # --------------------------------------------------
     # 2.7️⃣ Drift Adjustment (ADD ONLY)
@@ -3439,19 +3427,39 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     elif pos_z >= 1.5:
         budget -= 4
         pos_alert = " ⚠️ 수급 다소 과열"
+# =========================================================
+# PATCH 위치:
+# narrative_engine_filter()
+# ---------------------------------------------------------
+# 기존 코드의 "3️⃣ Phase Cap" 섹션만 아래처럼 교체
+# (다른 부분 건드리지 말고 이 if/elif 블록만 교체)
+# =========================================================
 
     # --------------------------------------------------
     # 3️⃣ Phase Cap
     # --------------------------------------------------
     cap = 100
+
     if phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
         cap = 60
+
+    elif phase_upper.startswith("HARD RISK-OFF"):
+        cap = 20
+
+    elif phase_upper.startswith("SOFT RISK-OFF"):
+        cap = 45
+
+   elif "RISK-OFF" in phase_upper:
+        cap = 35
+
+    elif "MIXED / FRAGILE" in phase_upper:
+        cap = 55
+
     elif phase_upper.startswith("TRANSITION") or "MIXED" in phase_upper:
-        cap = 70
+        cap = 65
+
     elif phase_upper.startswith("RISK-ON"):
         cap = 85
-    elif phase_upper.startswith("RISK-OFF"):
-        cap = 35
 
     if "SYSTEMIC" in struct_v2 or "STAGFLATION" in struct_v2:
         cap = min(cap, 30)
@@ -3464,14 +3472,15 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     # --------------------------------------------------
     # 4️⃣ Final Action
     # --------------------------------------------------
-    if budget >= 70:
+    # 추천:
+    if budget >= 75:
         action = "INCREASE"
-    elif budget <= 20:
-        action = "STRONG REDUCE"
-    elif budget <= 40:
+    elif budget >= 55:
+        action = "HOLD"
+    elif budget >= 35:
         action = "REDUCE"
     else:
-        action = "HOLD"
+        action = "STRONG REDUCE"
 
     # 포지셔닝 과열 시 액션 오버라이드
     if pos_z >= 2.0:
