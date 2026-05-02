@@ -4607,82 +4607,70 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Real Estate", -3, "크레딧 리스크 감지 → 부동산 금융 위축", "CREDIT")
         add_score("Consumer Staples", 1, "크레딧 리스크 감지 → 방어주 선호", "CREDIT")
         add_score("Health Care", 1, "크레딧 리스크 감지 → 퀄리티 선호", "CREDIT")
-
-    # -------------------------
-    # E) PHASE
-    # -------------------------
-    # -------------------------
     # -------------------------
     # E) PHASE + Macro Regime Profile
     # -------------------------
-macro_profile = "BALANCED"
-
-if "RISK-OFF" in phase:
-    if us10y_pct > 0 and wti_pct > 0 and dxy_pct > 0:
-        macro_profile = "INFLATION_SHOCK_RISK_OFF"
-
-    elif us10y_pct < 0 and wti_pct < 0 and vix >= 18:
-        macro_profile = "GROWTH_SCARE_RISK_OFF"
-
-    elif vix < 18 and credit_calm is True and liq_easy:
-        macro_profile = "SOFT_RISK_OFF"
-
-    else:
-        macro_profile = "MIXED_RISK_OFF"
-
-    if macro_profile == "INFLATION_SHOCK_RISK_OFF":
-        add_score("Energy", 1.5, "Inflation Shock Risk-Off → 에너지/원자재 방어 우위", "PHASE")
-        add_score("Consumer Staples", -0.5, "Inflation Shock Risk-Off → 비용 압박으로 방어주 자동가점 제한", "PHASE")
-        add_score("Utilities", -1.0, "Inflation Shock Risk-Off → 금리 상승에 취약", "PHASE")
-        add_score("Real Estate", -1.0, "Inflation Shock Risk-Off → 금리/조달비용 부담", "PHASE")
-        add_score("Technology", -0.5, "Inflation Shock Risk-Off → 장기금리 부담으로 성장주 일부 감점", "PHASE")
-
-    elif macro_profile == "GROWTH_SCARE_RISK_OFF":
-        add_score("Consumer Staples", 1.5, "Growth Scare Risk-Off → 경기방어 필수소비 선호", "PHASE")
-        add_score("Health Care", 1.5, "Growth Scare Risk-Off → 퀄리티/방어 선호", "PHASE")
-        add_score("Utilities", 0.5, "Growth Scare Risk-Off → 금리 하락 시 방어주 일부 우호", "PHASE")
-        add_score("Industrials", -0.5, "Growth Scare Risk-Off → 경기민감 부담", "PHASE")
-        add_score("Consumer Discretionary", -0.5, "Growth Scare Risk-Off → 소비민감 부담", "PHASE")
-
-    elif macro_profile == "SOFT_RISK_OFF":
-        add_score("Technology", 0.5, "Soft Risk-Off → 리더 섹터 일부 유지", "PHASE")
-        add_score("Health Care", 0.5, "Soft Risk-Off → 퀄리티 방어 일부 유지", "PHASE")
-        add_score("Consumer Staples", 0.5, "Soft Risk-Off → 과도하지 않은 방어 가점", "PHASE")
-
-    else:
-        add_score("Consumer Staples", 1, "Mixed Risk-Off → 방어주 미세 가점", "PHASE")
-        add_score("Health Care", 1, "Mixed Risk-Off → 퀄리티 미세 가점", "PHASE")
-        add_score("Technology", -0.5, "Mixed Risk-Off → 성장주 소폭 감점", "PHASE")
-
-elif "RISK-ON" in phase:
-    if us10y_pct <= 0 and dxy_pct <= 0:
-        macro_profile = "DISINFLATION_GROWTH"
-        add_score("Technology", 1.5, "Disinflation Growth → 성장주/장기 듀레이션 우호", "PHASE")
-        add_score("Consumer Discretionary", 1, "Disinflation Growth → 소비 베타 우호", "PHASE")
-        add_score("Communication Services", 0.5, "Disinflation Growth → 플랫폼/성장 섹터 우호", "PHASE")
-
-    elif us10y_pct > 0 and wti_pct > 0:
-        macro_profile = "REFLATION_CYCLICAL"
-        add_score("Industrials", 1.5, "Reflation Cyclical → 경기민감 우호", "PHASE")
-        add_score("Financials", 1, "Reflation Cyclical → 커브/성장 기대 우호", "PHASE")
-        add_score("Energy", 1, "Reflation Cyclical → 에너지/실물자산 우호", "PHASE")
-
-    else:
-        macro_profile = "RISK_ON_MIXED"
-        add_score("Industrials", 1, "RISK-ON → 경기민감 미세 가점", "PHASE")
-        add_score("Technology", 1, "RISK-ON → 성장주 미세 가점", "PHASE")
-
-elif "EVENT-WATCHING" in phase or "WAITING" in phase:
-    macro_profile = "EVENT_TRANSITION"
-    add_score("Health Care", 1, f"{phase} → 관망 구간 방어/퀄리티 선호", "PHASE")
-    add_score("Consumer Staples", 1, f"{phase} → 관망 구간 필수소비 선호", "PHASE")
-
-
-
-elif "EVENT-WATCHING" in phase or "WAITING" in phase:
-    macro_profile = "EVENT_TRANSITION"
-    add_score("Health Care", 1, f"{phase} → 관망 구간 방어/퀄리티 선호", "PHASE")
-    add_score("Consumer Staples", 1, f"{phase} → 관망 구간 필수소비 선호", "PHASE")
+    macro_profile = "BALANCED"
+    
+    if "RISK-OFF" in phase:
+        if us10y_pct > 0 and wti_pct > 0 and dxy_pct > 0:
+            macro_profile = "INFLATION_SHOCK_RISK_OFF"
+    
+        elif us10y_pct < 0 and wti_pct < 0 and vix >= 18:
+            macro_profile = "GROWTH_SCARE_RISK_OFF"
+    
+        elif vix < 18 and credit_calm is True and liq_easy:
+            macro_profile = "SOFT_RISK_OFF"
+    
+        else:
+            macro_profile = "MIXED_RISK_OFF"
+    
+        if macro_profile == "INFLATION_SHOCK_RISK_OFF":
+            add_score("Energy", 1.5, "Inflation Shock Risk-Off → 에너지/원자재 방어 우위", "PHASE")
+            add_score("Consumer Staples", -0.5, "Inflation Shock Risk-Off → 비용 압박으로 방어주 자동가점 제한", "PHASE")
+            add_score("Utilities", -1.0, "Inflation Shock Risk-Off → 금리 상승에 취약", "PHASE")
+            add_score("Real Estate", -1.0, "Inflation Shock Risk-Off → 금리/조달비용 부담", "PHASE")
+            add_score("Technology", -0.5, "Inflation Shock Risk-Off → 장기금리 부담으로 성장주 일부 감점", "PHASE")
+    
+        elif macro_profile == "GROWTH_SCARE_RISK_OFF":
+            add_score("Consumer Staples", 1.5, "Growth Scare Risk-Off → 경기방어 필수소비 선호", "PHASE")
+            add_score("Health Care", 1.5, "Growth Scare Risk-Off → 퀄리티/방어 선호", "PHASE")
+            add_score("Utilities", 0.5, "Growth Scare Risk-Off → 금리 하락 시 방어주 일부 우호", "PHASE")
+            add_score("Industrials", -0.5, "Growth Scare Risk-Off → 경기민감 부담", "PHASE")
+            add_score("Consumer Discretionary", -0.5, "Growth Scare Risk-Off → 소비민감 부담", "PHASE")
+    
+        elif macro_profile == "SOFT_RISK_OFF":
+            add_score("Technology", 0.5, "Soft Risk-Off → 리더 섹터 일부 유지", "PHASE")
+            add_score("Health Care", 0.5, "Soft Risk-Off → 퀄리티 방어 일부 유지", "PHASE")
+            add_score("Consumer Staples", 0.5, "Soft Risk-Off → 과도하지 않은 방어 가점", "PHASE")
+    
+        else:
+            add_score("Consumer Staples", 1, "Mixed Risk-Off → 방어주 미세 가점", "PHASE")
+            add_score("Health Care", 1, "Mixed Risk-Off → 퀄리티 미세 가점", "PHASE")
+            add_score("Technology", -0.5, "Mixed Risk-Off → 성장주 소폭 감점", "PHASE")
+    
+    elif "RISK-ON" in phase:
+        if us10y_pct <= 0 and dxy_pct <= 0:
+            macro_profile = "DISINFLATION_GROWTH"
+            add_score("Technology", 1.5, "Disinflation Growth → 성장주/장기 듀레이션 우호", "PHASE")
+            add_score("Consumer Discretionary", 1, "Disinflation Growth → 소비 베타 우호", "PHASE")
+            add_score("Communication Services", 0.5, "Disinflation Growth → 플랫폼/성장 섹터 우호", "PHASE")
+    
+        elif us10y_pct > 0 and wti_pct > 0:
+            macro_profile = "REFLATION_CYCLICAL"
+            add_score("Industrials", 1.5, "Reflation Cyclical → 경기민감 우호", "PHASE")
+            add_score("Financials", 1, "Reflation Cyclical → 커브/성장 기대 우호", "PHASE")
+            add_score("Energy", 1, "Reflation Cyclical → 에너지/실물자산 우호", "PHASE")
+    
+        else:
+            macro_profile = "RISK_ON_MIXED"
+            add_score("Industrials", 1, "RISK-ON → 경기민감 미세 가점", "PHASE")
+            add_score("Technology", 1, "RISK-ON → 성장주 미세 가점", "PHASE")
+    
+    elif "EVENT-WATCHING" in phase or "WAITING" in phase:
+        macro_profile = "EVENT_TRANSITION"
+        add_score("Health Care", 1, f"{phase} → 관망 구간 방어/퀄리티 선호", "PHASE")
+        add_score("Consumer Staples", 1, f"{phase} → 관망 구간 필수소비 선호", "PHASE")
     # -------------------------
     # F) REAL-TIME MOMENTUM (Relative Strength)
     # -------------------------
