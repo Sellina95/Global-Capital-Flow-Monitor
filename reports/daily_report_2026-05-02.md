@@ -6,10 +6,10 @@
 > **시스템 상태: ✅ STABLE**
 > **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
 ### 🎯 Exposure Framework
-- **Base Exposure (전략 기준): 45%**
-- **Final Exposure (실행 기준): 42%**
+- **Base Exposure (전략 기준): 42%**
+- **Final Exposure (실행 기준): 39%**
 
-- **Portfolio Stance:** REDUCE / 42%
+- **Portfolio Stance:** REDUCE / 39%
 
 - **[14번 구조·수급 괴리]:** ✅ **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
@@ -34,8 +34,8 @@
 
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **REDUCE**
-- **Final Exposure:** **42%**
-- **Base Context:** phase=SOFT RISK-OFF (부분 경계) / narrative=REDUCE / base_exposure=45%
+- **Final Exposure:** **39%**
+- **Base Context:** phase=SOFT RISK-OFF (부분 경계) / narrative=REDUCE / base_exposure=42%
 - **SEW:** STABLE / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
 - **Drift:** NO DRIFT / NEUTRAL / NONE / score=0
@@ -310,17 +310,19 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
-### 🎯 15) Volatility-Controlled Exposure (v2.7)
+### 🎯 15) Volatility-Controlled Exposure (v3.0)
 - **정의:** 13번 Risk Budget 실행 브레이크 레이어
 - **추가 이유:** 전략 판단(13) 이후 실제 진입 강도를 조절하기 위함
 
 - **Base Risk Budget (13):** 45
 - **VIX Level:** 16.99 (NORMAL) | **Change:** +0.59%
-- **Final Multiplier:** 1.00x (VIX x Positioning)
+- **Final Multiplier:** 0.93x (VIX x Positioning x Confidence)
+- **Confidence Level:** LOW (flow_score=2)
+- **Positioning Layer:** ⚠️ Positive Gamma(2.08)
 - **Slope Intensity:** 0.1450
-- **Brake Drivers:** ⚠️ Positioning Heat
+- **Brake Drivers:** ⚠️ Positioning Heat, Low Confidence
 
-- **📊 Recommended Exposure:** **45%**
+- **📊 Recommended Exposure:** **42%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
@@ -376,17 +378,17 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - No major theory-vs-flow divergence detected.
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
-- **Strategic Exposure (15):** **45.0%**
+- **Strategic Exposure (15):** **42.0%**
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
 | Technology | +3.5 | ALIGNED | **12.7%** | DELEVERAGE |
 | Industrials | +2.2 | ALIGNED | **8.0%** | DELEVERAGE |
 | Consumer Discretionary | +1.2 | ALIGNED | **8.7%** | DELEVERAGE |
-| Consumer Staples | +1 | ALIGNED | **4.6%** | DELEVERAGE |
+| Consumer Staples | +1 | ALIGNED | **3.6%** | DELEVERAGE |
 | Financials | +1 | ALIGNED | **3.6%** | DELEVERAGE |
-| Health Care | +1 | ALIGNED | **7.3%** | DELEVERAGE |
-| **Cash & Hedge** | - | - | **55.1%** | DEFENSIVE |
+| Health Care | +1 | ALIGNED | **5.3%** | DELEVERAGE |
+| **Cash & Hedge** | - | - | **58.1%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
@@ -394,17 +396,17 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Momentum → Score → Current Weight
 1. Financials (priority_score=2.7, score=1, weight=3.6%, div=ALIGNED, mom=-2)
-2. Technology (priority_score=0.56, score=3.5, weight=12.7%, div=ALIGNED, mom=2)
-3. Consumer Discretionary (priority_score=0.25, score=1.2, weight=8.7%, div=ALIGNED, mom=0)
-4. Consumer Staples (priority_score=-0.3, score=1, weight=4.6%, div=ALIGNED, mom=0)
-5. Health Care (priority_score=-0.3, score=1, weight=7.3%, div=ALIGNED, mom=0)
+2. Technology (priority_score=0.81, score=3.5, weight=12.7%, div=ALIGNED, mom=2)
+3. Consumer Discretionary (priority_score=0.5, score=1.2, weight=8.7%, div=ALIGNED, mom=0)
+4. Industrials (priority_score=-0.15, score=2.2, weight=8.0%, div=ALIGNED, mom=0)
+5. Consumer Staples (priority_score=-0.3, score=1, weight=3.6%, div=ALIGNED, mom=0)
 
 **Leveraging Priority Preview:**
 - 기준: Score → Momentum → Positive Divergence
 1. Technology (priority_score=6.50, score=3.5, weight=12.7%, div=ALIGNED, mom=2)
 2. Industrials (priority_score=2.20, score=2.2, weight=8.0%, div=ALIGNED, mom=0)
 3. Consumer Discretionary (priority_score=1.20, score=1.2, weight=8.7%, div=ALIGNED, mom=0)
-4. Consumer Staples (priority_score=1.00, score=1, weight=4.6%, div=ALIGNED, mom=0)
+4. Consumer Staples (priority_score=1.00, score=1, weight=3.6%, div=ALIGNED, mom=0)
 5. Financials (priority_score=1.00, score=1, weight=3.6%, div=ALIGNED, mom=-2)
 
 ### 🧬 19) Execution Layer (ETF Mapping)
@@ -414,9 +416,9 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 | Technology | XLK | 12.7% | ADD |
 | Industrials | XLI | 8.0% | SMALL |
 | Consumer Discretionary | XLY | 8.7% | SMALL |
-| Consumer Staples | XLP | 4.6% | SMALL |
+| Consumer Staples | XLP | 3.6% | SMALL |
 | Financials | XLF | 3.6% | SMALL |
-| Health Care | XLV | 7.3% | SMALL |
+| Health Care | XLV | 5.3% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -440,7 +442,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Crash?** False
 - **Risk Level:** NORMAL
 - **Z-Score (1d):** 0.4975808107327177
-- **Z-Score (5d):** -0.7061918913331547
+- **Z-Score (5d):** -0.706191675079006
 
 ### EEM
 - **Crash?** False
@@ -457,8 +459,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3623949214223572
-- **Z-Score (5d):** -0.27818589206692285
+- **Z-Score (1d):** 0.3623951297349871
+- **Z-Score (5d):** -0.2781861172003092
 
 ### EWJ
 - **Crash?** False
