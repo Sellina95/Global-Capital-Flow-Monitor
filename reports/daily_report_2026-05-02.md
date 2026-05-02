@@ -6,10 +6,10 @@
 > **시스템 상태: ✅ STABLE**
 > **판단 요약: 구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상**
 ### 🎯 Exposure Framework
-- **Base Exposure (전략 기준): 35%**
-- **Final Exposure (실행 기준): 33%**
+- **Base Exposure (전략 기준): 45%**
+- **Final Exposure (실행 기준): 42%**
 
-- **Portfolio Stance:** REDUCE / 33%
+- **Portfolio Stance:** REDUCE / 42%
 
 - **[14번 구조·수급 괴리]:** ✅ **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
@@ -34,8 +34,8 @@
 
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **REDUCE**
-- **Final Exposure:** **33%**
-- **Base Context:** phase=SOFT RISK-OFF (부분 경계) / narrative=REDUCE / base_exposure=35%
+- **Final Exposure:** **42%**
+- **Base Context:** phase=SOFT RISK-OFF (부분 경계) / narrative=REDUCE / base_exposure=45%
 - **SEW:** STABLE / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
 - **Drift:** NO DRIFT / NEUTRAL / NONE / score=0
@@ -48,7 +48,7 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=REDUCE 반영 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=REDUCE / Flow=NO CLEAR FLOW(2) / Drift=NO DRIFT(0) / Gamma=🟢 POSITIVE GAMMA → Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **RISK-OFF (부분 정렬)** → **SOFT RISK-OFF (부분 경계)**
+- **현재 국면 유지:** ✅ **SOFT RISK-OFF (부분 경계)**
 
 ---
 
@@ -151,7 +151,7 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.28% / 5D=+0.94% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-2.98% / 5D=+7.99% | Strength: HIGH
+- **WTI:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-2.45% / 5D=+8.58% | Strength: HIGH
 - **DXY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.13% / 5D=-0.30% | Strength: LOW
 - **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.65% / 5D=-1.65% | Strength: LOW
 
@@ -162,7 +162,7 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT DOWN
-  - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
+  - Oil (WTI): 🟡 PULLBACK / SHORT UP
   - Dollar (DXY): 🟡 REBOUND / SHORT DOWN
   - Gold (GOLD): 🟡 REBOUND / SHORT UP
 
@@ -314,12 +314,12 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **정의:** Risk Budget을 실제 익스포저로 변환 (Positions & Deadman Switch)
 - **추가 이유:** 수급 과열(POS_Z)이나 급격한 쏠림 발생 시 강제 시스템 셧다운
 
-- **Risk Budget:** 45 | **Phase Cap:** 35
+- **Base Risk Budget (13):** 45
 - **VIX Level:** 16.99 (NORMAL) | **Change:** +0.59%
 - **Final Multiplier:** 1.00x (Vol x Pos)
 - **Slope Intensity:** 0.1450 (Stable)
 
-- **📊 Recommended Exposure:** **35%**
+- **📊 Recommended Exposure:** **45%**
 
 ### 🎨 16) Style Tilt (v1.1)
 - **정의:** Macro 구조 기반 스타일 기울기 판단
@@ -327,7 +327,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **Growth vs Value:** **NEUTRAL**
 - **Duration Tilt:** **LONG DURATION FAVORED**
-- **Cyclical vs Defensive:** **DEFENSIVE FAVORED**
+- **Cyclical vs Defensive:** **NEUTRAL**
 
 ### 🧩 17) Factor Layer (v1)
 - **정의:** 시장을 움직이는 핵심 위험 요인 판별
@@ -375,47 +375,47 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - No major theory-vs-flow divergence detected.
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
-- **Strategic Exposure (15):** **35.0%**
+- **Strategic Exposure (15):** **45.0%**
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Technology | +3.5 | ALIGNED | **12.4%** | DELEVERAGE |
-| Industrials | +2.2 | ALIGNED | **7.8%** | DELEVERAGE |
-| Consumer Discretionary | +1.2 | ALIGNED | **4.2%** | DELEVERAGE |
-| Consumer Staples | +1 | ALIGNED | **3.5%** | DELEVERAGE |
-| Financials | +1 | ALIGNED | **3.5%** | DELEVERAGE |
-| Health Care | +1 | ALIGNED | **3.5%** | DELEVERAGE |
-| **Cash & Hedge** | - | - | **65.1%** | DEFENSIVE |
+| Technology | +3.5 | ALIGNED | **12.7%** | DELEVERAGE |
+| Industrials | +2.2 | ALIGNED | **8.0%** | DELEVERAGE |
+| Consumer Discretionary | +1.2 | ALIGNED | **8.7%** | DELEVERAGE |
+| Consumer Staples | +1 | ALIGNED | **4.6%** | DELEVERAGE |
+| Financials | +1 | ALIGNED | **3.6%** | DELEVERAGE |
+| Health Care | +1 | ALIGNED | **7.3%** | DELEVERAGE |
+| **Cash & Hedge** | - | - | **55.1%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Momentum → Score → Current Weight
-1. Financials (priority_score=2.7, score=1, weight=3.5%, div=ALIGNED, mom=-2)
-2. Technology (priority_score=1.24, score=3.5, weight=12.4%, div=ALIGNED, mom=2)
-3. Industrials (priority_score=0.33, score=2.2, weight=7.8%, div=ALIGNED, mom=0)
-4. Consumer Staples (priority_score=-0.3, score=1, weight=3.5%, div=ALIGNED, mom=0)
-5. Health Care (priority_score=-0.3, score=1, weight=3.5%, div=ALIGNED, mom=0)
+1. Financials (priority_score=2.7, score=1, weight=3.6%, div=ALIGNED, mom=-2)
+2. Technology (priority_score=0.56, score=3.5, weight=12.7%, div=ALIGNED, mom=2)
+3. Consumer Discretionary (priority_score=0.25, score=1.2, weight=8.7%, div=ALIGNED, mom=0)
+4. Consumer Staples (priority_score=-0.3, score=1, weight=4.6%, div=ALIGNED, mom=0)
+5. Health Care (priority_score=-0.3, score=1, weight=7.3%, div=ALIGNED, mom=0)
 
 **Leveraging Priority Preview:**
 - 기준: Score → Momentum → Positive Divergence
-1. Technology (priority_score=6.50, score=3.5, weight=12.4%, div=ALIGNED, mom=2)
-2. Industrials (priority_score=2.20, score=2.2, weight=7.8%, div=ALIGNED, mom=0)
-3. Consumer Discretionary (priority_score=1.20, score=1.2, weight=4.2%, div=ALIGNED, mom=0)
-4. Consumer Staples (priority_score=1.00, score=1, weight=3.5%, div=ALIGNED, mom=0)
-5. Financials (priority_score=1.00, score=1, weight=3.5%, div=ALIGNED, mom=-2)
+1. Technology (priority_score=6.50, score=3.5, weight=12.7%, div=ALIGNED, mom=2)
+2. Industrials (priority_score=2.20, score=2.2, weight=8.0%, div=ALIGNED, mom=0)
+3. Consumer Discretionary (priority_score=1.20, score=1.2, weight=8.7%, div=ALIGNED, mom=0)
+4. Consumer Staples (priority_score=1.00, score=1, weight=4.6%, div=ALIGNED, mom=0)
+5. Financials (priority_score=1.00, score=1, weight=3.6%, div=ALIGNED, mom=-2)
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Technology | XLK | 12.4% | ADD |
-| Industrials | XLI | 7.8% | SMALL |
-| Consumer Discretionary | XLY | 4.2% | SMALL |
-| Consumer Staples | XLP | 3.5% | SMALL |
-| Financials | XLF | 3.5% | SMALL |
-| Health Care | XLV | 3.5% | SMALL |
+| Technology | XLK | 12.7% | ADD |
+| Industrials | XLI | 8.0% | SMALL |
+| Consumer Discretionary | XLY | 8.7% | SMALL |
+| Consumer Staples | XLP | 4.6% | SMALL |
+| Financials | XLF | 3.6% | SMALL |
+| Health Care | XLV | 7.3% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -438,8 +438,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.49758109861164185
-- **Z-Score (5d):** -0.706191242453868
+- **Z-Score (1d):** 0.4975808107327177
+- **Z-Score (5d):** -0.7061918913331547
 
 ### EEM
 - **Crash?** False
@@ -456,8 +456,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.36239560525517717
-- **Z-Score (5d):** -0.27818568425014584
+- **Z-Score (1d):** 0.3623949214223572
+- **Z-Score (5d):** -0.278186007963263
 
 ### EWJ
 - **Crash?** False
