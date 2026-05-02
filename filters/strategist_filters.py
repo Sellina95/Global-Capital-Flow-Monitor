@@ -4611,6 +4611,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # E) PHASE + Macro Regime Profile
     # -------------------------
     macro_profile = "BALANCED"
+
     
     if "RISK-OFF" in phase:
         if us10y_pct > 0 and wti_pct > 0 and dxy_pct > 0:
@@ -4641,8 +4642,13 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     
         elif macro_profile == "SOFT_RISK_OFF":
             add_score("Technology", 0.5, "Soft Risk-Off → 리더 섹터 일부 유지", "PHASE")
-            add_score("Health Care", 0.5, "Soft Risk-Off → 퀄리티 방어 일부 유지", "PHASE")
-            add_score("Consumer Staples", 0.5, "Soft Risk-Off → 과도하지 않은 방어 가점", "PHASE")
+        
+            add_score("Industrials", -0.5, "Soft Risk-Off → 경기민감 과열 억제", "PHASE")
+            add_score("Consumer Discretionary", -1, "Soft Risk-Off → 소비 민감 베타 일부 축소", "PHASE")
+            add_score("Financials", -0.5, "Soft Risk-Off → 금융 베타 일부 보수화", "PHASE")
+        
+            add_score("Health Care", 0.5, "Soft Risk-Off → 퀄리티 보완", "PHASE")
+            add_score("Consumer Staples", 0.5, "Soft Risk-Off → 방어 보완", "PHASE")
     
         else:
             add_score("Consumer Staples", 1, "Mixed Risk-Off → 방어주 미세 가점", "PHASE")
@@ -4886,6 +4892,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     )
     lines.append("")
     lines.append("**Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM")
+    lines.append("")
+    lines.append(f"**Macro Profile:** {macro_profile}")
     lines.append("")
     lines.append(
         f"**Flow Overlay:** flow_score={flow_score} / flow_state={flow_state} / "
