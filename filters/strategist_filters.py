@@ -3449,7 +3449,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     elif phase_upper.startswith("SOFT RISK-OFF"):
         cap = 45
 
-   elif "RISK-OFF" in phase_upper:
+    elif "RISK-OFF" in phase_upper:
         cap = 35
 
     elif "MIXED / FRAGILE" in phase_upper:
