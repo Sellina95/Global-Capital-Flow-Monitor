@@ -3673,21 +3673,28 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
 
 def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     """
-    🎯 15) Volatility-Controlled Exposure (v2.6 - Dead Man's Switch Integrated)
+    🎯 15) Volatility-Controlled Exposure (v2.7 - Execution Brake Layer)
 
-    업그레이드:
-    - [CRITICAL] Dead Man's Switch: POS_Z 과열 및 Slope 폭주 시 강제 0%
-    - VIX 레벨 + 변화율 반영
-    - Positioning Data (Gamma, CTA) 연동 가중치 적용
-    - Exposure smoothing 및 Phase cap 적용
+    역할:
+    - 13번 Narrative Engine의 RISK_BUDGET을 그대로 입력받는다
+    - 15번은 새로운 국면(Phase) 판단을 하지 않는다
+    - 아래 브레이크만 적용:
+        1. VIX 레벨 / VIX 급등락
+        2. POS_Z / POS_SLOPE
+        3. Gamma / CTA
+        4. HY OAS
+        5. Dead Man's Switch
+    - Recommended Exposure = '전략 판단'이 아니라 '실행 노출'
     """
 
-    # ---------------------------
+    # --------------------------------------------------
     # Helpers
-    # ---------------------------
+    # --------------------------------------------------
     def _to_float(x) -> Optional[float]:
-        if x is None: return None
-        if isinstance(x, (int, float)): return float(x)
+        if x is None:
+            return None
+        if isinstance(x, (int, float)):
+            return float(x)
         try:
             return float(str(x).replace(",", "").replace("%", "").strip())
         except Exception:
@@ -3696,144 +3703,188 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     def _clamp(x, lo=0, hi=100):
         return max(lo, min(int(round(x)), hi))
 
-    # ---------------------------
+    # --------------------------------------------------
     # Inputs
-    # ---------------------------
-    risk_budget = _to_float(market_data.get("RISK_BUDGET", 50)) or 50.0
-    #phase = str(market_data.get("MARKET_REGIME", "N/A")).upper()
+    # --------------------------------------------------
+    risk_budget = _to_float(market_data.get("RISK_BUDGET", 50))
+    if risk_budget is None:
+        risk_budget = 50.0
 
     vix_series = market_data.get("VIX", {}) or {}
     vix_today = _to_float(vix_series.get("today"))
     vix_pct = _to_float(vix_series.get("pct_change"))
 
-    # 14번 포지셔닝 데이터 + 기울기(Slope) 추출
     pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
-    
+    if pos_z is None:
+        pos_z = 0.0
+
     pos_slope = _to_float(market_data.get("POS_SLOPE"))
     if pos_slope is None:
         pos_slope = get_recent_pos_slope("data/positioning_data.csv")
-        market_data["POS_SLOPE"] = pos_slope
-    
+
+    if pos_slope is None:
+        pos_slope = 0.0
+
+    market_data["POS_SLOPE"] = pos_slope
+
     gamma = _to_float(market_data.get("DEALER_GAMMA_BIAS", 1.0))
+    if gamma is None:
+        gamma = 1.0
+
     cta = _to_float(market_data.get("CTA_MOMENTUM_SCORE", 1.0))
-    
-    # 🔍 DEBUG (여기 위치 정확함)
+    if cta is None:
+        cta = 1.0
+
+    hy_oas = market_data.get("HY_OAS", {}) or {}
+    hy_level = _to_float(hy_oas.get("today"))
+
+    # --------------------------------------------------
+    # Debug
+    # --------------------------------------------------
     print("[DEBUG][15 POSITIONING INPUT]")
     print(f"SP500_POS_Z={pos_z}")
     print(f"POS_SLOPE={pos_slope}")
     print(f"GAMMA={gamma}")
     print(f"CTA={cta}")
-    
-    prev_exposure = _to_float(market_data.get("PREV_EXPOSURE"))
-    if prev_exposure is None:
-        prev_exposure = risk_budget
+    print(f"HY_OAS={hy_level}")
 
-    # ---------------------------
-    # 0️⃣ [NEW] Dead Man's Switch (최우선 브레이크)
-    # ---------------------------
-    is_deadman_on = False  # 변수명 통일
+    # --------------------------------------------------
+    # Base Exposure = 13번 결과 그대로
+    # --------------------------------------------------
+    exposure = risk_budget
+
+    # --------------------------------------------------
+    # Tracking
+    # --------------------------------------------------
+    brake_drivers = []
+    pos_notes = []
+
+    # --------------------------------------------------
+    # 0️⃣ Dead Man's Switch
+    # --------------------------------------------------
+    is_deadman_on = False
     deadman_reason = ""
-    
-    # 1. POS_Z가 2.0을 넘으면 (과열/항복 극단)
+
+    if abs(pos_z) > 1.5:
+        brake_drivers.append("Positioning Heat")
+
     if abs(pos_z) > 2.0:
         is_deadman_on = True
         deadman_reason = f"POS_Z Extreme ({pos_z:.2f})"
-    
-    # 2. 기울기가 급격할 때 (폭주)
-    if abs(pos_slope) > 0.5: 
+
+    if abs(pos_slope) > 0.5:
         is_deadman_on = True
         deadman_reason = f"Aggressive Slope ({pos_slope:.2f})"
 
-   
-    # ---------------------------
-    # 1️⃣ Base Exposure (13번 Risk Budget 그대로 승계)
-    # ---------------------------
-    exposure = risk_budget
-    # ---------------------------
-    # 2️⃣ Multiplier: Volatility (VIX)
-    # ---------------------------
-    vol_state = "N/A"
+    # --------------------------------------------------
+    # 1️⃣ VIX Brake
+    # --------------------------------------------------
     multiplier = 1.0
+    vol_state = "N/A"
 
     if vix_today is not None:
         if vix_today < 14:
-            vol_state = "LOW"; multiplier *= 1.05
+            vol_state = "LOW"
+            multiplier *= 1.05
+
         elif vix_today < 20:
             vol_state = "NORMAL"
+
         elif vix_today < 30:
-            vol_state = "HIGH"; multiplier *= 0.80
+            vol_state = "HIGH"
+            multiplier *= 0.80
+            brake_drivers.append("High VIX")
+
         else:
-            vol_state = "EXTREME"; multiplier *= 0.60
+            vol_state = "EXTREME"
+            multiplier *= 0.60
+            brake_drivers.append("Extreme VIX")
 
     if vix_pct is not None:
-        if vix_pct > 5: multiplier *= 0.85  
-        elif vix_pct < -5: multiplier *= 1.05 
+        if vix_pct > 5:
+            multiplier *= 0.85
+            brake_drivers.append("VIX Spike")
 
-    # ---------------------------
-    # 3️⃣ Multiplier: Positioning (Gamma/CTA)
-    # ---------------------------
+        elif vix_pct < -5:
+            multiplier *= 1.05
+
+    # --------------------------------------------------
+    # 2️⃣ Positioning / Gamma / CTA Brake
+    # --------------------------------------------------
     pos_multiplier = 1.0
-    pos_notes = []
 
     if gamma < 0.5:
         pos_multiplier *= 0.85
         pos_notes.append(f"Low Gamma({gamma:.2f})")
-    
+        brake_drivers.append("Low Gamma")
+
     if cta <= 0:
         pos_multiplier *= 0.90
         pos_notes.append(f"Bearish CTA({cta:.1f})")
+        brake_drivers.append("Bearish CTA")
 
-    multiplier *= pos_multiplier
     exposure *= multiplier
+    exposure *= pos_multiplier
 
-    # ---------------------------
-    # 4️⃣ Guardrail & Smoothing
-    # ---------------------------
-    hy_oas = market_data.get("HY_OAS", {}) or {}
-    hy_level = _to_float(hy_oas.get("today"))
-    if hy_level is not None and hy_level > 5:
-        exposure *= 0.75 
+    # --------------------------------------------------
+    # 3️⃣ Credit Brake (HY OAS)
+    # --------------------------------------------------
+    if hy_level is not None:
+        if hy_level > 5:
+            exposure *= 0.75
+            brake_drivers.append("Credit Stress")
 
-    #if prev_exposure is not None:
-        #exposure = 0.7 * prev_exposure + 0.3 * exposure
+        elif hy_level > 4:
+            exposure *= 0.90
+            brake_drivers.append("Mild Credit Stress")
 
-    # 🚨 Dead Man's Switch 적용
+    # --------------------------------------------------
+    # 4️⃣ Dead Man Override
+    # --------------------------------------------------
     if is_deadman_on:
-        exposure = 0 
+        exposure = 0
 
-   
-    #exposure = max(0, exposure - 10)  # TEST ONLY: force deleveraging
+    # --------------------------------------------------
+    # Final Clamp
+    # --------------------------------------------------
     exposure = _clamp(exposure)
+
+    market_data["RECOMMENDED_EXPOSURE"] = exposure
     market_data["PREV_EXPOSURE"] = exposure
 
-    # ---------------------------
-    # Output 구성 (리포트 시각화)
-    # ---------------------------
+    # --------------------------------------------------
+    # Output
+    # --------------------------------------------------
     vix_display = f"{vix_today:.2f}" if vix_today is not None else "N/A"
     vix_pct_display = f"{vix_pct:+.2f}%" if vix_pct is not None else "N/A"
-    
+
     lines = []
-    lines.append("### 🎯 15) Volatility-Controlled Exposure (v2.6)")
-    lines.append("- **정의:** Risk Budget을 실제 익스포저로 변환 (Positions & Deadman Switch)")
-    lines.append("- **추가 이유:** 수급 과열(POS_Z)이나 급격한 쏠림 발생 시 강제 시스템 셧다운")
+    lines.append("### 🎯 15) Volatility-Controlled Exposure (v2.7)")
+    lines.append("- **정의:** 13번 Risk Budget 실행 브레이크 레이어")
+    lines.append("- **추가 이유:** 전략 판단(13) 이후 실제 진입 강도를 조절하기 위함")
     lines.append("")
     lines.append(f"- **Base Risk Budget (13):** {risk_budget:.0f}")
     lines.append(f"- **VIX Level:** {vix_display} ({vol_state}) | **Change:** {vix_pct_display}")
-    
-    # 🚨 데드맨 스위치 작동 여부에 따른 리포트 분기
+
     if is_deadman_on:
         lines.append(f"- **🚨 STATUS:** **DEAD MAN'S SWITCH ACTIVATED**")
-        lines.append(f"- **Reason:** {deadman_reason}")  # 위에서 선언한 이름으로 수정
-        lines.append(f"- **Action:** 포지션 진입 금지 및 기존 물량 청산 권고")
+        lines.append(f"- **Reason:** {deadman_reason}")
+        lines.append("- **Action:** 포지션 진입 금지 / 기존 물량 축소")
     else:
-        lines.append(f"- **Final Multiplier:** {multiplier:.2f}x (Vol x Pos)")
+        total_multiplier = multiplier * pos_multiplier
+        lines.append(f"- **Final Multiplier:** {total_multiplier:.2f}x (VIX x Positioning)")
         if pos_notes:
-            lines.append(f"- **Positioning Brake:** 적용됨 | ⚠️ {', '.join(pos_notes)}")
-        lines.append(f"- **Slope Intensity:** {pos_slope:.4f} (Stable)")
+            lines.append(f"- **Positioning Brake:** ⚠️ {', '.join(pos_notes)}")
+        lines.append(f"- **Slope Intensity:** {pos_slope:.4f}")
+
+    if brake_drivers:
+        lines.append(f"- **Brake Drivers:** ⚠️ {', '.join(brake_drivers)}")
+    else:
+        lines.append("- **Brake Drivers:** None")
 
     lines.append("")
     lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
-    market_data["RECOMMENDED_EXPOSURE"] = exposure
+
     return "\n".join(lines)
         
 def style_tilt_filter(market_data: Dict[str, Any]) -> str:
