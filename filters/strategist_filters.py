@@ -772,36 +772,110 @@ def _strength_label(key: str, pct_change: Optional[float]) -> str:
 # =========================
 # 1) Regime
 # =========================
+# =========================================================
+# PATCH TARGET:
+# get_regime_label() 함수만 수정
+# (market_regime_filter는 출력용이라 최대한 유지)
+#
+# 핵심:
+# 1. 기존 구조 최대 보존
+# 2. VIX 레벨 + 강도 반영
+# 3. SOFT / HARD / MIXED 추가
+# 4. VIX 16~18 노이즈를 HARD RISK-OFF로 오판 방지
+# =========================================================
+
 def get_regime_label(market_data: Dict[str, Any]) -> str:
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
     vix = _get_series(market_data, "VIX")
+    wti = _get_series(market_data, "WTI")  # 디스인플레 완충용 추가
 
     us10y_dir = _sign_from(us10y)
     dxy_dir = _sign_from(dxy)
     vix_dir = _sign_from(vix)
 
+    # -----------------------------
+    # 실제 레벨 / 변화율
+    # -----------------------------
+    vix_today = vix.get("today")
+    vix_change = abs(vix.get("pct", 0) or 0)
+
+    dxy_change = abs(dxy.get("pct", 0) or 0)
+    us10y_change = abs(us10y.get("pct", 0) or 0)
+
+    wti_pct = wti.get("pct", 0) if wti else 0
+
     combo = (us10y_dir, dxy_dir, vix_dir)
 
+    # 기본값
     regime = "TRANSITION / MIXED (전환·혼조)"
 
+    # =====================================================
+    # 0) WAITING
+    # =====================================================
     if combo == (0, 0, 0):
         regime = "WAITING / RANGE (대기·박스권)"
+
+    # =====================================================
+    # 1) FULL RISK ON
+    # =====================================================
     elif combo == (-1, -1, -1):
         regime = "RISK-ON (완화 기대·리스크 선호)"
+
+    # =====================================================
+    # 2) FULL RISK OFF
+    # 단, 진짜 강한 공포일 때만
+    # =====================================================
     elif combo == (1, 1, 1):
-        regime = "RISK-OFF (긴축/불안·리스크 회피)"
+        if vix_today is not None and vix_today >= 22 and vix_change >= 3:
+            regime = "HARD RISK-OFF (긴축/불안 심화)"
+        else:
+            regime = "SOFT RISK-OFF (경계 강화)"
+
+    # =====================================================
+    # 3) EVENT WATCHING
+    # =====================================================
     elif vix_dir == 0 and (us10y_dir != 0 or dxy_dir != 0):
         regime = "EVENT-WATCHING (이벤트 관망)"
+
+    # =====================================================
+    # 4) TIGHTENING
+    # =====================================================
     elif us10y_dir == 1 and dxy_dir == 1 and vix_dir != -1:
-        regime = "TIGHTENING BIAS (긴축 편향)"
+        if vix_today is not None and vix_today < 18:
+            regime = "TIGHTENING BIAS (긴축 편향)"
+        else:
+            regime = "SOFT RISK-OFF (긴축 우려)"
+
+    # =====================================================
+    # 5) PARTIAL RISK ON
+    # =====================================================
     elif vix_dir == -1 and (dxy_dir == -1 or us10y_dir == -1):
         regime = "RISK-ON (부분 정렬)"
+
+    # =====================================================
+    # 6) PARTIAL RISK OFF
+    # 오늘 같은 과민반응 방지 핵심
+    # =====================================================
     elif vix_dir == 1 and (dxy_dir == 1 or us10y_dir == 1):
-        regime = "RISK-OFF (부분 정렬)"
+
+        # VIX 낮고 / 상승폭 작고 / 유가 급락이면
+        # 완전 리스크오프보다 혼조 또는 소프트 처리
+        if (
+            vix_today is not None
+            and vix_today < 18
+            and vix_change < 3
+        ):
+            if wti_pct <= -2:
+                regime = "MIXED / FRAGILE (혼조·디스인플레)"
+            else:
+                regime = "SOFT RISK-OFF (부분 경계)"
+
+        else:
+            regime = "RISK-OFF (부분 정렬)"
 
     return regime
-
+    
 def market_regime_filter(market_data: Dict[str, Any]) -> str:
     vix = _get_series(market_data, "VIX")
     us10y = _get_series(market_data, "US10Y")
