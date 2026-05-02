@@ -3700,7 +3700,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # Inputs
     # ---------------------------
     risk_budget = _to_float(market_data.get("RISK_BUDGET", 50)) or 50.0
-    phase = str(market_data.get("MARKET_REGIME", "N/A")).upper()
+    #phase = str(market_data.get("MARKET_REGIME", "N/A")).upper()
 
     vix_series = market_data.get("VIX", {}) or {}
     vix_today = _to_float(vix_series.get("today"))
@@ -3744,17 +3744,11 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         is_deadman_on = True
         deadman_reason = f"Aggressive Slope ({pos_slope:.2f})"
 
+   
     # ---------------------------
-    # 1️⃣ Phase Cap
+    # 1️⃣ Base Exposure (13번 Risk Budget 그대로 승계)
     # ---------------------------
-    cap = 100
-    if "WAITING" in phase or "RANGE" in phase: cap = 60
-    elif "TRANSITION" in phase or "MIXED" in phase: cap = 70
-    elif "RISK-ON" in phase: cap = 85
-    elif "RISK-OFF" in phase: cap = 35
-
-    exposure = min(risk_budget, cap)
-
+    exposure = risk_budget
     # ---------------------------
     # 2️⃣ Multiplier: Volatility (VIX)
     # ---------------------------
@@ -3800,14 +3794,14 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     if hy_level is not None and hy_level > 5:
         exposure *= 0.75 
 
-    if prev_exposure is not None:
-        exposure = 0.7 * prev_exposure + 0.3 * exposure
+    #if prev_exposure is not None:
+        #exposure = 0.7 * prev_exposure + 0.3 * exposure
 
     # 🚨 Dead Man's Switch 적용
     if is_deadman_on:
         exposure = 0 
 
-    exposure = min(exposure, cap)
+   
     #exposure = max(0, exposure - 10)  # TEST ONLY: force deleveraging
     exposure = _clamp(exposure)
     market_data["PREV_EXPOSURE"] = exposure
@@ -3823,7 +3817,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     lines.append("- **정의:** Risk Budget을 실제 익스포저로 변환 (Positions & Deadman Switch)")
     lines.append("- **추가 이유:** 수급 과열(POS_Z)이나 급격한 쏠림 발생 시 강제 시스템 셧다운")
     lines.append("")
-    lines.append(f"- **Risk Budget:** {risk_budget:.0f} | **Phase Cap:** {cap}")
+    lines.append(f"- **Base Risk Budget (13):** {risk_budget:.0f}")
     lines.append(f"- **VIX Level:** {vix_display} ({vol_state}) | **Change:** {vix_pct_display}")
     
     # 🚨 데드맨 스위치 작동 여부에 따른 리포트 분기
