@@ -347,18 +347,20 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
+**Macro Profile:** SOFT_RISK_OFF
+
 **Flow Overlay:** flow_score=2 / flow_state=NO CLEAR FLOW / drift_label=NEUTRAL / gamma=🟢 POSITIVE GAMMA
 
-**Overweight:** Technology, Industrials, Consumer Discretionary, Financials, Consumer Staples, Health Care
+**Overweight:** Technology, Industrials, Consumer Discretionary, Consumer Staples, Financials, Health Care
 
 **Underweight:** Energy, Real Estate, Utilities
 
 **Scoreboard:**
 - Technology: +4.5  (+2 LIQ, +0.5 PHASE, +2 MOM, = +4.5)
-- Industrials: +2.5  (+1.5 LIQ, +1 CURVE, = +2.5)
-- Consumer Discretionary: +1.5  (+1.5 LIQ, = +1.5)
-- Financials: +1  (+1 LIQ, +2 CURVE, -2 MOM, = +1)
+- Industrials: +2  (+1.5 LIQ, +1 CURVE, -0.5 PHASE, = +2)
+- Consumer Discretionary: +0.5  (+1.5 LIQ, -1 PHASE, = +0.5)
 - Consumer Staples: +0.5  (+0.5 PHASE, = +0.5)
+- Financials: +0.5  (+1 LIQ, +2 CURVE, -0.5 PHASE, -2 MOM, = +0.5)
 - Health Care: +0.5  (+0.5 PHASE, = +0.5)
 - Energy: -1  (-1 MOM, = -1)
 - Real Estate: -1  (-1 MOM, = -1)
@@ -370,8 +372,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - OW Industrials: +1.5: 유동성 완화 → 경기민감 회복
 - OW Industrials: +1: 완만한 스티프닝(0.51) → 성장 기대 반영
 - OW Consumer Discretionary: +1.5: 유동성 완화 → 소비 민감주 우호
-- OW Financials: +1: 유동성 완화 → 위험선호 회복
-- OW Financials: +2: 완만한 스티프닝(0.51) → 예대마진 개선
+- OW Consumer Discretionary: -1: Soft Risk-Off → 소비 민감 베타 일부 축소
+- OW Consumer Staples: +0.5: Soft Risk-Off → 방어 보완
 - UW Energy: -1: Relative Strength 약세 (vs SPY) → 소외 섹터
 
 **Divergence Monitor (Theory vs Flow):**
@@ -382,43 +384,43 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Technology | +5 | ALIGNED | **17.3%** | DELEVERAGE |
-| Industrials | +2.2 | ALIGNED | **7.6%** | DELEVERAGE |
-| Consumer Discretionary | +1.2 | ALIGNED | **8.3%** | DELEVERAGE |
-| Financials | +1 | ALIGNED | **3.5%** | DELEVERAGE |
-| Consumer Staples | +0.5 | ALIGNED | **1.8%** | DELEVERAGE |
-| Health Care | +0.5 | ALIGNED | **3.5%** | DELEVERAGE |
-| **Cash & Hedge** | - | - | **58.0%** | DEFENSIVE |
+| Technology | +5 | ALIGNED | **21.4%** | DELEVERAGE |
+| Industrials | +1.7 | ALIGNED | **8.1%** | DELEVERAGE |
+| Consumer Staples | +0.5 | ALIGNED | **4.3%** | DELEVERAGE |
+| Financials | +0.5 | ALIGNED | **2.1%** | DELEVERAGE |
+| Health Care | +0.5 | ALIGNED | **4.3%** | DELEVERAGE |
+| Consumer Discretionary | +0.2 | ALIGNED | **1.7%** | DELEVERAGE |
+| **Cash & Hedge** | - | - | **58.1%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Momentum → Score → Current Weight
-1. Financials (priority_score=2.7, score=1, weight=3.5%, div=ALIGNED, mom=-2)
-2. Technology (priority_score=2.65, score=5.0, weight=17.3%, div=ALIGNED, mom=2)
-3. Consumer Discretionary (priority_score=0.29, score=1.2, weight=8.3%, div=ALIGNED, mom=0)
-4. Consumer Staples (priority_score=-0.15, score=0.5, weight=1.8%, div=ALIGNED, mom=0)
-5. Health Care (priority_score=-0.15, score=0.5, weight=3.5%, div=ALIGNED, mom=0)
+1. Technology (priority_score=4.71, score=5.0, weight=21.4%, div=ALIGNED, mom=2)
+2. Financials (priority_score=2.85, score=0.5, weight=2.1%, div=ALIGNED, mom=-2)
+3. Industrials (priority_score=0.05, score=1.7, weight=8.1%, div=ALIGNED, mom=0)
+4. Consumer Discretionary (priority_score=-0.06, score=0.2, weight=1.7%, div=ALIGNED, mom=0)
+5. Consumer Staples (priority_score=-0.15, score=0.5, weight=4.3%, div=ALIGNED, mom=0)
 
 **Leveraging Priority Preview:**
 - 기준: Score → Momentum → Positive Divergence
-1. Technology (priority_score=8.00, score=5.0, weight=17.3%, div=ALIGNED, mom=2)
-2. Industrials (priority_score=2.20, score=2.2, weight=7.6%, div=ALIGNED, mom=0)
-3. Consumer Discretionary (priority_score=1.20, score=1.2, weight=8.3%, div=ALIGNED, mom=0)
-4. Financials (priority_score=1.00, score=1, weight=3.5%, div=ALIGNED, mom=-2)
-5. Consumer Staples (priority_score=0.50, score=0.5, weight=1.8%, div=ALIGNED, mom=0)
+1. Technology (priority_score=8.00, score=5.0, weight=21.4%, div=ALIGNED, mom=2)
+2. Industrials (priority_score=1.70, score=1.7, weight=8.1%, div=ALIGNED, mom=0)
+3. Consumer Staples (priority_score=0.50, score=0.5, weight=4.3%, div=ALIGNED, mom=0)
+4. Financials (priority_score=0.50, score=0.5, weight=2.1%, div=ALIGNED, mom=-2)
+5. Health Care (priority_score=0.50, score=0.5, weight=4.3%, div=ALIGNED, mom=0)
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Technology | XLK | 17.3% | ADD |
-| Industrials | XLI | 7.6% | SMALL |
-| Consumer Discretionary | XLY | 8.3% | SMALL |
-| Financials | XLF | 3.5% | SMALL |
-| Consumer Staples | XLP | 1.8% | SMALL |
-| Health Care | XLV | 3.5% | SMALL |
+| Technology | XLK | 21.4% | PRIMARY |
+| Industrials | XLI | 8.1% | SMALL |
+| Consumer Staples | XLP | 4.3% | SMALL |
+| Financials | XLF | 2.1% | SMALL |
+| Health Care | XLV | 4.3% | SMALL |
+| Consumer Discretionary | XLY | 1.7% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -441,8 +443,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.49758101848928427
-- **Z-Score (5d):** -0.706191023652706
+- **Z-Score (1d):** 0.49758109861164185
+- **Z-Score (5d):** -0.7061914587080781
 
 ### EEM
 - **Crash?** False
@@ -459,8 +461,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3623949214223572
-- **Z-Score (5d):** -0.278186007963263
+- **Z-Score (1d):** 0.3623951297349871
+- **Z-Score (5d):** -0.2781858728161308
 
 ### EWJ
 - **Crash?** False
