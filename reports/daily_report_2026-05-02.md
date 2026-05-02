@@ -20,7 +20,7 @@
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
 
 ### 📌 Interpretation
-- 금일 시장은 **RISK-OFF (부분 정렬) 환경**입니다.
+- 금일 시장은 **SOFT RISK-OFF (부분 경계) 환경**입니다.
 - 기관성 자금 흐름은 아직 뚜렷하지 않아, 공격적 확장에는 신중함이 필요합니다.
 - 드리프트 강도는 아직 약해 추세 신뢰도는 제한적입니다.
 - 따라서 **신규 진입보다는 기존 포지션 관리 및 일부 리스크 축소가 우선**입니다.
@@ -35,7 +35,7 @@
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **REDUCE**
 - **Final Exposure:** **33%**
-- **Base Context:** phase=RISK-OFF (부분 정렬) / narrative=REDUCE / base_exposure=35%
+- **Base Context:** phase=SOFT RISK-OFF (부분 경계) / narrative=REDUCE / base_exposure=35%
 - **SEW:** STABLE / NORMAL
 - **Divergence:** ALIGNED / **STAY (포지션 유지)**
 - **Drift:** NO DRIFT / NEUTRAL / NONE / score=0
@@ -48,7 +48,7 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=REDUCE 반영 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=REDUCE / Flow=NO CLEAR FLOW(2) / Drift=NO DRIFT(0) / Gamma=🟢 POSITIVE GAMMA → Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **RISK-ON (완화 기대·리스크 선호)** → **RISK-OFF (부분 정렬)**
+- **국면 전환 감지:** 🚨 **RISK-OFF (부분 정렬)** → **SOFT RISK-OFF (부분 경계)**
 
 ---
 
@@ -72,8 +72,8 @@
 
 - **VIX 레벨:** 16.99 → **Mid (Neutral/Mixed)**
 - **핵심 조합(전일 대비 방향):** US10Y(↓) / DXY(↑) / VIX(↑)
-- **판정:** **RISK-OFF (부분 정렬)**
-- **근거:** VIX↑ + (금리↑ 또는 달러↑) → 불안/긴축 우려 확대
+- **판정:** **SOFT RISK-OFF (부분 경계)**
+- **근거:** 금리/달러/변동성 축이 한 방향으로 정렬되지 않음
 
 ### 💧 2) Liquidity Filter (Enhanced)
 - **질문:** 시장에 새 돈이 들어오는가, 말라가는가?
@@ -151,9 +151,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.28% / 5D=+0.94% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-2.45% / 5D=+8.58% | Strength: HIGH
+- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-2.98% / 5D=+7.99% | Strength: HIGH
 - **DXY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.13% / 5D=-0.30% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: MIXED | 1D=+0.24% / 5D=-2.05% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.65% / 5D=-1.65% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -162,9 +162,9 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT DOWN
-  - Oil (WTI): 🟡 PULLBACK / SHORT UP
+  - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
   - Dollar (DXY): 🟡 REBOUND / SHORT DOWN
-  - Gold (GOLD): 🟡 REBOUND / MIXED
+  - Gold (GOLD): 🟡 REBOUND / SHORT UP
 
 ### ⚠ 6.5) Correlation Break Monitor
 ⚠ Market Closed / Stale Data → Correlation signals evaluated conservatively.
@@ -290,16 +290,16 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.130 / US10YΔ -0.012 (정상)
-- **Sentiment (Fear&Greed):** 65.81400032353693 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 65.81400032353706 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
-- **Phase:** RISK-OFF (부분 정렬) (Cap: 35)
+- **Phase:** SOFT RISK-OFF (부분 경계) (Cap: 45)
 - **Drift:** NO DRIFT / NEUTRAL / NONE
 - **Drift Score:** 0
 
 - **🎯 Final Risk Action:** **REDUCE**
-- **Risk Budget (0~100):** **35**
-- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=NO DRIFT (NEUTRAL) / 수급=1.79 ⚠️ 수급 다소 과열 → Phase=RISK-OFF (부분 정렬)
+- **Risk Budget (0~100):** **45**
+- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=NO DRIFT (NEUTRAL) / 수급=1.79 ⚠️ 수급 다소 과열 → Phase=SOFT RISK-OFF (부분 경계)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
@@ -314,7 +314,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **정의:** Risk Budget을 실제 익스포저로 변환 (Positions & Deadman Switch)
 - **추가 이유:** 수급 과열(POS_Z)이나 급격한 쏠림 발생 시 강제 시스템 셧다운
 
-- **Risk Budget:** 35 | **Phase Cap:** 35
+- **Risk Budget:** 45 | **Phase Cap:** 35
 - **VIX Level:** 16.99 (NORMAL) | **Change:** +0.59%
 - **Final Multiplier:** 1.00x (Vol x Pos)
 - **Slope Intensity:** 0.1450 (Stable)
@@ -340,7 +340,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 ### 🏭 18) Sector Allocation Engine (v3.3)
 
-**Context:** phase=RISK-OFF (부분 정렬) / T10Y2Y=0.51 (MODERATE STEEP) / VIX=16.99 (VOLATILITY NORMAL) / liquidity=UP-MID / credit=True
+**Context:** phase=SOFT RISK-OFF (부분 경계) / T10Y2Y=0.51 (MODERATE STEEP) / VIX=16.99 (VOLATILITY NORMAL) / liquidity=UP-MID / credit=True
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
@@ -438,8 +438,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.49758085308897715
-- **Z-Score (5d):** -0.7061908786615692
+- **Z-Score (1d):** 0.49758109861164185
+- **Z-Score (5d):** -0.706191242453868
 
 ### EEM
 - **Crash?** False
@@ -456,8 +456,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3623949214223572
-- **Z-Score (5d):** -0.27818589206692285
+- **Z-Score (1d):** 0.36239560525517717
+- **Z-Score (5d):** -0.27818568425014584
 
 ### EWJ
 - **Crash?** False
