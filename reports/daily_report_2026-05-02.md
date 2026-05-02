@@ -151,7 +151,7 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.28% / 5D=+0.94% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-2.45% / 5D=+8.58% | Strength: HIGH
+- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-2.98% / 5D=+7.99% | Strength: HIGH
 - **DXY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.13% / 5D=-0.30% | Strength: LOW
 - **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.65% / 5D=-1.65% | Strength: LOW
 
@@ -162,7 +162,7 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT DOWN
-  - Oil (WTI): 🟡 PULLBACK / SHORT UP
+  - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
   - Dollar (DXY): 🟡 REBOUND / SHORT DOWN
   - Gold (GOLD): 🟡 REBOUND / SHORT UP
 
@@ -310,14 +310,15 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
-### 🎯 15) Volatility-Controlled Exposure (v2.6)
-- **정의:** Risk Budget을 실제 익스포저로 변환 (Positions & Deadman Switch)
-- **추가 이유:** 수급 과열(POS_Z)이나 급격한 쏠림 발생 시 강제 시스템 셧다운
+### 🎯 15) Volatility-Controlled Exposure (v2.7)
+- **정의:** 13번 Risk Budget 실행 브레이크 레이어
+- **추가 이유:** 전략 판단(13) 이후 실제 진입 강도를 조절하기 위함
 
 - **Base Risk Budget (13):** 45
 - **VIX Level:** 16.99 (NORMAL) | **Change:** +0.59%
-- **Final Multiplier:** 1.00x (Vol x Pos)
-- **Slope Intensity:** 0.1450 (Stable)
+- **Final Multiplier:** 1.00x (VIX x Positioning)
+- **Slope Intensity:** 0.1450
+- **Brake Drivers:** ⚠️ Positioning Heat
 
 - **📊 Recommended Exposure:** **45%**
 
@@ -457,7 +458,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Crash?** False
 - **Risk Level:** NORMAL
 - **Z-Score (1d):** 0.3623949214223572
-- **Z-Score (5d):** -0.278186007963263
+- **Z-Score (5d):** -0.27818589206692285
 
 ### EWJ
 - **Crash?** False
