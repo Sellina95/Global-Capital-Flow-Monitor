@@ -4745,37 +4745,73 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # H) Theory vs Flow Divergence Adjustment
     # -------------------------
+    # -------------------------
+    # H) Institutional Theory vs Flow Classification (v4.0-lite)
+    # -------------------------
     divergence_flags = {}
+    sector_classification = {}
+    theoretical_score = {}
+    flow_score_by_sector = {}
+    final_score = {}
+
+    THEORY_BUCKETS = {"VOL", "LIQ", "CURVE", "CREDIT", "PHASE"}
+    FLOW_BUCKETS = {"FLOW", "MOM"}
 
     for s in sectors:
-        ticker = ticker_map.get(s)
-        mom = momentum_data.get(ticker, 0) if ticker else 0
-        theo = score[s]
+        theo = 0.0
+        flow = 0.0
 
-        if theo >= 2 and mom < 0:
-            score[s] -= 1
-            divergence_flags[s] = "NEGATIVE_DIVERGENCE"
-            drivers[s].append({
-                "pts": -1,
-                "why": "이론 대비 실제 자금 흐름 약세 → 포지션 보수화",
-                "bucket": "MOM",
-                "priority": PRIORITY["MOM"],
-            })
+        for d in drivers[s]:
+            bucket = d.get("bucket")
+            pts = float(d.get("pts", 0) or 0)
 
-        elif theo <= 0 and mom > 0:
-            # 🔥 Positive Divergence는 관찰이 아니라 최소 실행 후보로 상향
-            score[s] += 1
-            divergence_flags[s] = "POSITIVE_DIVERGENCE"
-            drivers[s].append({
-                "pts": 1,
-                "why": "이론 대비 실제 자금 유입 확인 → 최소 관찰 비중 후보로 상향",
-                "bucket": "MOM",
-                "priority": PRIORITY["MOM"],
-            })
+            if bucket in THEORY_BUCKETS:
+                theo += pts
+            elif bucket in FLOW_BUCKETS:
+                flow += pts
 
+        theoretical_score[s] = theo
+        flow_score_by_sector[s] = flow
+
+        classification = "ALIGNED"
+        div_flag = "ALIGNED"
+
+        if theo >= 1.5 and flow >= 1:
+            classification = "HIGH_CONVICTION_ALIGNED"
+            final = (0.55 * theo) + (0.45 * flow)
+
+        elif theo >= 1.5 and flow <= 0:
+            classification = "FLOW_WEAK"
+            div_flag = "NEGATIVE_DIVERGENCE"
+            final = (0.75 * theo) + (0.25 * flow) - 0.3
+
+        elif theo <= 0 and flow >= 1:
+            classification = "POSITIVE_DIVERGENCE"
+            div_flag = "POSITIVE_DIVERGENCE"
+            final = (0.35 * theo) + (0.65 * flow) + 0.3
+
+        elif theo >= 1 and flow <= -1:
+            classification = "THEORY_TRAP"
+            div_flag = "NEGATIVE_DIVERGENCE"
+            final = (0.65 * theo) + (0.35 * flow) - 0.7
+
+        elif theo <= 0 and flow <= 0:
+            classification = "AVOID"
+            final = (0.50 * theo) + (0.50 * flow)
 
         else:
-            divergence_flags[s] = "ALIGNED"
+            classification = "ALIGNED"
+            final = (0.65 * theo) + (0.35 * flow)
+
+        sector_classification[s] = classification
+        divergence_flags[s] = div_flag
+        final_score[s] = round(final, 2)
+
+    score = final_score
+
+    market_data["SECTOR_THEORETICAL_SCORE"] = theoretical_score
+    market_data["SECTOR_FLOW_SCORE"] = flow_score_by_sector
+    market_data["SECTOR_CLASSIFICATION"] = sector_classification
    
     # -------------------------
     # I) Conflict Resolver
@@ -4891,7 +4927,6 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         f"credit={credit_calm}"
     )
     
-    lines.append(f"**Macro Profile:** {macro_profile}")
     lines.append("")
     lines.append("**Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM")
     lines.append("")
@@ -4919,16 +4954,26 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     for r in top_rationales:
         lines.append(f"- {r}")
     lines.append("")
-    lines.append("**Divergence Monitor (Theory vs Flow):**")
-    has_divergence = False
-    for s in sorted(sectors, key=lambda x: (-score[x], x)):
-        flag = divergence_flags.get(s, "ALIGNED")
-        if flag != "ALIGNED":
-            has_divergence = True
-            lines.append(f"- {s}: {flag}")
-    if not has_divergence:
-        lines.append("- No major theory-vs-flow divergence detected.")
-
+    
+        lines.append("**Divergence / Classification Monitor (Theory vs Flow):**")
+        has_divergence = False
+    
+        for s in sorted(sectors, key=lambda x: (-score[x], x)):
+            classification = sector_classification.get(s, "ALIGNED")
+            flag = divergence_flags.get(s, "ALIGNED")
+            theo = theoretical_score.get(s, 0)
+            flow = flow_score_by_sector.get(s, 0)
+    
+            if classification != "ALIGNED":
+                has_divergence = True
+                lines.append(
+                    f"- {s}: {classification} "
+                    f"(theory={theo:+.1f}, flow={flow:+.1f}, final={score[s]:+.1f})"
+                )
+    
+        if not has_divergence:
+            lines.append("- No major theory-vs-flow divergence detected.")
+    
     # -------------------------
     # 18.5) Execution Weight Allocation Logic
     # -------------------------
