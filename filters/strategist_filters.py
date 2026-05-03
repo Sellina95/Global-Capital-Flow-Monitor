@@ -3416,6 +3416,40 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     # (지금은 시스템 안정화가 우선이라 과한 감점 넣지 않음)
     
     budget += flow_gamma_tilt
+        # --------------------------------------------------
+    # 2.76️⃣ Flow Continuity Tilt (Prev Flow → Current Flow)
+    # --------------------------------------------------
+    prev_flow_state = str(market_data.get("PREV_FLOW_STATE", "N/A") or "N/A").upper()
+    prev_flow_score = _to_float(market_data.get("PREV_FLOW_SCORE", 0))
+    if prev_flow_score is None:
+        prev_flow_score = 0.0
+
+    flow_continuity_tilt = 0
+    flow_continuity_note = "N/A"
+
+    # 전일 NO FLOW → 금일 EARLY TRACE 이상
+    if "NO CLEAR FLOW" in prev_flow_state and flow_score >= 3:
+        flow_continuity_tilt = 2
+        flow_continuity_note = "NEW_FLOW_TRACE"
+
+    # 전일 EARLY TRACE → 금일 BUILDING 이상
+    elif "EARLY TRACE" in prev_flow_state and flow_score >= 5:
+        flow_continuity_tilt = 3
+        flow_continuity_note = "FLOW_STRENGTHENING"
+
+    # 전일 FLOW 있었는데 금일 약화
+    elif ("EARLY TRACE" in prev_flow_state or "BUILDING" in prev_flow_state) and flow_score <= 2:
+        flow_continuity_tilt = -3
+        flow_continuity_note = "FLOW_FADE"
+
+    # 전일과 금일 모두 흐름 유지
+    elif prev_flow_score >= 3 and flow_score >= 3:
+        flow_continuity_tilt = 1
+        flow_continuity_note = "FLOW_PERSISTENCE"
+
+    budget += flow_continuity_tilt
+
+    
 
     # --------------------------------------------------
     # 2.8️⃣ Positioning Penalty
@@ -3550,6 +3584,12 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         "flow_gamma_tilt": flow_gamma_tilt,
     
         "narrative_line": narrative,
+
+        "prev_flow_state": prev_flow_state,
+        "prev_flow_score": prev_flow_score,
+        "flow_score": flow_score,
+        "flow_continuity_tilt": flow_continuity_tilt,
+        "flow_continuity_note": flow_continuity_note,
     }
     market_data["FINAL_STATE"] = final_state
 
@@ -3572,6 +3612,11 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
     lines.append(f"- **Drift:** {drift_state} / {drift_label} / {drift_combo}")
     lines.append(f"- **Drift Score:** {drift_score}")
+    lines.append(f"- **Flow Score:** {flow_score}")
+    lines.append(
+        f"- **Flow Continuity:** {prev_flow_state} → {flow.get('state', 'N/A')} "
+        f"({flow_continuity_note}, tilt={flow_continuity_tilt:+d})"
+    )
     lines.append("")
     lines.append(f"- **🎯 Final Risk Action:** **{action}**")
     lines.append(f"- **Risk Budget (0~100):** **{budget}**")
