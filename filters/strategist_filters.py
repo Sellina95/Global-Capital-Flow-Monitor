@@ -3769,7 +3769,7 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
 
 def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     """
-    🎯 15) Volatility-Controlled Exposure (v3.0 - Advanced Execution Brake Layer)
+    🎯 15) Volatility-Controlled Exposure (v3.1 - Advanced Execution Brake Layer)
 
     역할:
     - 13번 Narrative Engine의 RISK_BUDGET을 그대로 입력받는다
@@ -3857,9 +3857,6 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     is_deadman_on = False
     deadman_reason = ""
 
-    if abs(pos_z) > 1.5:
-        brake_drivers.append("Positioning Heat")
-
     if abs(pos_z) > 2.0:
         is_deadman_on = True
         deadman_reason = f"POS_Z Extreme ({pos_z:.2f})"
@@ -3905,10 +3902,20 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # --------------------------------------------------
     pos_multiplier = 1.0
 
-    # 과열
-    if pos_z > 1.8:
-        pos_multiplier *= 0.92
-        pos_notes.append("Overheated Positioning")
+    if pos_z >= 2.0:
+        pos_multiplier *= 0.85
+        brake_drivers.append("Extreme Positioning Heat")
+        pos_notes.append(f"Extreme Positioning Heat({pos_z:.2f})")
+
+    elif pos_z >= 1.7:
+        pos_multiplier *= 0.90
+        brake_drivers.append("Elevated Positioning Heat")
+        pos_notes.append(f"Elevated Positioning Heat({pos_z:.2f})")
+
+    elif pos_z >= 1.5:
+        pos_multiplier *= 0.95
+        brake_drivers.append("Positioning Heat")
+        pos_notes.append(f"Positioning Heat({pos_z:.2f})")
 
     # 과열이 풀리는 구간 → 감속 완화
     if pos_z > 2.0 and pos_slope < 0:
@@ -3951,23 +3958,25 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
             brake_drivers.append("Mild Credit Stress")
 
     # --------------------------------------------------
-    # 6️⃣ Confidence Scaling (핵심)
+    # 6️⃣ Confidence Scaling
     # --------------------------------------------------
-    confidence = "LOW"
-    confidence_multiplier = 0.90
-
-    if flow_score >= 4:
-        confidence = "HIGH"
-        confidence_multiplier = 1.00
-
-    elif flow_score >= 3:
-        confidence = "MEDIUM"
-        confidence_multiplier = 0.95
-
-    else:
+    if flow_score <= 1:
         confidence = "LOW"
         confidence_multiplier = 0.90
         brake_drivers.append("Low Confidence")
+
+    elif flow_score <= 3:
+        confidence = "MEDIUM-LOW"
+        confidence_multiplier = 0.95
+        brake_drivers.append("Medium-Low Confidence")
+
+    elif flow_score <= 5:
+        confidence = "MEDIUM"
+        confidence_multiplier = 1.00
+
+    else:
+        confidence = "HIGH"
+        confidence_multiplier = 1.05
 
     exposure *= confidence_multiplier
 
@@ -3994,7 +4003,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     total_multiplier = multiplier * pos_multiplier * confidence_multiplier
 
     lines = []
-    lines.append("### 🎯 15) Volatility-Controlled Exposure (v3.0)")
+    lines.append("### 🎯 15) Volatility-Controlled Exposure (v3.1)")
     lines.append("- **정의:** 13번 Risk Budget 실행 브레이크 레이어")
     lines.append("- **추가 이유:** 전략 판단(13) 이후 실제 진입 강도를 조절하기 위함")
     lines.append("")
