@@ -20,7 +20,17 @@ def rank_deleveraging_priority(
     weights: Dict[str, float],
     divergence_flags: Dict[str, str],
     momentum_scores: Dict[str, float] = None,
+    sector_classification: Dict[str, str] = None,
 ) -> List[Dict[str, Any]]:
+    """
+    18.5) Deleveraging Priority Ranker (Upgraded)
+
+    목적:
+    - '무엇을 먼저 줄일 것인가'를 정함
+    - NEGATIVE_DIVERGENCE / THEORY_TRAP / FLOW_WEAK 우선 컷
+    - HIGH_CONVICTION_ALIGNED는 가능한 마지막 컷
+    - 단순 overweight만으로 리더 섹터가 먼저 잘리는 현상 방지
+    """
 
     priority_list = []
 
@@ -28,42 +38,93 @@ def rank_deleveraging_priority(
 
     for sector, w in weights.items():
 
-        # 1️⃣ Divergence
+        # -------------------------
+        # 1️⃣ Divergence Flag
+        # -------------------------
         div_flag = divergence_flags.get(sector, "ALIGNED")
 
         if div_flag == "NEGATIVE_DIVERGENCE":
-            divergence_score = 3
-        elif div_flag == "POSITIVE_DIVERGENCE":
-            divergence_score = -1
-        else:
-            divergence_score = 0
+            divergence_score = 4.0
 
-        # 2️⃣ Momentum
+        elif div_flag == "POSITIVE_DIVERGENCE":
+            divergence_score = -2.0
+
+        else:
+            divergence_score = 0.0
+
+        # -------------------------
+        # 2️⃣ Classification Layer (NEW 핵심)
+        # -------------------------
+        classification = (
+            sector_classification.get(sector, "ALIGNED")
+            if sector_classification else "ALIGNED"
+        )
+
+        if classification == "THEORY_TRAP":
+            class_score = 4.0
+
+        elif classification == "FLOW_WEAK":
+            class_score = 2.5
+
+        elif classification == "AVOID":
+            class_score = 5.0
+
+        elif classification == "POSITIVE_DIVERGENCE":
+            class_score = -1.5
+
+        elif classification == "HIGH_CONVICTION_ALIGNED":
+            class_score = -4.0
+
+        else:
+            class_score = 0.0
+
+        # -------------------------
+        # 3️⃣ Momentum
+        # -------------------------
         mom = momentum_scores.get(sector, 0) if momentum_scores else 0
 
         if mom < 0:
             momentum_score = abs(mom) * 1.5
-        else:
-            momentum_score = -mom * 0.5
 
-        # 3️⃣ Score
+        elif mom > 0:
+            momentum_score = -mom * 1.0
+
+        else:
+            momentum_score = 0.0
+
+        # -------------------------
+        # 4️⃣ Score Quality
+        # -------------------------
         s = score.get(sector, 0)
 
+        # 좋은 점수면 보호 / 나쁜 점수면 컷 우선
         if s <= 0:
-            score_penalty = abs(s) * 1.2
-        else:
-            score_penalty = -s * 0.3
+            score_penalty = abs(s) * 1.5
 
-        # 4️⃣ Overweight
+        elif s >= 2:
+            score_penalty = -2.0
+
+        else:
+            score_penalty = -s * 0.5
+
+        # -------------------------
+        # 5️⃣ Overweight
+        # -------------------------
         overweight = w - avg_weight
 
+        # overweight 영향 축소 (기존보다 훨씬 약하게)
         if overweight > 0:
-            overweight_score = overweight * 0.5
-        else:
-            overweight_score = 0
+            overweight_score = overweight * 0.15
 
+        else:
+            overweight_score = 0.0
+
+        # -------------------------
+        # FINAL PRIORITY
+        # -------------------------
         priority_score = (
             divergence_score
+            + class_score
             + momentum_score
             + score_penalty
             + overweight_score
@@ -72,12 +133,14 @@ def rank_deleveraging_priority(
         priority_list.append({
             "sector": sector,
             "priority_score": round(priority_score, 2),
+            "classification": classification,
             "div": div_flag,
             "mom": mom,
             "score": s,
             "weight": w,
         })
 
+    # 높은 점수일수록 먼저 컷
     priority_list = sorted(
         priority_list,
         key=lambda x: x["priority_score"],
