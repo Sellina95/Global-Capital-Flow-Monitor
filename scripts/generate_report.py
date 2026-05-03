@@ -131,6 +131,38 @@ def build_strategic_interpretation(
             "금일 리포트의 신규 Flow 신호가 실제 개선인지 확인이 필요합니다."
         )
 
+
+    # -------------------------
+    # Flow Continuity Monitor
+    # -------------------------
+    flow_transition_note = ""
+
+    if "NO CLEAR FLOW" in prev_flow_state and flow_score >= 3:
+        flow_transition_note = (
+            "⚡ 전일 대비 기관성 흐름이 새롭게 발생했습니다 "
+            f"({prev_flow_state} → {flow_state}). 초기 축적 가능성 점검 구간입니다."
+        )
+
+    elif "EARLY TRACE" in prev_flow_state and flow_score >= 5:
+        flow_transition_note = (
+            "🔥 전일 초기 흐름이 금일 강화되었습니다 "
+            f"({prev_flow_state} → {flow_state}). 실제 자금 축적 지속 가능성을 확인해야 합니다."
+        )
+
+    elif ("BUILDING" in prev_flow_state or "EARLY TRACE" in prev_flow_state) and flow_score <= 2:
+        flow_transition_note = (
+            "⚠️ 전일 대비 기관성 흐름이 약화되었습니다 "
+            f"({prev_flow_state} → {flow_state}). 노이즈성 신호였는지 확인이 필요합니다."
+        )
+
+    elif prev_flow_state == flow_state and flow_score >= 3:
+        flow_transition_note = (
+            f"➡️ 기관성 흐름 상태가 유지되고 있습니다 ({flow_state}). "
+            "연속성 여부가 중요합니다."
+        )
+
+    if flow_transition_note:
+        lines.append(f"- {flow_transition_note}")
     
 
     if flow_score <= 2:
