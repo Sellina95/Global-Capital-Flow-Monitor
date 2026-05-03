@@ -71,6 +71,10 @@ def build_strategic_interpretation(
     flow_score = flow.get("score", 0)
     flow_state = str(flow.get("state", "N/A") or "N/A").upper()
 
+    prev_flow_state = str(market_data.get("PREV_FLOW_STATE", "N/A") or "N/A").upper()
+    prev_flow_score = market_data.get("PREV_FLOW_SCORE", 0)
+    prev_flow_timestamp = market_data.get("PREV_FLOW_TIMESTAMP")
+
     drift = market_data.get("DRIFT", {}) or {}
     drift_label = str(
         drift.get("label")
@@ -108,6 +112,26 @@ def build_strategic_interpretation(
     lines = []
 
     lines.append(f"- 금일 시장은 **{phase} 환경**입니다.")
+    
+    if "EARLY TRACE" in prev_flow_state:
+        lines.append(
+            f"- 전일 SEW 기준 기관성 초기 흐름이 관찰되었습니다 "
+            f"({prev_flow_state}, score={prev_flow_score}). "
+            "금일은 리더 섹터 지속 여부와 흐름의 강화 여부를 확인해야 합니다."
+        )
+    elif "BUILDING" in prev_flow_state:
+        lines.append(
+            f"- 전일 SEW 기준 기관성 자금 축적이 강화되었습니다 "
+            f"({prev_flow_state}, score={prev_flow_score}). "
+            "금일은 추세 확인 및 선택적 확대 가능성을 점검해야 합니다."
+        )
+    elif "NO CLEAR FLOW" in prev_flow_state:
+        lines.append(
+            "- 전일 SEW 기준 기관성 흐름은 뚜렷하지 않았습니다. "
+            "금일 리포트의 신규 Flow 신호가 실제 개선인지 확인이 필요합니다."
+        )
+
+    
 
     if flow_score <= 2:
         lines.append("- 기관성 자금 흐름은 아직 뚜렷하지 않아, 공격적 확장에는 신중함이 필요합니다.")
@@ -178,6 +202,33 @@ def get_today_deadman_log(log_path="insights/alerts.log"):
             return line.strip()
 
     return None
+
+
+def get_flow_state(filepath: str = "insights/flow_state.json") -> dict:
+    import os
+    import json
+
+    default_state = {
+        "flow_state": "N/A",
+        "flow_score": 0,
+        "timestamp": None,
+    }
+
+    try:
+        if not os.path.exists(filepath):
+            return default_state
+
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        return {
+            "flow_state": data.get("flow_state", "N/A"),
+            "flow_score": data.get("flow_score", 0),
+            "timestamp": data.get("timestamp"),
+        }
+
+    except Exception:
+        return default_state
 
 
 def get_sew_state(filepath: str = "insights/sew_state.json") -> dict:
@@ -1652,6 +1703,17 @@ def generate_daily_report() -> None:
     # flat key (Gamma / IFE / Action Engine용)
     market_data["SEW_STATUS"] = sew_status
     market_data["SEW_EVENT_TYPE"] = sew_event_type
+
+
+    # -------------------------
+    # 5.5) Flow State 먼저 로드
+    # -------------------------
+    flow_state = get_flow_state()
+
+    market_data["FLOW_STATE"] = flow_state
+    market_data["PREV_FLOW_STATE"] = flow_state.get("flow_state", "N/A")
+    market_data["PREV_FLOW_SCORE"] = flow_state.get("flow_score", 0)
+    market_data["PREV_FLOW_TIMESTAMP"] = flow_state.get("timestamp")
 
     # -------------------------
     # 6) Commentary block 생성
