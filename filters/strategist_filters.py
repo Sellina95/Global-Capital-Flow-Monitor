@@ -896,6 +896,30 @@ def market_regime_filter(market_data: Dict[str, Any]) -> str:
     vix_dir = _sign_from(vix)
 
     regime = get_regime_label(market_data)
+        # --------------------------------------------------
+    # Flow Context Overlay (Display only, all regimes)
+    # 내부 MARKET_REGIME 값은 건드리지 않고, 리포트 표시용으로만 사용
+    # --------------------------------------------------
+    flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+
+    flow_score = flow.get("score", 0)
+    try:
+        flow_score = int(flow_score)
+    except Exception:
+        flow_score = 0
+
+    if flow_score >= 7:
+        flow_suffix = " (Flow Confirmed)"
+    elif flow_score >= 5:
+        flow_suffix = " (Flow Building)"
+    elif flow_score >= 3:
+        flow_suffix = " (Flow Improving)"
+    else:
+        flow_suffix = " (Flow Weak)"
+
+    display_regime = f"{regime}{flow_suffix}"
+
+    
 
     # ✅ Phase/Regime를 다른 필터(Narrative Engine 등)에서 쓰도록 저장
     market_data["MARKET_REGIME"] = regime
@@ -926,7 +950,7 @@ def market_regime_filter(market_data: Dict[str, Any]) -> str:
         f"- **핵심 조합(전일 대비 방향):** "
         f"US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})"
     )
-    lines.append(f"- **판정:** **{regime}**")
+    lines.append(f"- **판정:** **{display_regime}**")
     lines.append(f"- **근거:** {reason}")
     return "\n".join(lines)
 
