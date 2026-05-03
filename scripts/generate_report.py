@@ -1628,8 +1628,9 @@ def generate_daily_report() -> None:
     print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
 
         # War room history 저장
-    generate_war_room_history(institutional_flow=flow_result)
-
+    generate_war_room_history(
+    institutional_flow=market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+    )
     # -------------------------
     # 5) SEW 먼저 로드
     # -------------------------
