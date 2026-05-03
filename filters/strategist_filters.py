@@ -4890,6 +4890,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         f"liquidity={liq_dir}-{liq_lvl} / "
         f"credit={credit_calm}"
     )
+    
+    lines.append(f"**Macro Profile:** {macro_profile}")
     lines.append("")
     lines.append("**Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM")
     lines.append("")
