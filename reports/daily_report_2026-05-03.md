@@ -344,6 +344,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### 🏭 18) Sector Allocation Engine (v3.3)
 
 **Context:** phase=SOFT RISK-OFF (부분 경계) / T10Y2Y=0.51 (MODERATE STEEP) / VIX=16.99 (VOLATILITY NORMAL) / liquidity=UP-MID / credit=True
+**Macro Profile:** SOFT_RISK_OFF
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
@@ -443,8 +444,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.49758085308897715
-- **Z-Score (5d):** -0.7061910700248082
+- **Z-Score (1d):** 0.4975808107327177
+- **Z-Score (5d):** -0.7061916999651615
 
 ### EEM
 - **Crash?** False
@@ -461,8 +462,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3623951297349871
-- **Z-Score (5d):** -0.2781859887121746
+- **Z-Score (1d):** 0.36239560525517717
+- **Z-Score (5d):** -0.27818568425014584
 
 ### EWJ
 - **Crash?** False
