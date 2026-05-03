@@ -4357,17 +4357,21 @@ def build_tactical_allocation(
     deleveraging_required: bool = False,
     prev_exposure: float = None,
     momentum_scores: Dict[str, float] = None,
+    sector_classification: Dict[str, str] = None,
 ) -> Dict[str, Any]:
     """
-    18.5) Tactical Asset Allocation Builder - Stable Final
+    18.5) Tactical Asset Allocation Builder - v4.0-lite
 
-    - total_exposure: 오늘 15번이 결정한 목표 노출
-    - prev_exposure: 직전 저장된 실제 노출
-    - deleveraging_required=True이면:
-        1) prev_exposure 기준으로 기존 포트폴리오 생성
-        2) priority_score 높은 섹터부터 reduction_needed 만큼 컷
-        3) 최종 target exposure에 맞춤
+    역할:
+    - 15번이 결정한 total_exposure 안에서 섹터 비중을 배분
+    - 18번의 score / divergence / classification을 실제 weight에 반영
+    - HIGH_CONVICTION_ALIGNED는 우대
+    - FLOW_WEAK / THEORY_TRAP / NEGATIVE_DIVERGENCE는 haircut
+    - AVOID는 배분 제외
     """
+
+    sector_classification = sector_classification or {}
+    momentum_scores = momentum_scores or {}
 
     positive_scores = {
         sector: float(score[sector])
@@ -4375,7 +4379,45 @@ def build_tactical_allocation(
         if float(score.get(sector, 0)) > 0
     }
 
-    total_score_sum = sum(positive_scores.values())
+    # -------------------------
+    # 1) Classification-based score adjustment
+    # -------------------------
+    adjusted_scores: Dict[str, float] = {}
+
+    for sector, raw_score in positive_scores.items():
+        classification = sector_classification.get(sector, "ALIGNED")
+        div_flag = divergence_flags.get(sector, "ALIGNED")
+
+        multiplier = 1.0
+
+        if classification == "HIGH_CONVICTION_ALIGNED":
+            multiplier *= 1.15
+
+        elif classification == "FLOW_WEAK":
+            multiplier *= 0.75
+
+        elif classification == "THEORY_TRAP":
+            multiplier *= 0.50
+
+        elif classification == "POSITIVE_DIVERGENCE":
+            multiplier *= 1.10
+
+        elif classification == "AVOID":
+            multiplier *= 0.0
+
+        # divergence 추가 반영
+        if div_flag == "NEGATIVE_DIVERGENCE":
+            multiplier *= 0.70
+
+        elif div_flag == "POSITIVE_DIVERGENCE":
+            multiplier *= 1.15
+
+        adjusted = raw_score * multiplier
+
+        if adjusted > 0:
+            adjusted_scores[sector] = adjusted
+
+    total_score_sum = sum(adjusted_scores.values())
     weights: Dict[str, float] = {}
 
     if total_score_sum <= 0:
@@ -4390,54 +4432,46 @@ def build_tactical_allocation(
     else:
         base_exposure = float(total_exposure)
 
-    # 1) 기본 비중: 디레버리징이면 prev_exposure 기준으로 먼저 생성
-    for sector, s_score in positive_scores.items():
-        weights[sector] = (s_score / total_score_sum) * base_exposure
-
-    # 2) Divergence 반영
-    for sector in list(weights.keys()):
-        flag = divergence_flags.get(sector, "ALIGNED")
-
-        if flag == "NEGATIVE_DIVERGENCE":
-            weights[sector] *= 0.65
-        elif flag == "POSITIVE_DIVERGENCE":
-            weights[sector] *= 1.25
-
-    # 3) 디레버리징: priority_score 높은 섹터부터 실제 컷
     # -------------------------
-    # 3) 디레버리징 (컷 제한 버전)
+    # 2) 기본 비중 생성
+    # -------------------------
+    for sector, adj_score in adjusted_scores.items():
+        weights[sector] = (adj_score / total_score_sum) * base_exposure
+
+    # -------------------------
+    # 3) 디레버리징
     # -------------------------
     if deleveraging_required and prev_exposure is not None:
         reduction_needed = max(0.0, float(prev_exposure) - float(total_exposure))
-    
+
         priority_rows = rank_deleveraging_priority(
             score=score,
             weights=weights,
             divergence_flags=divergence_flags,
             momentum_scores=momentum_scores,
         )
-    
-        MAX_CUT_RATIO = 0.5   # 🔥 여기만 조절 (0.5 = 최대 50% 컷)
-    
+
+        MAX_CUT_RATIO = 0.5
+
         for row in priority_rows:
             if reduction_needed <= 0:
                 break
-    
+
             sector = row["sector"]
             current_weight = weights.get(sector, 0.0)
-    
+
             if current_weight <= 0:
                 continue
-    
-            # 🔥 최대 컷 제한
+
             max_cut = current_weight * MAX_CUT_RATIO
-    
             cut_amount = min(max_cut, reduction_needed)
-    
+
             weights[sector] = current_weight - cut_amount
             reduction_needed -= cut_amount
-    
-    # 4) 최종 노출이 total_exposure를 초과하면 비례 압축
+
+    # -------------------------
+    # 4) 최종 노출 초과 시 비례 압축
+    # -------------------------
     current_sum = sum(weights.values())
 
     if current_sum > total_exposure and current_sum > 0:
@@ -4445,16 +4479,19 @@ def build_tactical_allocation(
         for sector in list(weights.keys()):
             weights[sector] *= scale
 
+    # -------------------------
     # 5) 반올림
+    # -------------------------
     for sector in list(weights.keys()):
         weights[sector] = round(weights[sector], 1)
 
-    cash_weight = round(100.0 - total_exposure, 1)
+    cash_weight = round(100.0 - sum(weights.values()), 1)
 
     return {
         "weights": weights,
         "cash_weight": cash_weight,
-        "total_score_sum": total_score_sum,
+        "total_score_sum": round(total_score_sum, 2),
+        "adjusted_scores": adjusted_scores,
     }
     
 def apply_rebalance_threshold(
@@ -5137,6 +5174,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         deleveraging_required=deleveraging_required,
         prev_exposure=prev_exposure,
         momentum_scores=sector_momentum,
+        sector_classification=sector_classification,
     )
 
     weights = alloc_result["weights"]
