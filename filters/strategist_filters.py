@@ -5482,9 +5482,14 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines.append("\n" + "\n".join(allocation_lines))
 
     # -------------------------
+    # -------------------------
     # 19) Execution Layer (ETF Mapping)
     # -------------------------
-    etf_plan = build_execution_etf_map(weights)
+    etf_plan = build_execution_etf_map(
+        weights=weights,
+        divergence_flags=divergence_flags,
+        market_regime=market_data.get("MARKET_REGIME", "N/A"),
+    )
 
     # -------------------------
     # Portfolio Logging (Paper Trading)
@@ -5495,22 +5500,20 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             load_previous_weights,
             save_trade_log,
         )
-    
+
         prev_etf_weights = load_previous_weights()
         etf_weights = {item["etf"]: item["weight"] for item in etf_plan}
-        
+
         save_trade_log(
             prev_weights=prev_etf_weights,
             target_weights=etf_weights,
-            market_data=market_data,  # 🔥 추가
-
-
+            market_data=market_data,
         )
-        
+
         save_paper_portfolio(
             weights=etf_weights,
             cash_weight=cash_weight,
-            exposure=final_exposure
+            exposure=final_exposure,
         )
 
     except Exception as e:
@@ -5521,18 +5524,19 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
 
     if etf_plan:
-        lines.append("| Sector | ETF | Weight | Action |")
-        lines.append("| :--- | :---: | :---: | :--- |")
+        lines.append("| Sector | ETF | Weight | Action | Divergence |")
+        lines.append("| :--- | :---: | :---: | :--- | :--- |")
 
         for item in etf_plan:
             lines.append(
-                f"| {item['sector']} | {item['etf']} | {item['weight']}% | {item['action']} |"
+                f"| {item['sector']} | {item['etf']} | "
+                f"{item['weight']}% | {item['action']} | "
+                f"{item.get('divergence', 'ALIGNED')} |"
             )
     else:
         lines.append("⚠️ 실행 가능한 ETF 매핑이 없습니다.")
 
     return "\n".join(lines)
-
 
 def build_execution_etf_map(
     weights: Dict[str, float],
