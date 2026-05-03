@@ -5534,10 +5534,17 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def build_execution_etf_map(weights: Dict[str, float]) -> List[Dict[str, Any]]:
+def build_execution_etf_map(
+    weights: Dict[str, float],
+    divergence_flags: Dict[str, str] = None,
+    market_regime: str = "N/A",
+) -> List[Dict[str, Any]]:
     """
-    19) Execution Layer (Phase 1)
-    - 18.5에서 나온 sector weight를 실제 ETF 실행안으로 변환
+    19) Execution Layer (v2.0)
+
+    목적:
+    - 18.5 sector weight → 실제 ETF 실행안 변환
+    - Weight + Divergence + Regime 반영
     """
 
     sector_to_etf = {
@@ -5554,6 +5561,12 @@ def build_execution_etf_map(weights: Dict[str, float]) -> List[Dict[str, Any]]:
         "Communication Services": "XLC",
     }
 
+    divergence_flags = divergence_flags or {}
+    regime_upper = str(market_regime).upper()
+
+    risk_off_mode = "RISK-OFF" in regime_upper
+    soft_risk_off_mode = "SOFT RISK-OFF" in regime_upper
+
     results: List[Dict[str, Any]] = []
 
     for sector, weight in weights.items():
@@ -5564,6 +5577,11 @@ def build_execution_etf_map(weights: Dict[str, float]) -> List[Dict[str, Any]]:
         if not etf:
             continue
 
+        div_flag = divergence_flags.get(sector, "ALIGNED")
+
+        # -------------------------
+        # Base action by weight
+        # -------------------------
         if weight >= 20:
             action = "PRIMARY"
         elif weight >= 10:
@@ -5571,15 +5589,41 @@ def build_execution_etf_map(weights: Dict[str, float]) -> List[Dict[str, Any]]:
         else:
             action = "SMALL"
 
+        # -------------------------
+        # Divergence override
+        # -------------------------
+        if div_flag == "NEGATIVE_DIVERGENCE":
+            if action == "PRIMARY":
+                action = "TRIM"
+            elif action == "ADD":
+                action = "SMALL"
+
+        elif div_flag == "POSITIVE_DIVERGENCE":
+            if action == "SMALL" and weight >= 5:
+                action = "ADD"
+
+        # -------------------------
+        # Regime context override
+        # -------------------------
+        if risk_off_mode:
+            if action == "PRIMARY":
+                action = "DEFENSIVE_PRIMARY"
+            elif action == "ADD":
+                action = "DEFENSIVE_ADD"
+
+        elif soft_risk_off_mode:
+            if action == "PRIMARY":
+                action = "CONTROLLED_PRIMARY"
+
         results.append({
             "sector": sector,
             "etf": etf,
             "weight": round(weight, 1),
             "action": action,
+            "divergence": div_flag,
         })
 
     return results
-
     
 
 # filters/execution_layer.py
