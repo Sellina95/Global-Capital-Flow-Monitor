@@ -425,25 +425,31 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
-| Sector | ETF | Weight | Action |
-| :--- | :---: | :---: | :--- |
-| Technology | XLK | 29.2% | PRIMARY |
-| Financials | XLF | 1.8% | SMALL |
-| Industrials | XLI | 2.7% | SMALL |
-| Consumer Staples | XLP | 3.0% | SMALL |
-| Health Care | XLV | 3.0% | SMALL |
-| Consumer Discretionary | XLY | 0.3% | SMALL |
+| Sector | ETF | Weight | Action | Divergence |
+| :--- | :---: | :---: | :--- | :--- |
+| Technology | XLK | 29.2% | DEFENSIVE_PRIMARY | ALIGNED |
+| Financials | XLF | 1.8% | SMALL | NEGATIVE_DIVERGENCE |
+| Industrials | XLI | 2.7% | SMALL | NEGATIVE_DIVERGENCE |
+| Consumer Staples | XLP | 3.0% | SMALL | ALIGNED |
+| Health Care | XLV | 3.0% | SMALL | ALIGNED |
+| Consumer Discretionary | XLY | 0.3% | SMALL | ALIGNED |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
 - **Implementation Focus:** Environment-Aware Stock Types
 
+**Execution Notes:**
+- Flow weak → avoid chasing; keep only proven leaders.
+- Positioning heat elevated → prefer rebalancing over fresh chasing.
+- Exposure below 45% → defensive execution; cash remains strategic asset.
+
 **Preferred Company Traits:**
-- Balanced quality exposure
-- Selective sector-neutral positioning
+- Market leaders with confirmed relative strength
+- Smaller position sizes with strict risk budget discipline
 
 **Risk Control / Avoid:**
-- Unscreened speculative exposure
+- Flow-weak cyclicals and theory-only sector bets
+- Crowded late-entry trades
 
 ---
 
@@ -455,8 +461,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.49757973482450957
-- **Z-Score (5d):** -0.7061915146972663
+- **Z-Score (1d):** 0.4975808107327177
+- **Z-Score (5d):** -0.7061916999651615
 
 ### EEM
 - **Crash?** False
@@ -474,7 +480,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Crash?** False
 - **Risk Level:** NORMAL
 - **Z-Score (1d):** 0.3623951297349871
-- **Z-Score (5d):** -0.27818610460792764
+- **Z-Score (5d):** -0.2781858728161308
 
 ### EWJ
 - **Crash?** False
