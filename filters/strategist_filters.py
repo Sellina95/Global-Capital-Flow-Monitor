@@ -4955,24 +4955,24 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         lines.append(f"- {r}")
     lines.append("")
     
-        lines.append("**Divergence / Classification Monitor (Theory vs Flow):**")
-        has_divergence = False
+    lines.append("**Divergence / Classification Monitor (Theory vs Flow):**")
+    has_divergence = False
     
-        for s in sorted(sectors, key=lambda x: (-score[x], x)):
-            classification = sector_classification.get(s, "ALIGNED")
-            flag = divergence_flags.get(s, "ALIGNED")
-            theo = theoretical_score.get(s, 0)
-            flow = flow_score_by_sector.get(s, 0)
+    for s in sorted(sectors, key=lambda x: (-score[x], x)):
+        classification = sector_classification.get(s, "ALIGNED")
+        flag = divergence_flags.get(s, "ALIGNED")
+        theo = theoretical_score.get(s, 0)
+        flow = flow_score_by_sector.get(s, 0)
     
-            if classification != "ALIGNED":
-                has_divergence = True
-                lines.append(
+        if classification != "ALIGNED":
+            has_divergence = True
+            lines.append(
                     f"- {s}: {classification} "
                     f"(theory={theo:+.1f}, flow={flow:+.1f}, final={score[s]:+.1f})"
                 )
     
-        if not has_divergence:
-            lines.append("- No major theory-vs-flow divergence detected.")
+    if not has_divergence:
+        lines.append("- No major theory-vs-flow divergence detected.")
     
     # -------------------------
     # 18.5) Execution Weight Allocation Logic
