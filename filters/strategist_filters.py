@@ -3449,6 +3449,27 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
     budget += flow_continuity_tilt
 
+    # --------------------------------------------------
+    # 2.77️⃣ Flow Regime Modifier (small, cap-aware)
+    # --------------------------------------------------
+    flow_regime_tilt = 0
+
+    if flow_score >= 7:
+        flow_regime_tilt = 4
+    elif flow_score >= 5:
+        flow_regime_tilt = 3
+    elif flow_score >= 3:
+        flow_regime_tilt = 2
+
+    # SOFT RISK-OFF + Flow improving이면 과도한 보수성만 완화
+    if "SOFT RISK-OFF" in phase_upper and flow_score >= 3:
+        flow_regime_tilt += 1
+
+    # EVENT / WAITING에서 flow가 강하면 완전 방관 방지
+    if ("EVENT-WATCHING" in phase_upper or "WAITING" in phase_upper) and flow_score >= 5:
+        flow_regime_tilt += 2
+
+    budget += flow_regime_tilt
     
 
     # --------------------------------------------------
@@ -3480,8 +3501,9 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     elif phase_upper.startswith("HARD RISK-OFF"):
         cap = 20
 
+
     elif phase_upper.startswith("SOFT RISK-OFF"):
-        cap = 45
+        cap = 50 if flow_score >= 3 else 45
 
     elif "RISK-OFF" in phase_upper:
         cap = 35
@@ -3590,6 +3612,9 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         "flow_score": flow_score,
         "flow_continuity_tilt": flow_continuity_tilt,
         "flow_continuity_note": flow_continuity_note,
+        "flow_state": flow.get("state", "N/A"),
+        "flow_confidence": flow.get("confidence", "N/A"),
+        "flow_regime_tilt": flow_regime_tilt,
     }
     market_data["FINAL_STATE"] = final_state
 
@@ -3617,6 +3642,8 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         f"- **Flow Continuity:** {prev_flow_state} → {flow.get('state', 'N/A')} "
         f"({flow_continuity_note}, tilt={flow_continuity_tilt:+d})"
     )
+    lines.append(f"- **Flow Regime Tilt:** {flow_regime_tilt:+d} / Flow-Gamma Tilt: {flow_gamma_tilt:+d}")
+    
     lines.append("")
     lines.append(f"- **🎯 Final Risk Action:** **{action}**")
     lines.append(f"- **Risk Budget (0~100):** **{budget}**")
