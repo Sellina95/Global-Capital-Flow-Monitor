@@ -1335,26 +1335,52 @@ def _find_effective_market_idx(
     return len(df) - 1
 
 
-def generate_war_room_history():
+def generate_war_room_history(institutional_flow: dict | None = None):
     import os
     import pandas as pd
 
     print("🚀 전략 상황실용 통합 데이터팩 최종 보정 및 생성을 시작합니다...")
 
     try:
-        pos_path = 'data/positioning_data.csv'
-        macro_path = 'data/macro_data.csv'
-        yield_path = 'data/sovereign_yields.csv'
-        spread_path = 'data/sovereign_spreads.csv'
+        pos_path = "data/positioning_data.csv"
+        macro_path = "data/macro_data.csv"
+        yield_path = "data/sovereign_yields.csv"
+        spread_path = "data/sovereign_spreads.csv"
         output_path = "data/market_data_history.csv"
 
         def get_clean_df(path):
             if not os.path.exists(path):
                 return pd.DataFrame()
+
             df = pd.read_csv(path)
-            if 'date' in df.columns:
-                df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.strftime('%Y-%m-%d')
-                df = df.dropna(subset=['date']).sort_values('date').reset_index(drop=True)
+
+            if "date" in df.columns:
+                df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%Y-%m-%d")
+                df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+            return df
+
+        def cleanup_duplicate_columns(df: pd.DataFrame) -> pd.DataFrame:
+            """
+            merge 과정에서 생긴 *_x / *_y / *_Y 중복 컬럼 정리.
+            원본 컬럼이 있으면 원본을 우선하고,
+            원본이 비어 있으면 suffix 컬럼 값으로 보완한 뒤 suffix 컬럼 삭제.
+            """
+            suffixes = ["_x", "_y", "_Y"]
+
+            for col in list(df.columns):
+                for suffix in suffixes:
+                    if col.endswith(suffix):
+                        base_col = col[: -len(suffix)]
+
+                        if base_col not in df.columns:
+                            df[base_col] = df[col]
+                        else:
+                            df[base_col] = df[base_col].combine_first(df[col])
+
+                        df = df.drop(columns=[col])
+                        break
+
             return df
 
         pos_df = get_clean_df(pos_path)
@@ -1367,44 +1393,74 @@ def generate_war_room_history():
             return
 
         # ✅ anchor date는 반드시 macro_data의 마지막 시장 기준 날짜
-        anchor_date = str(macro_df['date'].max())
+        anchor_date = str(macro_df["date"].max())
         print(f"[DEBUG] war room anchor_date = {anchor_date}")
 
-        merged = pd.merge(pos_df, macro_df, on='date', how='outer')
-        merged = pd.merge(merged, yield_df, on='date', how='outer')
-        merged = pd.merge(merged, spread_df, on='date', how='outer')
+        merged = pd.merge(pos_df, macro_df, on="date", how="outer")
+        merged = pd.merge(merged, yield_df, on="date", how="outer")
+        merged = pd.merge(merged, spread_df, on="date", how="outer")
 
-        merged = merged.sort_values('date').reset_index(drop=True)
-        merged = merged[merged['date'] <= anchor_date]
-        # ✅ 미래 데이터 누수 방지: bfill 제거
+        # ✅ merge 후 중복 컬럼 정리
+        merged = cleanup_duplicate_columns(merged)
+
+        merged = merged.sort_values("date").reset_index(drop=True)
+        merged = merged[merged["date"] <= anchor_date]
+
+        # ✅ 미래 데이터 누수 방지: bfill 금지
         merged = merged.ffill()
 
         # ✅ anchor_date 기준 row만 사용
-        today_data = merged[merged['date'].astype(str) == anchor_date].tail(1)
+        today_data = merged[merged["date"].astype(str) == anchor_date].tail(1)
 
         if today_data.empty:
             print(f"❌ anchor_date={anchor_date}에 해당하는 데이터가 없습니다.")
             return
 
+        today_data = today_data.copy()
+
+        # ✅ Institutional Flow 결과 저장
+        # daily report에서 flow dict를 넘겨주면 그 값을 저장
+        # 없으면 기본값 저장
+        flow = institutional_flow or {}
+
+        today_data["FLOW_STATE"] = flow.get("state", "NO CLEAR FLOW")
+        today_data["FLOW_SCORE"] = flow.get("score", 0)
+        today_data["FLOW_CONFIDENCE"] = flow.get("confidence", "N/A")
+        today_data["FLOW_ACTION_BIAS"] = flow.get("action_bias", "N/A")
+        today_data["FLOW_DRIFT_LABEL"] = flow.get("drift_label", "N/A")
+        today_data["FLOW_GAMMA_STATE"] = flow.get("gamma_state", "N/A")
+
+        # ✅ 기존 파일 처리
         if not os.path.exists(output_path):
             today_data.to_csv(output_path, index=False)
             print(f"✅ {output_path} 신규 생성 완료.")
         else:
             existing_df = pd.read_csv(output_path)
-            existing_df['date'] = pd.to_datetime(existing_df['date'], errors='coerce').dt.strftime('%Y-%m-%d')
+
+            if "date" in existing_df.columns:
+                existing_df["date"] = pd.to_datetime(
+                    existing_df["date"], errors="coerce"
+                ).dt.strftime("%Y-%m-%d")
+                existing_df = existing_df.dropna(subset=["date"])
+
+            # ✅ 기존 파일 안의 중복 컬럼도 정리
+            existing_df = cleanup_duplicate_columns(existing_df)
 
             # ✅ anchor_date 이전까지만 남기고, anchor_date는 새 today_data로 교체
-            existing_df = existing_df[existing_df['date'] < anchor_date]
-        
+            existing_df = existing_df[existing_df["date"] < anchor_date]
+
             final_df = pd.concat([existing_df, today_data], ignore_index=True)
-            final_df = final_df.sort_values('date').reset_index(drop=True)
+
+            # ✅ concat 후에도 한 번 더 중복 컬럼 정리
+            final_df = cleanup_duplicate_columns(final_df)
+
+            final_df = final_df.sort_values("date").reset_index(drop=True)
             final_df.to_csv(output_path, index=False)
+
             print(f"✅ {output_path}에 오늘자({anchor_date}) 보정 데이터 반영 완료.")
-                
 
     except Exception as e:
         print(f"❌ 데이터팩 생성 중 에러: {e}")
-
     
     
 def generate_daily_report() -> None:
@@ -1572,7 +1628,7 @@ def generate_daily_report() -> None:
     print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
 
         # War room history 저장
-    generate_war_room_history()
+    generate_war_room_history(institutional_flow=flow_result)
 
     # -------------------------
     # 5) SEW 먼저 로드
