@@ -309,7 +309,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
-- **Structure(3번):** `MIXED` | **Price(Regime):** `RISK-OFF` | **VIX:** `16.99`
+- **Structure(3번):** `MIXED` | **Price(Regime):** `SOFT RISK-OFF` | **Bucket:** `RISK-OFF` | **VIX:** `16.99`
 - **Positioning Data:** Z-Score: `1.79` (>1.8 시 Run) | Gamma: `2.08` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
@@ -455,8 +455,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.49758109861164185
-- **Z-Score (5d):** -0.7061908348268282
+- **Z-Score (1d):** 0.4975835121165262
+- **Z-Score (5d):** -0.7061914553141105
 
 ### EEM
 - **Crash?** False
@@ -473,8 +473,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3623951364443306
-- **Z-Score (5d):** -0.27818585154464304
+- **Z-Score (1d):** 0.36239560525517717
+- **Z-Score (5d):** -0.2781858127385929
 
 ### EWJ
 - **Crash?** False
