@@ -4587,11 +4587,12 @@ def build_tactical_allocation(
         reduction_needed = max(0.0, float(prev_exposure) - float(total_exposure))
 
         priority_rows = rank_deleveraging_priority(
-            score=score,
-            weights=weights,
-            divergence_flags=divergence_flags,
-            momentum_scores=momentum_scores,
-        )
+        score=score,
+        weights=weights,
+        divergence_flags=divergence_flags,
+        momentum_scores=momentum_scores,
+        sector_classification=sector_classification,
+    )
 
         MAX_CUT_RATIO = 0.5
 
@@ -5360,7 +5361,11 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         weights=weights,
         divergence_flags=divergence_flags,
         momentum_scores=sector_momentum,
+        sector_classification=sector_classification,
     )
+    # -------------------------
+    # Leveraging Priority Preview
+    # -------------------------
     # -------------------------
     # Leveraging Priority Preview
     # -------------------------
@@ -5371,11 +5376,16 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
                 "priority_score": (
                     score.get(sector, 0)
                     + max(sector_momentum.get(sector, 0), 0) * 1.5
+                    + (2 if sector_classification.get(sector) == "HIGH_CONVICTION_ALIGNED" else 0)
                     + (1 if divergence_flags.get(sector) == "POSITIVE_DIVERGENCE" else 0)
+                    - (2 if sector_classification.get(sector) == "FLOW_WEAK" else 0)
+                    - (3 if sector_classification.get(sector) == "THEORY_TRAP" else 0)
+                    - (5 if sector_classification.get(sector) == "AVOID" else 0)
                     - (1 if divergence_flags.get(sector) == "NEGATIVE_DIVERGENCE" else 0)
                 ),
                 "score": score.get(sector, 0),
                 "weight": weights.get(sector, 0),
+                "classification": sector_classification.get(sector, "ALIGNED"),
                 "div": divergence_flags.get(sector, "ALIGNED"),
                 "mom": sector_momentum.get(sector, 0),
             }
@@ -5383,8 +5393,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         ],
         key=lambda x: x["priority_score"],
         reverse=True,
-    )    
-    
+    )
+        
     # -------------------------
     # Report 출력
     # -------------------------
