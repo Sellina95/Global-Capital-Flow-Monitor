@@ -80,8 +80,8 @@
 - **추가 이유:** US10Y/DXY/VIX는 ‘시장의 기대’를 보여주고, FCI는 ‘현실의 압박’을, Real Rates는 ‘위험을 감수할 유인’을 보여준다.
 
 - **기대(가격) 신호:** US10Y(↓) / DXY(↑) / VIX(↑)
-- **현실(FCI):** level=EASY (완화) / dir(→) | as of: 2026-05-02 (FRED last available)
-- **유인(Real Rates):** level=NEUTRAL (중립) / dir(→) | as of: 2026-05-02 (FRED last available)
+- **현실(FCI):** level=EASY (완화) / dir(→) | as of: 2026-05-03 (FRED last available)
+- **유인(Real Rates):** level=NEUTRAL (중립) / dir(→) | as of: 2026-05-03 (FRED last available)
 - **판정:** **LIQUIDITY MIXED / FRAGILE (혼조·취약)**
 - **근거:** 기대(가격)와 현실(FCI)/유인(실질금리) 정렬이 불완전
 - **Note:** FCI/Real Rates는 매일 갱신되지 않을 수 있어, ‘최근 available 값’을 반영함
@@ -191,19 +191,19 @@ So What?
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
 ⚠ Market Closed / Stale Data → Price-based geo signals muted.
 
-- **Geo Stress Score (z-composite):** **-0.15**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **-0.14**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
 - **3D Avg Score:** -0.17
-- **Geo Momentum:** +0.02 *(Status: FLAT)*
+- **Geo Momentum:** +0.03 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Red_Sea
-- **Cosine Similarity Score:** -0.083
+- **Cosine Similarity Score:** -0.067
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Red_Sea: -0.083
-  - Taiwan_Tension: -0.104
-  - China_Trade_2018: -0.131
+  - Red_Sea: -0.067
+  - Taiwan_Tension: -0.088
+  - China_Trade_2018: -0.118
 - **Top Drivers:**
   - USDJPY: z_used=+3.04 (z1d=-3.78, z5d=-1.93, raw_w=0.05, norm_w=0.04) → contrib=+0.12
   - KR10Y_SPREAD: z_used=-1.42 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.09
@@ -255,7 +255,7 @@ So What?
 ### 🎯 8) Incentive Filter (Wall St. Logic)
 
 **핵심 신호:** 장단기차(51.00bp) | 실질금리(1.94%) | DXY(98.21)
-*(as of: RealRate: 2026-05-02 / FRED last available)*
+*(as of: RealRate: 2026-05-03 / FRED last available)*
 
 Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화 과정)
 
@@ -281,7 +281,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### 🏗️ 12) Structural Filter (v3)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
 - **핵심 신호:** US10Y(↓) / DXY(↑) / GOLD(↑) / VIX(↑) / WTI(↓)
-- **Meaningful Move Check:** DXY=0.13254205851454465 / GOLD=0.3293758291533108 / US10Y=-0.2733504393690673 / VIX=0.5920685913761188 / WTI=-2.9789637979528494
+- **Meaningful Move Check:** DXY=0.13254205851454465 / GOLD=0.6457581950344232 / US10Y=-0.2733504393690673 / VIX=0.5920685913761188 / WTI=-2.9789637979528494
 - **판정:** **NEUTRAL**
 - **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
 
@@ -319,7 +319,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Final Multiplier:** 0.93x (VIX x Positioning x Confidence)
 - **Confidence Level:** LOW (flow_score=2)
 - **Positioning Layer:** ⚠️ Positive Gamma(2.08)
-- **Slope Intensity:** 0.1450
+- **Slope Intensity:** 0.0100
 - **Brake Drivers:** ⚠️ Positioning Heat, Low Confidence
 
 - **📊 Recommended Exposure:** **42%**
@@ -384,28 +384,28 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Technology | +5 | ALIGNED | **21.4%** | DELEVERAGE |
-| Industrials | +1.7 | ALIGNED | **8.1%** | DELEVERAGE |
-| Consumer Staples | +0.5 | ALIGNED | **4.3%** | DELEVERAGE |
-| Financials | +0.5 | ALIGNED | **2.1%** | DELEVERAGE |
-| Health Care | +0.5 | ALIGNED | **4.3%** | DELEVERAGE |
-| Consumer Discretionary | +0.2 | ALIGNED | **1.7%** | DELEVERAGE |
-| **Cash & Hedge** | - | - | **58.1%** | DEFENSIVE |
+| Technology | +5 | ALIGNED | **25.0%** | SMALL ADJUST |
+| Industrials | +1.7 | ALIGNED | **8.1%** | HOLD |
+| Consumer Staples | +0.5 | ALIGNED | **4.3%** | HOLD |
+| Financials | +0.5 | ALIGNED | **2.1%** | HOLD |
+| Health Care | +0.5 | ALIGNED | **4.3%** | HOLD |
+| Consumer Discretionary | +0.2 | ALIGNED | **1.7%** | HOLD |
+| **Cash & Hedge** | - | - | **54.5%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Momentum → Score → Current Weight
-1. Technology (priority_score=4.71, score=5.0, weight=21.4%, div=ALIGNED, mom=2)
+1. Technology (priority_score=6.21, score=5.0, weight=25.0%, div=ALIGNED, mom=2)
 2. Financials (priority_score=2.85, score=0.5, weight=2.1%, div=ALIGNED, mom=-2)
-3. Industrials (priority_score=0.05, score=1.7, weight=8.1%, div=ALIGNED, mom=0)
-4. Consumer Discretionary (priority_score=-0.06, score=0.2, weight=1.7%, div=ALIGNED, mom=0)
-5. Consumer Staples (priority_score=-0.15, score=0.5, weight=4.3%, div=ALIGNED, mom=0)
+3. Consumer Discretionary (priority_score=-0.06, score=0.2, weight=1.7%, div=ALIGNED, mom=0)
+4. Consumer Staples (priority_score=-0.15, score=0.5, weight=4.3%, div=ALIGNED, mom=0)
+5. Health Care (priority_score=-0.15, score=0.5, weight=4.3%, div=ALIGNED, mom=0)
 
 **Leveraging Priority Preview:**
 - 기준: Score → Momentum → Positive Divergence
-1. Technology (priority_score=8.00, score=5.0, weight=21.4%, div=ALIGNED, mom=2)
+1. Technology (priority_score=8.00, score=5.0, weight=25.0%, div=ALIGNED, mom=2)
 2. Industrials (priority_score=1.70, score=1.7, weight=8.1%, div=ALIGNED, mom=0)
 3. Consumer Staples (priority_score=0.50, score=0.5, weight=4.3%, div=ALIGNED, mom=0)
 4. Financials (priority_score=0.50, score=0.5, weight=2.1%, div=ALIGNED, mom=-2)
@@ -415,7 +415,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Technology | XLK | 21.4% | PRIMARY |
+| Technology | XLK | 25.0% | PRIMARY |
 | Industrials | XLI | 8.1% | SMALL |
 | Consumer Staples | XLP | 4.3% | SMALL |
 | Financials | XLF | 2.1% | SMALL |
@@ -443,8 +443,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.49758109861164185
-- **Z-Score (5d):** -0.7061914587080781
+- **Z-Score (1d):** 0.49758085308897715
+- **Z-Score (5d):** -0.7061910700248082
 
 ### EEM
 - **Crash?** False
@@ -462,7 +462,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Crash?** False
 - **Risk Level:** NORMAL
 - **Z-Score (1d):** 0.3623951297349871
-- **Z-Score (5d):** -0.2781858728161308
+- **Z-Score (5d):** -0.2781859887121746
 
 ### EWJ
 - **Crash?** False
