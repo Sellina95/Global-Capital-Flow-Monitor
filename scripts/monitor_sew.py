@@ -11,8 +11,6 @@ from typing import Dict, Any, Optional
 # ---------------------------
 # 1. 통합 데이터(CSV) 로드 함수
 # ---------------------------
-
-
 def load_war_room_context(csv_path: str = "data/market_data_history.csv"):
     if not os.path.exists(csv_path):
         return None
@@ -122,7 +120,10 @@ def correlation_break_filter(market_data: Dict[str, Any]) -> str:
 
 
 # ---------------------------
-# 4. 15번 필터: Volatility-Controlled Exposure
+# 4. 15번 필터: SEW 실시간용 Volatility-Controlled Exposure
+# 주의:
+# - 이 함수는 monitor_sew.py 전용 실시간 안전장치
+# - Daily Report의 15번 v3.0과는 별도
 # ---------------------------
 def volatility_controlled_exposure_filter(
     market_data: Dict[str, Any], context: Dict[str, Any]
@@ -183,31 +184,26 @@ def detect_event_signature(
     cta_score = float(context.get("CTA_MOMENTUM_SCORE", 0.0) or 0.0)
     pos_slope = float(market_snap.get("POS_SLOPE", 0.0) or 0.0)
 
-    # 1) 시장 전체 리스크오프 쇼크
     if spy_z < -2.5 and vix_z > 2.5:
         if pos_z > 1.8 or abs(pos_slope) > 0.5:
             return "LIQUIDATION_SHOCK"
         return "RISK_OFF_SHOCK"
 
-    # 2) 기술주 중심 디레버리징
     if qqq_z < -2.5 and vix_z > 2.0:
         if cta_score >= 1.0 or pos_z > 1.5:
             return "TECH_DELEVERAGING"
         return "TECH_STRESS"
 
-    # 3) 오일 급락 + 달러 급등 = 매크로 플로우 왜곡
     if wti_z < -2.5 and dxy_z > 2.0:
         if pos_z > 1.8 or abs(pos_slope) > 0.5:
             return "MACRO_UNWIND"
         return "MACRO_FLOW_DISLOCATION"
 
-    # 4) 상승 쪽 squeeze
     if spy_z > 2.5 and vix_z < -2.0:
         if gamma_bias < 0.5:
             return "VOL_CRUSH_SQUEEZE"
         return "RISK_ON_SQUEEZE"
 
-    # 5) 포지셔닝만 과열된 unwind 경고
     if pos_z > 2.2 and abs(pos_slope) > 0.5:
         return "POSITION_UNWIND_RISK"
 
@@ -220,7 +216,7 @@ def detect_event_signature(
 def download_intraday_prices(
     ticker: str,
     period: str = "5d",
-    interval: str = "5m"
+    interval: str = "5m",
 ) -> Optional[np.ndarray]:
     try:
         df = yf.download(
@@ -277,24 +273,128 @@ def save_sew_state(
         }
 
     payload = {
-    "timestamp": timestamp,
-    "status": sew_status,
-    "event_type": event_type,
-    "spike_count": spike_count,
-    "extreme_count": extreme_count,
-    "recommended_exposure": recommended_exposure,
-    "deadman": deadman,
-    "summary": summary,
-    "deadman_reason": deadman_reason,
-    "assets": assets,
-}
+        "timestamp": timestamp,
+        "status": sew_status,
+        "event_type": event_type,
+        "spike_count": spike_count,
+        "extreme_count": extreme_count,
+        "recommended_exposure": recommended_exposure,
+        "deadman": deadman,
+        "summary": summary,
+        "deadman_reason": deadman_reason,
+        "assets": assets,
+    }
 
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
 
 # ---------------------------
-# 8. 메인 감시 및 이메일 로직 (실전용)
+# 7.5 Institutional Flow 상태 저장/비교 함수
+# ---------------------------
+def load_previous_flow_state(filepath: str = "insights/flow_state.json") -> Dict[str, Any]:
+    if not os.path.exists(filepath):
+        return {}
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_flow_state(
+    current_state: str,
+    current_score: int,
+    timestamp: str,
+    filepath: str = "insights/flow_state.json",
+) -> None:
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    payload = {
+        "timestamp": timestamp,
+        "flow_state": current_state,
+        "flow_score": current_score,
+    }
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+
+def extract_current_flow_from_context(context: Dict[str, Any]) -> tuple[str, int]:
+    """
+    market_data_history.csv의 컬럼명이 바뀌어도 최대한 안전하게 읽는다.
+    없으면 NO CLEAR FLOW / 0으로 처리.
+    """
+    current_flow_state = str(
+        context.get("flow_state")
+        or context.get("FLOW_STATE")
+        or context.get("institutional_flow_state")
+        or context.get("INSTITUTIONAL_FLOW_STATE")
+        or context.get("flow")
+        or context.get("FLOW")
+        or "NO CLEAR FLOW"
+    ).upper()
+
+    try:
+        current_flow_score = int(float(
+            context.get("flow_score")
+            or context.get("FLOW_SCORE")
+            or context.get("institutional_flow_score")
+            or context.get("INSTITUTIONAL_FLOW_SCORE")
+            or 0
+        ))
+    except Exception:
+        current_flow_score = 0
+
+    return current_flow_state, current_flow_score
+
+
+def evaluate_flow_change(
+    prev_flow_state: str,
+    current_flow_state: str,
+) -> tuple[bool, str, str]:
+    """
+    이전 flow_state와 현재 flow_state를 비교해 알림 여부/레벨/메시지 산출
+    """
+    prev_flow_state = str(prev_flow_state or "N/A").upper()
+    current_flow_state = str(current_flow_state or "NO CLEAR FLOW").upper()
+
+    if prev_flow_state == "N/A":
+        return False, "NONE", ""
+
+    if current_flow_state == prev_flow_state:
+        return False, "NONE", ""
+
+    if prev_flow_state == "NO CLEAR FLOW" and current_flow_state in ["EARLY TRACE", "CONFIRMED FLOW"]:
+        return (
+            True,
+            "UPGRADE",
+            f"Institutional flow upgraded: {prev_flow_state} → {current_flow_state}",
+        )
+
+    if prev_flow_state == "EARLY TRACE" and current_flow_state == "CONFIRMED FLOW":
+        return (
+            True,
+            "CONFIRMATION",
+            f"Institutional flow confirmed: {prev_flow_state} → {current_flow_state}",
+        )
+
+    if current_flow_state == "NO CLEAR FLOW":
+        return (
+            True,
+            "FADE",
+            f"Institutional flow faded: {prev_flow_state} → {current_flow_state}",
+        )
+
+    return (
+        True,
+        "CHANGE",
+        f"Institutional flow changed: {prev_flow_state} → {current_flow_state}",
+    )
+
+
+# ---------------------------
+# 8. 메인 감시 및 이메일 로직
 # ---------------------------
 def check_market_anomaly():
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -305,8 +405,8 @@ def check_market_anomaly():
         "SPY": "SPY",
         "QQQ": "QQQ",
         "VIX": "^VIX",
-        "DXY": "UUP",   # DX-Y.NYB 대체
-        "WTI": "USO",   # CL=F 대체
+        "DXY": "UUP",
+        "WTI": "USO",
     }
 
     market_snap: Dict[str, Any] = {}
@@ -360,20 +460,50 @@ def check_market_anomaly():
                 f"{icon} {name}: {curr:.2f} ({change:+.2f}%) | z={z:+.2f} [{state}]"
             )
 
-            print(f"✅ {name} 수집 성공 | len={len(prices)} | curr={curr:.2f} | change={change:+.2f}% | z={z:+.2f}")
+            print(
+                f"✅ {name} 수집 성공 | len={len(prices)} | "
+                f"curr={curr:.2f} | change={change:+.2f}% | z={z:+.2f}"
+            )
 
         except Exception as e:
             print(f"❌ {name} 오류: {e}")
             continue
 
-    # 다중 자산 기준 이상징후 판정
     if extreme_count >= 1:
         is_spiking = True
     elif spike_count >= 2:
         is_spiking = True
 
-    
     event_type = detect_event_signature(z_map, context, market_snap)
+
+    # ---------------------------
+    # Institutional Flow Change Monitor
+    # ---------------------------
+    current_flow_state, current_flow_score = extract_current_flow_from_context(context)
+
+    prev_flow = load_previous_flow_state()
+    prev_flow_state = str(prev_flow.get("flow_state", "N/A") or "N/A").upper()
+    try:
+        prev_flow_score = int(float(prev_flow.get("flow_score", 0) or 0))
+    except Exception:
+        prev_flow_score = 0
+
+    flow_change_alert, flow_alert_level, flow_alert_msg = evaluate_flow_change(
+        prev_flow_state=prev_flow_state,
+        current_flow_state=current_flow_state,
+    )
+
+    save_flow_state(
+        current_state=current_flow_state,
+        current_score=current_flow_score,
+        timestamp=now_str,
+    )
+
+    print(
+        f"[FLOW MONITOR] prev={prev_flow_state}({prev_flow_score}) "
+        f"current={current_flow_state}({current_flow_score}) "
+        f"alert={flow_alert_level}"
+    )
 
     market_snap["IS_SPIKING"] = is_spiking
     market_snap["POS_SLOPE"] = get_recent_pos_slope(csv_path)
@@ -382,9 +512,7 @@ def check_market_anomaly():
 
     corr_msg = correlation_break_filter(market_snap)
     recommended_exp, status_msg = volatility_controlled_exposure_filter(market_snap, context)
-    # TEST ONLY
-    #recommended_exp = 0
-    #status_msg = "🚨 DEAD MAN'S SWITCH: TEST_TRIGGER"
+
     # ---------------------------
     # SEW 상태 판단
     # ---------------------------
@@ -404,7 +532,7 @@ def check_market_anomaly():
         sew_summary = f"✅ 이상징후 없음 ({len(z_map)}개 자산 정상 범위 / z-score 발작 없음)"
 
     # ---------------------------
-    # SEW 상태 파일 저장 (항상 저장)
+    # SEW 상태 파일 저장
     # ---------------------------
     save_sew_state(
         filepath="insights/sew_state.json",
@@ -419,12 +547,9 @@ def check_market_anomaly():
         deadman_reason=status_msg,
         z_map=z_map,
         market_snap=market_snap,
-)
+    )
+
     # ---------------------------
-    # ---------------------------
-    # 실전용 발송 조건
-    # ---------------------------
-        # ---------------------------
     # 실전용 발송 조건
     # ---------------------------
     should_alert = (
@@ -442,15 +567,18 @@ def check_market_anomaly():
         ]
         or recommended_exp == 0
         or bool(corr_msg)
+        or flow_change_alert
     )
 
+    os.makedirs("insights", exist_ok=True)
+
     if should_alert:
-        subject = f"🚨 [SEW] {sew_status} | {event_type} | Exp {recommended_exp}%"
+        subject = f"🚨 [SEW] {sew_status} | {event_type} | Flow {flow_alert_level} | Exp {recommended_exp}%"
 
         body = f"""
 [Digital War Room - Real-time Status]
 
-현재 마켓에서 이상징후가 발견되어 시스템이 자산 보호를 위해 긴급 조치를 검토 중입니다.
+현재 마켓에서 이상징후 또는 기관성 흐름 변화가 감지되었습니다.
 
 ─────────────────────────────────────────
 📢 실시간 요약 (Exposure: {recommended_exp}%)
@@ -461,6 +589,17 @@ def check_market_anomaly():
 - Event Type: {event_type}
 - Deadman Reason: {status_msg if recommended_exp == 0 else 'N/A'}
 - 아침 데이터 기준: {context.get('date', 'Unknown')}
+
+─────────────────────────────────────────
+🏦 Institutional Flow Monitor
+─────────────────────────────────────────
+- Flow State: {current_flow_state} (prev: {prev_flow_state})
+- Flow Score: {current_flow_score} (prev: {prev_flow_score})
+- Flow Alert: {flow_alert_msg if flow_change_alert else 'N/A'}
+
+─────────────────────────────────────────
+📌 Positioning / Spike
+─────────────────────────────────────────
 - POS_Z: {context.get('SP500_POS_Z', 'N/A')}
 - POS_SLOPE: {market_snap.get('POS_SLOPE', 0.0):+.2f}
 - Spike Count: {spike_count}
@@ -475,16 +614,17 @@ def check_market_anomaly():
 🧠 전략적 가이드
 ─────────────────────────────────────────
 💡 권장 익스포저가 {recommended_exp}%로 산출되었습니다.
-💡 {'즉시 포지션을 동결하거나 축소하십시오.' if recommended_exp == 0 else '가격/포지셔닝/상관관계 이상반응을 주의 깊게 관찰하십시오.'}
+💡 {'즉시 포지션을 동결하거나 축소하십시오.' if recommended_exp == 0 else '가격/포지셔닝/상관관계/기관흐름 변화를 주의 깊게 관찰하십시오.'}
 ─────────────────────────────────────────
         """.strip()
 
-        os.makedirs("insights", exist_ok=True)
         with open("insights/alerts.log", "a", encoding="utf-8") as f:
             f.write(
                 f"[{now_str}] ALERT | "
                 f"SEW={sew_status} | "
                 f"EVENT={event_type} | "
+                f"flow={prev_flow_state}->{current_flow_state} | "
+                f"flow_alert={flow_alert_level} | "
                 f"Exp={recommended_exp}% | "
                 f"{status_msg} | "
                 f"spike={spike_count} extreme={extreme_count} | "
@@ -501,10 +641,13 @@ def check_market_anomaly():
             f"recommended_exp={recommended_exp}, "
             f"event_type={event_type}, "
             f"sew_status={sew_status}, "
+            f"flow={prev_flow_state}->{current_flow_state}, "
+            f"flow_alert={flow_alert_level}, "
             f"corr_msg_exists={bool(corr_msg)}, "
             f"z_map={z_map}"
         )
         print(f"DEBUG: RESEND_FROM={resend_from}, RESEND_TO={resend_to}")
+
         email_sent = False
 
         if api_key and resend_from and resend_to:
@@ -525,30 +668,30 @@ def check_market_anomaly():
                 )
                 print(f"✅ Resend status: {resp.status_code}")
                 print(f"✅ Resend response: {resp.text}")
-        
+
                 if resp.status_code in [200, 201]:
                     email_sent = True
                 else:
                     print("❌ 이메일 API 호출은 되었지만 성공 응답이 아닙니다.")
-        
+
             except Exception as e:
                 print(f"❌ 이메일 발송 실패: {e}")
         else:
             print("❌ RESEND_API_KEY / RESEND_FROM / RESEND_TO 환경변수 확인 필요")
-        
-        if email_sent:
-            print(f"📧 실전 알림 발송 완료: {sew_status} | {event_type}")
-        else:
-            print(f"⚠️ 실전 알림 미발송: {sew_status} | {event_type}")
 
-    
+        if email_sent:
+            print(f"📧 실전 알림 발송 완료: {sew_status} | {event_type} | {flow_alert_level}")
+        else:
+            print(f"⚠️ 실전 알림 미발송: {sew_status} | {event_type} | {flow_alert_level}")
+
     else:
-        os.makedirs("insights", exist_ok=True)
         with open("insights/alerts.log", "a", encoding="utf-8") as f:
             f.write(
                 f"[{now_str}] NO_ALERT | "
                 f"SEW={sew_status} | "
                 f"EVENT={event_type} | "
+                f"flow={prev_flow_state}->{current_flow_state} | "
+                f"flow_alert={flow_alert_level} | "
                 f"Exp={recommended_exp}% | "
                 f"spike={spike_count} extreme={extreme_count} | "
                 f"corr_break={'YES' if bool(corr_msg) else 'NO'} | "
