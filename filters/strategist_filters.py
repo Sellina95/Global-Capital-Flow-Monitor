@@ -4387,36 +4387,35 @@ def build_tactical_allocation(
     for sector, raw_score in positive_scores.items():
         classification = sector_classification.get(sector, "ALIGNED")
         div_flag = divergence_flags.get(sector, "ALIGNED")
-
+    
         multiplier = 1.0
-
+    
         if classification == "HIGH_CONVICTION_ALIGNED":
             multiplier *= 1.15
-
+    
         elif classification == "FLOW_WEAK":
-            multiplier *= 0.75
-
+            multiplier *= 0.60
+    
         elif classification == "THEORY_TRAP":
-            multiplier *= 0.50
-
+            multiplier *= 0.40
+    
         elif classification == "POSITIVE_DIVERGENCE":
             multiplier *= 1.10
-
+    
         elif classification == "AVOID":
             multiplier *= 0.0
-
-        # divergence 추가 반영
+    
         if div_flag == "NEGATIVE_DIVERGENCE":
-            multiplier *= 0.70
-
+            multiplier *= 0.60
+    
         elif div_flag == "POSITIVE_DIVERGENCE":
             multiplier *= 1.15
-
+    
         adjusted = raw_score * multiplier
-
+    
         if adjusted > 0:
             adjusted_scores[sector] = adjusted
-
+    
     total_score_sum = sum(adjusted_scores.values())
     weights: Dict[str, float] = {}
 
