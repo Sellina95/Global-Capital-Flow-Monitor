@@ -395,44 +395,44 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Technology | +2.8 | ALIGNED | **19.4%** | DELEVERAGE |
-| Financials | +1.1 | NEGATIVE_DIVERGENCE | **5.4%** | DELEVERAGE |
-| Industrials | +0.9 | NEGATIVE_DIVERGENCE | **4.5%** | DELEVERAGE |
-| Consumer Staples | +0.3 | ALIGNED | **2.6%** | DELEVERAGE |
-| Health Care | +0.3 | ALIGNED | **2.6%** | DELEVERAGE |
-| Consumer Discretionary | +0.0 | ALIGNED | **0.2%** | DELEVERAGE |
-| **Cash & Hedge** | - | - | **65.3%** | DEFENSIVE |
+| Technology | +2.8 | ALIGNED | **25.3%** | DELEVERAGE |
+| Financials | +1.1 | NEGATIVE_DIVERGENCE | **4.8%** | DELEVERAGE |
+| Industrials | +0.9 | NEGATIVE_DIVERGENCE | **4.0%** | DELEVERAGE |
+| Consumer Staples | +0.3 | ALIGNED | **2.8%** | DELEVERAGE |
+| Health Care | +0.3 | ALIGNED | **2.8%** | DELEVERAGE |
+| Consumer Discretionary | +0.0 | ALIGNED | **0.3%** | DELEVERAGE |
+| **Cash & Hedge** | - | - | **60.0%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Momentum → Score → Current Weight
-1. Financials (priority_score=5.68, score=1.07, weight=5.4%, div=NEGATIVE_DIVERGENCE, mom=-2)
-2. Technology (priority_score=4.98, score=2.77, weight=19.4%, div=ALIGNED, mom=2)
-3. Industrials (priority_score=2.73, score=0.8999999999999999, weight=4.5%, div=NEGATIVE_DIVERGENCE, mom=0)
-4. Consumer Discretionary (priority_score=-0.01, score=0.030000000000000027, weight=0.2%, div=ALIGNED, mom=0)
-5. Consumer Staples (priority_score=-0.1, score=0.33, weight=2.6%, div=ALIGNED, mom=0)
+1. Technology (priority_score=7.49, score=2.77, weight=25.3%, div=ALIGNED, mom=2)
+2. Financials (priority_score=5.68, score=1.07, weight=4.8%, div=NEGATIVE_DIVERGENCE, mom=-2)
+3. Industrials (priority_score=2.73, score=0.8999999999999999, weight=4.0%, div=NEGATIVE_DIVERGENCE, mom=0)
+4. Consumer Discretionary (priority_score=-0.01, score=0.030000000000000027, weight=0.3%, div=ALIGNED, mom=0)
+5. Consumer Staples (priority_score=-0.1, score=0.33, weight=2.8%, div=ALIGNED, mom=0)
 
 **Leveraging Priority Preview:**
 - 기준: Score → Momentum → Positive Divergence
-1. Technology (priority_score=5.77, score=2.77, weight=19.4%, div=ALIGNED, mom=2)
-2. Consumer Staples (priority_score=0.33, score=0.33, weight=2.6%, div=ALIGNED, mom=0)
-3. Health Care (priority_score=0.33, score=0.33, weight=2.6%, div=ALIGNED, mom=0)
-4. Financials (priority_score=0.07, score=1.07, weight=5.4%, div=NEGATIVE_DIVERGENCE, mom=-2)
-5. Consumer Discretionary (priority_score=0.03, score=0.030000000000000027, weight=0.2%, div=ALIGNED, mom=0)
+1. Technology (priority_score=5.77, score=2.77, weight=25.3%, div=ALIGNED, mom=2)
+2. Consumer Staples (priority_score=0.33, score=0.33, weight=2.8%, div=ALIGNED, mom=0)
+3. Health Care (priority_score=0.33, score=0.33, weight=2.8%, div=ALIGNED, mom=0)
+4. Financials (priority_score=0.07, score=1.07, weight=4.8%, div=NEGATIVE_DIVERGENCE, mom=-2)
+5. Consumer Discretionary (priority_score=0.03, score=0.030000000000000027, weight=0.3%, div=ALIGNED, mom=0)
 - **Divergence Adjustment:** Financials, Industrials penalized in weight sizing
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action |
 | :--- | :---: | :---: | :--- |
-| Technology | XLK | 19.4% | ADD |
-| Financials | XLF | 5.4% | SMALL |
-| Industrials | XLI | 4.5% | SMALL |
-| Consumer Staples | XLP | 2.6% | SMALL |
-| Health Care | XLV | 2.6% | SMALL |
-| Consumer Discretionary | XLY | 0.2% | SMALL |
+| Technology | XLK | 25.3% | PRIMARY |
+| Financials | XLF | 4.8% | SMALL |
+| Industrials | XLI | 4.0% | SMALL |
+| Consumer Staples | XLP | 2.8% | SMALL |
+| Health Care | XLV | 2.8% | SMALL |
+| Consumer Discretionary | XLY | 0.3% | SMALL |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -455,8 +455,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.49757973482450957
-- **Z-Score (5d):** -0.7061915146972663
+- **Z-Score (1d):** 0.49758109861164185
+- **Z-Score (5d):** -0.7061908348268282
 
 ### EEM
 - **Crash?** False
@@ -473,8 +473,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.36239568141697814
-- **Z-Score (5d):** -0.27818597156168556
+- **Z-Score (1d):** 0.3623951297349871
+- **Z-Score (5d):** -0.2781858728161308
 
 ### EWJ
 - **Crash?** False
