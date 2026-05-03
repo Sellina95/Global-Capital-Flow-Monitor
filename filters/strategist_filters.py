@@ -3703,6 +3703,150 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         price = "MIXED"
         price_bucket = "MIXED"
 
+
+
+def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
+    """
+    14) Divergence Monitor (Upgraded with Positioning Fragility Engine)
+
+    [핵심 로직]
+    - Macro(Structure) vs Price(Regime) 사이의 괴리 분석
+    - Positioning(Z-Score, Gamma, CTA)의 '임계치'와 '충돌'을 통한 폭발 가능성 진단
+    - SOFT/HARD RISK-OFF 등 세부 regime 표기는 보존하되,
+      내부 판정은 price_bucket으로 안정적으로 처리
+    """
+
+    # 1️⃣ 기초 데이터 로드
+    policy_bias_line = str(market_data.get("POLICY_BIAS_LINE", ""))
+    market_regime = str(market_data.get("MARKET_REGIME", "N/A")).upper()
+    vix_series = _get_series(market_data, "VIX") or {}
+    vix_value = float(vix_series.get("today", 20))
+
+    # 2️⃣ 포지셔닝 데이터 추출
+    try:
+        pos_z = float(market_data.get("SP500_POS_Z", 0.0))
+    except Exception:
+        pos_z = 0.0
+
+    try:
+        gamma = float(market_data.get("DEALER_GAMMA_BIAS", 1.0))
+    except Exception:
+        gamma = 1.0
+
+    try:
+        cta = float(market_data.get("CTA_MOMENTUM_SCORE", 0.0))
+    except Exception:
+        cta = 0.0
+
+    # 3️⃣ Structure(정책) & Price(시장) 판별
+    policy_upper = policy_bias_line.upper()
+
+    if "EASING" in policy_upper:
+        structure = "EASING"
+    elif "TIGHTENING" in policy_upper:
+        structure = "TIGHTENING"
+    else:
+        structure = "MIXED"
+
+    # 출력용 price / 내부 로직용 price_bucket 분리
+    if "HARD RISK-OFF" in market_regime:
+        price = "HARD RISK-OFF"
+        price_bucket = "RISK-OFF"
+    elif "SOFT RISK-OFF" in market_regime:
+        price = "SOFT RISK-OFF"
+        price_bucket = "RISK-OFF"
+    elif "RISK-OFF" in market_regime:
+        price = "RISK-OFF"
+        price_bucket = "RISK-OFF"
+    elif "RISK-ON" in market_regime:
+        price = "RISK-ON"
+        price_bucket = "RISK-ON"
+    elif "EVENT-WATCHING" in market_regime:
+        price = "EVENT-WATCHING"
+        price_bucket = "MIXED"
+    elif "WAITING" in market_regime or "RANGE" in market_regime:
+        price = "WAITING / RANGE"
+        price_bucket = "MIXED"
+    elif "MIXED" in market_regime or "TRANSITION" in market_regime:
+        price = "TRANSITION / MIXED"
+        price_bucket = "MIXED"
+    else:
+        price = "MIXED"
+        price_bucket = "MIXED"
+
+    # [고도화 로직 1: 국면별 가변 임계치]
+    # 관망/긴축/리스크오프 국면에서는 1.8만 넘어도 예민하게 반응
+    # 완화 + 리스크온 국면에서는 2.2까지 허용
+    threshold_z = 1.8 if price_bucket != "RISK-ON" or structure == "TIGHTENING" else 2.2
+
+    # [고도화 로직 2: 수급 취약성(Fragility) 판정]
+    # CTA는 쏠렸는데 딜러 감마가 받아줄 힘이 없는 상태
+    is_fragile = (abs(cta) > 0.8 and gamma < 0.5)
+
+    # 4️⃣ 판정 및 결과 조립
+    status = "ALIGNED"
+    explanation = "구조와 가격, 수급이 조화를 이루며 추세 유지 중"
+    action_signal = "STAY (포지션 유지)"
+
+    # CASE A: 정책 완화 vs 가격 하락
+    if structure == "EASING" and price_bucket == "RISK-OFF":
+        if pos_z < -threshold_z and cta < -0.7:
+            status = "🚀 CAPITULATION / GENERATIONAL BUY"
+            explanation = f"정책 완화 속 항복 매물 발생(Z:{pos_z:.2f}). 기계적 매도 정점 국면."
+            action_signal = "AGGRESSIVE ACCUMULATE (공격적 매수)"
+        else:
+            status = "BEAR TRAP / DISCOUNT"
+            explanation = "유동성 구조는 우호적이나 일시적 수급 꼬임"
+            action_signal = "ACCUMULATE (분할 매수)"
+
+    # CASE B: 정책 긴축 vs 가격 상승
+    elif structure == "TIGHTENING" and price_bucket == "RISK-ON":
+        if pos_z > threshold_z or is_fragile:
+            status = "🚨 EXTREME BULL TRAP / FRAGILITY"
+            explanation = (
+                f"긴축 중 가격 과열. 특히 수급 취약성(Gamma:{gamma:.2f}) 감지됨. "
+                "폭락 전 마지막 불꽃."
+            )
+            action_signal = "EXIT / PROTECT CAPITAL (RUN 액션 준비)"
+        else:
+            status = "BULL TRAP / OVERHEATED"
+            explanation = "긴축 구조 속 가격 상승. 점진적 과열 국면"
+            action_signal = "REDUCE RISK (익절 시작)"
+
+    # CASE C: 추세 고갈
+    elif abs(pos_z) > threshold_z:
+        status = "⚡ TREND EXHAUSTION"
+        explanation = f"추세와 정책은 일치하나 포지션 에너지 고갈(Z:{pos_z:.2f}). 반전 가능성 상존."
+        action_signal = "MONITOR REVERSAL (RUN 액션 준비)"
+
+    # 5️⃣ 리포트 텍스트 생성
+    lines = []
+    lines.append("### ⚠ 14) Divergence Monitor (Macro vs Positioning)")
+    lines.append("- **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단")
+    lines.append("- **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?")
+    lines.append("")
+
+    lines.append(
+        f"- **Structure(3번):** `{structure}` | "
+        f"**Price(Regime):** `{price}` | "
+        f"**Bucket:** `{price_bucket}` | "
+        f"**VIX:** `{vix_value:.2f}`"
+    )
+
+    pos_line = (
+        f"- **Positioning Data:** "
+        f"Z-Score: `{pos_z:.2f}` (>{threshold_z} 시 Run) | "
+        f"Gamma: `{gamma:.2f}` (<0.5 시 Run) | "
+        f"CTA: `{cta:.1f}` (추세 변곡점 확인)"
+    )
+    lines.append(pos_line)
+
+    lines.append(f"- **Status:** **{status}** -> **해석:** {explanation}")
+    lines.append(f"- **Action Signal:** 🚨 **{action_signal}**")
+
+    return "\n".join(lines)
+
+
 def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     """
     🎯 15) Volatility-Controlled Exposure (v3.1 - Advanced Execution Brake Layer)
