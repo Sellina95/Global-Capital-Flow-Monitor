@@ -1658,9 +1658,14 @@ def generate_daily_report() -> None:
     # -------------------------
     commentary_block = build_strategist_commentary(market_data)
 
-        # War room history 저장
+    flow_for_history = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+
+    print("[DEBUG][FLOW FOR HISTORY]", flow_for_history)
+
     generate_war_room_history(
-        institutional_flow=market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+
+    institutional_flow=flow_for_history
+
     )
     # -------------------------
     # 7) Country ETF risk block
