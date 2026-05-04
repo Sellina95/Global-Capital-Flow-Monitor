@@ -5337,7 +5337,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         elif theo >= 1.0 and flow < -0.5:
             classification = "THEORY_TRAP"
             div_flag = "NEGATIVE_DIVERGENCE"
-            final = (aligned_theo_w * theo) + (aligned_flow_w * flow) - (1.5 * trap_penalty_mult)
+            final = (aligned_theo_w * theo) + (aligned_flow_w * flow) - (1.8 * trap_penalty_mult)
 
         elif theo < 1.0 and flow >= 1.5:
             classification = "POSITIVE_DIVERGENCE"
@@ -5366,6 +5366,9 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
 
         if regime_controller == "DISLOCATION":
             final *= 0.90
+
+        if classification == "THEORY_TRAP" and final > -0.3:
+            final = -0.3
 
         sector_classification[s] = classification
         divergence_flags[s] = div_flag
