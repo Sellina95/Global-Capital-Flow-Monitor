@@ -5010,8 +5010,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Financials", -0.5, "Growth Scare → 성장 둔화 시 금융 베타 부담", "PHASE")
 
     elif macro_profile == "SOFT_RISK_OFF_DISINFLATION":
-        add_score("Health Care", 1.0, "Soft Risk-Off Disinflation → 퀄리티/방어 선호", "PHASE")
-        add_score("Consumer Staples", 1.0, "Soft Risk-Off Disinflation → 필수소비 방어 보완", "PHASE")
+        add_score("Health Care", 1.2, "Soft Risk-Off Disinflation → 금리 안정/퀄리티 방어 우위", "PHASE")
+        add_score("Consumer Staples", 0.8, "Soft Risk-Off Disinflation → 필수소비 방어 보완", "PHASE")
         add_score("Technology", 0.5, "Soft Risk-Off Disinflation → 금리 안정으로 리더 섹터 일부 유지", "PHASE")
         add_score("Consumer Discretionary", -0.5, "Soft Risk-Off Disinflation → 소비 베타는 일부 제한", "PHASE")
         add_score("Industrials", -0.5, "Soft Risk-Off Disinflation → 경기민감 과열 억제", "PHASE")
