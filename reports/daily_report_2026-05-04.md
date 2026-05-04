@@ -152,9 +152,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.28% / 5D=+0.94% | Strength: LOW
-- **WTI:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.97% / 5D=+6.81% | Strength: MEDIUM
-- **DXY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.10% / 5D=-0.17% | Strength: LOW
-- **GOLD:** 🔴 DOWN | Short-term: MIXED | 1D=-1.11% / 5D=-2.08% | Strength: LOW
+- **WTI:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.44% / 5D=+6.25% | Strength: MEDIUM
+- **DXY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.09% / 5D=-0.18% | Strength: LOW
+- **GOLD:** 🔴 DOWN | Short-term: SHORT UP | 1D=-1.01% / 5D=-1.97% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -165,7 +165,7 @@
   - Equity (SPY): 🟢 UP / SHORT DOWN
   - Oil (WTI): 🟢 UP / SHORT DOWN
   - Dollar (DXY): 🟡 REBOUND / SHORT DOWN
-  - Gold (GOLD): 🔴 DOWN / MIXED
+  - Gold (GOLD): 🔴 DOWN / SHORT UP
 
 ### ⚠ 6.5) Correlation Break Monitor
 ⚠ Market Closed / Stale Data → Correlation signals evaluated conservatively.
@@ -310,7 +310,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `MIXED` | **Price(Regime):** `SOFT RISK-OFF` | **Bucket:** `RISK-OFF` | **VIX:** `16.99`
-- **Positioning Data:** Z-Score: `1.76` (>1.8 시 Run) | Gamma: `1.39` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.76` (>1.8 시 Run) | Gamma: `1.40` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -461,8 +461,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.49758101848928427
-- **Z-Score (5d):** -0.7061914312748097
+- **Z-Score (1d):** 0.49758109861164185
+- **Z-Score (5d):** -0.706191242453868
 
 ### EEM
 - **Crash?** False
@@ -479,8 +479,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3623949214223572
-- **Z-Score (5d):** -0.278186007963263
+- **Z-Score (1d):** 0.36239560525517717
+- **Z-Score (5d):** -0.27818592863466224
 
 ### EWJ
 - **Crash?** False
