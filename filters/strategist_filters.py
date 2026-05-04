@@ -5297,7 +5297,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
     lines.append(f"**Macro Profile:** {macro_profile}")
     lines.append(
-        f"**Macro Inputs Debug:** us10y_pct={us10y_pct:+.2f}% / "
+        f"**Macro Inputs Debug:** phase={phase} / "
+        f"us10y_pct={us10y_pct:+.2f}% / "
         f"dxy_pct={dxy_pct:+.2f}% / "
         f"wti_pct={wti_pct:+.2f}% / "
         f"vix={vix:.2f} / "
