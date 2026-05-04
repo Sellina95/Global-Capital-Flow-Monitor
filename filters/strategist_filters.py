@@ -4740,7 +4740,15 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         - 기존 FINAL_STATE phase를 덮어쓰지 않음
         - Sector Allocation Engine의 PHASE 점수 보조용
         """
-    
+
+        phase_normalized = (
+            str(phase)
+            .upper()
+            .replace("–", "-")
+            .replace("—", "-")
+            .replace("−", "-")
+        )
+
         # 1) Dollar liquidity stress는 phase보다 우선
         if dxy_pct > 0 and liq_tight and credit_calm is False:
             return "DOLLAR_LIQUIDITY_STRESS"
@@ -4754,16 +4762,16 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             return "GROWTH_SCARE"
 
         # 4) Soft risk-off disinflation
-        if "RISK-OFF" in phase and dxy_pct <= 0 and credit_calm is True:
+        if "RISK-OFF" in phase_normalized and credit_calm is True and vix < 20:
             return "SOFT_RISK_OFF_DISINFLATION"
 
         # 5) Disinflation risk-on
-        if "RISK-ON" in phase and dxy_pct <= 0 and vix < 24:
+        if "RISK-ON" in phase_normalized and dxy_pct <= 0 and vix < 24:
             return "DISINFLATION_RISK_ON"
 
-                # 5.5) Soft risk-on disinflation
+        # 5.5) Soft risk-on disinflation
         if (
-            "RISK-ON" in phase
+            "RISK-ON" in phase_normalized
             and us10y_pct <= 0
             and wti_pct <= 0
             and vix < 20
@@ -4773,22 +4781,24 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             return "SOFT_RISK_ON_DISINFLATION"
 
         # 6) Early risk-on
-        if "RISK-ON" in phase and flow_score >= 4 and vix < 24:
+        if "RISK-ON" in phase_normalized and flow_score >= 4 and vix < 24:
             return "EARLY_RISK_ON"
 
         # 7) Reflation risk-on
-        if "RISK-ON" in phase and us10y_pct > 0 and wti_pct > 0:
+        if "RISK-ON" in phase_normalized and us10y_pct > 0 and wti_pct > 0:
             return "REFLATION_RISK_ON"
 
         # 8) Event transition
-        if "EVENT-WATCHING" in phase or "WAITING" in phase:
+        if "EVENT-WATCHING" in phase_normalized or "WAITING" in phase_normalized:
             return "EVENT_TRANSITION"
 
-        if "RISK-ON" in phase:
+        if "RISK-ON" in phase_normalized:
             return "EARLY_RISK_ON"
 
-        return "BALANCED"
+        if "RISK-OFF" in phase_normalized:
+            return "SOFT_RISK_OFF_DISINFLATION"
 
+        return "BALANCED"
     # -------------------------
     # 1) 핵심 변수
     # -------------------------
