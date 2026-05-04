@@ -5201,7 +5201,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         elif theo >= 1.0 and flow < -0.5:
             classification = "THEORY_TRAP"
             div_flag = "NEGATIVE_DIVERGENCE"
-            final = (0.55 * theo) + (0.45 * flow) - 1.0
+            final = (0.50 * theo) + (0.50 * flow) - 1.5
 
         # 4) 이론은 약한데 실제 돈이 먼저 붙음
         elif theo < 1.0 and flow >= 1.5:
