@@ -4504,7 +4504,7 @@ def build_tactical_allocation(
     macro_profile: str = "BALANCED",
 ) -> Dict[str, Any]:
     """
-    18.5) Tactical Asset Allocation Builder - v4.0-lite
+    18.5) Tactical Asset Allocation Builder - v4.1
 
     역할:
     - 15번이 결정한 total_exposure 안에서 섹터 비중을 배분
@@ -4512,10 +4512,13 @@ def build_tactical_allocation(
     - HIGH_CONVICTION_ALIGNED는 우대
     - FLOW_WEAK / THEORY_TRAP / NEGATIVE_DIVERGENCE는 haircut
     - AVOID는 배분 제외
+    - Macro Regime별 sector cap 적용
     """
 
     sector_classification = sector_classification or {}
     momentum_scores = momentum_scores or {}
+    macro_profile = str(macro_profile or "BALANCED").upper()
+    cap_applied = []
 
     positive_scores = {
         sector: float(score[sector])
@@ -4531,35 +4534,30 @@ def build_tactical_allocation(
     for sector, raw_score in positive_scores.items():
         classification = sector_classification.get(sector, "ALIGNED")
         div_flag = divergence_flags.get(sector, "ALIGNED")
-    
+
         multiplier = 1.0
-    
+
         if classification == "HIGH_CONVICTION_ALIGNED":
             multiplier *= 1.15
-    
         elif classification == "FLOW_WEAK":
             multiplier *= 0.60
-    
         elif classification == "THEORY_TRAP":
             multiplier *= 0.40
-    
         elif classification == "POSITIVE_DIVERGENCE":
             multiplier *= 1.10
-    
         elif classification == "AVOID":
             multiplier *= 0.0
-    
+
         if div_flag == "NEGATIVE_DIVERGENCE":
             multiplier *= 0.60
-    
         elif div_flag == "POSITIVE_DIVERGENCE":
             multiplier *= 1.15
-    
+
         adjusted = raw_score * multiplier
-    
+
         if adjusted > 0:
             adjusted_scores[sector] = adjusted
-    
+
     total_score_sum = sum(adjusted_scores.values())
     weights: Dict[str, float] = {}
 
@@ -4568,6 +4566,9 @@ def build_tactical_allocation(
             "weights": {},
             "cash_weight": round(100.0 - total_exposure, 1),
             "total_score_sum": 0,
+            "adjusted_scores": adjusted_scores,
+            "cap_applied": cap_applied,
+            "macro_profile": macro_profile,
         }
 
     if deleveraging_required and prev_exposure is not None:
@@ -4588,12 +4589,12 @@ def build_tactical_allocation(
         reduction_needed = max(0.0, float(prev_exposure) - float(total_exposure))
 
         priority_rows = rank_deleveraging_priority(
-        score=score,
-        weights=weights,
-        divergence_flags=divergence_flags,
-        momentum_scores=momentum_scores,
-        sector_classification=sector_classification,
-    )
+            score=score,
+            weights=weights,
+            divergence_flags=divergence_flags,
+            momentum_scores=momentum_scores,
+            sector_classification=sector_classification,
+        )
 
         MAX_CUT_RATIO = 0.5
 
@@ -4613,91 +4614,87 @@ def build_tactical_allocation(
             weights[sector] = current_weight - cut_amount
             reduction_needed -= cut_amount
 
-        # -------------------------
-        # 3.5) Regime-Based Position Cap
-        # -------------------------
-        macro_profile = str(macro_profile or "BALANCED").upper()
-    
-        regime_caps = {
-            "SOFT_RISK_OFF_DISINFLATION": {
-                "Technology": 28.0,
-                "Health Care": 18.0,
-                "Consumer Staples": 15.0,
-                "Consumer Discretionary": 10.0,
-                "Industrials": 10.0,
-            },
-            "SOFT_RISK_ON_DISINFLATION": {
-                "Technology": 32.0,
-                "Consumer Discretionary": 16.0,
-                "Health Care": 16.0,
-                "Industrials": 14.0,
-            },
-            "DISINFLATION_RISK_ON": {
-                "Technology": 35.0,
-                "Consumer Discretionary": 20.0,
-                "Communication Services": 18.0,
-                "Industrials": 15.0,
-            },
-            "EARLY_RISK_ON": {
-                "Technology": 30.0,
-                "Industrials": 18.0,
-                "Consumer Discretionary": 16.0,
-                "Financials": 14.0,
-            },
-            "REFLATION_RISK_ON": {
-                "Industrials": 24.0,
-                "Financials": 22.0,
-                "Energy": 20.0,
-                "Materials": 18.0,
-            },
-            "STAGFLATION_STRESS": {
-                "Energy": 24.0,
-                "Materials": 18.0,
-                "Consumer Staples": 18.0,
-                "Health Care": 16.0,
-                "Technology": 12.0,
-            },
-            "DOLLAR_LIQUIDITY_STRESS": {
-                "Consumer Staples": 20.0,
-                "Health Care": 18.0,
-                "Utilities": 16.0,
-                "Technology": 12.0,
-                "Financials": 8.0,
-                "Real Estate": 6.0,
-            },
-            "GROWTH_SCARE": {
-                "Health Care": 22.0,
-                "Consumer Staples": 20.0,
-                "Utilities": 18.0,
-                "Technology": 14.0,
-                "Industrials": 8.0,
-                "Consumer Discretionary": 8.0,
-            },
-            "EVENT_TRANSITION": {
-                "Health Care": 18.0,
-                "Consumer Staples": 18.0,
-                "Technology": 18.0,
-                "Industrials": 10.0,
-                "Consumer Discretionary": 10.0,
-            },
-        }
-    
-        caps = regime_caps.get(macro_profile, {})
-    
-        cap_excess = 0.0
-        cap_applied = []
-        
-        for sector, cap in caps.items():
-            if sector in weights and weights[sector] > cap:
-                original_weight = weights[sector]
-                cap_excess += original_weight - cap
-                weights[sector] = cap
-                cap_applied.append({
-                    "sector": sector,
-                    "original": round(original_weight, 1),
-                    "cap": round(cap, 1),
-                    "reduced_by": round(original_weight - cap, 1),
-                })
+    # -------------------------
+    # 3.5) Regime-Based Position Cap
+    # -------------------------
+    regime_caps = {
+        "SOFT_RISK_OFF_DISINFLATION": {
+            "Technology": 28.0,
+            "Health Care": 18.0,
+            "Consumer Staples": 15.0,
+            "Consumer Discretionary": 10.0,
+            "Industrials": 10.0,
+        },
+        "SOFT_RISK_ON_DISINFLATION": {
+            "Technology": 32.0,
+            "Consumer Discretionary": 16.0,
+            "Health Care": 16.0,
+            "Industrials": 14.0,
+        },
+        "DISINFLATION_RISK_ON": {
+            "Technology": 35.0,
+            "Consumer Discretionary": 20.0,
+            "Communication Services": 18.0,
+            "Industrials": 15.0,
+        },
+        "EARLY_RISK_ON": {
+            "Technology": 30.0,
+            "Industrials": 18.0,
+            "Consumer Discretionary": 16.0,
+            "Financials": 14.0,
+        },
+        "REFLATION_RISK_ON": {
+            "Industrials": 24.0,
+            "Financials": 22.0,
+            "Energy": 20.0,
+            "Materials": 18.0,
+        },
+        "STAGFLATION_STRESS": {
+            "Energy": 24.0,
+            "Materials": 18.0,
+            "Consumer Staples": 18.0,
+            "Health Care": 16.0,
+            "Technology": 12.0,
+        },
+        "DOLLAR_LIQUIDITY_STRESS": {
+            "Consumer Staples": 20.0,
+            "Health Care": 18.0,
+            "Utilities": 16.0,
+            "Technology": 12.0,
+            "Financials": 8.0,
+            "Real Estate": 6.0,
+        },
+        "GROWTH_SCARE": {
+            "Health Care": 22.0,
+            "Consumer Staples": 20.0,
+            "Utilities": 18.0,
+            "Technology": 14.0,
+            "Industrials": 8.0,
+            "Consumer Discretionary": 8.0,
+        },
+        "EVENT_TRANSITION": {
+            "Health Care": 18.0,
+            "Consumer Staples": 18.0,
+            "Technology": 18.0,
+            "Industrials": 10.0,
+            "Consumer Discretionary": 10.0,
+        },
+    }
+
+    caps = regime_caps.get(macro_profile, {})
+    cap_excess = 0.0
+
+    for sector, cap in caps.items():
+        if sector in weights and weights[sector] > cap:
+            original_weight = weights[sector]
+            cap_excess += original_weight - cap
+            weights[sector] = cap
+            cap_applied.append({
+                "sector": sector,
+                "original": round(original_weight, 1),
+                "cap": round(cap, 1),
+                "reduced_by": round(original_weight - cap, 1),
+            })
 
     # cap으로 잘린 비중은 현금으로 보냄
     # 공격적으로 다른 섹터에 재분배하지 않음
