@@ -5217,22 +5217,24 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # H) Theory vs Flow Divergence Adjustment
     # -------------------------
-    # -------------------------
-    # -------------------------
-    # H) Layer 2~5. Theory / Flow / Divergence / Final Score (v4.1)
+        # -------------------------
+    # H) Layer 2~5. Theory / Flow / Divergence / Final Score (v4.2)
     # -------------------------
     divergence_flags = {}
     sector_classification = {}
     theoretical_score = {}
     flow_score_by_sector = {}
+    sector_divergence = {}
     final_score = {}
 
     THEORY_BUCKETS = {"VOL", "LIQ", "CURVE", "CREDIT", "PHASE"}
     FLOW_BUCKETS = {"FLOW", "MOM"}
 
+    # -------------------------
+    # H-1) First Pass: Theory / Flow / Divergence 계산
+    # -------------------------
     for s in sectors:
         theo = 0.0
-        flow = 0.0
 
         for d in drivers[s]:
             bucket = d.get("bucket")
@@ -5240,16 +5242,9 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
 
             if bucket in THEORY_BUCKETS:
                 theo += pts
-            elif bucket in FLOW_BUCKETS:
-                flow += pts
 
         theoretical_score[s] = round(theo, 2)
 
-        # -------------------------
-        # Layer 3) Flow Score v4.2
-        # FLOW + MOM을 단순합산하지 않고,
-        # 실제 리더십 구조로 재가중
-        # -------------------------
         momentum_component = 0.0
         flow_component = 0.0
         relative_component = 0.0
@@ -5262,11 +5257,9 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             if bucket == "MOM":
                 momentum_component += pts
                 relative_component += pts
-
             elif bucket == "FLOW":
                 flow_component += pts
 
-        # price trend는 현재 MOM 기반 대체 (추후 별도 확장 가능)
         price_trend_component = momentum_component
 
         market_flow_score = (
@@ -5277,57 +5270,102 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         )
 
         flow_score_by_sector[s] = round(market_flow_score, 2)
-        flow = market_flow_score
+        sector_divergence[s] = round(market_flow_score - theo, 2)
+
+    # -------------------------
+    # H-2) Regime Controller
+    # -------------------------
+    div_values = list(sector_divergence.values())
+
+    if div_values:
+        avg_divergence = round(sum(div_values) / len(div_values), 2)
+        variance = sum((x - avg_divergence) ** 2 for x in div_values) / len(div_values)
+        divergence_dispersion = round(variance ** 0.5, 2)
+    else:
+        avg_divergence = 0.0
+        divergence_dispersion = 0.0
+
+    if divergence_dispersion > 1.5:
+        regime_controller = "DISLOCATION"
+    elif avg_divergence > 1.0:
+        regime_controller = "FLOW_MARKET"
+    elif avg_divergence < -1.0:
+        regime_controller = "THEORY_MARKET"
+    else:
+        regime_controller = "BALANCED"
+
+    # -------------------------
+    # H-3) Second Pass: Regime-aware Classification / Final Score
+    # -------------------------
+    for s in sectors:
+        theo = theoretical_score.get(s, 0.0)
+        flow = flow_score_by_sector.get(s, 0.0)
+
+        if regime_controller == "FLOW_MARKET":
+            aligned_theo_w = 0.45
+            aligned_flow_w = 0.55
+            trap_penalty_mult = 0.8
+
+        elif regime_controller == "THEORY_MARKET":
+            aligned_theo_w = 0.75
+            aligned_flow_w = 0.25
+            trap_penalty_mult = 1.2
+
+        elif regime_controller == "DISLOCATION":
+            aligned_theo_w = 0.50
+            aligned_flow_w = 0.50
+            trap_penalty_mult = 1.35
+
+        else:
+            aligned_theo_w = 0.65
+            aligned_flow_w = 0.35
+            trap_penalty_mult = 1.0
 
         classification = "ALIGNED"
         div_flag = "ALIGNED"
 
-        # 1) 이론도 강하고 실제 흐름도 강함
         if theo >= 2.0 and flow >= 1.0:
             classification = "HIGH_CONVICTION_ALIGNED"
             div_flag = "ALIGNED"
-            final = (0.60 * theo) + (0.40 * flow) + 0.3
+            final = (aligned_theo_w * theo) + (aligned_flow_w * flow) + 0.3
 
-        # 2) 이론은 강한데 실제 돈 흐름이 약함
         elif theo >= 2.0 and -0.5 <= flow < 1.0:
             classification = "FLOW_WEAK"
             div_flag = "NEGATIVE_DIVERGENCE"
-            final = (0.80 * theo) + (0.20 * flow) - 0.3
+            final = ((aligned_theo_w + 0.10) * theo) + ((aligned_flow_w - 0.10) * flow) - 0.3
 
-        # 3) 이론은 좋아 보이는데 실제 흐름이 반대로 감
         elif theo >= 1.0 and flow < -0.5:
             classification = "THEORY_TRAP"
             div_flag = "NEGATIVE_DIVERGENCE"
-            final = (0.50 * theo) + (0.50 * flow) - 1.5
+            final = (aligned_theo_w * theo) + (aligned_flow_w * flow) - (1.5 * trap_penalty_mult)
 
-        # 4) 이론은 약한데 실제 돈이 먼저 붙음
         elif theo < 1.0 and flow >= 1.5:
             classification = "POSITIVE_DIVERGENCE"
             div_flag = "POSITIVE_DIVERGENCE"
-            final = (0.30 * theo) + (0.70 * flow) + 0.4
+            final = ((aligned_theo_w - 0.20) * theo) + ((aligned_flow_w + 0.20) * flow) + 0.4
 
-        # 5) 거시 근거는 약하지만 단기 리더십만 있는 상태
         elif -0.5 <= theo < 1.0 and 0.5 <= flow < 1.5:
             classification = "TACTICAL_MOMENTUM_ONLY"
             div_flag = "POSITIVE_DIVERGENCE"
-            final = (0.40 * theo) + (0.60 * flow)
+            final = ((aligned_theo_w - 0.10) * theo) + ((aligned_flow_w + 0.10) * flow)
 
-        # 6) 이론도 흐름도 약함
         elif theo < 0 and flow < 0:
             classification = "AVOID"
             div_flag = "ALIGNED"
-            final = (0.50 * theo) + (0.50 * flow) - 0.3
+            final = (0.50 * theo) + (0.50 * flow) - (0.3 * trap_penalty_mult)
 
         elif theo == 0 and flow == 0:
             classification = "NEUTRAL"
             div_flag = "ALIGNED"
             final = 0.0
 
-        # 7) 방어적 중립
         else:
             classification = "ALIGNED"
             div_flag = "ALIGNED"
-            final = (0.65 * theo) + (0.35 * flow)
+            final = (aligned_theo_w * theo) + (aligned_flow_w * flow)
+
+        if regime_controller == "DISLOCATION":
+            final *= 0.90
 
         sector_classification[s] = classification
         divergence_flags[s] = div_flag
@@ -5337,12 +5375,15 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
 
     market_data["SECTOR_THEORETICAL_SCORE"] = theoretical_score
     market_data["SECTOR_FLOW_SCORE"] = flow_score_by_sector
+    market_data["SECTOR_DIVERGENCE"] = sector_divergence
     market_data["SECTOR_CLASSIFICATION"] = sector_classification
     market_data["SECTOR_DIVERGENCE_FLAGS"] = divergence_flags
     market_data["SECTOR_FINAL_SCORE"] = final_score
 
-    sector_divergence = {}
-
+    market_data["REGIME_CONTROLLER"] = regime_controller
+    market_data["AVG_DIVERGENCE"] = avg_divergence
+    market_data["DIVERGENCE_DISPERSION"] = divergence_dispersion
+    
     for s in sectors:
         divergence_value = round(flow_score_by_sector[s] - theoretical_score[s], 2)
         sector_divergence[s] = divergence_value
