@@ -5162,7 +5162,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         elif theo >= 2.0 and -0.5 <= flow < 1.0:
             classification = "FLOW_WEAK"
             div_flag = "NEGATIVE_DIVERGENCE"
-            final = (0.75 * theo) + (0.25 * flow) - 0.5
+            final = (0.80 * theo) + (0.20 * flow) - 0.3
 
         # 3) 이론은 좋아 보이는데 실제 흐름이 반대로 감
         elif theo >= 1.0 and flow < -0.5:
@@ -5183,10 +5183,15 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             final = (0.40 * theo) + (0.60 * flow)
 
         # 6) 이론도 흐름도 약함
-        elif theo <= 0 and flow <= 0:
+        elif theo < 0 and flow < 0:
             classification = "AVOID"
             div_flag = "ALIGNED"
             final = (0.50 * theo) + (0.50 * flow) - 0.3
+
+        elif theo == 0 and flow == 0:
+            classification = "NEUTRAL"
+            div_flag = "ALIGNED"
+            final = 0.0
 
         # 7) 방어적 중립
         else:
