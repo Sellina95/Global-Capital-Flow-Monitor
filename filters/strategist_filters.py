@@ -4744,35 +4744,38 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         # 1) Dollar liquidity stress는 phase보다 우선
         if dxy_pct > 0 and liq_tight and credit_calm is False:
             return "DOLLAR_LIQUIDITY_STRESS"
-    
+
         # 2) Stagflation / inflation shock
         if us10y_pct > 0 and wti_pct > 0 and dxy_pct > 0 and vix >= 18:
             return "STAGFLATION_STRESS"
-    
+
         # 3) Growth scare
         if us10y_pct < 0 and wti_pct < 0 and vix >= 18:
             return "GROWTH_SCARE"
-    
+
         # 4) Soft risk-off disinflation
-        if "RISK-OFF" in phase and us10y_pct <= 0 and dxy_pct <= 0 and credit_calm is True:
+        if "RISK-OFF" in phase and dxy_pct <= 0 and credit_calm is True:
             return "SOFT_RISK_OFF_DISINFLATION"
-    
+
         # 5) Disinflation risk-on
-        if "RISK-ON" in phase and us10y_pct <= 0 and dxy_pct <= 0 and vix < 22:
+        if "RISK-ON" in phase and dxy_pct <= 0 and vix < 24:
             return "DISINFLATION_RISK_ON"
-    
+
         # 6) Early risk-on
         if "RISK-ON" in phase and flow_score >= 4 and vix < 24:
             return "EARLY_RISK_ON"
-    
+
         # 7) Reflation risk-on
         if "RISK-ON" in phase and us10y_pct > 0 and wti_pct > 0:
             return "REFLATION_RISK_ON"
-    
+
         # 8) Event transition
         if "EVENT-WATCHING" in phase or "WAITING" in phase:
             return "EVENT_TRANSITION"
-    
+
+        if "RISK-ON" in phase:
+            return "EARLY_RISK_ON"
+
         return "BALANCED"
 
     # -------------------------
@@ -5276,6 +5279,16 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines.append("**Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM")
     lines.append("")
     lines.append(f"**Macro Profile:** {macro_profile}")
+    lines.append(
+        f"**Macro Inputs Debug:** us10y_pct={us10y_pct:+.2f}% / "
+        f"dxy_pct={dxy_pct:+.2f}% / "
+        f"wti_pct={wti_pct:+.2f}% / "
+        f"vix={vix:.2f} / "
+        f"liq_easy={liq_easy} / "
+        f"liq_tight={liq_tight} / "
+        f"credit_calm={credit_calm} / "
+        f"flow_score={flow_score}"
+    )
     lines.append("")
     lines.append(
         f"**Flow Overlay:** flow_score={flow_score} / flow_state={flow_state} / "
