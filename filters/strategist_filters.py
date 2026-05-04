@@ -5579,52 +5579,42 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     for r in top_rationales:
         lines.append(f"- {r}")
     
-        lines.append("")
-        lines.append("**Regime Controller:**")
-        
-        macro_profile_upper = str(macro_profile or "BALANCED").upper()
-        
-        if regime_controller == "DISLOCATION":
-            controller_comment = "섹터별 괴리가 큰 불안정 장세 → 포지션 축소와 리더 섹터 검증 필요"
-        
-        elif regime_controller == "FLOW_MARKET":
-            controller_comment = "실제 자금흐름이 시장을 주도하는 장세 → 리더 섹터 중심 베타 유지 가능"
-        
-        elif regime_controller == "THEORY_MARKET":
-            controller_comment = "거시/이론 조건이 자금흐름보다 우세한 장세 → 보수적 해석과 방어적 배분 필요"
-        
+    lines.append("")
+    lines.append("**Regime Controller:**")
+    
+    macro_profile_upper = str(macro_profile or "BALANCED").upper()
+    
+    if regime_controller == "DISLOCATION":
+        controller_comment = "섹터별 괴리가 큰 불안정 장세 → 포지션 축소와 리더 섹터 검증 필요"
+    elif regime_controller == "FLOW_MARKET":
+        controller_comment = "실제 자금흐름이 시장을 주도하는 장세 → 리더 섹터 중심 베타 유지 가능"
+    elif regime_controller == "THEORY_MARKET":
+        controller_comment = "거시/이론 조건이 자금흐름보다 우세한 장세 → 보수적 해석과 방어적 배분 필요"
+    else:
+        if macro_profile_upper == "SOFT_RISK_OFF_DISINFLATION":
+            controller_comment = "소프트 리스크오프 / 디스인플레이션 / 선택적 성장 허용"
+        elif macro_profile_upper == "SOFT_RISK_ON_DISINFLATION":
+            controller_comment = "부드러운 위험선호 회복 / 금리 안정 / 성장주 일부 우호"
+        elif macro_profile_upper == "DISINFLATION_RISK_ON":
+            controller_comment = "디스인플레이션 리스크온 / 성장주·소비 베타 우호"
+        elif macro_profile_upper == "GROWTH_SCARE":
+            controller_comment = "성장 둔화 우려 / 방어주·퀄리티 우위"
+        elif macro_profile_upper == "STAGFLATION_STRESS":
+            controller_comment = "스태그플레이션 압력 / 에너지·원자재 우위, 장기 성장주 부담"
+        elif macro_profile_upper == "DOLLAR_LIQUIDITY_STRESS":
+            controller_comment = "달러 유동성 압박 / EM·크레딧·고베타 자산 주의"
         else:
-            if macro_profile_upper == "SOFT_RISK_OFF_DISINFLATION":
-                controller_comment = "소프트 리스크오프 / 디스인플레이션 / 선택적 성장 허용"
-        
-            elif macro_profile_upper == "SOFT_RISK_ON_DISINFLATION":
-                controller_comment = "부드러운 위험선호 회복 / 금리 안정 / 성장주 일부 우호"
-        
-            elif macro_profile_upper == "DISINFLATION_RISK_ON":
-                controller_comment = "디스인플레이션 리스크온 / 성장주·소비 베타 우호"
-        
-            elif macro_profile_upper == "GROWTH_SCARE":
-                controller_comment = "성장 둔화 우려 / 방어주·퀄리티 우위"
-        
-            elif macro_profile_upper == "STAGFLATION_STRESS":
-                controller_comment = "스태그플레이션 압력 / 에너지·원자재 우위, 장기 성장주 부담"
-        
-            elif macro_profile_upper == "DOLLAR_LIQUIDITY_STRESS":
-                controller_comment = "달러 유동성 압박 / EM·크레딧·고베타 자산 주의"
-        
-            else:
-                controller_comment = "균형 장세 / 강한 방향성보다 선별적 배분 필요"
-        
-        lines.append(
-            f"- {regime_controller} "
-            f"(avg_divergence={avg_divergence:+.2f}, dispersion={divergence_dispersion:.2f})"
-        )
-        
-        lines.append(f"- **Interpretation:** {controller_comment}")
-        
-        lines.append("")
-        lines.append("**Divergence / Classification Monitor (Theory vs Flow):**")
-        has_divergence = False
+            controller_comment = "균형 장세 / 강한 방향성보다 선별적 배분 필요"
+    
+    lines.append(
+        f"- {regime_controller} "
+        f"(avg_divergence={avg_divergence:+.2f}, dispersion={divergence_dispersion:.2f})"
+    )
+    lines.append(f"- **Interpretation:** {controller_comment}")
+    
+    lines.append("")
+    lines.append("**Divergence / Classification Monitor (Theory vs Flow):**")
+    has_divergence = False
     
     for s in sorted(sectors, key=lambda x: (-score[x], x)):
         classification = sector_classification.get(s, "ALIGNED")
