@@ -5386,39 +5386,43 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     market_data["REGIME_CONTROLLER"] = regime_controller
     market_data["AVG_DIVERGENCE"] = avg_divergence
     market_data["DIVERGENCE_DISPERSION"] = divergence_dispersion
-    
-    for s in sectors:
-        divergence_value = round(flow_score_by_sector[s] - theoretical_score[s], 2)
-        sector_divergence[s] = divergence_value
-    
-    market_data["SECTOR_DIVERGENCE"] = sector_divergence
-    
-    div_values = list(sector_divergence.values())
-    
-    if div_values:
-        avg_divergence = round(sum(div_values) / len(div_values), 2)
-    
-        variance = sum((x - avg_divergence) ** 2 for x in div_values) / len(div_values)
-        divergence_dispersion = round(variance ** 0.5, 2)
+
+    # -------------------------
+    # H-4) Correlation Break Integration
+    # -------------------------
+    corr_msg = correlation_break_filter(market_data)
+    is_corr_break = bool(corr_msg)
+
+    if is_corr_break:
+        break_sector = None
+
+        corr_lower = str(corr_msg).lower()
+
+        if "technology" in corr_lower or "xlk" in corr_lower:
+            break_sector = "Technology"
+        elif "health" in corr_lower or "xlv" in corr_lower:
+            break_sector = "Health Care"
+        elif "energy" in corr_lower or "xle" in corr_lower:
+            break_sector = "Energy"
+
+        # 시장 전체 신뢰도 할인
+        for s in final_score:
+            final_score[s] = round(final_score[s] * 0.90, 2)
+
+        # Break sector는 상대강도 유지
+        if break_sector and break_sector in final_score:
+            final_score[break_sector] = round(final_score[break_sector] + 0.3, 2)
+
+        market_data["CORRELATION_BREAK_ACTIVE"] = True
+        market_data["CORRELATION_BREAK_SECTOR"] = break_sector or "UNKNOWN"
+
     else:
-        avg_divergence = 0.0
-        divergence_dispersion = 0.0
+        market_data["CORRELATION_BREAK_ACTIVE"] = False
+        market_data["CORRELATION_BREAK_SECTOR"] = None
+
+    score = final_score
     
-    if divergence_dispersion > 1.5:
-        regime_controller = "DISLOCATION"
-    
-    elif avg_divergence > 1.0:
-        regime_controller = "FLOW_MARKET"
-    
-    elif avg_divergence < -1.0:
-        regime_controller = "THEORY_MARKET"
-    
-    else:
-        regime_controller = "BALANCED"
-    
-    market_data["REGIME_CONTROLLER"] = regime_controller
-    market_data["AVG_DIVERGENCE"] = avg_divergence
-    market_data["DIVERGENCE_DISPERSION"] = divergence_dispersion
+    market_data["SECTOR_FINAL_SCORE"] = final_score
    
     # -------------------------
     # I) Conflict Resolver
