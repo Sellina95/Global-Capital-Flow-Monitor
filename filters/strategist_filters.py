@@ -4505,23 +4505,21 @@ def build_tactical_allocation(
 ) -> Dict[str, Any]:
     """
     18.5) Tactical Asset Allocation Builder - v4.1
-
-    역할:
-    - 15번이 결정한 total_exposure 안에서 섹터 비중을 배분
-    - 18번의 score / divergence / classification을 실제 weight에 반영
-    - HIGH_CONVICTION_ALIGNED는 우대
-    - FLOW_WEAK / THEORY_TRAP / NEGATIVE_DIVERGENCE는 haircut
-    - AVOID는 배분 제외
-    - Macro Regime별 sector cap 적용
     """
 
+    # -------------------------
+    # 0) Safe defaults
+    # -------------------------
     sector_classification = sector_classification or {}
     momentum_scores = momentum_scores or {}
-
-    # 🔥 반드시 함수 최상단에서 선언
     macro_profile = str(macro_profile or "BALANCED").upper()
-    cap_applied: List[Dict[str, Any]] = []
 
+    # 🔥 NameError 방지: 함수 전체 스코프 최상단
+    cap_applied = []
+
+    # -------------------------
+    # 1) Positive score universe
+    # -------------------------
     positive_scores = {
         sector: float(score[sector])
         for sector in ow_sorted
@@ -4529,9 +4527,9 @@ def build_tactical_allocation(
     }
 
     # -------------------------
-    # 1) Classification-based score adjustment
+    # 2) Classification adjustment
     # -------------------------
-    adjusted_scores: Dict[str, float] = {}
+    adjusted_scores = {}
 
     for sector, raw_score in positive_scores.items():
         classification = sector_classification.get(sector, "ALIGNED")
@@ -4561,7 +4559,7 @@ def build_tactical_allocation(
             adjusted_scores[sector] = adjusted
 
     total_score_sum = sum(adjusted_scores.values())
-    weights: Dict[str, float] = {}
+    weights = {}
 
     # -------------------------
     # Early Exit
@@ -4576,19 +4574,22 @@ def build_tactical_allocation(
             "macro_profile": macro_profile,
         }
 
+    # -------------------------
+    # 3) Base exposure
+    # -------------------------
     if deleveraging_required and prev_exposure is not None:
         base_exposure = float(prev_exposure)
     else:
         base_exposure = float(total_exposure)
 
     # -------------------------
-    # 2) 기본 비중 생성
+    # 4) Initial weights
     # -------------------------
     for sector, adj_score in adjusted_scores.items():
         weights[sector] = (adj_score / total_score_sum) * base_exposure
 
     # -------------------------
-    # 3) 디레버리징
+    # 5) Deleveraging
     # -------------------------
     if deleveraging_required and prev_exposure is not None:
         reduction_needed = max(0.0, float(prev_exposure) - float(total_exposure))
@@ -4620,7 +4621,7 @@ def build_tactical_allocation(
             reduction_needed -= cut_amount
 
     # -------------------------
-    # 3.5) Regime-Based Position Cap
+    # 6) Regime Caps
     # -------------------------
     regime_caps = {
         "SOFT_RISK_OFF_DISINFLATION": {
@@ -4693,31 +4694,37 @@ def build_tactical_allocation(
             original_weight = weights[sector]
             weights[sector] = cap
 
-            cap_applied.append({
-                "sector": sector,
-                "original": round(original_weight, 1),
-                "cap": round(cap, 1),
-                "reduced_by": round(original_weight - cap, 1),
-            })
+            cap_applied.append(
+                {
+                    "sector": sector,
+                    "original": round(original_weight, 1),
+                    "cap": round(cap, 1),
+                    "reduced_by": round(original_weight - cap, 1),
+                }
+            )
 
     # -------------------------
-    # 4) 최종 노출 초과 시 비례 압축
+    # 7) Exposure compression
     # -------------------------
     current_sum = sum(weights.values())
 
     if current_sum > total_exposure and current_sum > 0:
         scale = total_exposure / current_sum
+
         for sector in list(weights.keys()):
             weights[sector] *= scale
 
     # -------------------------
-    # 5) 반올림
+    # 8) Rounding
     # -------------------------
     for sector in list(weights.keys()):
         weights[sector] = round(weights[sector], 1)
 
     cash_weight = round(100.0 - sum(weights.values()), 1)
 
+    # -------------------------
+    # Final Return
+    # -------------------------
     return {
         "weights": weights,
         "cash_weight": cash_weight,
