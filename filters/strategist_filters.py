@@ -5658,6 +5658,10 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         f"- {regime_controller} "
         f"(avg_divergence={avg_divergence:+.2f}, dispersion={divergence_dispersion:.2f})"
     )
+    corr_active = market_data.get("CORRELATION_BREAK_ACTIVE", False)
+    corr_sector = market_data.get("CORRELATION_BREAK_SECTOR", None)
+    
+    lines.append(f"Correlation Break: {corr_active} / Leader={corr_sector}")
     lines.append(f"- Interpretation: {controller_comment}")
     lines.append(
         f"- Correlation Break: "
