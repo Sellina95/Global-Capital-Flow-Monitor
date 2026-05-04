@@ -4723,6 +4723,58 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             val = state.get(key.lower())
         return str(val if val is not None else default).upper()
 
+    def infer_macro_regime_profile(
+        phase: str,
+        us10y_pct: float,
+        dxy_pct: float,
+        wti_pct: float,
+        vix: float,
+        credit_calm: Any,
+        liq_easy: bool,
+        liq_tight: bool,
+        flow_score: int,
+        drift_label: str,
+    ) -> str:
+        """
+        Macro Regime Profile Inference Layer
+        - 기존 FINAL_STATE phase를 덮어쓰지 않음
+        - Sector Allocation Engine의 PHASE 점수 보조용
+        """
+    
+        # 1) Dollar liquidity stress는 phase보다 우선
+        if dxy_pct > 0 and liq_tight and credit_calm is False:
+            return "DOLLAR_LIQUIDITY_STRESS"
+    
+        # 2) Stagflation / inflation shock
+        if us10y_pct > 0 and wti_pct > 0 and dxy_pct > 0 and vix >= 18:
+            return "STAGFLATION_STRESS"
+    
+        # 3) Growth scare
+        if us10y_pct < 0 and wti_pct < 0 and vix >= 18:
+            return "GROWTH_SCARE"
+    
+        # 4) Soft risk-off disinflation
+        if "RISK-OFF" in phase and us10y_pct <= 0 and dxy_pct <= 0 and credit_calm is True:
+            return "SOFT_RISK_OFF_DISINFLATION"
+    
+        # 5) Disinflation risk-on
+        if "RISK-ON" in phase and us10y_pct <= 0 and dxy_pct <= 0 and vix < 22:
+            return "DISINFLATION_RISK_ON"
+    
+        # 6) Early risk-on
+        if "RISK-ON" in phase and flow_score >= 4 and vix < 24:
+            return "EARLY_RISK_ON"
+    
+        # 7) Reflation risk-on
+        if "RISK-ON" in phase and us10y_pct > 0 and wti_pct > 0:
+            return "REFLATION_RISK_ON"
+    
+        # 8) Event transition
+        if "EVENT-WATCHING" in phase or "WAITING" in phase:
+            return "EVENT_TRANSITION"
+    
+        return "BALANCED"
+
     # -------------------------
     # 1) 핵심 변수
     # -------------------------
@@ -4893,75 +4945,83 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Consumer Staples", 1, "크레딧 리스크 감지 → 방어주 선호", "CREDIT")
         add_score("Health Care", 1, "크레딧 리스크 감지 → 퀄리티 선호", "CREDIT")
     # -------------------------
+    # -------------------------
     # E) PHASE + Macro Regime Profile
     # -------------------------
-    macro_profile = "BALANCED"
+    macro_profile = infer_macro_regime_profile(
+        phase=phase,
+        us10y_pct=us10y_pct,
+        dxy_pct=dxy_pct,
+        wti_pct=wti_pct,
+        vix=vix,
+        credit_calm=credit_calm,
+        liq_easy=liq_easy,
+        liq_tight=liq_tight,
+        flow_score=flow_score,
+        drift_label=drift_label,
+    )
 
-    
-    if "RISK-OFF" in phase:
-        if us10y_pct > 0 and wti_pct > 0 and dxy_pct > 0:
-            macro_profile = "INFLATION_SHOCK_RISK_OFF"
-    
-        elif us10y_pct < 0 and wti_pct < 0 and vix >= 18:
-            macro_profile = "GROWTH_SCARE_RISK_OFF"
-    
-        elif vix < 18 and credit_calm is True and liq_easy:
-            macro_profile = "SOFT_RISK_OFF"
-    
-        else:
-            macro_profile = "MIXED_RISK_OFF"
-    
-        if macro_profile == "INFLATION_SHOCK_RISK_OFF":
-            add_score("Energy", 1.5, "Inflation Shock Risk-Off → 에너지/원자재 방어 우위", "PHASE")
-            add_score("Consumer Staples", -0.5, "Inflation Shock Risk-Off → 비용 압박으로 방어주 자동가점 제한", "PHASE")
-            add_score("Utilities", -1.0, "Inflation Shock Risk-Off → 금리 상승에 취약", "PHASE")
-            add_score("Real Estate", -1.0, "Inflation Shock Risk-Off → 금리/조달비용 부담", "PHASE")
-            add_score("Technology", -0.5, "Inflation Shock Risk-Off → 장기금리 부담으로 성장주 일부 감점", "PHASE")
-    
-        elif macro_profile == "GROWTH_SCARE_RISK_OFF":
-            add_score("Consumer Staples", 1.5, "Growth Scare Risk-Off → 경기방어 필수소비 선호", "PHASE")
-            add_score("Health Care", 1.5, "Growth Scare Risk-Off → 퀄리티/방어 선호", "PHASE")
-            add_score("Utilities", 0.5, "Growth Scare Risk-Off → 금리 하락 시 방어주 일부 우호", "PHASE")
-            add_score("Industrials", -0.5, "Growth Scare Risk-Off → 경기민감 부담", "PHASE")
-            add_score("Consumer Discretionary", -0.5, "Growth Scare Risk-Off → 소비민감 부담", "PHASE")
-    
-        elif macro_profile == "SOFT_RISK_OFF":
-            add_score("Technology", 0.5, "Soft Risk-Off → 리더 섹터 일부 유지", "PHASE")
-        
-            add_score("Industrials", -0.5, "Soft Risk-Off → 경기민감 과열 억제", "PHASE")
-            add_score("Consumer Discretionary", -1, "Soft Risk-Off → 소비 민감 베타 일부 축소", "PHASE")
-            add_score("Financials", -0.5, "Soft Risk-Off → 금융 베타 일부 보수화", "PHASE")
-        
-            add_score("Health Care", 0.5, "Soft Risk-Off → 퀄리티 보완", "PHASE")
-            add_score("Consumer Staples", 0.5, "Soft Risk-Off → 방어 보완", "PHASE")
-    
-        else:
-            add_score("Consumer Staples", 1, "Mixed Risk-Off → 방어주 미세 가점", "PHASE")
-            add_score("Health Care", 1, "Mixed Risk-Off → 퀄리티 미세 가점", "PHASE")
-            add_score("Technology", -0.5, "Mixed Risk-Off → 성장주 소폭 감점", "PHASE")
-    
-    elif "RISK-ON" in phase:
-        if us10y_pct <= 0 and dxy_pct <= 0:
-            macro_profile = "DISINFLATION_GROWTH"
-            add_score("Technology", 1.5, "Disinflation Growth → 성장주/장기 듀레이션 우호", "PHASE")
-            add_score("Consumer Discretionary", 1, "Disinflation Growth → 소비 베타 우호", "PHASE")
-            add_score("Communication Services", 0.5, "Disinflation Growth → 플랫폼/성장 섹터 우호", "PHASE")
-    
-        elif us10y_pct > 0 and wti_pct > 0:
-            macro_profile = "REFLATION_CYCLICAL"
-            add_score("Industrials", 1.5, "Reflation Cyclical → 경기민감 우호", "PHASE")
-            add_score("Financials", 1, "Reflation Cyclical → 커브/성장 기대 우호", "PHASE")
-            add_score("Energy", 1, "Reflation Cyclical → 에너지/실물자산 우호", "PHASE")
-    
-        else:
-            macro_profile = "RISK_ON_MIXED"
-            add_score("Industrials", 1, "RISK-ON → 경기민감 미세 가점", "PHASE")
-            add_score("Technology", 1, "RISK-ON → 성장주 미세 가점", "PHASE")
-    
-    elif "EVENT-WATCHING" in phase or "WAITING" in phase:
-        macro_profile = "EVENT_TRANSITION"
-        add_score("Health Care", 1, f"{phase} → 관망 구간 방어/퀄리티 선호", "PHASE")
-        add_score("Consumer Staples", 1, f"{phase} → 관망 구간 필수소비 선호", "PHASE")
+    if macro_profile == "DOLLAR_LIQUIDITY_STRESS":
+        add_score("Consumer Staples", 1.5, "Dollar Liquidity Stress → 달러 강세/유동성 압박에서 방어주 선호", "PHASE")
+        add_score("Health Care", 1.0, "Dollar Liquidity Stress → 퀄리티/현금흐름 선호", "PHASE")
+        add_score("Utilities", 0.5, "Dollar Liquidity Stress → 방어적 버퍼", "PHASE")
+        add_score("Technology", -1.0, "Dollar Liquidity Stress → 고밸류 성장주 부담", "PHASE")
+        add_score("Financials", -1.0, "Dollar Liquidity Stress → 크레딧/달러 조달 부담", "PHASE")
+        add_score("Real Estate", -1.0, "Dollar Liquidity Stress → 조달비용 부담", "PHASE")
+
+    elif macro_profile == "STAGFLATION_STRESS":
+        add_score("Energy", 1.5, "Stagflation Stress → 유가/인플레 압력 수혜", "PHASE")
+        add_score("Materials", 0.5, "Stagflation Stress → 원자재 민감 섹터 일부 우호", "PHASE")
+        add_score("Utilities", -1.0, "Stagflation Stress → 금리 상승에 취약", "PHASE")
+        add_score("Real Estate", -1.0, "Stagflation Stress → 조달비용 부담", "PHASE")
+        add_score("Technology", -1.0, "Stagflation Stress → 장기금리 상승 부담", "PHASE")
+        add_score("Consumer Discretionary", -0.5, "Stagflation Stress → 소비 여력 압박", "PHASE")
+
+    elif macro_profile == "GROWTH_SCARE":
+        add_score("Consumer Staples", 1.5, "Growth Scare → 경기방어 필수소비 선호", "PHASE")
+        add_score("Health Care", 1.5, "Growth Scare → 퀄리티/방어 선호", "PHASE")
+        add_score("Utilities", 0.5, "Growth Scare → 금리 하락 시 방어주 일부 우호", "PHASE")
+        add_score("Industrials", -0.5, "Growth Scare → 경기민감 부담", "PHASE")
+        add_score("Consumer Discretionary", -0.5, "Growth Scare → 소비민감 부담", "PHASE")
+        add_score("Financials", -0.5, "Growth Scare → 성장 둔화 시 금융 베타 부담", "PHASE")
+
+    elif macro_profile == "SOFT_RISK_OFF_DISINFLATION":
+        add_score("Health Care", 1.0, "Soft Risk-Off Disinflation → 퀄리티/방어 선호", "PHASE")
+        add_score("Consumer Staples", 1.0, "Soft Risk-Off Disinflation → 필수소비 방어 보완", "PHASE")
+        add_score("Technology", 0.5, "Soft Risk-Off Disinflation → 금리 안정으로 리더 섹터 일부 유지", "PHASE")
+        add_score("Consumer Discretionary", -0.5, "Soft Risk-Off Disinflation → 소비 베타는 일부 제한", "PHASE")
+        add_score("Industrials", -0.5, "Soft Risk-Off Disinflation → 경기민감 과열 억제", "PHASE")
+
+    elif macro_profile == "DISINFLATION_RISK_ON":
+        add_score("Technology", 1.5, "Disinflation Risk-On → 성장주/장기 듀레이션 우호", "PHASE")
+        add_score("Consumer Discretionary", 1.0, "Disinflation Risk-On → 소비 베타 우호", "PHASE")
+        add_score("Communication Services", 0.5, "Disinflation Risk-On → 플랫폼/성장 섹터 우호", "PHASE")
+        add_score("Utilities", -0.5, "Disinflation Risk-On → 방어주 상대매력 둔화", "PHASE")
+
+    elif macro_profile == "EARLY_RISK_ON":
+        add_score("Technology", 1.0, "Early Risk-On → 초기 리더 섹터 선호", "PHASE")
+        add_score("Industrials", 1.0, "Early Risk-On → 경기민감 회복 관찰", "PHASE")
+        add_score("Consumer Discretionary", 0.5, "Early Risk-On → 소비 베타 일부 회복", "PHASE")
+        add_score("Consumer Staples", -0.5, "Early Risk-On → 방어주 상대매력 둔화", "PHASE")
+
+    elif macro_profile == "REFLATION_RISK_ON":
+        add_score("Industrials", 1.5, "Reflation Risk-On → 경기민감 우호", "PHASE")
+        add_score("Financials", 1.0, "Reflation Risk-On → 커브/성장 기대 우호", "PHASE")
+        add_score("Energy", 1.0, "Reflation Risk-On → 에너지/실물자산 우호", "PHASE")
+        add_score("Materials", 0.5, "Reflation Risk-On → 원자재/산업재 우호", "PHASE")
+
+    elif macro_profile == "EVENT_TRANSITION":
+        add_score("Health Care", 1.0, f"{phase} → 관망 구간 방어/퀄리티 선호", "PHASE")
+        add_score("Consumer Staples", 1.0, f"{phase} → 관망 구간 필수소비 선호", "PHASE")
+        add_score("Technology", -0.5, f"{phase} → 이벤트 전 성장주 베타 일부 제한", "PHASE")
+        add_score("Industrials", -0.5, f"{phase} → 이벤트 전 경기민감 베팅 제한", "PHASE")
+
+    else:
+        add_score("Health Care", 0.5, "Balanced Macro Profile → 퀄리티 보완", "PHASE")
+        add_score("Consumer Staples", 0.5, "Balanced Macro Profile → 방어 보완", "PHASE")
+
+    # Store inferred macro profile for downstream layers
+    market_data["MACRO_REGIME_PROFILE"] = macro_profile
     # -------------------------
     # F) REAL-TIME MOMENTUM (Relative Strength)
     # -------------------------
