@@ -5324,12 +5324,62 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         used_bucket = set()
         local_count = 0
 
+        classification = sector_classification.get(s, "ALIGNED")
+
+        # -------------------------
+        # Classification-first rationale
+        # -------------------------
+        if classification == "THEORY_TRAP":
+            text = (
+                f"{label} {s}: THEORY_TRAP → "
+                f"거시/이론 우호 대비 실제 자금흐름 및 상대강도 약세"
+            )
+            if text not in seen_text:
+                seen_text.add(text)
+                top_rationales.append(text)
+
+        elif classification == "FLOW_WEAK":
+            text = (
+                f"{label} {s}: FLOW_WEAK → "
+                f"이론상 우호하나 실제 자금 유입 확인 부족"
+            )
+            if text not in seen_text:
+                seen_text.add(text)
+                top_rationales.append(text)
+
+        elif classification == "POSITIVE_DIVERGENCE":
+            text = (
+                f"{label} {s}: POSITIVE_DIVERGENCE → "
+                f"거시 대비 실제 자금 선행 유입"
+            )
+            if text not in seen_text:
+                seen_text.add(text)
+                top_rationales.append(text)
+
+        elif classification == "TACTICAL_MOMENTUM_ONLY":
+            text = (
+                f"{label} {s}: TACTICAL_MOMENTUM_ONLY → "
+                f"거시 근거 약하지만 단기 리더십 존재"
+            )
+            if text not in seen_text:
+                seen_text.add(text)
+                top_rationales.append(text)
+
+        # -------------------------
+        # 기존 bucket rationale
+        # -------------------------
         for d in drivers[s]:
             if d["bucket"] in used_bucket:
                 continue
 
-            pts_display = f"{int(d['pts']):+d}" if float(d["pts"]).is_integer() else f"{d['pts']:+.1f}"
+            pts_display = (
+                f"{int(d['pts']):+d}"
+                if float(d["pts"]).is_integer()
+                else f"{d['pts']:+.1f}"
+            )
+
             text = f"{label} {s}: {pts_display}: {d['why']}"
+
             if text in seen_text:
                 continue
 
@@ -5341,8 +5391,9 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             if local_count >= 2:
                 break
 
-        if len(top_rationales) >= 8:
+        if len(top_rationales) >= 12:
             break
+   
 
     # -------------------------
     # 6) 출력
