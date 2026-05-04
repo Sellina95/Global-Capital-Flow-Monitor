@@ -5805,11 +5805,12 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # 19) Execution Layer (ETF Mapping)
     # -------------------------
     etf_plan = build_execution_etf_map(
-        weights=weights,
-        divergence_flags=divergence_flags,
-        market_regime=market_data.get("MARKET_REGIME", "N/A"),
+    weights=weights,
+    divergence_flags=divergence_flags,
+    market_regime=market_data.get("MARKET_REGIME", "N/A"),
+    macro_profile=macro_profile,
+    sector_classification=sector_classification,
     )
-
     # -------------------------
     # Portfolio Logging (Paper Trading)
     # -------------------------
@@ -5843,14 +5844,15 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
 
     if etf_plan:
-        lines.append("| Sector | ETF | Weight | Action | Divergence |")
-        lines.append("| :--- | :---: | :---: | :--- | :--- |")
+        lines.append("| Sector | ETF | Weight | Action | Divergence | Classification |")
+        lines.append("| :--- | :---: | :---: | :--- | :--- | :--- |")
 
         for item in etf_plan:
             lines.append(
                 f"| {item['sector']} | {item['etf']} | "
                 f"{item['weight']}% | {item['action']} | "
-                f"{item.get('divergence', 'ALIGNED')} |"
+                f"{item.get('divergence', 'ALIGNED')} | "
+                f"{item.get('classification', 'ALIGNED')} |"
             )
     else:
         lines.append("⚠️ 실행 가능한 ETF 매핑이 없습니다.")
@@ -5861,13 +5863,15 @@ def build_execution_etf_map(
     weights: Dict[str, float],
     divergence_flags: Dict[str, str] = None,
     market_regime: str = "N/A",
+    macro_profile: str = "BALANCED",
+    sector_classification: Dict[str, str] = None,
 ) -> List[Dict[str, Any]]:
     """
-    19) Execution Layer (v2.0)
+    19) Execution Layer (v2.1)
 
     목적:
     - 18.5 sector weight → 실제 ETF 실행안 변환
-    - Weight + Divergence + Regime 반영
+    - Weight + Divergence + Macro Profile + Classification 반영
     """
 
     sector_to_etf = {
@@ -5885,10 +5889,13 @@ def build_execution_etf_map(
     }
 
     divergence_flags = divergence_flags or {}
-    regime_upper = str(market_regime).upper()
+    sector_classification = sector_classification or {}
 
-    risk_off_mode = "RISK-OFF" in regime_upper
-    soft_risk_off_mode = "SOFT RISK-OFF" in regime_upper
+    regime_upper = str(market_regime or "N/A").upper()
+    macro_profile = str(macro_profile or "BALANCED").upper()
+
+    risk_off_mode = "RISK-OFF" in regime_upper or "RISK_OFF" in macro_profile
+    soft_risk_off_mode = "SOFT_RISK_OFF" in macro_profile or "SOFT RISK-OFF" in regime_upper
 
     results: List[Dict[str, Any]] = []
 
@@ -5901,6 +5908,7 @@ def build_execution_etf_map(
             continue
 
         div_flag = divergence_flags.get(sector, "ALIGNED")
+        classification = sector_classification.get(sector, "ALIGNED")
 
         # -------------------------
         # Base action by weight
@@ -5909,34 +5917,69 @@ def build_execution_etf_map(
             action = "PRIMARY"
         elif weight >= 10:
             action = "ADD"
-        else:
+        elif weight >= 3:
             action = "SMALL"
+        else:
+            action = "MICRO"
+
+        # -------------------------
+        # Classification override
+        # -------------------------
+        if classification == "HIGH_CONVICTION_ALIGNED":
+            if action == "PRIMARY":
+                action = "CORE_LEADER"
+            elif action in ("ADD", "SMALL"):
+                action = "ACCUMULATE"
+
+        elif classification == "FLOW_WEAK":
+            action = "WATCHLIST_SMALL"
+
+        elif classification == "THEORY_TRAP":
+            action = "AVOID_TRAP"
+
+        elif classification == "POSITIVE_DIVERGENCE":
+            if action in ("SMALL", "MICRO"):
+                action = "TACTICAL_ADD"
+            else:
+                action = "TACTICAL_LEADER"
+
+        elif classification == "TACTICAL_MOMENTUM_ONLY":
+            action = "TACTICAL_ONLY"
+
+        elif classification == "NEUTRAL":
+            action = "NO_ACTION"
 
         # -------------------------
         # Divergence override
         # -------------------------
         if div_flag == "NEGATIVE_DIVERGENCE":
-            if action == "PRIMARY":
-                action = "TRIM"
-            elif action == "ADD":
-                action = "SMALL"
+            if action in ("CORE_LEADER", "PRIMARY", "ADD", "ACCUMULATE"):
+                action = "PROBATION"
+            elif action in ("SMALL", "MICRO", "WATCHLIST_SMALL"):
+                action = "WATCHLIST_SMALL"
 
         elif div_flag == "POSITIVE_DIVERGENCE":
-            if action == "SMALL" and weight >= 5:
-                action = "ADD"
+            if action in ("SMALL", "MICRO"):
+                action = "TACTICAL_ADD"
 
         # -------------------------
-        # Regime context override
+        # Macro Profile context override
         # -------------------------
-        if risk_off_mode:
-            if action == "PRIMARY":
-                action = "DEFENSIVE_PRIMARY"
+        if soft_risk_off_mode:
+            if sector == "Technology" and action in ("CORE_LEADER", "PRIMARY", "ACCUMULATE"):
+                action = "CONTROLLED_LEADER"
+            elif sector == "Health Care":
+                action = "DEFENSIVE_QUALITY"
+            elif sector == "Consumer Staples":
+                action = "DEFENSIVE_BUFFER"
             elif action == "ADD":
-                action = "DEFENSIVE_ADD"
+                action = "CONTROLLED_ADD"
 
-        elif soft_risk_off_mode:
-            if action == "PRIMARY":
-                action = "CONTROLLED_PRIMARY"
+        elif risk_off_mode:
+            if action in ("CORE_LEADER", "PRIMARY", "ADD", "ACCUMULATE"):
+                action = "DEFENSIVE_PRIMARY"
+            elif action in ("SMALL", "MICRO"):
+                action = "DEFENSIVE_SMALL"
 
         results.append({
             "sector": sector,
@@ -5944,6 +5987,7 @@ def build_execution_etf_map(
             "weight": round(weight, 1),
             "action": action,
             "divergence": div_flag,
+            "classification": classification,
         })
 
     return results
