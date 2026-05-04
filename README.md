@@ -1,6 +1,12 @@
 # 🌍 Global Capital Flow Monitor
 ### Strategy & Capital Flow Research Initiative
 
+Global Capital Flow Monitor is a macro-to-execution framework that converts:
+Structure → Flow → Risk Budget → Tactical Allocation → ETF Execution.
+
+It is designed not to predict markets,
+but to systematically interpret capital flow and translate it into disciplined positioning.
+
 ---
 
 # 🧠 Overview
@@ -19,9 +25,13 @@ The system integrates multiple layers of global market structure:
 - Sector Allocation Logic  
 - Execution Translation Layer  
 
-The objective is **not prediction**.
+The objective is not prediction.
 
-The objective is **disciplined interpretation of market structure and risk allocation.**
+The objective is:
+- disciplined interpretation of market structure
+- systematic risk budgeting
+- tactical asset allocation
+- execution translation
 
 ---
 
@@ -62,14 +72,17 @@ This framework removes emotional interpretation and replaces it with **rule-base
 
 Markets move in hierarchical layers:
 
-1. **Structure** (Policy & Liquidity)
-2. **Price Confirmation** (Rates / USD / Volatility)
-3. **Credit Conditions**
-4. **Risk Budget Construction**
-5. **Volatility Adjustment**
-6. **Style & Factor Tilt**
-7. **Sector Allocation**
-8. **Execution Translation (Company Traits)**
+1. Structure (Policy & Liquidity)
+2. Price Confirmation (Rates / USD / Volatility)
+3. Credit Conditions
+4. Drift Detection
+5. Institutional Flow Detection
+6. Risk Budget Construction
+7. Divergence / Fragility Monitoring
+8. Volatility-Controlled Exposure
+9. Tactical Sector Allocation
+10. ETF Execution Mapping
+11. Execution / Style Translation
 
 This engine replicates that hierarchy using rule-based macro logic.
 
@@ -85,41 +98,23 @@ It separates:
 ---
 
 # ⚙️ System Architecture
-Macro Data
+Drift Monitor
 ↓
-Real-time Market "Scream" Detector (2-Sigma Alert) 
-↓
-Regime Detection
-↓
-Liquidity & Policy Analysis
-↓
-Credit Monitoring
+Institutional Flow Engine
 ↓
 Narrative Engine
 ↓
-Risk Budget Calculation
-↓
-Dead Man’s Switch (Mechanical Fail-safe) 
+Divergence Monitor
 ↓
 Volatility-Controlled Exposure
 ↓
-Automated Notification (Resend API Workflow)
-↓
-Style Tilt
-↓
-Factor Layer
-↓
 Sector Allocation Engine
 ↓
+Tactical Allocation Builder
+↓
+ETF Execution Layer
+↓
 Execution / Style Translation Layer
-↓
-Correlation Break Monitoring
-↓
-Scenario Framework
-↓
-Decision Layer
-↓
-Transmission Mapping
 
 Each filter operates independently but feeds into a structured **daily strategist report.**
 
@@ -149,6 +144,7 @@ These outputs represent **interpreted capital flow narratives**, not raw data du
 1. Market Regime Detection  
 2. Liquidity Structure (Enhanced)  
 3. Policy Bias Analysis  
+
 4. Fed Plumbing (TGA / RRP / Net Liquidity)  
 4.2 High Yield Spread (HY OAS)  
 4.5 Credit Stress (HYG vs LQD)
@@ -162,29 +158,75 @@ These outputs represent **interpreted capital flow narratives**, not raw data du
 6.6 Sector Correlation Break Monitor  
 
 7. Risk Exposure Filter  
+7.2 Geopolitical Early Warning System (Geo Stress Composite)  
+7.5 Institutional Flow Architecture (Core Flow Engine)  
+
 8. Incentive Mapping  
 9. Cause Filter  
 10. Noise vs Signal Filter  
 11. Timing Framework  
 12. Structural Interpretation  
-
 ---
 
 ## Narrative & Allocation Engine
 
-13. Narrative Engine (FINAL_STATE)
+13. Narrative Engine (Risk Budget Core)
+14. Divergence / Fragility Monitor
+15. Volatility-Controlled Exposure & Dead Man's Switch
 
-14. Risk Budget Model
+16. Style Tilt
+17. Factor Layer
+18. Sector Allocation Engine
 
-15. Divergence Monitor
+18.5 Tactical Asset Allocation Builder
+19 ETF Execution Layer
+19.5 Execution / Style Translation Layer
 
-16. Volatility-Controlled Exposure & Dead Man's Switch
+---
 
-17. Style Tilt  
-(Growth / Value / Duration / Defensive)
+# 🏦 Institutional Flow Architecture (Filter 7.5 / Core Flow Engine)
 
-18. Sector Allocation Engine  
-(v2 Rule-Based Scoring)
+The Institutional Flow Engine is designed to detect whether capital is beginning to reposition before narrative consensus forms.
+
+Unlike price-only systems, this layer evaluates whether institutional behavior is leaving structural footprints through:
+
+### Core Inputs
+- Drift Score (multi-day directional persistence)
+- Cross-Asset Validation
+- Gamma Context (dealer positioning environment)
+- SEW Stability (shock filtering)
+- Positioning Stress (POS_Z)
+- Day-over-Day Flow Continuity
+
+### Flow Classification
+- NO CLEAR FLOW
+- EARLY TRACE
+- FLOW BUILDING
+- CONFIRMED FLOW
+
+### Purpose
+This engine answers:
+
+“Is this merely price movement —
+or is capital actually beginning to move?”
+
+### Strategic Use
+Flow signals do not replace macro regime.
+
+They modify conviction.
+
+Examples:
+- Risk-Off + No Flow → Defensive
+- Risk-Off + Flow Improving → Defensive but selective
+- Transition + Flow Building → Early positioning
+- Risk-On + Confirmed Flow → Expansion bias
+
+### Philosophy
+Price can bounce.
+
+Flow sustains.
+
+This layer exists to distinguish noise from institutional intent.
 
 ---
 
@@ -261,11 +303,20 @@ The system identifies:
 
 ### Executive Summary (3 Lines)
 
-Risk Stance: **HOLD (40%)**
+Risk Budget: 45
+Final Exposure: 40
+Core Position: XLK (DEFENSIVE_PRIMARY)
+Cash Buffer: 60
+Flow State: NO CLEAR FLOW
 
 Sector Tilt:
-Overweight: Staples, Health Care, Financials
-Underweight: Technology, Real Estate
+Core Position:
+Technology (XLK) as defensive primary
+Selective Financials / Industrials
+Elevated Cash Buffer
+
+Underweight:
+Energy / Real Estate / Utilities
 
 Execution Focus:
 High Free Cash Flow
@@ -310,9 +361,12 @@ Correlation Break Detection: Monitors the breakdown of historical relationships 
 
 Geopolitical Stress Mapping: Translates vague geopolitical fears into quantified Geo Stress Scores through pattern matching and sovereign spread differentials.
 
-This is **not an indicator stack.**
+5. Institutional Flow Architecture:
+Captures early-stage institutional repositioning before narrative consensus through drift persistence, cross-asset validation, gamma structure, and flow continuity.
 
-It is a **capital flow hierarchy model.**
+This system does not stop at interpretation —
+it translates macro structure into:
+Risk Budget → Tactical Allocation → ETF Execution → Style Translation.
 
 ---
 
@@ -332,9 +386,11 @@ Planned upgrades include:
 
 - Event-driven Cause Filter (Economic Calendar Integration)
 - Structural Trend Overlay (PMI / 200DMA)
-- Factor Momentum Scoring
 - Cross-Asset Divergence Intensity Index
 - Allocation backtesting module
+- Paper Portfolio Performance Tracking
+- Flow Regime Persistence Scoring
+- Sector-to-ETF Rotation Backtesting
 
 ---
 
