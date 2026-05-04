@@ -4761,6 +4761,17 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         if "RISK-ON" in phase and dxy_pct <= 0 and vix < 24:
             return "DISINFLATION_RISK_ON"
 
+                # 5.5) Soft risk-on disinflation
+        if (
+            "RISK-ON" in phase
+            and us10y_pct <= 0
+            and wti_pct <= 0
+            and vix < 20
+            and liq_easy
+            and credit_calm is True
+        ):
+            return "SOFT_RISK_ON_DISINFLATION"
+
         # 6) Early risk-on
         if "RISK-ON" in phase and flow_score >= 4 and vix < 24:
             return "EARLY_RISK_ON"
@@ -4994,6 +5005,12 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         add_score("Technology", 0.5, "Soft Risk-Off Disinflation → 금리 안정으로 리더 섹터 일부 유지", "PHASE")
         add_score("Consumer Discretionary", -0.5, "Soft Risk-Off Disinflation → 소비 베타는 일부 제한", "PHASE")
         add_score("Industrials", -0.5, "Soft Risk-Off Disinflation → 경기민감 과열 억제", "PHASE")
+
+    elif macro_profile == "SOFT_RISK_ON_DISINFLATION":
+        add_score("Technology", 1.0, "Soft Risk-On Disinflation → 금리 안정으로 성장주 일부 우호", "PHASE")
+        add_score("Health Care", 0.5, "Soft Risk-On Disinflation → 퀄리티 보완", "PHASE")
+        add_score("Consumer Discretionary", 0.5, "Soft Risk-On Disinflation → 낮은 변동성에서 소비 베타 일부 회복", "PHASE")
+        add_score("Utilities", -0.5, "Soft Risk-On Disinflation → 방어주 상대매력 일부 둔화", "PHASE")
 
     elif macro_profile == "DISINFLATION_RISK_ON":
         add_score("Technology", 1.5, "Disinflation Risk-On → 성장주/장기 듀레이션 우호", "PHASE")
