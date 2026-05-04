@@ -5147,7 +5147,40 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
                 flow += pts
 
         theoretical_score[s] = round(theo, 2)
-        flow_score_by_sector[s] = round(flow, 2)
+
+        # -------------------------
+        # Layer 3) Flow Score v4.2
+        # FLOW + MOM을 단순합산하지 않고,
+        # 실제 리더십 구조로 재가중
+        # -------------------------
+        momentum_component = 0.0
+        flow_component = 0.0
+        relative_component = 0.0
+        price_trend_component = 0.0
+
+        for d in drivers[s]:
+            bucket = d.get("bucket")
+            pts = float(d.get("pts", 0) or 0)
+
+            if bucket == "MOM":
+                momentum_component += pts
+                relative_component += pts
+
+            elif bucket == "FLOW":
+                flow_component += pts
+
+        # price trend는 현재 MOM 기반 대체 (추후 별도 확장 가능)
+        price_trend_component = momentum_component
+
+        market_flow_score = (
+            (0.35 * momentum_component) +
+            (0.30 * flow_component) +
+            (0.20 * relative_component) +
+            (0.15 * price_trend_component)
+        )
+
+        flow_score_by_sector[s] = round(market_flow_score, 2)
+        flow = market_flow_score
 
         classification = "ALIGNED"
         div_flag = "ALIGNED"
