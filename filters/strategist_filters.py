@@ -5733,6 +5733,18 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         allocation_lines.append(f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |")
         allocation_lines.append("")
         allocation_lines.append(f"- **Allocation Check:** Sector Weights + Cash = **{total_allocated:.1f}%**")
+        allocation_lines.append(f"- **Regime Cap Profile:** {macro_profile}")
+
+        if cap_applied:
+            allocation_lines.append("- **Regime Cap Applied:**")
+            for row in cap_applied:
+                allocation_lines.append(
+                    f"  - {row['sector']}: {row['original']:.1f}% → "
+                    f"{row['cap']:.1f}% (-{row['reduced_by']:.1f}%)"
+                )
+        else:
+            allocation_lines.append("- **Regime Cap Applied:** None")
+        
         allocation_lines.append("")
 
         # Priority 출력
