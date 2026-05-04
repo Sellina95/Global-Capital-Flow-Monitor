@@ -5628,6 +5628,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     weights = alloc_result["weights"]
     cash_weight = alloc_result["cash_weight"]
     total_score_sum = alloc_result["total_score_sum"]
+    cap_applied = alloc_result.get("cap_applied", [])
+    cap_macro_profile = alloc_result.get("macro_profile", macro_profile)
 
     # -------------------------
     # Rebalancing Threshold
@@ -5738,7 +5740,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         allocation_lines.append(f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |")
         allocation_lines.append("")
         allocation_lines.append(f"- **Allocation Check:** Sector Weights + Cash = **{total_allocated:.1f}%**")
-        allocation_lines.append(f"- **Regime Cap Profile:** {macro_profile}")
+        allocation_lines.append(f"- **Regime Cap Profile:** {cap_macro_profile}")
 
         if cap_applied:
             allocation_lines.append("- **Regime Cap Applied:**")
