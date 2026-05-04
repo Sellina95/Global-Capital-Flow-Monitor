@@ -5340,6 +5340,41 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     market_data["SECTOR_CLASSIFICATION"] = sector_classification
     market_data["SECTOR_DIVERGENCE_FLAGS"] = divergence_flags
     market_data["SECTOR_FINAL_SCORE"] = final_score
+
+    sector_divergence = {}
+
+    for s in sectors:
+        divergence_value = round(flow_score_by_sector[s] - theoretical_score[s], 2)
+        sector_divergence[s] = divergence_value
+    
+    market_data["SECTOR_DIVERGENCE"] = sector_divergence
+    
+    div_values = list(sector_divergence.values())
+    
+    if div_values:
+        avg_divergence = round(sum(div_values) / len(div_values), 2)
+    
+        variance = sum((x - avg_divergence) ** 2 for x in div_values) / len(div_values)
+        divergence_dispersion = round(variance ** 0.5, 2)
+    else:
+        avg_divergence = 0.0
+        divergence_dispersion = 0.0
+    
+    if divergence_dispersion > 1.5:
+        regime_controller = "DISLOCATION"
+    
+    elif avg_divergence > 1.0:
+        regime_controller = "FLOW_MARKET"
+    
+    elif avg_divergence < -1.0:
+        regime_controller = "THEORY_MARKET"
+    
+    else:
+        regime_controller = "BALANCED"
+    
+    market_data["REGIME_CONTROLLER"] = regime_controller
+    market_data["AVG_DIVERGENCE"] = avg_divergence
+    market_data["DIVERGENCE_DISPERSION"] = divergence_dispersion
    
     # -------------------------
     # I) Conflict Resolver
@@ -5543,8 +5578,14 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
 
     for r in top_rationales:
         lines.append(f"- {r}")
+        
     lines.append("")
-    
+    lines.append("**Regime Controller:**")
+    lines.append(
+    f"- {regime_controller} "
+    f"(avg_divergence={avg_divergence:+.2f}, dispersion={divergence_dispersion:.2f})"
+    )     
+    lines.append("")
     lines.append("**Divergence / Classification Monitor (Theory vs Flow):**")
     has_divergence = False
     
