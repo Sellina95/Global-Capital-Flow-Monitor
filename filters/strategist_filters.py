@@ -4517,8 +4517,10 @@ def build_tactical_allocation(
 
     sector_classification = sector_classification or {}
     momentum_scores = momentum_scores or {}
+
+    # 🔥 반드시 함수 최상단에서 선언
     macro_profile = str(macro_profile or "BALANCED").upper()
-    cap_applied = []
+    cap_applied: List[Dict[str, Any]] = []
 
     positive_scores = {
         sector: float(score[sector])
@@ -4561,6 +4563,9 @@ def build_tactical_allocation(
     total_score_sum = sum(adjusted_scores.values())
     weights: Dict[str, float] = {}
 
+    # -------------------------
+    # Early Exit
+    # -------------------------
     if total_score_sum <= 0:
         return {
             "weights": {},
@@ -4682,22 +4687,18 @@ def build_tactical_allocation(
     }
 
     caps = regime_caps.get(macro_profile, {})
-    cap_excess = 0.0
 
     for sector, cap in caps.items():
         if sector in weights and weights[sector] > cap:
             original_weight = weights[sector]
-            cap_excess += original_weight - cap
             weights[sector] = cap
+
             cap_applied.append({
                 "sector": sector,
                 "original": round(original_weight, 1),
                 "cap": round(cap, 1),
                 "reduced_by": round(original_weight - cap, 1),
             })
-
-    # cap으로 잘린 비중은 현금으로 보냄
-    # 공격적으로 다른 섹터에 재분배하지 않음
 
     # -------------------------
     # 4) 최종 노출 초과 시 비례 압축
