@@ -152,9 +152,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.28% / 5D=+0.94% | Strength: LOW
-- **WTI:** 🟢 UP | Short-term: SHORT UP | 1D=+0.92% / 5D=+6.76% | Strength: MEDIUM
-- **DXY:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.01% / 5D=-0.27% | Strength: LOW
-- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.78% / 5D=-1.75% | Strength: LOW
+- **WTI:** 🟢 UP | Short-term: SHORT UP | 1D=+0.76% / 5D=+6.58% | Strength: MEDIUM
+- **DXY:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.03% / 5D=-0.24% | Strength: LOW
+- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.68% / 5D=-1.65% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -463,8 +463,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.49758085308897715
-- **Z-Score (5d):** -0.7061904710346566
+- **Z-Score (1d):** 0.49758109861164185
+- **Z-Score (5d):** -0.7061914587080781
 
 ### EEM
 - **Crash?** False
@@ -481,8 +481,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.36239568141697814
-- **Z-Score (5d):** -0.27818598415406925
+- **Z-Score (1d):** 0.3623949214223572
+- **Z-Score (5d):** -0.278186007963263
 
 ### EWJ
 - **Crash?** False
