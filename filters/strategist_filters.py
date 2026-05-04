@@ -4501,6 +4501,7 @@ def build_tactical_allocation(
     prev_exposure: float = None,
     momentum_scores: Dict[str, float] = None,
     sector_classification: Dict[str, str] = None,
+    macro_profile: str = "BALANCED",
 ) -> Dict[str, Any]:
     """
     18.5) Tactical Asset Allocation Builder - v4.0-lite
@@ -4611,6 +4612,87 @@ def build_tactical_allocation(
 
             weights[sector] = current_weight - cut_amount
             reduction_needed -= cut_amount
+
+        # -------------------------
+        # 3.5) Regime-Based Position Cap
+        # -------------------------
+        macro_profile = str(macro_profile or "BALANCED").upper()
+    
+        regime_caps = {
+            "SOFT_RISK_OFF_DISINFLATION": {
+                "Technology": 28.0,
+                "Health Care": 18.0,
+                "Consumer Staples": 15.0,
+                "Consumer Discretionary": 10.0,
+                "Industrials": 10.0,
+            },
+            "SOFT_RISK_ON_DISINFLATION": {
+                "Technology": 32.0,
+                "Consumer Discretionary": 16.0,
+                "Health Care": 16.0,
+                "Industrials": 14.0,
+            },
+            "DISINFLATION_RISK_ON": {
+                "Technology": 35.0,
+                "Consumer Discretionary": 20.0,
+                "Communication Services": 18.0,
+                "Industrials": 15.0,
+            },
+            "EARLY_RISK_ON": {
+                "Technology": 30.0,
+                "Industrials": 18.0,
+                "Consumer Discretionary": 16.0,
+                "Financials": 14.0,
+            },
+            "REFLATION_RISK_ON": {
+                "Industrials": 24.0,
+                "Financials": 22.0,
+                "Energy": 20.0,
+                "Materials": 18.0,
+            },
+            "STAGFLATION_STRESS": {
+                "Energy": 24.0,
+                "Materials": 18.0,
+                "Consumer Staples": 18.0,
+                "Health Care": 16.0,
+                "Technology": 12.0,
+            },
+            "DOLLAR_LIQUIDITY_STRESS": {
+                "Consumer Staples": 20.0,
+                "Health Care": 18.0,
+                "Utilities": 16.0,
+                "Technology": 12.0,
+                "Financials": 8.0,
+                "Real Estate": 6.0,
+            },
+            "GROWTH_SCARE": {
+                "Health Care": 22.0,
+                "Consumer Staples": 20.0,
+                "Utilities": 18.0,
+                "Technology": 14.0,
+                "Industrials": 8.0,
+                "Consumer Discretionary": 8.0,
+            },
+            "EVENT_TRANSITION": {
+                "Health Care": 18.0,
+                "Consumer Staples": 18.0,
+                "Technology": 18.0,
+                "Industrials": 10.0,
+                "Consumer Discretionary": 10.0,
+            },
+        }
+    
+        caps = regime_caps.get(macro_profile, {})
+    
+        cap_excess = 0.0
+    
+        for sector, cap in caps.items():
+            if sector in weights and weights[sector] > cap:
+                cap_excess += weights[sector] - cap
+                weights[sector] = cap
+
+    # cap으로 잘린 비중은 현금으로 보냄
+    # 공격적으로 다른 섹터에 재분배하지 않음
 
     # -------------------------
     # 4) 최종 노출 초과 시 비례 압축
@@ -5526,8 +5608,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         prev_exposure=prev_exposure,
         momentum_scores=sector_momentum,
         sector_classification=sector_classification,
+        macro_profile=macro_profile,
     )
-
     weights = alloc_result["weights"]
     cash_weight = alloc_result["cash_weight"]
     total_score_sum = alloc_result["total_score_sum"]
