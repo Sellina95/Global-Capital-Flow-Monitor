@@ -4684,20 +4684,20 @@ def build_tactical_allocation(
     
         caps = regime_caps.get(macro_profile, {})
     
-            cap_excess = 0.0
-            cap_applied = []
+        cap_excess = 0.0
+        cap_applied = []
         
-            for sector, cap in caps.items():
-                if sector in weights and weights[sector] > cap:
-                    original_weight = weights[sector]
-                    cap_excess += original_weight - cap
-                    weights[sector] = cap
-                    cap_applied.append({
-                        "sector": sector,
-                        "original": round(original_weight, 1),
-                        "cap": round(cap, 1),
-                        "reduced_by": round(original_weight - cap, 1),
-                    })
+        for sector, cap in caps.items():
+            if sector in weights and weights[sector] > cap:
+                original_weight = weights[sector]
+                cap_excess += original_weight - cap
+                weights[sector] = cap
+                cap_applied.append({
+                    "sector": sector,
+                    "original": round(original_weight, 1),
+                    "cap": round(cap, 1),
+                    "reduced_by": round(original_weight - cap, 1),
+                })
 
     # cap으로 잘린 비중은 현금으로 보냄
     # 공격적으로 다른 섹터에 재분배하지 않음
