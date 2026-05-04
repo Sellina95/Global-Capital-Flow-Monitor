@@ -151,10 +151,10 @@
 ### 🌊 Drift Monitor (v4)
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
-- **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.19% / 5D=+0.95% | Strength: LOW
-- **WTI:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.21% / 5D=+6.00% | Strength: MEDIUM
-- **DXY:** 🟡 REBOUND | Short-term: MIXED | 1D=+0.07% / 5D=-0.20% | Strength: LOW
-- **GOLD:** 🔴 DOWN | Short-term: SHORT UP | 1D=-0.87% / 5D=-1.83% | Strength: LOW
+- **SPY:** 🟢 UP | Short-term: MIXED | 1D=+0.12% / 5D=+0.89% | Strength: LOW
+- **WTI:** 🟢 UP | Short-term: SHORT UP | 1D=+0.61% / 5D=+6.42% | Strength: MEDIUM
+- **DXY:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.10% / 5D=-0.17% | Strength: LOW
+- **GOLD:** 🔴 DOWN | Short-term: SHORT UP | 1D=-0.98% / 5D=-1.94% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -162,9 +162,9 @@
 - **SEW Combo Signal:** NONE
 
 - **Market Drift Summary:**
-  - Equity (SPY): 🟢 UP / SHORT UP
-  - Oil (WTI): 🟢 UP / SHORT DOWN
-  - Dollar (DXY): 🟡 REBOUND / MIXED
+  - Equity (SPY): 🟢 UP / MIXED
+  - Oil (WTI): 🟢 UP / SHORT UP
+  - Dollar (DXY): 🟡 REBOUND / SHORT UP
   - Gold (GOLD): 🔴 DOWN / SHORT UP
 
 ### ⚠ 6.5) Correlation Break Monitor
@@ -358,7 +358,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 **Overweight:** Technology, Industrials, Health Care, Consumer Discretionary, Consumer Staples
 
-**Underweight:** Utilities, Energy, Real Estate, Financials
+**Underweight:** Utilities, Financials, Energy, Real Estate
 
 **Scoreboard:**
 - Technology: +2.4  (+2 LIQ, +0.5 PHASE, +2 MOM, = +2.4)
@@ -366,9 +366,9 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - Health Care: +0.8  (+1.2 PHASE, = +0.8)
 - Consumer Discretionary: +0.7  (+1.5 LIQ, -0.5 PHASE, = +0.7)
 - Consumer Staples: +0.5  (+0.8 PHASE, = +0.5)
-- Financials: -0.0  (+1 LIQ, +2 CURVE, -2 MOM, = -0.0)
 - Energy: -0.2  (-1 MOM, = -0.2)
 - Real Estate: -0.2  (-1 MOM, = -0.2)
+- Financials: -0.3  (+1 LIQ, +2 CURVE, -2 MOM, = -0.3)
 - Utilities: -0.7  (-1 LIQ, = -0.7)
 
 **Rationale (top drivers):**
@@ -381,8 +381,6 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - OW Consumer Discretionary: +1.5: 유동성 완화 → 소비 민감주 우호
 - OW Consumer Discretionary: -0.5: Soft Risk-Off Disinflation → 소비 베타는 일부 제한
 - UW Utilities: -1: 유동성 완화 → 방어주 상대매력 저하
-- UW Energy: -1: Relative Strength 약세 (vs SPY) → 소외 섹터
-- UW Real Estate: -1: Relative Strength 약세 (vs SPY) → 소외 섹터
 - UW Financials: THEORY_TRAP → 거시/이론 우호 대비 실제 자금흐름 및 상대강도 약세
 - UW Financials: +1: 유동성 완화 → 위험선호 회복
 - UW Financials: +2: 완만한 스티프닝(0.51) → 예대마진 개선
@@ -396,7 +394,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - Industrials: FLOW_WEAK (theory=+2.0, flow=+0.0, final=+1.2)
 - Communication Services: NEUTRAL (theory=+0.0, flow=+0.0, final=+0.0)
 - Materials: NEUTRAL (theory=+0.0, flow=+0.0, final=+0.0)
-- Financials: THEORY_TRAP (theory=+3.0, flow=-1.4, final=-0.0)
+- Financials: THEORY_TRAP (theory=+3.0, flow=-1.4, final=-0.3)
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
 - **Strategic Exposure (15):** **40.0%** → **Regime Adjusted:** **40.0%**
@@ -470,53 +468,53 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.6440005273552861
-- **Z-Score (5d):** -0.7125137461013343
+- **Z-Score (1d):** -0.5944734319301749
+- **Z-Score (5d):** -0.6870507845134859
 
 ### EEM
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.45488622372277987
-- **Z-Score (5d):** 0.3120487501081525
+- **Z-Score (1d):** 0.42522095381629255
+- **Z-Score (5d):** 0.2965711714756588
 
 ### EIS
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.004083435130288
-- **Z-Score (5d):** 1.3310806284418824
+- **Z-Score (1d):** 0.9445989502274731
+- **Z-Score (5d):** 1.3020184188178214
 
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.1334187912520751
-- **Z-Score (5d):** -0.15442211915452891
+- **Z-Score (1d):** -0.10164755633888853
+- **Z-Score (5d):** -0.13904778173007823
 
 ### EWJ
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.30022893125413486
-- **Z-Score (5d):** 0.3068534704374439
+- **Z-Score (1d):** 0.278840743171327
+- **Z-Score (5d):** 0.2962910066391025
 
 ### FXI
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.0007854989355382641
-- **Z-Score (5d):** 0.5706064254963868
+- **Z-Score (1d):** 0.01178932252688826
+- **Z-Score (5d):** 0.5761208692020767
 
 ### GLD
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.4032109518152825
-- **Z-Score (5d):** -0.47214723646672224
+- **Z-Score (1d):** -0.37347680615432133
+- **Z-Score (5d):** -0.45903464828491175
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.06692748361839064
-- **Z-Score (5d):** 0.2721773597720257
+- **Z-Score (1d):** 0.06982842940420785
+- **Z-Score (5d):** 0.2735144603261471
 
 ### VXX
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.34356992932866653
-- **Z-Score (5d):** -0.4947685314413242
+- **Z-Score (1d):** -0.304827349758253
+- **Z-Score (5d):** -0.47215151562708013
