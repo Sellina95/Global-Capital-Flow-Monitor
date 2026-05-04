@@ -5121,7 +5121,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # H) Theory vs Flow Divergence Adjustment
     # -------------------------
     # -------------------------
-    # H) Institutional Theory vs Flow Classification (v4.0-lite)
+    # -------------------------
+    # H) Layer 2~5. Theory / Flow / Divergence / Final Score (v4.1)
     # -------------------------
     divergence_flags = {}
     sector_classification = {}
@@ -5145,37 +5146,52 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             elif bucket in FLOW_BUCKETS:
                 flow += pts
 
-        theoretical_score[s] = theo
-        flow_score_by_sector[s] = flow
+        theoretical_score[s] = round(theo, 2)
+        flow_score_by_sector[s] = round(flow, 2)
 
         classification = "ALIGNED"
         div_flag = "ALIGNED"
 
-        if theo >= 1.5 and flow >= 1:
+        # 1) 이론도 강하고 실제 흐름도 강함
+        if theo >= 2.0 and flow >= 1.0:
             classification = "HIGH_CONVICTION_ALIGNED"
-            final = (0.55 * theo) + (0.45 * flow)
+            div_flag = "ALIGNED"
+            final = (0.60 * theo) + (0.40 * flow) + 0.3
 
-        elif theo >= 1.5 and flow <= 0:
+        # 2) 이론은 강한데 실제 돈 흐름이 약함
+        elif theo >= 2.0 and -0.5 <= flow < 1.0:
             classification = "FLOW_WEAK"
             div_flag = "NEGATIVE_DIVERGENCE"
-            final = (0.75 * theo) + (0.25 * flow) - 0.3
+            final = (0.75 * theo) + (0.25 * flow) - 0.5
 
-        elif theo <= 0 and flow >= 1:
-            classification = "POSITIVE_DIVERGENCE"
-            div_flag = "POSITIVE_DIVERGENCE"
-            final = (0.35 * theo) + (0.65 * flow) + 0.3
-
-        elif theo >= 1 and flow <= -1:
+        # 3) 이론은 좋아 보이는데 실제 흐름이 반대로 감
+        elif theo >= 1.0 and flow < -0.5:
             classification = "THEORY_TRAP"
             div_flag = "NEGATIVE_DIVERGENCE"
-            final = (0.65 * theo) + (0.35 * flow) - 0.7
+            final = (0.55 * theo) + (0.45 * flow) - 1.0
 
+        # 4) 이론은 약한데 실제 돈이 먼저 붙음
+        elif theo < 1.0 and flow >= 1.5:
+            classification = "POSITIVE_DIVERGENCE"
+            div_flag = "POSITIVE_DIVERGENCE"
+            final = (0.30 * theo) + (0.70 * flow) + 0.4
+
+        # 5) 거시 근거는 약하지만 단기 리더십만 있는 상태
+        elif -0.5 <= theo < 1.0 and 0.5 <= flow < 1.5:
+            classification = "TACTICAL_MOMENTUM_ONLY"
+            div_flag = "POSITIVE_DIVERGENCE"
+            final = (0.40 * theo) + (0.60 * flow)
+
+        # 6) 이론도 흐름도 약함
         elif theo <= 0 and flow <= 0:
             classification = "AVOID"
-            final = (0.50 * theo) + (0.50 * flow)
+            div_flag = "ALIGNED"
+            final = (0.50 * theo) + (0.50 * flow) - 0.3
 
+        # 7) 방어적 중립
         else:
             classification = "ALIGNED"
+            div_flag = "ALIGNED"
             final = (0.65 * theo) + (0.35 * flow)
 
         sector_classification[s] = classification
@@ -5187,6 +5203,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     market_data["SECTOR_THEORETICAL_SCORE"] = theoretical_score
     market_data["SECTOR_FLOW_SCORE"] = flow_score_by_sector
     market_data["SECTOR_CLASSIFICATION"] = sector_classification
+    market_data["SECTOR_DIVERGENCE_FLAGS"] = divergence_flags
+    market_data["SECTOR_FINAL_SCORE"] = final_score
    
     # -------------------------
     # I) Conflict Resolver
