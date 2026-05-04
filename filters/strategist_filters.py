@@ -5641,7 +5641,35 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
 
     final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
     #final_exposure = 70 # test only
+    # -------------------------
+    # 18.45) Regime Controller Exposure Override
+    # -------------------------
+    base_final_exposure = final_exposure
+    exposure_override_reason = "None"
+    
+    if regime_controller == "DISLOCATION":
+        final_exposure *= 0.85
+        exposure_override_reason = "DISLOCATION → 섹터 괴리 확대, 총노출 15% 축소"
+    
+    elif regime_controller == "FLOW_MARKET":
+        final_exposure *= 1.10
+        exposure_override_reason = "FLOW_MARKET → 실제 자금흐름 우세, 총노출 10% 확대"
+    
+    elif regime_controller == "THEORY_MARKET":
+        final_exposure *= 0.90
+        exposure_override_reason = "THEORY_MARKET → 거시 논리 우세, 총노출 10% 축소"
+    
+    else:
+        exposure_override_reason = "BALANCED → 총노출 유지"
+    
+    final_exposure = round(max(0.0, min(final_exposure, 100.0)), 1)
+    
+    market_data["BASE_RECOMMENDED_EXPOSURE"] = base_final_exposure
+    market_data["REGIME_ADJUSTED_EXPOSURE"] = final_exposure
+    market_data["EXPOSURE_OVERRIDE_REASON"] = exposure_override_reason
 
+
+    
     try:
         from portfolio.save_portfolio import load_previous_exposure
         prev_exposure = load_previous_exposure()
@@ -5775,7 +5803,13 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     allocation_lines = []
     allocation_lines.append("### 💰 18.5) Tactical Asset Allocation (Execution Weight)")
-    allocation_lines.append(f"- **Strategic Exposure (15):** **{final_exposure}%**")
+    allocation_lines.append(
+    f"- **Strategic Exposure (15):** **{base_final_exposure}%** "
+    f"→ **Regime Adjusted:** **{final_exposure}%**"
+    )
+    allocation_lines.append(f"- **Exposure Override:** {exposure_override_reason}")
+
+
     allocation_lines.append("")
 
     if total_score_sum > 0:
