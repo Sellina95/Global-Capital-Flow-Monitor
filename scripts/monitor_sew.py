@@ -591,6 +591,28 @@ def check_market_anomaly():
         prev_flow_state=prev_flow_state,
         current_flow_state=transition_info.get("flow_state", current_flow_state),
     )
+    transition_state = str(transition_info.get("flow_state", current_flow_state) or "").upper()
+    flow_delta = int(transition_info.get("flow_delta", 0) or 0)
+    
+    if transition_state == "FLOW_BREAK":
+        flow_change_alert = True
+        flow_alert_level = "FLOW_BREAK"
+        flow_alert_msg = "전일 형성되던 기관성 흐름이 유지되지 못하고 소멸되었습니다."
+    
+    elif transition_state == "FLOW_FADE":
+        flow_change_alert = True
+        flow_alert_level = "FLOW_FADE"
+        flow_alert_msg = "기관성 흐름은 남아 있으나 강도가 약화되었습니다."
+    
+    elif transition_state == "TRACE_BUILDING":
+        flow_change_alert = True
+        flow_alert_level = "TRACE_BUILDING"
+        flow_alert_msg = "기관성 흐름이 전일 대비 강화되고 있습니다."
+    
+    elif transition_state == "CONFIRMED_FLOW":
+        flow_change_alert = True
+        flow_alert_level = "CONFIRMED_FLOW"
+        flow_alert_msg = "기관성 흐름이 높은 강도로 확인되었습니다."
     
     save_flow_state(
         current_state=current_flow_state,
@@ -693,8 +715,12 @@ def check_market_anomaly():
 ─────────────────────────────────────────
 🏦 Institutional Flow Monitor
 ─────────────────────────────────────────
-- Flow State: {current_flow_state} (prev: {prev_flow_state})
-- Flow Score: {current_flow_score} (prev: {prev_flow_score})
+- Raw Flow State: {current_flow_state} (prev: {prev_flow_state})
+- Raw Flow Score: {current_flow_score} (prev: {prev_flow_score})
+- Transition State: {transition_info.get('flow_state', current_flow_state)}
+- Flow Delta: {transition_info.get('flow_delta', 0)}
+- Persistence Days: {transition_info.get('persistence_days', 0)}
+- Transition Note: {transition_info.get('transition_note', 'N/A')}
 - Flow Alert: {flow_alert_msg if flow_change_alert else 'N/A'}
 
 ─────────────────────────────────────────
@@ -723,7 +749,9 @@ def check_market_anomaly():
                 f"[{now_str}] ALERT | "
                 f"SEW={sew_status} | "
                 f"EVENT={event_type} | "
-                f"flow={prev_flow_state}->{current_flow_state} | "
+                f"flow={transition_info.get('transition', f'{prev_flow_state}->{current_flow_state}')} | "
+                f"flow_delta={transition_info.get('flow_delta', 0)} | "
+                f"persistence={transition_info.get('persistence_days', 0)} | "
                 f"flow_alert={flow_alert_level} | "
                 f"Exp={recommended_exp}% | "
                 f"{status_msg} | "
