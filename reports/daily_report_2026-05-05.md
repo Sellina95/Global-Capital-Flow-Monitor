@@ -151,9 +151,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.36% / 5D=+0.41% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-2.06% / 5D=+4.30% | Strength: MEDIUM
-- **DXY:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.02% / 5D=-0.17% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.79% / 5D=-0.79% | Strength: LOW
+- **WTI:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-1.86% / 5D=+4.51% | Strength: MEDIUM
+- **DXY:** 🔴 DOWN | Short-term: MIXED | 1D=-0.01% / 5D=-0.16% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: MIXED | 1D=+0.82% / 5D=-0.76% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -162,9 +162,9 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟡 PULLBACK / SHORT UP
-  - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
-  - Dollar (DXY): 🔴 DOWN / SHORT DOWN
-  - Gold (GOLD): 🟡 REBOUND / SHORT DOWN
+  - Oil (WTI): 🟡 PULLBACK / SHORT UP
+  - Dollar (DXY): 🔴 DOWN / MIXED
+  - Gold (GOLD): 🟡 REBOUND / MIXED
 
 ### ⚠ 6.5) Correlation Break Monitor
 No significant correlation break detected.
@@ -227,10 +227,12 @@ So What?
 ### 🏦 Institutional Flow Engine (v2-minimal)
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
-- **Flow Score:** 0
-- **Flow State:** **NO CLEAR FLOW**
+- **Raw Flow State:** **NO CLEAR FLOW**
+- **Transition State:** **NO_FLOW_BASE**
+- **Flow Delta:** +0 (prev=0 → current=0)
+- **Persistence Days:** 0
+- **Transition Note:** 기관성 흐름 부재 상태 지속
 - **Confidence:** **LOW**
-- **Interpretation:** 기관성 축적 흔적 불충분
 - **Action Bias:** **IGNORE**
 
 - **Drift:** NO DRIFT / GROWTH_SCARE / NONE
@@ -480,8 +482,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.045349212104917
-- **Z-Score (5d):** -0.5987427969967786
+- **Z-Score (1d):** -1.045350733742326
+- **Z-Score (5d):** -0.5987429268957998
 
 ### EWJ
 - **Crash?** False
