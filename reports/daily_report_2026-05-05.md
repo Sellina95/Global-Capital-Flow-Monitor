@@ -42,7 +42,7 @@
 - **Flow:** NO CLEAR FLOW / score=0
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK)
 - **Tactical Action:** REDUCE / DEFENSIVE / MEDIUM
-- **Positioning:** pos_z=1.77
+- **Positioning:** pos_z=1.79
 - **Warning Score:** 1 (6.6 섹터 상관관계 붕괴)
 - **Tactical Why:** Risk-off environment
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=REDUCE 반영 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=REDUCE / Flow=NO CLEAR FLOW(0) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소
@@ -151,9 +151,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.36% / 5D=+0.41% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-2.34% / 5D=+4.00% | Strength: MEDIUM
-- **DXY:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.03% / 5D=-0.12% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+1.12% / 5D=-0.46% | Strength: LOW
+- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-3.22% / 5D=+3.06% | Strength: MEDIUM
+- **DXY:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.01% / 5D=-0.16% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+1.39% / 5D=-0.20% | Strength: LOW
 
 - **Drift Score:** 1
 - **State:** **WEAK DRIFT (노이즈 가능)**
@@ -163,7 +163,7 @@
 - **Market Drift Summary:**
   - Equity (SPY): 🟡 PULLBACK / SHORT UP
   - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
-  - Dollar (DXY): 🟡 REBOUND / SHORT UP
+  - Dollar (DXY): 🔴 DOWN / SHORT DOWN
   - Gold (GOLD): 🟡 REBOUND / SHORT UP
 
 - **Drivers:**
@@ -241,7 +241,7 @@ So What?
 - **Drift:** WEAK DRIFT (노이즈 가능) / GROWTH_SCARE / NONE
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK) / 🟢 STABLE FLOW
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.77
+- **Positioning (POS_Z):** 1.79
 - **Validation Score:** 0 (boost applied: +0)
 
 - **Drivers:**
@@ -298,14 +298,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **REDUCE**
 - **Risk Budget (0~100):** **45**
-- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=WEAK DRIFT (노이즈 가능) (GROWTH_SCARE) / 수급=1.77 ⚠️ 수급 다소 과열 → Phase=SOFT RISK-OFF (경계 강화)
+- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=WEAK DRIFT (노이즈 가능) (GROWTH_SCARE) / 수급=1.79 ⚠️ 수급 다소 과열 → Phase=SOFT RISK-OFF (경계 강화)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `TIGHTENING` | **Price(Regime):** `SOFT RISK-OFF` | **Bucket:** `RISK-OFF` | **VIX:** `18.29`
-- **Positioning Data:** Z-Score: `1.77` (>1.8 시 Run) | Gamma: `0.86` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.79` (>1.8 시 Run) | Gamma: `0.86` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -317,8 +317,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **VIX Level:** 18.29 (NORMAL) | **Change:** +7.65%
 - **Final Multiplier:** 0.69x (VIX x Positioning x Confidence)
 - **Confidence Level:** LOW (flow_score=0)
-- **Positioning Layer:** ⚠️ Elevated Positioning Heat(1.77)
-- **Slope Intensity:** -0.0100
+- **Positioning Layer:** ⚠️ Elevated Positioning Heat(1.79)
+- **Slope Intensity:** 0.0000
 - **Brake Drivers:** ⚠️ VIX Spike, Elevated Positioning Heat, Low Confidence
 
 - **📊 Recommended Exposure:** **31%**
@@ -467,8 +467,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.236428401992503
-- **Z-Score (5d):** -1.019172595109445
+- **Z-Score (1d):** -1.2364249805048657
+- **Z-Score (5d):** -1.0191731388466083
 
 ### EEM
 - **Crash?** False
@@ -485,8 +485,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.045350733742326
-- **Z-Score (5d):** -0.5987428334088164
+- **Z-Score (1d):** -1.0453505210795224
+- **Z-Score (5d):** -0.5987426187247032
 
 ### EWJ
 - **Crash?** False
