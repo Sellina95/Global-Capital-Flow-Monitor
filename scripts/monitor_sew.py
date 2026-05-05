@@ -306,18 +306,107 @@ def save_flow_state(
     current_state: str,
     current_score: int,
     timestamp: str,
+    transition_info: Dict[str, Any] = None,
     filepath: str = "insights/flow_state.json",
 ) -> None:
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
+    transition_info = transition_info or {}
+
     payload = {
         "timestamp": timestamp,
-        "flow_state": current_state,
-        "flow_score": current_score,
+        "flow_state": transition_info.get("flow_state", current_state),
+        "flow_score": transition_info.get("flow_score", current_score),
+        "prev_flow_state": transition_info.get("prev_flow_state", "N/A"),
+        "prev_flow_score": transition_info.get("prev_flow_score", 0),
+        "flow_delta": transition_info.get("flow_delta", 0),
+        "persistence_days": transition_info.get("persistence_days", 0),
+        "transition": transition_info.get("transition", "N/A"),
+        "transition_note": transition_info.get("transition_note", "N/A"),
+        "raw_flow_state": current_state,
+        "raw_flow_score": current_score,
     }
 
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
+
+
+def classify_flow_transition(
+    prev_flow_state: str,
+    prev_flow_score: int,
+    current_flow_state: str,
+    current_flow_score: int,
+    prev_persistence_days: int = 0,
+) -> Dict[str, Any]:
+    """
+    Flow Persistence Layer (v2.5)
+
+    목적:
+    - 단순 현재 flow_state가 아니라
+      이전 상태 대비 흐름이 강화/약화/붕괴/유지되는지 판정
+    """
+
+    prev_state = str(prev_flow_state or "N/A").upper()
+    current_state = str(current_flow_state or "N/A").upper()
+
+    flow_delta = int(current_flow_score) - int(prev_flow_score)
+
+    transition_state = current_flow_state
+    transition_note = "현재 flow 상태 기준 유지"
+    persistence_days = 0
+
+    # 1) 이전에 흔적이 있었는데 오늘 완전히 사라짐
+    if prev_flow_score >= 2 and current_flow_score == 0:
+        transition_state = "FLOW_BREAK"
+        transition_note = "전일 형성되던 기관성 흐름이 유지되지 못하고 소멸"
+        persistence_days = 0
+
+    # 2) 이전보다 약해짐
+    elif prev_flow_score >= 3 and 0 < current_flow_score < prev_flow_score:
+        transition_state = "FLOW_FADE"
+        transition_note = "기관성 흐름은 남아 있으나 강도 약화"
+        persistence_days = max(0, prev_persistence_days - 1)
+
+    # 3) 초기 흔적 발생
+    elif prev_flow_score < 2 and current_flow_score >= 2:
+        transition_state = "EARLY_TRACE"
+        transition_note = "기관성 흐름 초기 흔적 발생"
+        persistence_days = 1
+
+    # 4) 흐름 강화
+    elif current_flow_score > prev_flow_score and current_flow_score >= 3:
+        transition_state = "TRACE_BUILDING"
+        transition_note = "기관성 흐름이 전일 대비 강화"
+        persistence_days = prev_persistence_days + 1
+
+    # 5) 강한 흐름 확인
+    elif current_flow_score >= 5:
+        transition_state = "CONFIRMED_FLOW"
+        transition_note = "기관성 흐름이 높은 강도로 확인"
+        persistence_days = prev_persistence_days + 1
+
+    # 6) 계속 없음
+    elif current_flow_score < 2 and prev_flow_score < 2:
+        transition_state = "NO_FLOW_BASE"
+        transition_note = "기관성 흐름 부재 상태 지속"
+        persistence_days = 0
+
+    # 7) 그 외 유지
+    else:
+        transition_state = current_flow_state
+        transition_note = "기관성 흐름 상태 유지"
+        persistence_days = prev_persistence_days if current_flow_score >= 2 else 0
+
+    return {
+        "flow_state": transition_state,
+        "flow_score": current_flow_score,
+        "prev_flow_state": prev_flow_state,
+        "prev_flow_score": prev_flow_score,
+        "flow_delta": flow_delta,
+        "persistence_days": persistence_days,
+        "transition": f"{prev_flow_state} -> {transition_state}",
+        "transition_note": transition_note,
+    }
 
 
 def extract_current_flow_from_context(context: Dict[str, Any]) -> tuple[str, int]:
@@ -488,15 +577,26 @@ def check_market_anomaly():
     except Exception:
         prev_flow_score = 0
 
+    prev_persistence_days = int(prev_flow.get("persistence_days", 0) or 0)
+
+    transition_info = classify_flow_transition(
+        prev_flow_state=prev_flow_state,
+        prev_flow_score=prev_flow_score,
+        current_flow_state=current_flow_state,
+        current_flow_score=current_flow_score,
+        prev_persistence_days=prev_persistence_days,
+    )
+    
     flow_change_alert, flow_alert_level, flow_alert_msg = evaluate_flow_change(
         prev_flow_state=prev_flow_state,
-        current_flow_state=current_flow_state,
+        current_flow_state=transition_info.get("flow_state", current_flow_state),
     )
-
+    
     save_flow_state(
         current_state=current_flow_state,
         current_score=current_flow_score,
         timestamp=now_str,
+        transition_info=transition_info,
     )
 
     print(
