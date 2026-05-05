@@ -5622,7 +5622,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             score_display = f"{int(score[s]):+d}" if float(score[s]).is_integer() else f"{score[s]:+.1f}"
             lines.append(f"- {s}: {score_display}  ({sector_breakdown(s)})")
     lines.append("")
-    lines.append("**Rationale (top drivers):**")
+    lines.append("**Rationale (Why the score exists: 섹터 점수의 핵심 드라이버)**")
 
     for r in top_rationales:
         lines.append(f"- {r}")
@@ -5670,7 +5670,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     )
 
     lines.append("")
-    lines.append("**Divergence / Classification Monitor (Theory vs Flow):**")
+    lines.append("**Divergence / Classification Monitor (Theory vs Flow alignment: 이론과 실제 자금흐름 정렬 여부)**")
     has_divergence = False
     
     for s in sorted(sectors, key=lambda x: (-score[x], x)):
