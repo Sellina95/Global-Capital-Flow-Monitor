@@ -2306,13 +2306,138 @@ def generate_final_state_history():
         
             
           
-    
 if __name__ == "__main__":
+    # =========================
+    # 🔥 ETF 백테스트 실행 (원본 + CSV 저장)
+    # =========================
+
+    # 기존 리포트 실행
+    real_market_data = generate_daily_report()
+    #generate_final_state_history()
+    #generate_war_room_history()
+
+    print("\n" + "=" * 60)
+    print("🚀 ETF BACKTEST DEBUG START")
+
+    try:
+        from etf_returns import (
+            build_regime_portfolio,
+            build_portfolio_returns,
+            calculate_returns,
+            compare_portfolios,
+            compare_against_benchmark,
+            build_single_benchmark_returns,
+            build_6040_benchmark_returns,
+            base_weights,
+        )
+        import pandas as pd
+        import os
+
+        # =========================
+        # ETF 데이터 로드
+        combined_df = calculate_returns(base_weights)
+
+        if combined_df is not None:
+            combined_df = combined_df.sort_index()
+
+            # ===== 1년치 샘플 데이터 =====
+            start_date = (combined_df.index[-1] - pd.DateOffset(years=1)).strftime("%Y-%m-%d")
+            end_date = combined_df.index[-1].strftime("%Y-%m-%d")
+            combined_df = combined_df.loc[start_date:end_date]
+
+            # Base 포트폴리오
+            base_returns = build_portfolio_returns(
+                combined_df,
+                base_weights,
+                "Base"
+            )
+
+            market_data = real_market_data or {}
+            market_data.setdefault("SECTOR_OW", ["Consumer Staples", "Utilities", "Health Care"])
+            market_data.setdefault("SECTOR_UW", ["Technology", "Consumer Discretionary", "Real Estate"])
+
+            # Regime 포트폴리오
+            filtered_weights, scores, regime, style_tags = build_regime_portfolio(market_data)
+
+            print("\n📊 Regime")
+            print(regime)
+
+            print("\n📊 Style Tags")
+            print(style_tags)
+
+            print("\n📊 ETF Scores")
+            print(scores)
+
+            print("\n📊 Auto Generated ETF Weights")
+            print(filtered_weights)
+
+            # Filtered 포트폴리오 수익률
+            filtered_returns = build_portfolio_returns(
+                combined_df,
+                filtered_weights,
+                "Filtered"
+            )
+
+            # Base vs Filtered 비교
+            comparison = compare_portfolios(base_returns, filtered_returns)
+            print("\n📊 Base vs Filtered Portfolio Comparison")
+            print(comparison.round(4))
+
+            # SPY benchmark 비교
+            spy_returns = build_single_benchmark_returns(
+                combined_df,
+                symbol="SPY",
+                benchmark_name="SPY_Return"
+            )
+            spy_comparison = compare_against_benchmark(
+                filtered_returns,
+                spy_returns,
+                benchmark_label="SPY"
+            )
+            print("\n📊 Filtered Portfolio vs SPY")
+            print(spy_comparison.round(4))
+
+            # 60/40 benchmark 비교
+            benchmark_6040_returns = build_6040_benchmark_returns(combined_df)
+            benchmark_6040_comparison = compare_against_benchmark(
+                filtered_returns,
+                benchmark_6040_returns,
+                benchmark_label="60_40"
+            )
+            print("\n📊 Filtered Portfolio vs 60/40")
+            print(benchmark_6040_comparison.round(4))
+
+            # =========================
+            # CSV 파일 저장
+            # =========================
+            data_folder = "./Global-Capital-Flow-Monitor/data"
+            os.makedirs(data_folder, exist_ok=True)
+            timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+
+            comparison.to_csv(os.path.join(data_folder, f"backtest_comparison_{timestamp}.csv"))
+            filtered_returns.to_csv(os.path.join(data_folder, f"filtered_portfolio_returns_{timestamp}.csv"))
+            spy_comparison.to_csv(os.path.join(data_folder, f"filtered_vs_spy_{timestamp}.csv"))
+            benchmark_6040_comparison.to_csv(os.path.join(data_folder, f"filtered_vs_6040_{timestamp}.csv"))
+
+            print(f"\n✅ CSV 저장 완료: {data_folder}/backtest_comparison_{timestamp}.csv")
+            print(f"✅ CSV 저장 완료: {data_folder}/filtered_portfolio_returns_{timestamp}.csv")
+            print(f"✅ CSV 저장 완료: {data_folder}/filtered_vs_spy_{timestamp}.csv")
+            print(f"✅ CSV 저장 완료: {data_folder}/filtered_vs_6040_{timestamp}.csv")
+
+        else:
+            print("❌ ETF 데이터 없음")
+
+    except Exception as e:
+        print(f"❌ ETF BACKTEST ERROR: {e}")
+
+    print("🚀 ETF BACKTEST DEBUG END")
+    print("=" * 60)    
+#if __name__ == "__main__":
     #백테스트
     
     """generate_final_state_history()"""
     # 기존 리포트 실행
-    real_market_data = generate_daily_report()
+    #real_market_data = generate_daily_report()
     #generate_war_room_history()
     # =========================
     # 🔥 ETF BACKTEST DEBUG BLOCK
