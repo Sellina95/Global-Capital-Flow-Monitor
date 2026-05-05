@@ -6462,6 +6462,24 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
         interpretation = "기관성 축적 흔적 불충분"
         action_bias = "IGNORE"
 
+    prev_flow = load_previous_flow_state()
+
+    prev_flow_state = str(prev_flow.get("flow_state", "N/A") or "N/A")
+    try:
+        prev_flow_score = int(float(prev_flow.get("flow_score", 0) or 0))
+    except Exception:
+        prev_flow_score = 0
+    
+    prev_persistence_days = int(prev_flow.get("persistence_days", 0) or 0)
+    
+    transition_info = classify_flow_transition(
+        prev_flow_state=prev_flow_state,
+        prev_flow_score=prev_flow_score,
+        current_flow_state=flow_state,
+        current_flow_score=flow_score,
+        prev_persistence_days=prev_persistence_days,
+    )
+
     market_data["INSTITUTIONAL_FLOW"] = {
         "score": flow_score,
         "state": flow_state,
@@ -6485,10 +6503,15 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append("### 🏦 Institutional Flow Engine (v2-minimal)")
     lines.append("- **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지")
     lines.append("")
-    lines.append(f"- **Flow Score:** {flow_score}")
-    lines.append(f"- **Flow State:** **{flow_state}**")
+    lines.append(f"- **Raw Flow State:** **{flow_state}**")
+    lines.append(f"- **Transition State:** **{transition_info.get('flow_state', flow_state)}**")
+    lines.append(
+        f"- **Flow Delta:** {transition_info.get('flow_delta', 0):+d} "
+        f"(prev={prev_flow_score} → current={flow_score})"
+    )
+    lines.append(f"- **Persistence Days:** {transition_info.get('persistence_days', 0)}")
+    lines.append(f"- **Transition Note:** {transition_info.get('transition_note', interpretation)}")
     lines.append(f"- **Confidence:** **{confidence}**")
-    lines.append(f"- **Interpretation:** {interpretation}")
     lines.append(f"- **Action Bias:** **{action_bias}**")
     lines.append("")
     lines.append(f"- **Drift:** {drift_state} / {drift_label} / {combo_signal}")
