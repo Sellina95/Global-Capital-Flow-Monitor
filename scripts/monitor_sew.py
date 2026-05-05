@@ -613,6 +613,11 @@ def check_market_anomaly():
         flow_change_alert = True
         flow_alert_level = "CONFIRMED_FLOW"
         flow_alert_msg = "기관성 흐름이 높은 강도로 확인되었습니다."
+
+    elif transition_state == "NO_FLOW_BASE":
+        flow_change_alert = False
+        flow_alert_level = "NONE"
+        flow_alert_msg = "기관성 흐름 부재 상태가 지속되고 있습니다."
     
     save_flow_state(
         current_state=current_flow_state,
