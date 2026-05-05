@@ -21,7 +21,6 @@
 
 ### 📌 Interpretation
 - 금일 시장은 **SOFT RISK-OFF (경계 강화) 환경**입니다.
-- 전일 SEW 기준 기관성 흐름은 뚜렷하지 않았습니다. 금일 리포트의 신규 Flow 신호가 실제 개선인지 확인이 필요합니다.
 - 기관성 자금 흐름은 아직 뚜렷하지 않아, 공격적 확장에는 신중함이 필요합니다.
 - 드리프트 강도는 아직 약해 추세 신뢰도는 제한적입니다.
 - 따라서 **신규 진입보다는 기존 포지션 관리 및 일부 리스크 축소가 우선**입니다.
@@ -152,9 +151,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.36% / 5D=+0.41% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-1.95% / 5D=+4.42% | Strength: MEDIUM
-- **DXY:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.04% / 5D=-0.11% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.49% / 5D=-1.08% | Strength: LOW
+- **WTI:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-1.84% / 5D=+4.53% | Strength: MEDIUM
+- **DXY:** 🟡 REBOUND | Short-term: MIXED | 1D=+0.06% / 5D=-0.09% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.85% / 5D=-0.73% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -163,9 +162,9 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟡 PULLBACK / SHORT UP
-  - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
-  - Dollar (DXY): 🟡 REBOUND / SHORT UP
-  - Gold (GOLD): 🟡 REBOUND / SHORT DOWN
+  - Oil (WTI): 🟡 PULLBACK / SHORT UP
+  - Dollar (DXY): 🟡 REBOUND / MIXED
+  - Gold (GOLD): 🟡 REBOUND / SHORT UP
 
 ### ⚠ 6.5) Correlation Break Monitor
 No significant correlation break detected.
@@ -289,7 +288,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Drift:** NO DRIFT / GROWTH_SCARE / NONE
 - **Drift Score:** 0
 - **Flow Score:** 0
-- **Flow Continuity:** NO CLEAR FLOW → NO CLEAR FLOW (N/A, tilt=+0)
+- **Flow Continuity:** NO_FLOW_BASE → NO CLEAR FLOW (N/A, tilt=+0)
 - **Flow Regime Tilt:** +0 / Flow-Gamma Tilt: +0
 
 - **🎯 Final Risk Action:** **REDUCE**
@@ -463,8 +462,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.2364315706663602
-- **Z-Score (5d):** -1.0191737559793805
+- **Z-Score (1d):** -1.236424647616403
+- **Z-Score (5d):** -1.019173019760674
 
 ### EEM
 - **Crash?** False
@@ -481,8 +480,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.045350733742326
-- **Z-Score (5d):** -0.5987429268957998
+- **Z-Score (1d):** -1.0453495183904915
+- **Z-Score (5d):** -0.5987427259377358
 
 ### EWJ
 - **Crash?** False
