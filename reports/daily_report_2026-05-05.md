@@ -42,7 +42,7 @@
 - **Flow:** NO CLEAR FLOW / score=0
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK)
 - **Tactical Action:** REDUCE / DEFENSIVE / MEDIUM
-- **Positioning:** pos_z=1.72
+- **Positioning:** pos_z=1.74
 - **Warning Score:** 1 (6.6 섹터 상관관계 붕괴)
 - **Tactical Why:** Risk-off environment
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=REDUCE 반영 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=REDUCE / Flow=NO CLEAR FLOW(0) / Drift=NO DRIFT(0) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소
@@ -151,9 +151,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.36% / 5D=+0.41% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-1.84% / 5D=+4.53% | Strength: MEDIUM
-- **DXY:** 🟡 REBOUND | Short-term: MIXED | 1D=+0.06% / 5D=-0.09% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.85% / 5D=-0.73% | Strength: LOW
+- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-2.06% / 5D=+4.30% | Strength: MEDIUM
+- **DXY:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.02% / 5D=-0.17% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.79% / 5D=-0.79% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -162,9 +162,9 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟡 PULLBACK / SHORT UP
-  - Oil (WTI): 🟡 PULLBACK / SHORT UP
-  - Dollar (DXY): 🟡 REBOUND / MIXED
-  - Gold (GOLD): 🟡 REBOUND / SHORT UP
+  - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
+  - Dollar (DXY): 🔴 DOWN / SHORT DOWN
+  - Gold (GOLD): 🟡 REBOUND / SHORT DOWN
 
 ### ⚠ 6.5) Correlation Break Monitor
 No significant correlation break detected.
@@ -236,7 +236,7 @@ So What?
 - **Drift:** NO DRIFT / GROWTH_SCARE / NONE
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK) / 🟢 STABLE FLOW
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.72
+- **Positioning (POS_Z):** 1.74
 - **Validation Score:** 0 (boost applied: +0)
 
 - **Drivers:**
@@ -281,7 +281,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.260 / US10YΔ +0.068 (정상)
-- **Sentiment (Fear&Greed):** 62.17790517484646 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 62.067830346924566 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** SOFT RISK-OFF (경계 강화) (Cap: 45)
@@ -293,14 +293,14 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **REDUCE**
 - **Risk Budget (0~100):** **45**
-- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=NO DRIFT (GROWTH_SCARE) / 수급=1.72 ⚠️ 수급 다소 과열 → Phase=SOFT RISK-OFF (경계 강화)
+- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=NO DRIFT (GROWTH_SCARE) / 수급=1.74 ⚠️ 수급 다소 과열 → Phase=SOFT RISK-OFF (경계 강화)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `TIGHTENING` | **Price(Regime):** `SOFT RISK-OFF` | **Bucket:** `RISK-OFF` | **VIX:** `18.29`
-- **Positioning Data:** Z-Score: `1.72` (>1.8 시 Run) | Gamma: `1.63` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.74` (>1.8 시 Run) | Gamma: `1.66` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -312,8 +312,8 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **VIX Level:** 18.29 (NORMAL) | **Change:** +7.65%
 - **Final Multiplier:** 0.71x (VIX x Positioning x Confidence)
 - **Confidence Level:** LOW (flow_score=0)
-- **Positioning Layer:** ⚠️ Elevated Positioning Heat(1.72), Positive Gamma(1.63)
-- **Slope Intensity:** -0.0350
+- **Positioning Layer:** ⚠️ Elevated Positioning Heat(1.74), Positive Gamma(1.66)
+- **Slope Intensity:** -0.0250
 - **Brake Drivers:** ⚠️ VIX Spike, Elevated Positioning Heat, Low Confidence
 
 - **📊 Recommended Exposure:** **32%**
@@ -462,8 +462,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.236424647616403
-- **Z-Score (5d):** -1.019173019760674
+- **Z-Score (1d):** -1.2364249805048657
+- **Z-Score (5d):** -1.0191731388466083
 
 ### EEM
 - **Crash?** False
@@ -480,8 +480,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.0453495183904915
-- **Z-Score (5d):** -0.5987427259377358
+- **Z-Score (1d):** -1.045349212104917
+- **Z-Score (5d):** -0.5987427969967786
 
 ### EWJ
 - **Crash?** False
