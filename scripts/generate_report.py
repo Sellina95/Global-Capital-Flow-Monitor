@@ -2306,30 +2306,30 @@ def generate_final_state_history():
         
             
           
-if __name__ == "__main__":
+#if __name__ == "__main__":
     # =========================
     # 🔥 ETF 백테스트 실행 (원본 + CSV 저장)
     # =========================
 
     # 기존 리포트 실행
-    real_market_data = generate_daily_report()
+    #real_market_data = generate_daily_report()
     #generate_final_state_history()
     #generate_war_room_history()
 
    
-#if __name__ == "__main__":
+if __name__ == "__main__":
     #백테스트
     
     """generate_final_state_history()"""
     # 기존 리포트 실행
-    #real_market_data = generate_daily_report()
+    real_market_data = generate_daily_report()
     #generate_war_room_history()
     # =========================
     # 🔥 ETF BACKTEST DEBUG BLOCK
     # =========================
-    """print("\n" + "=" * 60)
+    print("\n" + "=" * 60)
     print("🚀 ETF BACKTEST DEBUG START")
-    #print(combined_df.index[0], combined_df.index[-1])
+    print(combined_df.index[0], combined_df.index[-1])
 
     try:
         from etf_returns import (
