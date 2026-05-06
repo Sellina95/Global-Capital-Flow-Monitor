@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-05 12:36:20",
+  "timestamp": "2026-05-06 04:32:30",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -10,29 +10,29 @@
   "deadman_reason": "Normal Operation",
   "assets": {
     "SPY": {
-      "zscore": 1.62,
+      "zscore": 0.35,
       "state": "NORMAL",
-      "pct_change": 0.01
+      "pct_change": -0.14
     },
     "QQQ": {
-      "zscore": 1.35,
-      "state": "NORMAL",
-      "pct_change": 0.01
+      "zscore": 1.92,
+      "state": "WATCH",
+      "pct_change": -0.1
     },
     "VIX": {
-      "zscore": 0.28,
+      "zscore": -1.63,
       "state": "NORMAL",
       "pct_change": -0.23
     },
     "DXY": {
-      "zscore": 1.43,
+      "zscore": -0.06,
       "state": "NORMAL",
-      "pct_change": 0.09
+      "pct_change": 0.0
     },
     "WTI": {
-      "zscore": 0.64,
+      "zscore": -0.18,
       "state": "NORMAL",
-      "pct_change": 0.19
+      "pct_change": 0.21
     }
   }
 }
