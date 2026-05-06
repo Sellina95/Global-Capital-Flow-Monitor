@@ -2422,6 +2422,6 @@ if __name__ == "__main__":
         print(f"❌ ETF BACKTEST ERROR: {e}")
 
     print("🚀 ETF BACKTEST DEBUG END")
-    print("=" * 60)"""
+    print("=" * 60)
 
     
