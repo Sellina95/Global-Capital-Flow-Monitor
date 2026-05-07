@@ -2882,21 +2882,40 @@ def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
 
 def pseudo_gamma_filter(market_data: Dict[str, Any]) -> str:
     """
-    7.3) Pseudo Gamma Filter (v1)
+    7.3) Pseudo Gamma Filter (v1.1)
 
     목적:
-    - 옵션 데이터 없이 시장의 감마 상태 추론
+    - 옵션 데이터 없이 시장의 감마 상태를 추론
     - Drift + VIX + SEW 기반 구조 판단
+    - DEALER_GAMMA_BIAS 숫자는 별도 표시하여 Pseudo Gamma State와 혼동 방지
 
-    Output:
-    - POSITIVE / NEGATIVE / TRANSITION
+    주의:
+    - DEALER_GAMMA_BIAS는 실제 옵션 감마 데이터가 아니라 positioning layer에서 주입된 proxy 값
+    - GAMMA_STATE는 Drift/VIX/SEW 기반 pseudo regime label
     """
 
     drift_score = market_data.get("DRIFT_SCORE", 0)
     drift_state = market_data.get("DRIFT_STATE", "N/A")
 
+    try:
+        drift_score = int(float(drift_score))
+    except Exception:
+        drift_score = 0
+
     vix = market_data.get("VIX", {}) or {}
     vix_level = vix.get("today")
+
+    try:
+        vix_level = float(vix_level) if vix_level is not None else None
+    except Exception:
+        vix_level = None
+
+    dealer_gamma_bias = market_data.get("DEALER_GAMMA_BIAS", 1.0)
+
+    try:
+        dealer_gamma_bias = float(dealer_gamma_bias)
+    except Exception:
+        dealer_gamma_bias = 1.0
 
     sew_state = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
     sew_event_type = str(market_data.get("SEW_EVENT_TYPE", "N/A") or "N/A").upper()
@@ -2906,27 +2925,35 @@ def pseudo_gamma_filter(market_data: Dict[str, Any]) -> str:
     strategy = ""
 
     # -------------------------
-    # 1️⃣ Positive Gamma
+    # 1️⃣ Positive Gamma Zone
     # -------------------------
     if vix_level is not None and vix_level < 18:
         if drift_score <= 1:
             gamma_state = "🟢 POSITIVE GAMMA"
             gamma_bias = "Mean-reverting / 딜러가 변동성 흡수"
             strategy = "눌림 매수 / 추격 금지"
+        else:
+            gamma_state = "🟡 POSITIVE-TRANSITION"
+            gamma_bias = "VIX는 안정적이나 Drift가 형성 중"
+            strategy = "초기 방향성 관찰 / 과도한 추격 금지"
 
     # -------------------------
-    # 2️⃣ Negative Gamma
+    # 2️⃣ Negative Gamma Zone
     # -------------------------
-    if vix_level is not None and vix_level >= 20:
+    elif vix_level is not None and vix_level >= 20:
         if drift_score >= 3:
             gamma_state = "🔴 NEGATIVE GAMMA"
             gamma_bias = "Trend acceleration / 변동성 확대"
             strategy = "추세 추종 / 빠른 대응"
+        else:
+            gamma_state = "🟡 VOL STRESS TRANSITION"
+            gamma_bias = "VIX는 높지만 방향성 확정 전"
+            strategy = "리스크 축소 / 신호 확인"
 
     # -------------------------
-    # 3️⃣ Transition Zone (핵심)
+    # 3️⃣ Neutral / Transition Zone
     # -------------------------
-    if gamma_state == "UNKNOWN":
+    else:
         if drift_score >= 2:
             gamma_state = "🟡 TRANSITION"
             gamma_bias = "초기 방향성 형성 / 감마 전환 구간"
@@ -2937,15 +2964,25 @@ def pseudo_gamma_filter(market_data: Dict[str, Any]) -> str:
             strategy = "과도한 베팅 금지"
 
     # -------------------------
-    # 4️⃣ SEW 결합 (리얼 핵심)
+    # 4️⃣ Dealer Gamma Bias Note
+    # -------------------------
+    if dealer_gamma_bias < 0.5:
+        dealer_gamma_note = "RUN RISK / dealer gamma proxy weak"
+    elif dealer_gamma_bias > 1.5:
+        dealer_gamma_note = "STABILIZING / dealer gamma proxy supportive"
+    else:
+        dealer_gamma_note = "NEUTRAL / transition zone"
+
+    # -------------------------
+    # 5️⃣ SEW 결합
     # -------------------------
     combo_signal = ""
 
-    if sew_state in ["ALERT", "CRISIS"]:
+    if sew_state in ["ALERT", "CRISIS", "DEADMAN", "WATCH"]:
         if "NEGATIVE" in gamma_state:
             combo_signal = "🚨 SHOCK + NEGATIVE GAMMA → 폭발 구간"
         else:
-            combo_signal = "⚠️ SHOCK but gamma unclear"
+            combo_signal = "⚠️ SHOCK but gamma not fully negative"
     else:
         if "TRANSITION" in gamma_state:
             combo_signal = "🟢 EARLY FLOW WITHOUT SHOCK"
@@ -2955,25 +2992,31 @@ def pseudo_gamma_filter(market_data: Dict[str, Any]) -> str:
             combo_signal = "🔴 TREND ACCELERATION"
 
     # -------------------------
+    # Save to market_data
+    # -------------------------
+    market_data["GAMMA_STATE"] = gamma_state
+    market_data["GAMMA_COMBO"] = combo_signal
+    market_data["DEALER_GAMMA_NOTE"] = dealer_gamma_note
+
+    # -------------------------
     # Output
     # -------------------------
     lines = []
     lines.append("### ⚡ 7.3) Pseudo Gamma Filter")
-    lines.append("- **정의:** 옵션 데이터 없이 시장의 감마 상태 추론")
+    lines.append("- **정의:** 옵션 데이터 없이 시장의 감마 환경을 추론")
+    lines.append("- **주의:** Dealer Gamma Bias 숫자와 Pseudo Gamma State는 서로 다른 레이어")
     lines.append("")
 
-    lines.append(f"- **Gamma State:** {gamma_state}")
+    lines.append(f"- **Pseudo Gamma State:** {gamma_state}")
+    lines.append(f"- **Dealer Gamma Bias:** {dealer_gamma_bias:.2f} ({dealer_gamma_note})")
     lines.append(f"- **Bias:** {gamma_bias}")
     lines.append(f"- **Strategy:** {strategy}")
     lines.append("")
     lines.append(f"- **Drift Score:** {drift_score} ({drift_state})")
-    lines.append(f"- **VIX:** {vix_level}")
+    lines.append(f"- **VIX:** {vix_level if vix_level is not None else 'N/A'}")
     lines.append(f"- **SEW:** {sew_state} / {sew_event_type}")
     lines.append("")
     lines.append(f"- **🚀 Combo Signal:** {combo_signal}")
-
-    market_data["GAMMA_STATE"] = gamma_state
-    market_data["GAMMA_COMBO"] = combo_signal
 
     return "\n".join(lines)
 
