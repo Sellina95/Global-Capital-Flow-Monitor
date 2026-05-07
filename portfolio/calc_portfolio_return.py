@@ -44,13 +44,23 @@ def load_latest_portfolio(filepath: str = PORTFOLIO_LOG_PATH) -> Optional[pd.Ser
 def extract_ticker_weights(portfolio_row: pd.Series) -> Tuple[Dict[str, float], float]:
     """
     portfolio row에서 ETF 비중과 cash 비중을 분리한다.
+    DEADMAN / CASH 100%일 때 ETF 칸이 빈칸이어도 정상 처리.
     """
-    reserved_cols = {"date", "CASH", "total_exposure"}
+    reserved_cols = {
+        "date",
+        "CASH",
+        "cash_weight",
+        "Cash",
+        "total_exposure",
+        "recommended_exposure",
+    }
+
     ticker_weights: Dict[str, float] = {}
 
     for col, val in portfolio_row.items():
         if col in reserved_cols:
             continue
+
         if pd.isna(val):
             continue
 
@@ -62,7 +72,17 @@ def extract_ticker_weights(portfolio_row: pd.Series) -> Tuple[Dict[str, float], 
         if weight > 0:
             ticker_weights[col] = weight
 
-    cash_weight = float(portfolio_row.get("CASH", 0.0) or 0.0)
+    cash_raw = (
+        portfolio_row.get("CASH", None)
+        if "CASH" in portfolio_row.index
+        else portfolio_row.get("cash_weight", 0.0)
+    )
+
+    try:
+        cash_weight = float(0.0 if pd.isna(cash_raw) else cash_raw)
+    except Exception:
+        cash_weight = 0.0
+
     return ticker_weights, cash_weight
 
 
@@ -134,7 +154,6 @@ def calculate_portfolio_return(
 
         ticker_returns[ticker] = ret_pct
 
-        # weight는 % 단위, ret_pct도 % 단위
         contrib = (weight / 100.0) * ret_pct
         weighted_contribs[ticker] = contrib
         portfolio_return += contrib
@@ -155,6 +174,7 @@ def fetch_benchmark_return(ticker: str = "SPY") -> float:
     """
     ret = fetch_1d_return(ticker)
     return round(ret if ret is not None else 0.0, 4)
+
 
 def load_trade_cost_for_date(
     portfolio_date: str,
@@ -190,6 +210,7 @@ def load_trade_cost_for_date(
 
     return round(float(total_cost), 4)
 
+
 def save_performance_row(
     portfolio_date: str,
     ticker_weights: Dict[str, float],
@@ -205,16 +226,14 @@ def save_performance_row(
     - 같은 portfolio_date가 이미 있으면 기존 row를 삭제하고 최신 값으로 덮어쓴다.
     """
     row = {
-    "date": portfolio_date,
-    "portfolio_return_pct": result["portfolio_return_pct"],
-    "benchmark_return_pct": benchmark_return,
-    "alpha_vs_spy_pct": round(result["portfolio_return_pct"] - benchmark_return, 4),
-
-    "trade_cost_impact_pct": trade_cost_impact,
-    "net_portfolio_return_pct": net_portfolio_return,
-    "net_alpha_vs_spy_pct": net_alpha_vs_spy,
-
-    "cash_weight": result["cash_weight"],
+        "date": portfolio_date,
+        "portfolio_return_pct": result["portfolio_return_pct"],
+        "benchmark_return_pct": benchmark_return,
+        "alpha_vs_spy_pct": round(result["portfolio_return_pct"] - benchmark_return, 4),
+        "trade_cost_impact_pct": trade_cost_impact,
+        "net_portfolio_return_pct": net_portfolio_return,
+        "net_alpha_vs_spy_pct": net_alpha_vs_spy,
+        "cash_weight": result["cash_weight"],
     }
 
     # ETF 비중 저장
@@ -257,19 +276,76 @@ def save_performance_row(
     print(f"✅ File path: {output_path}")
 
 
+def print_summary(
+    result: Dict[str, float],
+    benchmark_return: float,
+    trade_cost_impact: float,
+    net_portfolio_return: float,
+    net_alpha_vs_spy: float,
+) -> None:
+    print("")
+    print("=== Portfolio Return Summary ===")
+    print(f"Portfolio 1D Return: {result['portfolio_return_pct']:.4f}%")
+    print(f"SPY 1D Return: {benchmark_return:.4f}%")
+    print(f"Alpha vs SPY: {result['portfolio_return_pct'] - benchmark_return:.4f}%")
+    print(f"Trade Cost Impact: -{trade_cost_impact:.4f}%")
+    print(f"Net Portfolio Return: {net_portfolio_return:.4f}%")
+    print(f"Net Alpha vs SPY: {net_alpha_vs_spy:.4f}%")
+    print("")
+
+
 def main() -> None:
     latest_row = load_latest_portfolio()
     if latest_row is None:
         return
 
-    # ✅ 현재 시스템 기준:
-    # paper_portfolio_log.csv의 날짜를 그대로 성과 CSV의 날짜로 사용
     portfolio_date = pd.to_datetime(latest_row["date"]).strftime("%Y-%m-%d")
 
     ticker_weights, cash_weight = extract_ticker_weights(latest_row)
 
+    # ✅ DEADMAN / CASH 100% edge case
+    # ETF weight가 전부 빈칸이어도 cash가 99% 이상이면 정상적인 현금 포지션으로 처리
     if not ticker_weights:
-        print("⚠️ No ETF weights found in latest portfolio row")
+        if cash_weight >= 99.0:
+            print("🛡️ CASH-ONLY / DEADMAN portfolio detected")
+            print(f"📌 Portfolio date: {portfolio_date}")
+            print("📌 ETF weights: none")
+            print(f"📌 Cash weight: {cash_weight:.2f}%")
+
+            result = {
+                "portfolio_return_pct": 0.0,
+                "cash_weight": round(cash_weight, 2),
+                "ticker_returns": {},
+                "weighted_contribs": {"CASH": 0.0},
+            }
+
+            benchmark_return = fetch_benchmark_return("SPY")
+            trade_cost_impact = load_trade_cost_for_date(portfolio_date)
+
+            net_portfolio_return = round(result["portfolio_return_pct"] - trade_cost_impact, 4)
+            net_alpha_vs_spy = round(net_portfolio_return - benchmark_return, 4)
+
+            print_summary(
+                result=result,
+                benchmark_return=benchmark_return,
+                trade_cost_impact=trade_cost_impact,
+                net_portfolio_return=net_portfolio_return,
+                net_alpha_vs_spy=net_alpha_vs_spy,
+            )
+
+            save_performance_row(
+                portfolio_date=portfolio_date,
+                ticker_weights=ticker_weights,
+                result=result,
+                benchmark_return=benchmark_return,
+                trade_cost_impact=trade_cost_impact,
+                net_portfolio_return=net_portfolio_return,
+                net_alpha_vs_spy=net_alpha_vs_spy,
+            )
+            return
+
+        print("⚠️ No ETF weights found in latest portfolio row and cash is not 100%")
+        print(f"cash_weight={cash_weight:.2f}%")
         return
 
     print(f"📌 Portfolio date: {portfolio_date}")
@@ -281,17 +357,14 @@ def main() -> None:
     trade_cost_impact = load_trade_cost_for_date(portfolio_date)
     net_portfolio_return = round(result["portfolio_return_pct"] - trade_cost_impact, 4)
     net_alpha_vs_spy = round(net_portfolio_return - benchmark_return, 4)
-    
 
-    print("")
-    print("=== Portfolio Return Summary ===")
-    print(f"Portfolio 1D Return: {result['portfolio_return_pct']:.4f}%")
-    print(f"SPY 1D Return: {benchmark_return:.4f}%")
-    print(f"Alpha vs SPY: {result['portfolio_return_pct'] - benchmark_return:.4f}%")
-    print(f"Trade Cost Impact: -{trade_cost_impact:.4f}%")
-    print(f"Net Portfolio Return: {net_portfolio_return:.4f}%")
-    print(f"Net Alpha vs SPY: {net_alpha_vs_spy:.4f}%")
-    print("")
+    print_summary(
+        result=result,
+        benchmark_return=benchmark_return,
+        trade_cost_impact=trade_cost_impact,
+        net_portfolio_return=net_portfolio_return,
+        net_alpha_vs_spy=net_alpha_vs_spy,
+    )
 
     print("=== ETF Returns ===")
     for ticker, ret in result["ticker_returns"].items():
@@ -303,16 +376,15 @@ def main() -> None:
         print(f"{ticker}: {contrib:.4f}%")
 
     save_performance_row(
-    portfolio_date=portfolio_date,
-    ticker_weights=ticker_weights,
-    result=result,
-    benchmark_return=benchmark_return,
-    trade_cost_impact=trade_cost_impact,
-    net_portfolio_return=net_portfolio_return,
-    net_alpha_vs_spy=net_alpha_vs_spy,
+        portfolio_date=portfolio_date,
+        ticker_weights=ticker_weights,
+        result=result,
+        benchmark_return=benchmark_return,
+        trade_cost_impact=trade_cost_impact,
+        net_portfolio_return=net_portfolio_return,
+        net_alpha_vs_spy=net_alpha_vs_spy,
     )
 
-   
 
 if __name__ == "__main__":
     main()
