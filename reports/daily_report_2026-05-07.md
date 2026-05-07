@@ -11,7 +11,7 @@
 
 - **Portfolio Stance:** REDUCE (POS_OVERHEATED) / 0%
 
-- **[14번 구조·수급 괴리]:** 🚨 **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.14). 반전 가능성 상존.
+- **[14번 구조·수급 괴리]:** 🚨 **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.13). 반전 가능성 상존.
 - **[실시간 보초병(SEW)]:** STABLE | ✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)
 - **[SEW Event Type]:** NORMAL
   → 해석: 정상 상태 / 구조적 리스크 없음
@@ -21,7 +21,10 @@
 
 ### 📌 Interpretation
 - 금일 시장은 **TRANSITION / MIXED (전환·혼조) 환경**입니다.
-- 기관성 자금 유입은 **EARLY TRACE(초기 흔적)** 단계로, 이탈 신호가 아니라 초기 관찰 구간입니다.
+- 전일 SEW 기준 기관성 자금 축적이 강화되었습니다 (TRACE_BUILDING, score=4). 금일은 추세 확인 및 선택적 확대 가능성을 점검해야 합니다.
+- ⚠️ 전일 대비 기관성 흐름이 약화되었습니다 (TRACE_BUILDING → NO CLEAR FLOW). 노이즈성 신호였는지 확인이 필요합니다.
+- ⚠️ 전일 대비 기관성 흐름이 약화되었습니다 (TRACE_BUILDING → NO CLEAR FLOW). 전일 신호의 지속성 재검토가 필요합니다.
+- 기관성 자금 흐름은 아직 뚜렷하지 않아, 공격적 확장에는 신중함이 필요합니다.
 - 드리프트 강도는 아직 약해 추세 신뢰도는 제한적입니다.
 - 따라서 **현 수준에서 포지션 유지 및 관망 전략이 적절**합니다.
 
@@ -38,14 +41,14 @@
 - **Base Context:** phase=TRANSITION / MIXED (전환·혼조) / narrative=REDUCE (POS_OVERHEATED) / base_exposure=0%
 - **SEW:** STABLE / NORMAL
 - **Divergence:** N/A / **MONITOR REVERSAL (RUN 액션 준비)**
-- **Drift:** ⚡ TREND FORMING (초기 흐름 감지) / DISINFLATION_RISK_ON / NONE / score=2
-- **Flow:** 👀 EARLY TRACE / score=4
-- **Gamma:** 🟡 TRANSITION
+- **Drift:** WEAK DRIFT (노이즈 가능) / DISINFLATION_RISK_ON / NONE / score=1
+- **Flow:** NO CLEAR FLOW / score=1
+- **Gamma:** 🟢 POSITIVE GAMMA
 - **Tactical Action:** HOLD / NONE / LOW
-- **Positioning:** pos_z=2.14
+- **Positioning:** pos_z=2.13
 - **Warning Score:** 0 (No warning)
 - **Tactical Why:** No actionable alignment
-- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence 비정렬 → 방어적 태도 유지 → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Tactical=HOLD / Flow=👀 EARLY TRACE(4) / Drift=⚡ TREND FORMING (초기 흐름 감지)(2) / Gamma=🟡 TRANSITION → Tactical HOLD/MONITOR → 최종판단 변경 없음
+- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence 비정렬 → 방어적 태도 유지 → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Tactical=HOLD / Flow=NO CLEAR FLOW(1) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA → Tactical HOLD/MONITOR → 최종판단 변경 없음
 
 ### 🚩 Market Regime Status
 - **현재 국면 유지:** ✅ **TRANSITION / MIXED (전환·혼조)**
@@ -150,24 +153,23 @@
 ### 🌊 Drift Monitor (v4)
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
-- **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+1.38% / 5D=+3.12% | Strength: MEDIUM
-- **WTI:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-4.76% / 5D=-13.82% | Strength: HIGH
-- **DXY:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.16% / 5D=-0.22% | Strength: LOW
-- **GOLD:** 🟢 UP | Short-term: SHORT UP | 1D=+1.60% / 5D=+3.07% | Strength: MEDIUM
+- **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.06% / 5D=+2.18% | Strength: LOW
+- **WTI:** 🔴 DOWN | Short-term: MIXED | 1D=-3.95% / 5D=-13.09% | Strength: HIGH
+- **DXY:** 🔴 DOWN | Short-term: SHORT UP | 1D=-0.17% / 5D=-0.23% | Strength: LOW
+- **GOLD:** 🟢 UP | Short-term: SHORT UP | 1D=+1.66% / 5D=+3.14% | Strength: MEDIUM
 
-- **Drift Score:** 2
-- **State:** **⚡ TREND FORMING (초기 흐름 감지)**
+- **Drift Score:** 1
+- **State:** **WEAK DRIFT (노이즈 가능)**
 - **Label:** DISINFLATION_RISK_ON
 - **SEW Combo Signal:** NONE
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT UP
-  - Oil (WTI): 🔴 DOWN / SHORT DOWN
-  - Dollar (DXY): 🔴 DOWN / SHORT DOWN
+  - Oil (WTI): 🔴 DOWN / MIXED
+  - Dollar (DXY): 🔴 DOWN / SHORT UP
   - Gold (GOLD): 🟢 UP / SHORT UP
 
 - **Drivers:**
-  - SPY 1D continuation
   - Gold strength
 
 ### ⚠ 6.5) Correlation Break Monitor
@@ -213,44 +215,42 @@ No significant sector-level correlation break detected.
 - **Extreme Country Risk:** GLD
 
 ### ⚡ 7.3) Pseudo Gamma Filter
-- **정의:** 옵션 데이터 없이 시장의 감마 상태 추론
+- **정의:** 옵션 데이터 없이 시장의 감마 환경을 추론
+- **주의:** Dealer Gamma Bias 숫자와 Pseudo Gamma State는 서로 다른 레이어
 
-- **Gamma State:** 🟡 TRANSITION
-- **Bias:** 초기 방향성 형성 / 감마 전환 구간
-- **Strategy:** 포지션 확대 신중 / 초기 진입 구간
+- **Pseudo Gamma State:** 🟢 POSITIVE GAMMA
+- **Dealer Gamma Bias:** 2.65 (STABILIZING / dealer gamma proxy supportive)
+- **Bias:** Mean-reverting / 딜러가 변동성 흡수
+- **Strategy:** 눌림 매수 / 추격 금지
 
-- **Drift Score:** 2 (⚡ TREND FORMING (초기 흐름 감지))
+- **Drift Score:** 1 (WEAK DRIFT (노이즈 가능))
 - **VIX:** 17.389999389648438
 - **SEW:** STABLE / NORMAL
 
-- **🚀 Combo Signal:** 🟢 EARLY FLOW WITHOUT SHOCK
+- **🚀 Combo Signal:** 🟢 STABLE FLOW
 
 ### 🏦 Institutional Flow Engine (v2-minimal)
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
-- **Raw Flow State:** **👀 EARLY TRACE**
-- **Transition State:** **TRACE_BUILDING**
-- **Flow Delta:** +1 (prev=3 → current=4)
-- **Persistence Days:** 2
-- **Transition Note:** 기관성 흐름이 전일 대비 강화
-- **Confidence:** **MEDIUM**
-- **Action Bias:** **MONITOR**
+- **Raw Flow State:** **NO CLEAR FLOW**
+- **Transition State:** **FLOW_FADE**
+- **Flow Delta:** -3 (prev=4 → current=1)
+- **Persistence Days:** 1
+- **Transition Note:** 기관성 흐름은 남아 있으나 강도 약화
+- **Confidence:** **LOW**
+- **Action Bias:** **IGNORE**
 
-- **Drift:** ⚡ TREND FORMING (초기 흐름 감지) / DISINFLATION_RISK_ON / NONE
-- **Gamma:** 🟡 TRANSITION / 🟢 EARLY FLOW WITHOUT SHOCK
+- **Drift:** WEAK DRIFT (노이즈 가능) / DISINFLATION_RISK_ON / NONE
+- **Gamma:** 🟢 POSITIVE GAMMA / 🟢 STABLE FLOW
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 2.14
-- **Validation Score:** 3 (boost applied: +2)
+- **Positioning (POS_Z):** 2.13
+- **Validation Score:** 1 (boost applied: +1)
 
 - **Drivers:**
-  - Drift early
   - Clear flow label: DISINFLATION_RISK_ON
-  - Gamma transition
   - No shock yet
   - Positioning overheated
-  - Cross-asset risk participation
   - Leadership breadth expanding
-  - Cyclical leadership over defensives
 
 ### 🎯 8) Incentive Filter (Wall St. Logic)
 
@@ -290,39 +290,39 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ -0.460 / US10YΔ -0.060 (정상)
-- **Sentiment (Fear&Greed):** 60.09611344342787 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 60.06166646803311 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** TRANSITION / MIXED (전환·혼조) (Cap: 65)
-- **Drift:** ⚡ TREND FORMING (초기 흐름 감지) / DISINFLATION_RISK_ON / NONE
-- **Drift Score:** 2
-- **Flow Score:** 4
-- **Flow Continuity:** FLOW_FADE → 👀 EARLY TRACE (FLOW_PERSISTENCE, tilt=+1)
-- **Flow Regime Tilt:** +2 / Flow-Gamma Tilt: +3
+- **Drift:** WEAK DRIFT (노이즈 가능) / DISINFLATION_RISK_ON / NONE
+- **Drift Score:** 1
+- **Flow Score:** 1
+- **Flow Continuity:** TRACE_BUILDING → NO CLEAR FLOW (FLOW_FADE, tilt=-3)
+- **Flow Regime Tilt:** +0 / Flow-Gamma Tilt: +0
 
 - **🎯 Final Risk Action:** **REDUCE (POS_OVERHEATED)**
-- **Risk Budget (0~100):** **65**
-- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ TREND FORMING (초기 흐름 감지) (DISINFLATION_RISK_ON) / 수급=2.14 ⚠️ 수급 과열 감지 → Phase=TRANSITION / MIXED (전환·혼조)
+- **Risk Budget (0~100):** **64**
+- **Narrative:** 구조=EASING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=WEAK DRIFT (노이즈 가능) (DISINFLATION_RISK_ON) / 수급=2.13 ⚠️ 수급 과열 감지 → Phase=TRANSITION / MIXED (전환·혼조)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `EASING` | **Price(Regime):** `TRANSITION / MIXED` | **Bucket:** `MIXED` | **VIX:** `17.39`
-- **Positioning Data:** Z-Score: `2.14` (>1.8 시 Run) | Gamma: `2.14` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
-- **Status:** **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.14). 반전 가능성 상존.
+- **Positioning Data:** Z-Score: `2.13` (>1.8 시 Run) | Gamma: `2.65` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Status:** **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.13). 반전 가능성 상존.
 - **Action Signal:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
 
 ### 🎯 15) Volatility-Controlled Exposure (v3.1)
 - **정의:** 13번 Risk Budget 실행 브레이크 레이어
 - **추가 이유:** 전략 판단(13) 이후 실제 진입 강도를 조절하기 위함
 
-- **Base Risk Budget (13):** 65
+- **Base Risk Budget (13):** 64
 - **VIX Level:** 17.39 (NORMAL) | **Change:** +0.06%
 - **🚨 STATUS:** DEAD MAN'S SWITCH ACTIVATED
-- **Reason:** POS_Z Extreme (2.14)
+- **Reason:** POS_Z Extreme (2.13)
 - **Action:** 포지션 진입 금지 / 기존 물량 축소
-- **Brake Drivers:** ⚠️ Extreme Positioning Heat
+- **Brake Drivers:** ⚠️ Extreme Positioning Heat, Low Confidence
 
 - **📊 Recommended Exposure:** **0%**
 
@@ -350,35 +350,32 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
 **Macro Profile:** BALANCED
-**Macro Inputs Debug:** phase=TRANSITION / MIXED (전환·혼조) / us10y_pct=-1.36% / dxy_pct=-0.47% / wti_pct=-7.03% / vix=17.39 / liq_easy=True / liq_tight=False / credit_calm=True / flow_score=4
+**Macro Inputs Debug:** phase=TRANSITION / MIXED (전환·혼조) / us10y_pct=-1.36% / dxy_pct=-0.47% / wti_pct=-7.03% / vix=17.39 / liq_easy=True / liq_tight=False / credit_calm=True / flow_score=1
 
-**Flow Overlay:** flow_score=4 / flow_state=👀 EARLY TRACE / drift_label=DISINFLATION_RISK_ON / gamma=🟡 TRANSITION
-**Flow Notes:** DISINFLATION_RISK_ON → XLK/XLY/XLC 가점 | Gamma TRANSITION → 초기 리더 소폭 가점
+**Flow Overlay:** flow_score=1 / flow_state=NO CLEAR FLOW / drift_label=DISINFLATION_RISK_ON / gamma=🟢 POSITIVE GAMMA
 
-**Overweight:** Technology, Industrials, Consumer Discretionary, Consumer Staples, Health Care, Communication Services
+**Overweight:** Technology, Industrials, Consumer Discretionary, Consumer Staples, Health Care
 
 **Underweight:** Utilities, Energy, Financials, Real Estate
 
 **Scoreboard:**
-- Technology: +2.1  (+2 LIQ, +2 FLOW, +2 MOM, = +2.1)
-- Industrials: +1.4  (+1.5 LIQ, +1 CURVE, = +1.4)
-- Consumer Discretionary: +1.0  (+1.5 LIQ, +1 FLOW, = +1.0)
+- Technology: +1.9  (+2 LIQ, +2 MOM, = +1.9)
+- Industrials: +1.6  (+1.5 LIQ, +1 CURVE, = +1.6)
+- Consumer Discretionary: +1.0  (+1.5 LIQ, = +1.0)
 - Consumer Staples: +0.3  (+0.5 PHASE, = +0.3)
 - Health Care: +0.3  (+0.5 PHASE, = +0.3)
-- Communication Services: +0.1  (+0.5 FLOW, = +0.1)
-- Real Estate: -0.2  (-1 MOM, = -0.2)
+- Real Estate: -0.1  (-1 MOM, = -0.1)
 - Financials: -0.3  (+1 LIQ, +2 CURVE, -2 MOM, = -0.3)
-- Energy: -0.4  (-2 MOM, = -0.4)
-- Utilities: -0.6  (-1 LIQ, = -0.6)
+- Energy: -0.3  (-2 MOM, = -0.3)
+- Utilities: -0.7  (-1 LIQ, = -0.7)
 
 **Rationale (Why the score exists: 섹터 점수의 핵심 드라이버)**
 - OW Technology: +2: 유동성 완화 → 성장주/베타 우호
-- OW Technology: +1.5: Flow Overlay → DISINFLATION_RISK_ON 수혜
+- OW Technology: +2: Relative Strength 강세 (vs SPY) → 자금 유입 확인
 - OW Industrials: FLOW_WEAK → 이론상 우호하나 실제 자금 유입 확인 부족
 - OW Industrials: +1.5: 유동성 완화 → 경기민감 회복
 - OW Industrials: +1: 완만한 스티프닝(0.49) → 성장 기대 반영
 - OW Consumer Discretionary: +1.5: 유동성 완화 → 소비 민감주 우호
-- OW Consumer Discretionary: +1: Flow Overlay → 소비/성장 베타 우호
 - OW Consumer Staples: +0.5: Balanced Macro Profile → 방어 보완
 - UW Utilities: -1: 유동성 완화 → 방어주 상대매력 저하
 - UW Energy: -2: Relative Strength 약세 (vs SPY) → 소외 섹터
@@ -387,29 +384,29 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - UW Financials: +2: 완만한 스티프닝(0.49) → 예대마진 개선
 
 **Regime Controller:**
-- BALANCED (avg_divergence=-0.91, dispersion=1.41)
+- THEORY_MARKET (avg_divergence=-1.01, dispersion=1.38)
 Correlation Break: True / Leader=UNKNOWN
-- Interpretation: 균형 장세 / 강한 방향성보다 선별적 배분 필요
+- Interpretation: 거시/이론 조건이 자금흐름보다 우세한 장세 → 보수적 해석과 방어적 배분 필요
 - Correlation Break: True / Leader=UNKNOWN
 
 **Divergence / Classification Monitor (Theory vs Flow alignment: 이론과 실제 자금흐름 정렬 여부)**
-- Technology: HIGH_CONVICTION_ALIGNED (theory=+2.0, flow=+2.0, final=+2.1)
-- Industrials: FLOW_WEAK (theory=+2.5, flow=+0.0, final=+1.4)
+- Technology: HIGH_CONVICTION_ALIGNED (theory=+2.0, flow=+1.4, final=+1.9)
+- Industrials: FLOW_WEAK (theory=+2.5, flow=+0.0, final=+1.6)
+- Communication Services: NEUTRAL (theory=+0.0, flow=+0.0, final=+0.0)
 - Materials: NEUTRAL (theory=+0.0, flow=+0.0, final=+0.0)
 - Financials: THEORY_TRAP (theory=+3.0, flow=-1.4, final=-0.3)
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
 - **Strategic Exposure (15):** **0.0%** → **Regime Adjusted:** **0.0%**
-- **Exposure Override:** BALANCED → 총노출 유지
+- **Exposure Override:** THEORY_MARKET → 거시 논리 우세, 총노출 10% 축소
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Technology | +2.6 | ALIGNED | **0.0%** | DELEVERAGE |
-| Industrials | +1.1 | NEGATIVE_DIVERGENCE | **0.0%** | DELEVERAGE |
+| Technology | +2.4 | ALIGNED | **0.0%** | DELEVERAGE |
+| Industrials | +1.3 | NEGATIVE_DIVERGENCE | **0.0%** | DELEVERAGE |
 | Consumer Discretionary | +0.7 | ALIGNED | **0.0%** | DELEVERAGE |
 | Consumer Staples | +0.3 | ALIGNED | **0.0%** | DELEVERAGE |
 | Health Care | +0.3 | ALIGNED | **0.0%** | DELEVERAGE |
-| Communication Services | +0.1 | ALIGNED | **0.0%** | DELEVERAGE |
 | **Cash & Hedge** | - | - | **100.0%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
@@ -419,19 +416,19 @@ Correlation Break: True / Leader=UNKNOWN
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Momentum → Score → Current Weight
-1. Industrials (priority_score=5.95, score=1.1099999999999999, weight=0.0%, div=NEGATIVE_DIVERGENCE, mom=0)
-2. Communication Services (priority_score=-0.03, score=0.05, weight=0.0%, div=ALIGNED, mom=0)
-3. Consumer Staples (priority_score=-0.15, score=0.3, weight=0.0%, div=ALIGNED, mom=0)
-4. Health Care (priority_score=-0.15, score=0.3, weight=0.0%, div=ALIGNED, mom=0)
-5. Consumer Discretionary (priority_score=-0.33, score=0.6699999999999999, weight=0.0%, div=ALIGNED, mom=0)
+1. Industrials (priority_score=5.83, score=1.3399999999999999, weight=0.0%, div=NEGATIVE_DIVERGENCE, mom=0)
+2. Consumer Staples (priority_score=-0.17, score=0.34, weight=0.0%, div=ALIGNED, mom=0)
+3. Health Care (priority_score=-0.17, score=0.34, weight=0.0%, div=ALIGNED, mom=0)
+4. Consumer Discretionary (priority_score=-0.35, score=0.71, weight=0.0%, div=ALIGNED, mom=0)
+5. Technology (priority_score=-8.0, score=2.44, weight=0.0%, div=ALIGNED, mom=2)
 
 **Leveraging Priority Preview:**
 - 기준: Score → Momentum → Positive Divergence
-1. Technology (priority_score=7.57, score=2.57, weight=0.0%, div=ALIGNED, mom=2)
-2. Consumer Discretionary (priority_score=0.67, score=0.6699999999999999, weight=0.0%, div=ALIGNED, mom=0)
-3. Consumer Staples (priority_score=0.30, score=0.3, weight=0.0%, div=ALIGNED, mom=0)
-4. Health Care (priority_score=0.30, score=0.3, weight=0.0%, div=ALIGNED, mom=0)
-5. Communication Services (priority_score=0.05, score=0.05, weight=0.0%, div=ALIGNED, mom=0)
+1. Technology (priority_score=7.44, score=2.44, weight=0.0%, div=ALIGNED, mom=2)
+2. Consumer Discretionary (priority_score=0.71, score=0.71, weight=0.0%, div=ALIGNED, mom=0)
+3. Consumer Staples (priority_score=0.34, score=0.34, weight=0.0%, div=ALIGNED, mom=0)
+4. Health Care (priority_score=0.34, score=0.34, weight=0.0%, div=ALIGNED, mom=0)
+5. Industrials (priority_score=-1.66, score=1.3399999999999999, weight=0.0%, div=NEGATIVE_DIVERGENCE, mom=0)
 - **Divergence Adjustment:** Industrials penalized in weight sizing
 
 ### 🧬 19) Execution Layer (ETF Mapping)
@@ -443,16 +440,16 @@ Correlation Break: True / Leader=UNKNOWN
 - **Implementation Focus:** Environment-Aware Stock Types
 
 **Execution Notes:**
-- Early flow trace → maintain leaders, wait for confirmation before broadening.
+- Flow weak → avoid chasing; keep only proven leaders.
 - Positioning heat elevated → prefer rebalancing over fresh chasing.
 - Exposure below 45% → defensive execution; cash remains strategic asset.
 
 **Preferred Company Traits:**
-- Leaders with improving breadth confirmation
+- Market leaders with confirmed relative strength
 - Smaller position sizes with strict risk budget discipline
 
 **Risk Control / Avoid:**
-- Broad beta expansion before confirmation
+- Flow-weak cyclicals and theory-only sector bets
 - Crowded late-entry trades
 
 ---
@@ -465,53 +462,53 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5345911907975143
-- **Z-Score (5d):** 1.0730493304545927
+- **Z-Score (1d):** 0.35804970722757806
+- **Z-Score (5d):** 0.98384198125579
 
 ### EEM
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.6385471515165804
-- **Z-Score (5d):** 1.8950938524934313
+- **Z-Score (1d):** -0.21879532219999676
+- **Z-Score (5d):** 1.198763209276141
 
 ### EIS
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.5023509718848759
-- **Z-Score (5d):** 1.3844090174850978
+- **Z-Score (1d):** -0.043675272189926936
+- **Z-Score (5d):** 0.9856778268362606
 
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.5308507354543772
-- **Z-Score (5d):** 1.1844874831291619
+- **Z-Score (1d):** 0.05888770525226204
+- **Z-Score (5d):** 0.9093467298338375
 
 ### EWJ
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.6363649910446956
-- **Z-Score (5d):** 1.6018018209215406
+- **Z-Score (1d):** -0.018749436023311444
+- **Z-Score (5d):** 0.8409651957402619
 
 ### FXI
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 2.31405681653353
-- **Z-Score (5d):** 1.441261434971228
+- **Z-Score (1d):** -0.13842856660797082
+- **Z-Score (5d):** 0.8310975813001116
 
 ### GLD
 - **Crash?** True
 - **Risk Level:** EXTREME
-- **Z-Score (1d):** 1.6272422478310051
-- **Z-Score (5d):** 0.901515394138273
+- **Z-Score (1d):** 0.6411086864139592
+- **Z-Score (5d):** 0.8133889099939223
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.381793450370579
-- **Z-Score (5d):** 1.2756791454717988
+- **Z-Score (1d):** -0.04382224605045013
+- **Z-Score (5d):** 0.8028808916317736
 
 ### VXX
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5520120828784214
-- **Z-Score (5d):** -0.5026022060577992
+- **Z-Score (1d):** -0.18653858513071297
+- **Z-Score (5d):** -0.2109474623484545
