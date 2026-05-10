@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-05-10 04:42:19",
+  "timestamp": "2026-05-10 04:55:45",
   "flow_state": "NO_FLOW_BASE",
   "flow_score": 0,
   "prev_flow_state": "NO_FLOW_BASE",
-  "prev_flow_score": 1,
-  "flow_delta": -1,
+  "prev_flow_score": 0,
+  "flow_delta": 0,
   "persistence_days": 0,
   "transition": "NO_FLOW_BASE -> NO_FLOW_BASE",
   "transition_note": "기관성 흐름 부재 상태 지속",
