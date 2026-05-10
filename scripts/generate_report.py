@@ -1962,12 +1962,22 @@ def generate_daily_report() -> None:
     
     if is_deadman_activated or sew_deadman:
         war_room_summary = "데드맨 스위치 발동 / 자산 보호 모드 강제 전환"
+    
     elif clean_div_status == "ALIGNED" and sew_status == "STABLE":
         war_room_summary = "구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상"
+    
+    elif sew_status == "RISK_COMPRESSION":
+        war_room_summary = "포지셔닝 과열 감지 / Hard Deadman은 아니나 추격보다 리스크 축소 우선"
+    
+    elif clean_div_status != "ALIGNED":
+        war_room_summary = "구조·수급 괴리 및 추세 피로 감지 / 반전 가능성 모니터링 필요"
+    
     elif sew_status == "WATCH":
         war_room_summary = "구조는 유지되나 실시간 수급 이상반응 초기 감지 / 모니터링 필요"
+    
     elif sew_status == "ALERT":
         war_room_summary = "실시간 발작 감지 / 구조 또는 수급 레벨에서 즉시 점검 필요"
+    
     else:
         war_room_summary = "구조 또는 실시간 수급에 경미한 이상징후 존재 / 모니터링 필요"
     
