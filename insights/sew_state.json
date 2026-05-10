@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-09 04:21:16",
+  "timestamp": "2026-05-10 04:10:35",
   "status": "DEADMAN",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -7,7 +7,7 @@
   "recommended_exposure": 0,
   "deadman": true,
   "summary": "🚨 데드맨 스위치 발동 (익스포저 0% / 자산 보호 모드)",
-  "deadman_reason": "🚨 DEAD MAN'S SWITCH: POS_Z Extreme (2.13)",
+  "deadman_reason": "🚨 DEAD MAN'S SWITCH: POS_Z Extreme (2.05)",
   "assets": {
     "SPY": {
       "zscore": 0.35,
