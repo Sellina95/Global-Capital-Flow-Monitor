@@ -6,9 +6,9 @@
 > **시스템 상태: 🚨 ALERT**
 > **판단 요약: 구조 또는 실시간 수급에 경미한 이상징후 존재 / 모니터링 필요**
 
-### 🚨 Intraday Deadman Trigger Detected
+### 🕓 Intraday Historical Trigger Log
 - [2026-05-10 10:26:03] ALERT | SEW=DEADMAN | EVENT=NORMAL | flow=NO_FLOW_BASE -> NO_FLOW_BASE | flow_delta=0 | persistence=0 | flow_alert=NONE | Exp=0% | 🚨 DEAD MAN'S SWITCH: POS_Z Extreme (2.05) | spike=0 extreme=0 | corr_break=NO | z={'SPY': 0.3491320667064861, 'QQQ': 0.5694943441311158, 'VIX': 0.6358953133332057, 'DXY': -6.143831223753569e-05, 'WTI': 0.6645642969160414}
-👉 해석: 장중 변동성 급등 → 시스템 강제 리스크 차단 발생
+👉 해석: 오늘 장중 데드맨/리스크 이벤트 이력이 있었으나, 현재 상태는 아래 SEW 현재값을 기준으로 별도 판단합니다.
 
 ### 🎯 Exposure Framework
 - **Base Exposure (전략 기준): 51%**
@@ -17,12 +17,13 @@
 - **Portfolio Stance:** REDUCE (POS_OVERHEATED) / 48%
 
 - **[14번 구조·수급 괴리]:** 🚨 **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.22). 반전 가능성 상존.
-- **[실시간 보초병(SEW)]:** RISK_COMPRESSION | ⚠️ Risk Compression 발동 (권장 익스포저 55%)
-- **[SEW Event Type]:** NORMAL
-  → 해석: 정상 상태 / 구조적 리스크 없음
-- **[SEW Spike Monitor]:** Spike 0 / Extreme 0
-- **[SEW Deadman Reason]:** ⚠️ CROWDING RISK: POS_Z Extreme (2.05) → Risk Compression (55%)
-- **[15번 데드맨]:** ✅ PASS
+### 🟢 Current SEW Status
+- **SEW:** RISK_COMPRESSION | ⚠️ Risk Compression 발동 (권장 익스포저 55%)
+- **Event Type:** NORMAL → 정상 상태 / 구조적 리스크 없음
+- **Spike Monitor:** Spike 0 / Extreme 0
+- **Current Reason:** ⚠️ CROWDING RISK: POS_Z Extreme (2.05) → Risk Compression (55%)
+
+- **[15번 Hard Deadman]:** ✅ PASS
 - **[14번 수급 시그널]:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
 
 ### 📌 Interpretation
@@ -201,19 +202,19 @@ So What?
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
 ⚠ Market Closed / Stale Data → Price-based geo signals muted.
 
-- **Geo Stress Score (z-composite):** **-0.48**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **-0.47**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
 - **3D Avg Score:** -0.40
-- **Geo Momentum:** -0.08 *(Status: FLAT)*
+- **Geo Momentum:** -0.07 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Red_Sea
-- **Cosine Similarity Score:** -0.093
+- **Cosine Similarity Score:** -0.084
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Red_Sea: -0.093
-  - Ukraine_2022: -0.097
-  - Iran_Crisis_2020: -0.118
+  - Red_Sea: -0.084
+  - Ukraine_2022: -0.088
+  - Iran_Crisis_2020: -0.104
 - **Top Drivers:**
   - USDCNH: z_used=-0.78 (z1d=-0.77, z5d=-0.78, raw_w=0.18, norm_w=0.14) → contrib=-0.11
   - EEM: z_used=-1.15 (z1d=+1.00, z5d=+1.39, raw_w=0.10, norm_w=0.08) → contrib=-0.09
@@ -295,7 +296,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### 🏗️ 12) Structural Filter (v3)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
 - **핵심 신호:** US10Y(↓) / DXY(↓) / GOLD(↑) / VIX(↑) / WTI(↑)
-- **Meaningful Move Check:** DXY=-0.4173065263199746 / GOLD=0.43831862020386086 / US10Y=-0.6375308174456382 / VIX=0.6440316794081948 / WTI=0.6433927075829471
+- **Meaningful Move Check:** DXY=-0.4173065263199746 / GOLD=0.6574831250084414 / US10Y=-0.6375308174456382 / VIX=0.6440316794081948 / WTI=0.6433927075829471
 - **판정:** **NEUTRAL**
 - **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
 
@@ -484,8 +485,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.9429937371912519
-- **Z-Score (5d):** 0.5573525407224559
+- **Z-Score (1d):** 0.9429936781543536
+- **Z-Score (5d):** 0.5573521854092127
 
 ### EEM
 - **Crash?** False
@@ -502,8 +503,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.49791998297977064
-- **Z-Score (5d):** 0.5714985274511027
+- **Z-Score (1d):** 0.4979201670455116
+- **Z-Score (5d):** 0.5714990511802686
 
 ### EWJ
 - **Crash?** False
