@@ -14,14 +14,14 @@
 - **Base Exposure (전략 기준): 0%**
 - **Final Exposure (실행 기준): 0%**
 
-- **Portfolio Stance:** EXIT / 0%
+- **Portfolio Stance:** REDUCE (POS_OVERHEATED) / 0%
 
 - **[14번 구조·수급 괴리]:** 🚨 **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.22). 반전 가능성 상존.
-- **[실시간 보초병(SEW)]:** DEADMAN | 🚨 데드맨 스위치 발동 (익스포저 0% / 자산 보호 모드)
+- **[실시간 보초병(SEW)]:** RISK_COMPRESSION | ⚠️ Risk Compression 발동 (권장 익스포저 55%)
 - **[SEW Event Type]:** NORMAL
   → 해석: 정상 상태 / 구조적 리스크 없음
 - **[SEW Spike Monitor]:** Spike 0 / Extreme 0
-- **[SEW Deadman Reason]:** 🚨 DEAD MAN'S SWITCH: POS_Z Extreme (2.05)
+- **[SEW Deadman Reason]:** ⚠️ CROWDING RISK: POS_Z Extreme (2.05) → Risk Compression (55%)
 - **[15번 데드맨]:** 🚨 ACTIVATED
 - **[14번 수급 시그널]:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
 
@@ -36,14 +36,14 @@
 - **Size:** TAKE PROFIT
 - **Confidence:** MEDIUM
 - **Reason:**
-  - SEW shock → emergency risk cut
+  - No actionable alignment
   - Positioning overheat
 
 ## 🎯 Final Decision (War Room Override)
-- **Final Action:** **EXIT**
+- **Final Action:** **REDUCE (POS_OVERHEATED)**
 - **Final Exposure:** **0%**
 - **Base Context:** phase=TRANSITION / MIXED (전환·혼조) / narrative=REDUCE (POS_OVERHEATED) / base_exposure=0%
-- **SEW:** DEADMAN / NORMAL
+- **SEW:** RISK_COMPRESSION / NORMAL
 - **Divergence:** N/A / **MONITOR REVERSAL (RUN 액션 준비)**
 - **Drift:** WEAK DRIFT (노이즈 가능) / REOPENING / DEMAND_BOOM / NONE / score=1
 - **Flow:** NO CLEAR FLOW / score=0
@@ -51,8 +51,8 @@
 - **Tactical Action:** REDUCE / TAKE PROFIT / MEDIUM
 - **Positioning:** pos_z=2.22
 - **Warning Score:** 1 (6.6 섹터 상관관계 붕괴)
-- **Tactical Why:** SEW shock → emergency risk cut / Positioning overheat
-- **Why:** SEW DEADMAN 발동 → 즉시 EXIT / 익스포저 0% → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=REDUCE / Flow=NO CLEAR FLOW(0) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA → Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소
+- **Tactical Why:** No actionable alignment / Positioning overheat
+- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence 비정렬 → 방어적 태도 유지 → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=REDUCE / Flow=NO CLEAR FLOW(0) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA → Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소
 
 ### 🚩 Market Regime Status
 - **현재 국면 유지:** ✅ **TRANSITION / MIXED (전환·혼조)**
@@ -239,9 +239,9 @@ So What?
 
 - **Drift Score:** 1 (WEAK DRIFT (노이즈 가능))
 - **VIX:** 17.190000534057617
-- **SEW:** DEADMAN / NORMAL
+- **SEW:** RISK_COMPRESSION / NORMAL
 
-- **🚀 Combo Signal:** ⚠️ SHOCK but gamma not fully negative
+- **🚀 Combo Signal:** 🟢 STABLE FLOW
 
 ### 🏦 Institutional Flow Engine (v2-minimal)
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
@@ -255,8 +255,8 @@ So What?
 - **Action Bias:** **IGNORE**
 
 - **Drift:** WEAK DRIFT (노이즈 가능) / REOPENING / DEMAND_BOOM / NONE
-- **Gamma:** 🟢 POSITIVE GAMMA / ⚠️ SHOCK but gamma not fully negative
-- **SEW:** DEADMAN / NORMAL
+- **Gamma:** 🟢 POSITIVE GAMMA / 🟢 STABLE FLOW
+- **SEW:** RISK_COMPRESSION / NORMAL
 - **Positioning (POS_Z):** 2.22
 - **Validation Score:** 3 (boost applied: +2)
 
@@ -476,8 +476,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.9429930722112104
-- **Z-Score (5d):** 0.557351854854962
+- **Z-Score (1d):** 0.9429970876338384
+- **Z-Score (5d):** 0.5573532916158194
 
 ### EEM
 - **Crash?** False
@@ -494,8 +494,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.4979201670455116
-- **Z-Score (5d):** 0.5714990511802686
+- **Z-Score (1d):** 0.4979198952378966
+- **Z-Score (5d):** 0.5714986602603477
 
 ### EWJ
 - **Crash?** False
