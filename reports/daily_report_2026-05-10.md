@@ -7,7 +7,7 @@
 > **판단 요약: 데드맨 스위치 발동 / 자산 보호 모드 강제 전환**
 
 ### 🚨 Intraday Deadman Trigger Detected
-- [2026-05-10 04:55:45] ALERT | SEW=DEADMAN | EVENT=NORMAL | flow=NO_FLOW_BASE -> NO_FLOW_BASE | flow_delta=0 | persistence=0 | flow_alert=NONE | Exp=0% | 🚨 DEAD MAN'S SWITCH: POS_Z Extreme (2.05) | spike=0 extreme=0 | corr_break=NO | z={'SPY': 0.3491320667064861, 'QQQ': 0.5694943441311158, 'VIX': 0.6358953133332057, 'DXY': -6.143831223753569e-05, 'WTI': 0.6645642969160414}
+- [2026-05-10 05:13:56] ALERT | SEW=DEADMAN | EVENT=NORMAL | flow=NO_FLOW_BASE -> NO_FLOW_BASE | flow_delta=0 | persistence=0 | flow_alert=NONE | Exp=0% | 🚨 DEAD MAN'S SWITCH: POS_Z Extreme (2.05) | spike=0 extreme=0 | corr_break=NO | z={'SPY': 0.3491320667064861, 'QQQ': 0.5694943441311158, 'VIX': 0.6358953133332057, 'DXY': -6.143831223753569e-05, 'WTI': 0.6645642969160414}
 👉 해석: 장중 변동성 급등 → 시스템 강제 리스크 차단 발생
 
 ### 🎯 Exposure Framework
@@ -476,8 +476,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.9429937371912519
-- **Z-Score (5d):** 0.5573525407224559
+- **Z-Score (1d):** 0.9429962623042021
+- **Z-Score (5d):** 0.5573517845749719
 
 ### EEM
 - **Crash?** False
@@ -494,8 +494,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.4979201670455116
-- **Z-Score (5d):** 0.5714990511802686
+- **Z-Score (1d):** 0.4979206972199471
+- **Z-Score (5d):** 0.571498773331433
 
 ### EWJ
 - **Crash?** False
