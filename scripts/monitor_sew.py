@@ -9,6 +9,93 @@ from typing import Dict, Any, Optional
 
 
 # ---------------------------
+# 0. Credit State Helper
+# ---------------------------
+def get_credit_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    HY_OAS 기반 Credit State 판단.
+    monitor_sew.py에서는 market_data_history.csv의 마지막 row(context)를 사용하므로
+    flat dict / nested dict 둘 다 최대한 안전하게 처리한다.
+    """
+
+    def safe_float(x, default=None):
+        try:
+            if x is None or pd.isna(x):
+                return default
+            return float(x)
+        except Exception:
+            return default
+
+    hy_today = None
+    hy_prev = None
+    hy_pct = None
+
+    # 1) flat context 형태
+    for key in ["HY_OAS", "hy_oas"]:
+        if key in market_data:
+            hy_today = safe_float(market_data.get(key))
+            break
+
+    for key in ["HY_OAS_prev", "HY_OAS_PREV", "hy_oas_prev"]:
+        if key in market_data:
+            hy_prev = safe_float(market_data.get(key))
+            break
+
+    for key in ["HY_OAS_pct_change", "HY_OAS_PCT_CHANGE", "hy_oas_pct_change"]:
+        if key in market_data:
+            hy_pct = safe_float(market_data.get(key))
+            break
+
+    # 2) nested 형태
+    if hy_today is None and isinstance(market_data.get("HY_OAS"), dict):
+        hy_obj = market_data.get("HY_OAS", {})
+        hy_today = safe_float(hy_obj.get("today") or hy_obj.get("current"))
+        hy_prev = safe_float(hy_obj.get("prev"))
+        hy_pct = safe_float(hy_obj.get("pct_change"))
+
+    if hy_today is None:
+        return {
+            "state": "UNKNOWN",
+            "level": None,
+            "direction": 0,
+            "pct_change": None,
+            "is_credit_fracture": False,
+            "is_credit_stress": False,
+        }
+
+    direction = 0
+
+    if hy_pct is not None:
+        if hy_pct > 0:
+            direction = 1
+        elif hy_pct < 0:
+            direction = -1
+    elif hy_prev is not None:
+        if hy_today > hy_prev:
+            direction = 1
+        elif hy_today < hy_prev:
+            direction = -1
+
+    if hy_today >= 6.0:
+        state = "CREDIT_CRISIS"
+    elif hy_today >= 4.0:
+        state = "CREDIT_STRESS"
+    elif hy_today >= 3.0:
+        state = "CREDIT_WATCH"
+    else:
+        state = "CREDIT_CALM"
+
+    return {
+        "state": state,
+        "level": hy_today,
+        "direction": direction,
+        "pct_change": hy_pct,
+        "is_credit_fracture": hy_today >= 6.0,
+        "is_credit_stress": hy_today >= 4.0 and direction == 1,
+    }
+
+
+# ---------------------------
 # 1. 통합 데이터(CSV) 로드 함수
 # ---------------------------
 def load_war_room_context(csv_path: str = "data/market_data_history.csv"):
@@ -121,9 +208,6 @@ def correlation_break_filter(market_data: Dict[str, Any]) -> str:
 
 # ---------------------------
 # 4. 15번 필터: SEW 실시간용 Volatility-Controlled Exposure
-# 주의:
-# - 이 함수는 monitor_sew.py 전용 실시간 안전장치
-# - Daily Report의 15번 v3.0과는 별도
 # ---------------------------
 def volatility_controlled_exposure_filter(
     market_data: Dict[str, Any], context: Dict[str, Any]
@@ -134,23 +218,57 @@ def volatility_controlled_exposure_filter(
 
     vix_today = market_data.get("VIX", {}).get("current")
     pos_slope = float(market_data.get("POS_SLOPE", 0.0))
-    is_spiking = market_data.get("IS_SPIKING", False)
+    is_spiking = bool(market_data.get("IS_SPIKING", False))
 
-    is_deadman_on = False
-    reason = ""
+    spike_count = int(market_data.get("SPIKE_COUNT", 0) or 0)
+    extreme_count = int(market_data.get("EXTREME_COUNT", 0) or 0)
 
-    if is_spiking:
-        is_deadman_on = True
-        reason = "Real-time Vol Spike Detected"
-    elif abs(pos_z) > 2.0:
-        is_deadman_on = True
-        reason = f"POS_Z Extreme ({pos_z:.2f})"
-    elif abs(pos_slope) > 0.5:
-        is_deadman_on = True
-        reason = f"Aggressive Slope ({pos_slope:.2f})"
+    credit = get_credit_state(context)
+    credit_state = credit.get("state", "UNKNOWN")
+    credit_level = credit.get("level")
 
-    if is_deadman_on:
-        return 0, f"🚨 DEAD MAN'S SWITCH: {reason}"
+    # 1순위: Credit Fracture = HARD DEADMAN
+    if credit.get("is_credit_fracture"):
+        return (
+            0,
+            f"🚨 HARD DEADMAN: Credit Fracture Detected "
+            f"({credit_state} / HY_OAS={credit_level:.2f}%)",
+        )
+
+    # 2순위: 4/23 같은 Cross-Asset Shock / Real-time Vol Spike = HARD DEADMAN
+    if is_spiking and (spike_count >= 2 or extreme_count >= 1):
+        return (
+            0,
+            f"🚨 HARD DEADMAN: Real-time Cross-Asset Shock "
+            f"(spike={spike_count}, extreme={extreme_count})",
+        )
+
+    # 3순위: Credit Stress = 강한 압축, 하지만 0%는 아님
+    if credit.get("is_credit_stress"):
+        exposure = max(15, int(risk_budget * 0.35))
+        return (
+            exposure,
+            f"⚠️ CREDIT STRESS: HY_OAS={credit_level:.2f}% rising "
+            f"→ hard risk compression ({exposure}%)",
+        )
+
+    # 4순위: POS_Z 단독 = 수급 과열. DEADMAN 금지.
+    if abs(pos_z) > 2.0:
+        exposure = max(25, int(risk_budget * 0.65))
+        return (
+            exposure,
+            f"⚠️ CROWDING RISK: POS_Z Extreme ({pos_z:.2f}) "
+            f"→ Risk Compression ({exposure}%)",
+        )
+
+    # 5순위: POS_SLOPE 단독 = 감속. DEADMAN 금지.
+    if abs(pos_slope) > 0.5:
+        exposure = max(25, int(risk_budget * 0.70))
+        return (
+            exposure,
+            f"⚠️ POSITIONING SLOPE RISK: Aggressive Slope ({pos_slope:.2f}) "
+            f"→ Risk Compression ({exposure}%)",
+        )
 
     cap = 85 if "RISK-ON" in phase else 35
     exposure = min(risk_budget, cap)
@@ -169,10 +287,6 @@ def detect_event_signature(
     context: Dict[str, Any],
     market_snap: Dict[str, Any],
 ) -> str:
-    """
-    가격 + 포지셔닝 결합형 이벤트 해석
-    """
-
     spy_z = float(z_map.get("SPY", 0.0) or 0.0)
     qqq_z = float(z_map.get("QQQ", 0.0) or 0.0)
     vix_z = float(z_map.get("VIX", 0.0) or 0.0)
@@ -338,14 +452,6 @@ def classify_flow_transition(
     current_flow_score: int,
     prev_persistence_days: int = 0,
 ) -> Dict[str, Any]:
-    """
-    Flow Persistence Layer (v2.5)
-
-    목적:
-    - 단순 현재 flow_state가 아니라
-      이전 상태 대비 흐름이 강화/약화/붕괴/유지되는지 판정
-    """
-
     prev_state = str(prev_flow_state or "N/A").upper()
     current_state = str(current_flow_state or "N/A").upper()
 
@@ -355,43 +461,36 @@ def classify_flow_transition(
     transition_note = "현재 flow 상태 기준 유지"
     persistence_days = 0
 
-    # 1) 이전에 흔적이 있었는데 오늘 완전히 사라짐
     if prev_flow_score >= 2 and current_flow_score == 0:
         transition_state = "FLOW_BREAK"
         transition_note = "전일 형성되던 기관성 흐름이 유지되지 못하고 소멸"
         persistence_days = 0
 
-    # 2) 이전보다 약해짐
     elif prev_flow_score >= 3 and 0 < current_flow_score < prev_flow_score:
         transition_state = "FLOW_FADE"
         transition_note = "기관성 흐름은 남아 있으나 강도 약화"
         persistence_days = max(0, prev_persistence_days - 1)
 
-    # 3) 초기 흔적 발생
     elif prev_flow_score < 2 and current_flow_score >= 2:
         transition_state = "EARLY_TRACE"
         transition_note = "기관성 흐름 초기 흔적 발생"
         persistence_days = 1
 
-    # 4) 흐름 강화
     elif current_flow_score > prev_flow_score and current_flow_score >= 3:
         transition_state = "TRACE_BUILDING"
         transition_note = "기관성 흐름이 전일 대비 강화"
         persistence_days = prev_persistence_days + 1
 
-    # 5) 강한 흐름 확인
     elif current_flow_score >= 5:
         transition_state = "CONFIRMED_FLOW"
         transition_note = "기관성 흐름이 높은 강도로 확인"
         persistence_days = prev_persistence_days + 1
 
-    # 6) 계속 없음
     elif current_flow_score < 2 and prev_flow_score < 2:
         transition_state = "NO_FLOW_BASE"
         transition_note = "기관성 흐름 부재 상태 지속"
         persistence_days = 0
 
-    # 7) 그 외 유지
     else:
         transition_state = current_flow_state
         transition_note = "기관성 흐름 상태 유지"
@@ -410,10 +509,6 @@ def classify_flow_transition(
 
 
 def extract_current_flow_from_context(context: Dict[str, Any]) -> tuple[str, int]:
-    """
-    market_data_history.csv의 컬럼명이 바뀌어도 최대한 안전하게 읽는다.
-    없으면 NO CLEAR FLOW / 0으로 처리.
-    """
     current_flow_state = str(
         context.get("flow_state")
         or context.get("FLOW_STATE")
@@ -442,9 +537,6 @@ def evaluate_flow_change(
     prev_flow_state: str,
     current_flow_state: str,
 ) -> tuple[bool, str, str]:
-    """
-    이전 flow_state와 현재 flow_state를 비교해 알림 여부/레벨/메시지 산출
-    """
     prev_flow_state = str(prev_flow_state or "N/A").upper()
     current_flow_state = str(current_flow_state or "NO CLEAR FLOW").upper()
 
@@ -455,31 +547,15 @@ def evaluate_flow_change(
         return False, "NONE", ""
 
     if prev_flow_state == "NO CLEAR FLOW" and current_flow_state in ["EARLY TRACE", "CONFIRMED FLOW"]:
-        return (
-            True,
-            "UPGRADE",
-            f"Institutional flow upgraded: {prev_flow_state} → {current_flow_state}",
-        )
+        return True, "UPGRADE", f"Institutional flow upgraded: {prev_flow_state} → {current_flow_state}"
 
     if prev_flow_state == "EARLY TRACE" and current_flow_state == "CONFIRMED FLOW":
-        return (
-            True,
-            "CONFIRMATION",
-            f"Institutional flow confirmed: {prev_flow_state} → {current_flow_state}",
-        )
+        return True, "CONFIRMATION", f"Institutional flow confirmed: {prev_flow_state} → {current_flow_state}"
 
     if current_flow_state == "NO CLEAR FLOW":
-        return (
-            True,
-            "FADE",
-            f"Institutional flow faded: {prev_flow_state} → {current_flow_state}",
-        )
+        return True, "FADE", f"Institutional flow faded: {prev_flow_state} → {current_flow_state}"
 
-    return (
-        True,
-        "CHANGE",
-        f"Institutional flow changed: {prev_flow_state} → {current_flow_state}",
-    )
+    return True, "CHANGE", f"Institutional flow changed: {prev_flow_state} → {current_flow_state}"
 
 
 # ---------------------------
@@ -586,29 +662,29 @@ def check_market_anomaly():
         current_flow_score=current_flow_score,
         prev_persistence_days=prev_persistence_days,
     )
-    
+
     flow_change_alert, flow_alert_level, flow_alert_msg = evaluate_flow_change(
         prev_flow_state=prev_flow_state,
         current_flow_state=transition_info.get("flow_state", current_flow_state),
     )
+
     transition_state = str(transition_info.get("flow_state", current_flow_state) or "").upper()
-    flow_delta = int(transition_info.get("flow_delta", 0) or 0)
-    
+
     if transition_state == "FLOW_BREAK":
         flow_change_alert = True
         flow_alert_level = "FLOW_BREAK"
         flow_alert_msg = "전일 형성되던 기관성 흐름이 유지되지 못하고 소멸되었습니다."
-    
+
     elif transition_state == "FLOW_FADE":
         flow_change_alert = True
         flow_alert_level = "FLOW_FADE"
         flow_alert_msg = "기관성 흐름은 남아 있으나 강도가 약화되었습니다."
-    
+
     elif transition_state == "TRACE_BUILDING":
         flow_change_alert = True
         flow_alert_level = "TRACE_BUILDING"
         flow_alert_msg = "기관성 흐름이 전일 대비 강화되고 있습니다."
-    
+
     elif transition_state == "CONFIRMED_FLOW":
         flow_change_alert = True
         flow_alert_level = "CONFIRMED_FLOW"
@@ -618,7 +694,7 @@ def check_market_anomaly():
         flow_change_alert = False
         flow_alert_level = "NONE"
         flow_alert_msg = "기관성 흐름 부재 상태가 지속되고 있습니다."
-    
+
     save_flow_state(
         current_state=current_flow_state,
         current_score=current_flow_score,
@@ -633,9 +709,16 @@ def check_market_anomaly():
     )
 
     market_snap["IS_SPIKING"] = is_spiking
+    market_snap["SPIKE_COUNT"] = spike_count
+    market_snap["EXTREME_COUNT"] = extreme_count
     market_snap["POS_SLOPE"] = get_recent_pos_slope(csv_path)
     market_snap["EVENT_TYPE"] = event_type
     market_snap["Z_MAP"] = z_map
+
+    credit = get_credit_state(context)
+    credit_state = credit.get("state", "UNKNOWN")
+    credit_level = credit.get("level")
+    credit_level_txt = f"{credit_level:.2f}%" if credit_level is not None else "N/A"
 
     corr_msg = correlation_break_filter(market_snap)
     recommended_exp, status_msg = volatility_controlled_exposure_filter(market_snap, context)
@@ -643,11 +726,30 @@ def check_market_anomaly():
     # ---------------------------
     # SEW 상태 판단
     # ---------------------------
-    deadman = (recommended_exp == 0)
+    hard_deadman = recommended_exp == 0 and (
+        "HARD DEADMAN" in status_msg
+        or credit.get("is_credit_fracture")
+        or is_spiking
+    )
 
-    if deadman:
+    soft_risk = (
+        recommended_exp < 85
+        and recommended_exp > 0
+        and (
+            "CROWDING RISK" in status_msg
+            or "POSITIONING SLOPE RISK" in status_msg
+            or "CREDIT STRESS" in status_msg
+        )
+    )
+
+    deadman = hard_deadman
+
+    if hard_deadman:
         sew_status = "DEADMAN"
-        sew_summary = "🚨 데드맨 스위치 발동 (익스포저 0% / 자산 보호 모드)"
+        sew_summary = "🚨 HARD DEADMAN 발동 (익스포저 0% / 자산 보호 모드)"
+    elif soft_risk:
+        sew_status = "RISK_COMPRESSION"
+        sew_summary = f"⚠️ Risk Compression 발동 (권장 익스포저 {recommended_exp}%)"
     elif extreme_count >= 1:
         sew_status = "ALERT"
         sew_summary = "🚨 실시간 발작 감지 (EXTREME z-score 발생 / 즉시 모니터링 필요)"
@@ -677,35 +779,79 @@ def check_market_anomaly():
     )
 
     # ---------------------------
-    # 실전용 발송 조건
+    # 실전용 이메일 발송 조건
     # ---------------------------
-    should_alert = (
-        sew_status in ["WATCH", "ALERT", "DEADMAN"]
-        or event_type in [
-            "LIQUIDATION_SHOCK",
-            "MACRO_UNWIND",
-            "TECH_DELEVERAGING",
-            "POSITION_UNWIND_RISK",
-            "RISK_OFF_SHOCK",
-            "MACRO_FLOW_DISLOCATION",
-            "TECH_STRESS",
-            "VOL_CRUSH_SQUEEZE",
-            "RISK_ON_SQUEEZE",
-        ]
-        or recommended_exp == 0
+    hard_event_types = [
+        "LIQUIDATION_SHOCK",
+        "MACRO_UNWIND",
+        "TECH_DELEVERAGING",
+        "RISK_OFF_SHOCK",
+        "MACRO_FLOW_DISLOCATION",
+        "TECH_STRESS",
+    ]
+
+    should_email_alert = (
+        hard_deadman
+        or credit.get("is_credit_fracture")
+        or event_type in hard_event_types
+    )
+
+    should_log_alert = (
+        should_email_alert
+        or sew_status in ["WATCH", "ALERT", "DEADMAN", "RISK_COMPRESSION"]
         or bool(corr_msg)
         or flow_change_alert
     )
 
     os.makedirs("insights", exist_ok=True)
 
-    if should_alert:
-        subject = f"🚨 [SEW] {sew_status} | {event_type} | Flow {flow_alert_level} | Exp {recommended_exp}%"
+    if should_log_alert:
+        with open("insights/alerts.log", "a", encoding="utf-8") as f:
+            f.write(
+                f"[{now_str}] ALERT | "
+                f"SEW={sew_status} | "
+                f"EVENT={event_type} | "
+                f"credit={credit_state}({credit_level_txt}) | "
+                f"flow={transition_info.get('transition', f'{prev_flow_state}->{current_flow_state}')} | "
+                f"flow_delta={transition_info.get('flow_delta', 0)} | "
+                f"persistence={transition_info.get('persistence_days', 0)} | "
+                f"flow_alert={flow_alert_level} | "
+                f"Exp={recommended_exp}% | "
+                f"{status_msg} | "
+                f"spike={spike_count} extreme={extreme_count} | "
+                f"corr_break={'YES' if bool(corr_msg) else 'NO'} | "
+                f"email={'YES' if should_email_alert else 'NO'} | "
+                f"z={z_map}\n"
+            )
+    else:
+        with open("insights/alerts.log", "a", encoding="utf-8") as f:
+            f.write(
+                f"[{now_str}] NO_ALERT | "
+                f"SEW={sew_status} | "
+                f"EVENT={event_type} | "
+                f"credit={credit_state}({credit_level_txt}) | "
+                f"flow={prev_flow_state}->{current_flow_state} | "
+                f"flow_alert={flow_alert_level} | "
+                f"Exp={recommended_exp}% | "
+                f"spike={spike_count} extreme={extreme_count} | "
+                f"corr_break={'YES' if bool(corr_msg) else 'NO'} | "
+                f"z={z_map}\n"
+            )
+
+        print("✅ 특이사항 없음. 정상 모니터링 종료.")
+        return
+
+    # ---------------------------
+    # 이메일은 HARD DEADMAN급만 발송
+    # ---------------------------
+    if should_email_alert:
+        subject = f"🚨 [SEW HARD ALERT] {sew_status} | {event_type} | Credit {credit_state} | Exp {recommended_exp}%"
 
         body = f"""
-[Digital War Room - Real-time Status]
+[Digital War Room - HARD Risk Alert]
 
-현재 마켓에서 이상징후 또는 기관성 흐름 변화가 감지되었습니다.
+시스템이 HARD risk event를 감지했습니다.
+POS_Z 단독 과열이나 일반 flow 변화는 이메일 발송 대상에서 제외됩니다.
 
 ─────────────────────────────────────────
 📢 실시간 요약 (Exposure: {recommended_exp}%)
@@ -714,7 +860,8 @@ def check_market_anomaly():
 - 시스템 상태: {status_msg}
 - SEW Status: {sew_status}
 - Event Type: {event_type}
-- Deadman Reason: {status_msg if recommended_exp == 0 else 'N/A'}
+- Credit State: {credit_state}
+- HY_OAS Level: {credit_level_txt}
 - 아침 데이터 기준: {context.get('date', 'Unknown')}
 
 ─────────────────────────────────────────
@@ -744,36 +891,22 @@ def check_market_anomaly():
 ─────────────────────────────────────────
 🧠 전략적 가이드
 ─────────────────────────────────────────
+💡 HARD risk event입니다.
 💡 권장 익스포저가 {recommended_exp}%로 산출되었습니다.
-💡 {'즉시 포지션을 동결하거나 축소하십시오.' if recommended_exp == 0 else '가격/포지셔닝/상관관계/기관흐름 변화를 주의 깊게 관찰하십시오.'}
+💡 크레딧 붕괴 또는 cross-asset shock 여부를 최우선 확인하십시오.
 ─────────────────────────────────────────
         """.strip()
-
-        with open("insights/alerts.log", "a", encoding="utf-8") as f:
-            f.write(
-                f"[{now_str}] ALERT | "
-                f"SEW={sew_status} | "
-                f"EVENT={event_type} | "
-                f"flow={transition_info.get('transition', f'{prev_flow_state}->{current_flow_state}')} | "
-                f"flow_delta={transition_info.get('flow_delta', 0)} | "
-                f"persistence={transition_info.get('persistence_days', 0)} | "
-                f"flow_alert={flow_alert_level} | "
-                f"Exp={recommended_exp}% | "
-                f"{status_msg} | "
-                f"spike={spike_count} extreme={extreme_count} | "
-                f"corr_break={'YES' if bool(corr_msg) else 'NO'} | "
-                f"z={z_map}\n"
-            )
 
         api_key = os.getenv("RESEND_API_KEY")
         resend_from = os.getenv("RESEND_FROM")
         resend_to = os.getenv("RESEND_TO")
 
         print(
-            f"DEBUG: should_alert={should_alert}, "
+            f"DEBUG: should_email_alert={should_email_alert}, "
             f"recommended_exp={recommended_exp}, "
             f"event_type={event_type}, "
             f"sew_status={sew_status}, "
+            f"credit={credit_state}({credit_level_txt}), "
             f"flow={prev_flow_state}->{current_flow_state}, "
             f"flow_alert={flow_alert_level}, "
             f"corr_msg_exists={bool(corr_msg)}, "
@@ -813,25 +946,11 @@ def check_market_anomaly():
             print("❌ RESEND_API_KEY / RESEND_FROM / RESEND_TO 환경변수 확인 필요")
 
         if email_sent:
-            print(f"📧 실전 알림 발송 완료: {sew_status} | {event_type} | {flow_alert_level}")
+            print(f"📧 HARD 알림 발송 완료: {sew_status} | {event_type} | {credit_state}")
         else:
-            print(f"⚠️ 실전 알림 미발송: {sew_status} | {event_type} | {flow_alert_level}")
-
+            print(f"⚠️ HARD 알림 미발송: {sew_status} | {event_type} | {credit_state}")
     else:
-        with open("insights/alerts.log", "a", encoding="utf-8") as f:
-            f.write(
-                f"[{now_str}] NO_ALERT | "
-                f"SEW={sew_status} | "
-                f"EVENT={event_type} | "
-                f"flow={prev_flow_state}->{current_flow_state} | "
-                f"flow_alert={flow_alert_level} | "
-                f"Exp={recommended_exp}% | "
-                f"spike={spike_count} extreme={extreme_count} | "
-                f"corr_break={'YES' if bool(corr_msg) else 'NO'} | "
-                f"z={z_map}\n"
-            )
-
-        print("✅ 특이사항 없음. 정상 모니터링 종료.")
+        print(f"📝 Log only: {sew_status} | {event_type} | {status_msg}")
 
 
 if __name__ == "__main__":
