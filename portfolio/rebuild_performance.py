@@ -13,51 +13,23 @@ META_COLS = {"date", "CASH", "total_exposure"}
 
 
 def is_weekend(date_str: str) -> bool:
-    """
-    토/일 여부 확인
-    """
     return pd.to_datetime(date_str).weekday() >= 5
 
 
-def get_next_trading_day(date_str: str) -> pd.Timestamp | None:
+def fetch_return_for_date(ticker: str, target_date: str) -> float:
     """
-    리포트 날짜(T)의 다음 실제 거래일(T+1)을 찾는다.
-    예:
-    금요일 리포트 -> 다음주 월요일
-    토요일 리포트 -> 월요일
-    일요일 리포트 -> 월요일
+    Decision Day 기준 1D 수익률 계산.
+    - target_date 당일 종가 기준
+    - 주말/휴장일이면 0
+    - 직전 거래일 종가 대비 target_date 종가 수익률
     """
-    base = pd.to_datetime(date_str).normalize()
+    target = pd.to_datetime(target_date).normalize()
 
-    for i in range(1, 8):
-        candidate = base + pd.Timedelta(days=i)
-
-        if candidate.weekday() < 5:
-            return candidate
-
-    return None
-
-
-def fetch_return_for_date(ticker: str, signal_date: str) -> float:
-    """
-    핵심 수정:
-    signal_date(T)에 생성된 포트폴리오를
-    다음 거래일(T+1) 종가 기준으로 평가
-
-    즉:
-    T일 리포트 액션
-    →
-    T+1 실제 성과
-
-    주말 리포트도 다음 거래일 기준으로 연결 가능
-    """
-    next_day = get_next_trading_day(signal_date)
-
-    if next_day is None:
+    if target.weekday() >= 5:
         return 0.0
 
-    start = (next_day - pd.Timedelta(days=20)).strftime("%Y-%m-%d")
-    end = (next_day + pd.Timedelta(days=2)).strftime("%Y-%m-%d")
+    start = (target - pd.Timedelta(days=15)).strftime("%Y-%m-%d")
+    end = (target + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
 
     try:
         df = yf.download(
@@ -70,7 +42,7 @@ def fetch_return_for_date(ticker: str, signal_date: str) -> float:
             threads=False,
         )
     except Exception as e:
-        print(f"⚠️ Return fetch failed for {ticker} on {signal_date}: {e}")
+        print(f"⚠️ Return fetch failed for {ticker} on {target_date}: {e}")
         return 0.0
 
     if df is None or df.empty or "Close" not in df.columns:
@@ -89,28 +61,32 @@ def fetch_return_for_date(ticker: str, signal_date: str) -> float:
     close.index = pd.to_datetime(close.index).normalize()
     close = close.sort_index()
 
-    if next_day not in close.index:
+    # target_date가 실제 거래일이 아니면 0
+    if target not in close.index:
         return 0.0
 
-    pos = list(close.index).index(next_day)
+    pos = list(close.index).index(target)
 
     if pos == 0:
         return 0.0
 
     prev_close = float(close.iloc[pos - 1])
-    next_close = float(close.iloc[pos])
+    today_close = float(close.iloc[pos])
 
     if prev_close == 0:
         return 0.0
 
-    return round(((next_close - prev_close) / prev_close) * 100.0, 4)
+    return round(((today_close - prev_close) / prev_close) * 100.0, 4)
 
 
 def load_trade_cost_for_date(date: str) -> float:
     """
-    거래 비용:
-    signal_date 기준 실제 리밸런싱 비용
+    해당 날짜 trade_log에서 거래비용 합산.
+    주말은 무조건 0.
     """
+    if is_weekend(date):
+        return 0.0
+
     if not os.path.exists(TRADE_LOG_PATH):
         return 0.0
 
@@ -126,7 +102,6 @@ def load_trade_cost_for_date(date: str) -> float:
         return 0.0
 
     df["date"] = df["date"].astype(str)
-
     day_df = df[df["date"] == str(date)].copy()
 
     if day_df.empty:
@@ -178,6 +153,7 @@ def rebuild() -> None:
 
     for _, row in pf.iterrows():
         date = str(row["date"])
+        weekend = is_weekend(date)
 
         weights = extract_weights(row)
 
@@ -187,34 +163,30 @@ def rebuild() -> None:
             cash_weight = 0.0
 
         portfolio_return = 0.0
+        benchmark_return = 0.0
         ticker_returns: Dict[str, float] = {}
         contribs: Dict[str, float] = {}
 
-        # CASH ONLY / DEADMAN
-        if len(weights) == 0:
-            portfolio_return = 0.0
+        if weekend:
+            for ticker in weights:
+                ticker_returns[ticker] = 0.0
+                contribs[ticker] = 0.0
 
         else:
             for ticker, weight in weights.items():
                 ret = fetch_return_for_date(ticker, date)
-
                 ticker_returns[ticker] = ret
 
                 contrib = round((weight / 100.0) * ret, 4)
-
                 contribs[ticker] = contrib
                 portfolio_return += contrib
 
-        portfolio_return = round(portfolio_return, 4)
-
-        benchmark_return = fetch_return_for_date("SPY", date)
+            portfolio_return = round(portfolio_return, 4)
+            benchmark_return = fetch_return_for_date("SPY", date)
 
         alpha = round(portfolio_return - benchmark_return, 4)
-
         trade_cost = load_trade_cost_for_date(date)
-
         net_return = round(portfolio_return - trade_cost, 4)
-
         net_alpha = round(net_return - benchmark_return, 4)
 
         out = {
@@ -240,10 +212,8 @@ def rebuild() -> None:
 
         rows.append(out)
 
-        next_day = get_next_trading_day(date)
-
         print(
-            f"✅ Signal={date} | Eval={next_day.strftime('%Y-%m-%d') if next_day else 'N/A'} | "
+            f"✅ {date} | weekend={weekend} | "
             f"port={portfolio_return:.4f}% | "
             f"SPY={benchmark_return:.4f}% | "
             f"cost={trade_cost:.4f}% | "
@@ -251,11 +221,9 @@ def rebuild() -> None:
         )
 
     out_df = pd.DataFrame(rows)
-
     out_df = out_df.sort_values("date").reset_index(drop=True)
 
     os.makedirs("data", exist_ok=True)
-
     out_df.to_csv(OUTPUT_PATH, index=False)
 
     print(f"✅ Rebuilt performance file: {OUTPUT_PATH}")
