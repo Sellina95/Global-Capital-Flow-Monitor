@@ -3987,27 +3987,15 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
 
     return "\n".join(lines)
 
-
 def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     """
-    🎯 15) Volatility-Controlled Exposure (v3.1 - Advanced Execution Brake Layer)
+    🎯 15) Volatility-Controlled Exposure (v3.2)
 
-    역할:
-    - 13번 Narrative Engine의 RISK_BUDGET을 그대로 입력받는다
-    - 15번은 새로운 Phase 판단을 하지 않는다
-    - 실행 강도만 조절:
-        1. VIX Regime
-        2. Positioning Heat / Slope
-        3. Gamma Environment
-        4. CTA
-        5. HY OAS
-        6. Confidence Scaling
-        7. Dead Man's Switch
+    핵심 수정:
+    - POS_Z 단독 과열은 DEADMAN이 아니라 Risk Compression
+    - Credit Crisis / Cross-Asset Shock 급만 0% 허용
     """
 
-    # --------------------------------------------------
-    # Helpers
-    # --------------------------------------------------
     def _to_float(x) -> Optional[float]:
         if x is None:
             return None
@@ -4021,9 +4009,6 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     def _clamp(x, lo=0, hi=100):
         return max(lo, min(int(round(x)), hi))
 
-    # --------------------------------------------------
-    # Inputs
-    # --------------------------------------------------
     risk_budget = _to_float(market_data.get("RISK_BUDGET", 50))
     if risk_budget is None:
         risk_budget = 50.0
@@ -4053,6 +4038,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     hy_oas = market_data.get("HY_OAS", {}) or {}
     hy_level = _to_float(hy_oas.get("today"))
+    hy_pct = _to_float(hy_oas.get("pct_change"))
 
     flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
     flow_score = flow.get("score", 0)
@@ -4061,30 +4047,41 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     except Exception:
         flow_score = 0
 
-    # --------------------------------------------------
-    # Base Exposure
-    # --------------------------------------------------
     exposure = risk_budget
-
-    # --------------------------------------------------
-    # Tracking
-    # --------------------------------------------------
     brake_drivers = []
     pos_notes = []
 
     # --------------------------------------------------
-    # 0️⃣ Dead Man's Switch
+    # 0️⃣ Hard Deadman / Soft Compression 분리
     # --------------------------------------------------
-    is_deadman_on = False
-    deadman_reason = ""
+    hard_deadman = False
+    hard_deadman_reason = ""
 
-    if abs(pos_z) > 2.0:
-        is_deadman_on = True
-        deadman_reason = f"POS_Z Extreme ({pos_z:.2f})"
+    risk_compression = False
+    compression_reason = ""
 
-    if abs(pos_slope) > 0.5:
-        is_deadman_on = True
-        deadman_reason = f"Aggressive Slope ({pos_slope:.2f})"
+    # Credit Crisis = 진짜 0%
+    if hy_level is not None and hy_level >= 6.0:
+        hard_deadman = True
+        hard_deadman_reason = f"Credit Crisis / HY_OAS {hy_level:.2f}%"
+
+    # VIX Panic + 급등 = 진짜 0% 후보
+    elif vix_today is not None and vix_today >= 30:
+        hard_deadman = True
+        hard_deadman_reason = f"VIX Panic ({vix_today:.2f})"
+
+    # POS_Z 단독 = 0% 금지, 감속만
+    elif abs(pos_z) > 2.0:
+        risk_compression = True
+        compression_reason = f"POS_Z Extreme ({pos_z:.2f})"
+        brake_drivers.append("Extreme Positioning Heat")
+        pos_notes.append(f"Extreme Positioning Heat({pos_z:.2f})")
+
+    elif abs(pos_slope) > 0.5:
+        risk_compression = True
+        compression_reason = f"Aggressive Slope ({pos_slope:.2f})"
+        brake_drivers.append("Aggressive Positioning Slope")
+        pos_notes.append(f"Aggressive Slope({pos_slope:.2f})")
 
     # --------------------------------------------------
     # 1️⃣ VIX Regime
@@ -4096,15 +4093,12 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         if vix_today < 14:
             vol_state = "LOW"
             multiplier *= 1.05
-
         elif vix_today < 20:
             vol_state = "NORMAL"
-
         elif vix_today < 30:
             vol_state = "STRESS"
             multiplier *= 0.80
             brake_drivers.append("High VIX")
-
         else:
             vol_state = "PANIC"
             multiplier *= 0.60
@@ -4114,7 +4108,6 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         if vix_pct > 5:
             multiplier *= 0.85
             brake_drivers.append("VIX Spike")
-
         elif vix_pct < -5:
             multiplier *= 1.05
 
@@ -4125,8 +4118,10 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     if pos_z >= 2.0:
         pos_multiplier *= 0.85
-        brake_drivers.append("Extreme Positioning Heat")
-        pos_notes.append(f"Extreme Positioning Heat({pos_z:.2f})")
+        if "Extreme Positioning Heat" not in brake_drivers:
+            brake_drivers.append("Extreme Positioning Heat")
+        if not any("Extreme Positioning Heat" in x for x in pos_notes):
+            pos_notes.append(f"Extreme Positioning Heat({pos_z:.2f})")
 
     elif pos_z >= 1.7:
         pos_multiplier *= 0.90
@@ -4138,7 +4133,6 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         brake_drivers.append("Positioning Heat")
         pos_notes.append(f"Positioning Heat({pos_z:.2f})")
 
-    # 과열이 풀리는 구간 → 감속 완화
     if pos_z > 2.0 and pos_slope < 0:
         pos_multiplier *= 1.05
         pos_notes.append("Position Unwind")
@@ -4150,7 +4144,6 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         pos_multiplier *= 0.85
         brake_drivers.append("Negative Gamma")
         pos_notes.append(f"Negative Gamma({gamma:.2f})")
-
     elif gamma > 1.5:
         pos_multiplier *= 1.03
         pos_notes.append(f"Positive Gamma({gamma:.2f})")
@@ -4170,11 +4163,12 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     # 5️⃣ Credit Layer
     # --------------------------------------------------
     if hy_level is not None:
-        if hy_level > 5:
+        if hy_level >= 6.0:
+            brake_drivers.append("Credit Crisis")
+        elif hy_level >= 5.0:
             exposure *= 0.75
             brake_drivers.append("Credit Stress")
-
-        elif hy_level > 4:
+        elif hy_level >= 4.0:
             exposure *= 0.90
             brake_drivers.append("Mild Credit Stress")
 
@@ -4185,16 +4179,13 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         confidence = "LOW"
         confidence_multiplier = 0.90
         brake_drivers.append("Low Confidence")
-
     elif flow_score <= 3:
         confidence = "MEDIUM-LOW"
         confidence_multiplier = 0.95
         brake_drivers.append("Medium-Low Confidence")
-
     elif flow_score <= 5:
         confidence = "MEDIUM"
         confidence_multiplier = 1.00
-
     else:
         confidence = "HIGH"
         confidence_multiplier = 1.05
@@ -4202,48 +4193,56 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     exposure *= confidence_multiplier
 
     # --------------------------------------------------
-    # 7️⃣ Dead Man Override
+    # 7️⃣ Final Override
     # --------------------------------------------------
-    if is_deadman_on:
+    if hard_deadman:
         exposure = 0
+        status = "HARD_DEADMAN"
+    elif risk_compression:
+        exposure = max(25, exposure)
+        status = "RISK_COMPRESSION"
+    else:
+        status = "NORMAL"
 
-    # --------------------------------------------------
-    # Final
-    # --------------------------------------------------
     exposure = _clamp(exposure)
 
     market_data["RECOMMENDED_EXPOSURE"] = exposure
     market_data["PREV_EXPOSURE"] = exposure
+    market_data["SEW_STATUS"] = status
 
     # --------------------------------------------------
     # Output
     # --------------------------------------------------
     vix_display = f"{vix_today:.2f}" if vix_today is not None else "N/A"
     vix_pct_display = f"{vix_pct:+.2f}%" if vix_pct is not None else "N/A"
-
     total_multiplier = multiplier * pos_multiplier * confidence_multiplier
 
     lines = []
-    lines.append("### 🎯 15) Volatility-Controlled Exposure (v3.1)")
+    lines.append("### 🎯 15) Volatility-Controlled Exposure (v3.2)")
     lines.append("- **정의:** 13번 Risk Budget 실행 브레이크 레이어")
     lines.append("- **추가 이유:** 전략 판단(13) 이후 실제 진입 강도를 조절하기 위함")
     lines.append("")
     lines.append(f"- **Base Risk Budget (13):** {risk_budget:.0f}")
     lines.append(f"- **VIX Level:** {vix_display} ({vol_state}) | **Change:** {vix_pct_display}")
 
-    if is_deadman_on:
-        lines.append("- **🚨 STATUS:** DEAD MAN'S SWITCH ACTIVATED")
-        lines.append(f"- **Reason:** {deadman_reason}")
-        lines.append("- **Action:** 포지션 진입 금지 / 기존 물량 축소")
-
+    if hard_deadman:
+        lines.append("- **🚨 STATUS:** HARD DEAD MAN'S SWITCH ACTIVATED")
+        lines.append(f"- **Reason:** {hard_deadman_reason}")
+        lines.append("- **Action:** 포지션 진입 금지 / 기존 물량 강제 축소")
+    elif risk_compression:
+        lines.append("- **⚠️ STATUS:** RISK COMPRESSION")
+        lines.append(f"- **Reason:** {compression_reason}")
+        lines.append("- **Action:** 신규 추격 금지 / 일부 이익실현 / 베타 노출 축소")
+        lines.append(f"- **Final Multiplier:** {total_multiplier:.2f}x (VIX x Positioning x Confidence)")
+        lines.append(f"- **Confidence Level:** {confidence} (flow_score={flow_score})")
+        lines.append(f"- **Slope Intensity:** {pos_slope:.4f}")
     else:
         lines.append(f"- **Final Multiplier:** {total_multiplier:.2f}x (VIX x Positioning x Confidence)")
         lines.append(f"- **Confidence Level:** {confidence} (flow_score={flow_score})")
-
-        if pos_notes:
-            lines.append(f"- **Positioning Layer:** ⚠️ {', '.join(pos_notes)}")
-
         lines.append(f"- **Slope Intensity:** {pos_slope:.4f}")
+
+    if pos_notes:
+        lines.append(f"- **Positioning Layer:** ⚠️ {', '.join(pos_notes)}")
 
     if brake_drivers:
         lines.append(f"- **Brake Drivers:** ⚠️ {', '.join(brake_drivers)}")
@@ -4254,6 +4253,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
 
     return "\n".join(lines)
+
         
 def style_tilt_filter(market_data: Dict[str, Any]) -> str:
     """
