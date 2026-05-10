@@ -208,10 +208,11 @@ jobs:
           echo "== trade_log tail after report =="
           tail -n 10 data/trade_log.csv || true
 
-      - name: Rebuild paper portfolio performance
-        run: |
-          export PYTHONPATH="$GITHUB_WORKSPACE"
-          python portfolio/rebuild_performance.py
+      #- name: Rebuild paper portfolio performance
+        #run: |
+          
+          #export PYTHONPATH="$GITHUB_WORKSPACE"
+          #python portfolio/rebuild_performance.py
 
       - name: Run portfolio return calc
         run: |
