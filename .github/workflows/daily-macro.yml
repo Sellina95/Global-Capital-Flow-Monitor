@@ -208,10 +208,10 @@ jobs:
           echo "== trade_log tail after report =="
           tail -n 10 data/trade_log.csv || true
 
-      - name: Backfill missing cash-only performance
+      - name: Rebuild paper portfolio performance
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
-          python portfolio/backfill_cash_only_performance.py
+          python portfolio/rebuild_performance.py
 
       - name: Run portfolio return calc
         run: |
