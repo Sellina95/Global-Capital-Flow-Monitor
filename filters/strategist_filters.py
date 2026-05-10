@@ -6022,22 +6022,30 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             load_previous_weights,
             save_trade_log,
         )
-
+    
         prev_etf_weights = load_previous_weights()
         etf_weights = {item["etf"]: item["weight"] for item in etf_plan}
-
+    
+        # ✅ DEADMAN / NO ETF MAP 방어
+        # 실행 가능한 ETF가 없거나 최종 익스포저가 0이면
+        # 반드시 CASH 100% snapshot으로 저장
+        if final_exposure <= 0 or not etf_weights:
+            etf_weights = {}
+            cash_weight = 100.0
+            final_exposure = 0.0
+    
         save_trade_log(
             prev_weights=prev_etf_weights,
             target_weights=etf_weights,
             market_data=market_data,
         )
-
+    
         save_paper_portfolio(
             weights=etf_weights,
             cash_weight=cash_weight,
             exposure=final_exposure,
         )
-
+    
     except Exception as e:
         print(f"⚠️ Portfolio save failed: {e}")
 
