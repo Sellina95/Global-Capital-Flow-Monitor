@@ -1987,9 +1987,18 @@ def generate_daily_report() -> None:
 
     if deadman_log:
         lines.append("")
-        lines.append("### 🚨 Intraday Deadman Trigger Detected")
+        lines.append("### 🕓 Intraday Historical Trigger Log")
         lines.append(f"- {deadman_log}")
-        lines.append("👉 해석: 장중 변동성 급등 → 시스템 강제 리스크 차단 발생")
+
+        if sew_deadman:
+            lines.append("👉 해석: 오늘 장중 HARD DEADMAN 이벤트가 발생했으며, 현재도 자산 보호 모드가 유지 중입니다.")
+        elif "DEAD MAN" in deadman_log or "DEADMAN" in deadman_log:
+            lines.append("👉 해석: 오늘 장중 데드맨/리스크 이벤트 이력이 있었으나, 현재 상태는 아래 SEW 현재값을 기준으로 별도 판단합니다.")
+        elif "CROWDING RISK" in deadman_log or "RISK_COMPRESSION" in deadman_log:
+            lines.append("👉 해석: 오늘 장중 포지셔닝 과열로 Risk Compression 신호가 발생했습니다.")
+        else:
+            lines.append("👉 해석: 오늘 장중 리스크 이벤트 이력이 있어 사후 복기용으로 기록합니다.")
+
         lines.append("")
     
     lines.append("### 🎯 Exposure Framework")
@@ -2000,18 +2009,20 @@ def generate_daily_report() -> None:
     lines.append("")
     
     lines.append(f"- **[14번 구조·수급 괴리]:** {war_room_emoji} {div_status}")
-    lines.append(f"- **[실시간 보초병(SEW)]:** {sew_status} | {sew_summary}")
-    lines.append(f"- **[SEW Event Type]:** {sew_event_type}")
-    lines.append(f"  → 해석: {sew_event_interp}")
-    lines.append(f"- **[SEW Spike Monitor]:** Spike {sew_spike_count} / Extreme {sew_extreme_count}")
-    
+    lines.append("### 🟢 Current SEW Status")
+    lines.append(f"- **SEW:** {sew_status} | {sew_summary}")
+    lines.append(f"- **Event Type:** {sew_event_type} → {sew_event_interp}")
+    lines.append(f"- **Spike Monitor:** Spike {sew_spike_count} / Extreme {sew_extreme_count}")
     if sew_deadman_reason and sew_deadman_reason != "Normal Operation":
-        lines.append(f"- **[SEW Deadman Reason]:** {sew_deadman_reason}")
+        lines.append(f"- **Current Reason:** {sew_deadman_reason}")
+    lines.append("")
+    
     
     if is_deadman_activated or sew_deadman:
         lines.append("- **[15번 데드맨]:** 🚨 ACTIVATED")
     else:
-        lines.append("- **[15번 데드맨]:** ✅ PASS")
+        lines.append("- **[15번 Hard Deadman]:** ✅ PASS")
+   
     
     lines.append(f"- **[14번 수급 시그널]:** {div_action}")
     lines.append("")
