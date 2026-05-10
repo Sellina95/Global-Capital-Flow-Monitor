@@ -1377,6 +1377,41 @@ def fed_plumbing_filter(market_data: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def get_credit_state(market_data):
+    hy = _get_series(market_data, "HY_OAS")
+
+    if hy.get("today") is None:
+        return {
+            "state": "UNKNOWN",
+            "level": None,
+            "direction": 0,
+            "is_credit_fracture": False,
+            "is_credit_stress": False,
+        }
+
+    level = float(hy["today"])
+    direction = _sign_from(hy)
+
+    if level >= 6.0:
+        state = "CREDIT_CRISIS"
+    elif level >= 4.0:
+        state = "CREDIT_STRESS"
+    elif level >= 3.0:
+        state = "CREDIT_WATCH"
+    else:
+        state = "CREDIT_CALM"
+
+    is_credit_fracture = level >= 6.0
+    is_credit_stress = level >= 4.0 and direction == 1
+
+    return {
+        "state": state,
+        "level": level,
+        "direction": direction,
+        "is_credit_fracture": is_credit_fracture,
+        "is_credit_stress": is_credit_stress,
+    }
+
 # =========================
 # 4.5) Credit Stress Filter (HYG vs LQD)
 # =========================
