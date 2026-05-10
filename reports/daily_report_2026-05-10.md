@@ -4,7 +4,7 @@
 
 ## ⚡ Strategic War Room (통합 대응)
 > **시스템 상태: 🚨 ALERT**
-> **판단 요약: 구조 또는 실시간 수급에 경미한 이상징후 존재 / 모니터링 필요**
+> **판단 요약: 포지셔닝 과열 감지 / Hard Deadman은 아니나 추격보다 리스크 축소 우선**
 
 ### 🕓 Intraday Historical Trigger Log
 - [2026-05-10 10:26:03] ALERT | SEW=DEADMAN | EVENT=NORMAL | flow=NO_FLOW_BASE -> NO_FLOW_BASE | flow_delta=0 | persistence=0 | flow_alert=NONE | Exp=0% | 🚨 DEAD MAN'S SWITCH: POS_Z Extreme (2.05) | spike=0 extreme=0 | corr_break=NO | z={'SPY': 0.3491320667064861, 'QQQ': 0.5694943441311158, 'VIX': 0.6358953133332057, 'DXY': -6.143831223753569e-05, 'WTI': 0.6645642969160414}
@@ -485,8 +485,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.9429936781543536
-- **Z-Score (5d):** 0.5573521854092127
+- **Z-Score (1d):** 0.9429937371912519
+- **Z-Score (5d):** 0.5573525407224559
 
 ### EEM
 - **Crash?** False
@@ -503,8 +503,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.4979201670455116
-- **Z-Score (5d):** 0.5714990511802686
+- **Z-Score (1d):** 0.4979198952378966
+- **Z-Score (5d):** 0.5714986602603477
 
 ### EWJ
 - **Crash?** False
