@@ -58,8 +58,8 @@
 ## 📊 Daily Macro Signals
 
 - **미국 10년물 금리**: 4.410  (+1.05% vs 4.364)
-- **달러 인덱스**: 97.905  (+0.07% vs 97.840)
-- **WTI 유가**: 98.160  (+2.87% vs 95.420)
+- **달러 인덱스**: 97.970  (+0.13% vs 97.840)
+- **WTI 유가**: 98.100  (+2.81% vs 95.420)
 - **변동성 지수 (VIX)**: 18.380  (+6.92% vs 17.190)
 - **원/달러 환율**: 1460.550  (+0.40% vs 1454.790)
 
@@ -93,7 +93,7 @@
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(↑) / DXY(↑) / VIX(↑)
-- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.065 / US10YΔ +0.046**
+- **Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.130 / US10YΔ +0.046**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY TIGHTENING (긴축)**
@@ -134,8 +134,8 @@
 ### 📌 5) Directional Signals (Legacy Filters)
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Strong, +1.05%)** → 완화 기대 약화/금리 부담
-- DXY **(Mild, +0.07%)** → 달러 강세/신흥국 부담
-- WTI **(Strong, +2.87%)** → 인플레 재자극 가능성
+- DXY **(Mild, +0.13%)** → 달러 강세/신흥국 부담
+- WTI **(Strong, +2.81%)** → 인플레 재자극 가능성
 - VIX **(Strong, +6.92%)** → 심리 악화/리스크오프
 - 원/달러(USDKRW) **(Clear, +0.40%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Mild, -0.20%)** → 크레딧 스트레스↑
@@ -154,9 +154,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.21% / 5D=+2.95% | Strength: LOW
-- **WTI:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+2.84% / 5D=-7.79% | Strength: HIGH
-- **DXY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.07% / 5D=-0.57% | Strength: LOW
-- **GOLD:** 🟢 UP | Short-term: SHORT UP | 1D=+0.95% / 5D=+5.43% | Strength: MEDIUM
+- **WTI:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+2.80% / 5D=-7.83% | Strength: HIGH
+- **DXY:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.14% / 5D=-0.50% | Strength: LOW
+- **GOLD:** 🟢 UP | Short-term: SHORT UP | 1D=+0.99% / 5D=+5.48% | Strength: MEDIUM
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -166,7 +166,7 @@
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT UP
   - Oil (WTI): 🟡 REBOUND / SHORT DOWN
-  - Dollar (DXY): 🟡 REBOUND / SHORT DOWN
+  - Dollar (DXY): 🟡 REBOUND / SHORT UP
   - Gold (GOLD): 🟢 UP / SHORT UP
 
 ### ⚠ 6.5) Correlation Break Monitor
@@ -196,12 +196,12 @@ So What?
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Red_Sea
-- **Cosine Similarity Score:** 0.430
+- **Cosine Similarity Score:** 0.429
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Red_Sea: 0.430
-  - Ukraine_2022: 0.344
-  - Iran_Crisis_2020: 0.291
+  - Red_Sea: 0.429
+  - Ukraine_2022: 0.342
+  - Iran_Crisis_2020: 0.289
 - **Top Drivers:**
   - GOLD: z_used=+0.89 (z1d=+0.53, z5d=+1.43, raw_w=0.12, norm_w=0.09) → contrib=+0.08
   - VIX: z_used=+0.53 (z1d=+0.87, z5d=+0.01, raw_w=0.18, norm_w=0.14) → contrib=+0.07
@@ -256,7 +256,7 @@ So What?
 
 ### 🎯 8) Incentive Filter (Wall St. Logic)
 
-**핵심 신호:** 장단기차(47.00bp) | 실질금리(1.93%) | DXY(97.90)
+**핵심 신호:** 장단기차(47.00bp) | 실질금리(1.93%) | DXY(97.97)
 *(as of: RealRate: 2026-05-11 / FRED last available)*
 
 Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화 과정)
@@ -278,12 +278,12 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **가이드:**
   - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼
   - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감
-- **Today snapshot:** US10Y(4.410), DXY(97.905), VIX(18.38)
+- **Today snapshot:** US10Y(4.410), DXY(97.970), VIX(18.38)
 
 ### 🏗️ 12) Structural Filter (v3)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
 - **핵심 신호:** US10Y(↑) / DXY(↑) / GOLD(↑) / VIX(↑) / WTI(↑)
-- **Meaningful Move Check:** DXY=0.06643749370325397 / GOLD=0.9596706615102192 / US10Y=1.0540789519547211 / VIX=6.9226212317521725 / WTI=2.871521217504896
+- **Meaningful Move Check:** DXY=0.13287498740650794 / GOLD=0.9596706615102192 / US10Y=1.0540789519547211 / VIX=6.9226212317521725 / WTI=2.8086358799029822
 - **판정:** **NEUTRAL**
 - **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
 
@@ -305,7 +305,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Score:** 0
 - **Label:** SHORT_COVERING
 - **Breadth / Participation:** -2
-- **Breadth Note:** XLK only leadership → narrow rally
+- **Nasdaq Breadth Note:** QQQE/QQQ data missing
 - **Positioning / Gamma:** -2
 - **Credit Confirmation:** 2
 - **Macro Participation:** 2
@@ -317,7 +317,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.065 / US10YΔ +0.046 (정상)
+- **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.130 / US10YΔ +0.046 (정상)
 - **Sentiment (Fear&Greed):** 59.84655492180194 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
@@ -382,7 +382,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
 **Macro Profile:** STAGFLATION_STRESS
-**Macro Inputs Debug:** phase=SOFT RISK-OFF (경계 강화) / us10y_pct=+1.05% / dxy_pct=+0.07% / wti_pct=+2.87% / vix=18.38 / liq_easy=True / liq_tight=False / credit_calm=True / flow_score=0
+**Macro Inputs Debug:** phase=SOFT RISK-OFF (경계 강화) / us10y_pct=+1.05% / dxy_pct=+0.13% / wti_pct=+2.81% / vix=18.38 / liq_easy=True / liq_tight=False / credit_calm=True / flow_score=0
 
 **Flow Overlay:** flow_score=0 / flow_state=NO CLEAR FLOW / drift_label=REOPENING / DEMAND_BOOM / gamma=🟢 POSITIVE GAMMA (WEAK)
 
@@ -502,8 +502,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.8583458607727519
-- **Z-Score (5d):** 0.7618682978275608
+- **Z-Score (1d):** -0.8583488963127248
+- **Z-Score (5d):** 0.7618672935678219
 
 ### EEM
 - **Crash?** False
