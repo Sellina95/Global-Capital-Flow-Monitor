@@ -14,6 +14,7 @@ from filters.decision_layer import (
 from filters.executive_layer import executive_summary_filter
 from filters.scenario_layer import scenario_generator_filter
 from filters.transmission_layer import transmission_layer_filter
+from filters.growth_sustainability import growth_sustainability_filter
 
 from filters.strategist_filters import (
     attach_country_risk_layer,
