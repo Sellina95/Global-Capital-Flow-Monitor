@@ -145,7 +145,7 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
 - **Score:** {total}
 - **Label:** {label}
 - **Breadth / Participation:** {breadth}
-- **Breadth Note:** {breadth_note}
+- **Nasdaq Breadth Note:** {nasdaq_breadth_note}
 - **Positioning / Gamma:** {positioning}
 - **Credit Confirmation:** {credit}
 - **Macro Participation:** {sector}
