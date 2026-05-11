@@ -35,6 +35,8 @@ INDICATORS: Dict[str, str] = {
 
     "QQQ": "QQQ",
     "SPY": "SPY",
+    "RSP": "RSP",
+    "QQQE": "QQQE",
 
     "GOLD": "GC=F",
     "USDCNH": "CNH=X",
