@@ -16,7 +16,7 @@
 - **SEW:** RISK_COMPRESSION | ⚠️ Risk Compression 발동 (권장 익스포저 55%)
 - **Event Type:** NORMAL → 정상 상태 / 구조적 리스크 없음
 - **Spike Monitor:** Spike 0 / Extreme 0
-- **Current Reason:** ⚠️ CROWDING RISK: POS_Z Extreme (2.05) → Risk Compression (55%)
+- **Current Reason:** ⚠️ CROWDING RISK: POS_Z Extreme (2.25) → Risk Compression (55%)
 
 - **[15번 Hard Deadman]:** ✅ PASS
 - **[14번 수급 시그널]:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
@@ -51,7 +51,7 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence 비정렬 → 방어적 태도 유지 → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Warning Score 2 → 익스포저 15% haircut → Tactical=REDUCE / Flow=NO CLEAR FLOW(0) / Drift=NO DRIFT(0) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **TRANSITION / MIXED (전환·혼조)** → **SOFT RISK-OFF (경계 강화)**
+- **현재 국면 유지:** ✅ **SOFT RISK-OFF (경계 강화)**
 
 ---
 
@@ -59,7 +59,7 @@
 
 - **미국 10년물 금리**: 4.410  (+1.05% vs 4.364)
 - **달러 인덱스**: 97.905  (+0.07% vs 97.840)
-- **WTI 유가**: 98.190  (+2.90% vs 95.420)
+- **WTI 유가**: 98.160  (+2.87% vs 95.420)
 - **변동성 지수 (VIX)**: 18.380  (+6.92% vs 17.190)
 - **원/달러 환율**: 1460.550  (+0.40% vs 1454.790)
 
@@ -135,7 +135,7 @@
 **추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함
 - 미국 금리(US10Y) **(Strong, +1.05%)** → 완화 기대 약화/금리 부담
 - DXY **(Mild, +0.07%)** → 달러 강세/신흥국 부담
-- WTI **(Strong, +2.90%)** → 인플레 재자극 가능성
+- WTI **(Strong, +2.87%)** → 인플레 재자극 가능성
 - VIX **(Strong, +6.92%)** → 심리 악화/리스크오프
 - 원/달러(USDKRW) **(Clear, +0.40%)** → 원화 약세/수급 부담
 - HYG (High Yield ETF) **(Mild, -0.20%)** → 크레딧 스트레스↑
@@ -154,9 +154,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.21% / 5D=+2.95% | Strength: LOW
-- **WTI:** 🟡 REBOUND | Short-term: MIXED | 1D=+2.90% / 5D=-7.73% | Strength: HIGH
+- **WTI:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+2.84% / 5D=-7.79% | Strength: HIGH
 - **DXY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.07% / 5D=-0.57% | Strength: LOW
-- **GOLD:** 🟢 UP | Short-term: SHORT UP | 1D=+0.87% / 5D=+5.36% | Strength: MEDIUM
+- **GOLD:** 🟢 UP | Short-term: SHORT UP | 1D=+0.95% / 5D=+5.43% | Strength: MEDIUM
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -165,7 +165,7 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT UP
-  - Oil (WTI): 🟡 REBOUND / MIXED
+  - Oil (WTI): 🟡 REBOUND / SHORT DOWN
   - Dollar (DXY): 🟡 REBOUND / SHORT DOWN
   - Gold (GOLD): 🟢 UP / SHORT UP
 
@@ -200,10 +200,10 @@ So What?
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
   - Red_Sea: 0.430
-  - Ukraine_2022: 0.342
-  - Iran_Crisis_2020: 0.289
+  - Ukraine_2022: 0.344
+  - Iran_Crisis_2020: 0.291
 - **Top Drivers:**
-  - GOLD: z_used=+0.86 (z1d=+0.49, z5d=+1.42, raw_w=0.12, norm_w=0.09) → contrib=+0.08
+  - GOLD: z_used=+0.89 (z1d=+0.53, z5d=+1.43, raw_w=0.12, norm_w=0.09) → contrib=+0.08
   - VIX: z_used=+0.53 (z1d=+0.87, z5d=+0.01, raw_w=0.18, norm_w=0.14) → contrib=+0.07
   - KR10Y_SPREAD: z_used=-1.02 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.06
   - BDRY: z_used=+1.38 (z1d=+1.59, z5d=+1.08, raw_w=0.05, norm_w=0.04) → contrib=+0.05
@@ -283,7 +283,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### 🏗️ 12) Structural Filter (v3)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
 - **핵심 신호:** US10Y(↑) / DXY(↑) / GOLD(↑) / VIX(↑) / WTI(↑)
-- **Meaningful Move Check:** DXY=0.06643749370325397 / GOLD=0.8939961906944994 / US10Y=1.0540789519547211 / VIX=6.9226212317521725 / WTI=2.9029598885094234
+- **Meaningful Move Check:** DXY=0.06643749370325397 / GOLD=0.9596706615102192 / US10Y=1.0540789519547211 / VIX=6.9226212317521725 / WTI=2.871521217504896
 - **판정:** **NEUTRAL**
 - **근거:** 글로벌 매크로 구조의 특이 신호가 감지되지 않음
 
@@ -305,6 +305,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Score:** 0
 - **Label:** SHORT_COVERING
 - **Breadth / Participation:** -2
+- **Breadth Note:** XLK only leadership → narrow rally
 - **Positioning / Gamma:** -2
 - **Credit Confirmation:** 2
 - **Macro Participation:** 2
@@ -381,7 +382,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
 **Macro Profile:** STAGFLATION_STRESS
-**Macro Inputs Debug:** phase=SOFT RISK-OFF (경계 강화) / us10y_pct=+1.05% / dxy_pct=+0.07% / wti_pct=+2.90% / vix=18.38 / liq_easy=True / liq_tight=False / credit_calm=True / flow_score=0
+**Macro Inputs Debug:** phase=SOFT RISK-OFF (경계 강화) / us10y_pct=+1.05% / dxy_pct=+0.07% / wti_pct=+2.87% / vix=18.38 / liq_easy=True / liq_tight=False / credit_calm=True / flow_score=0
 
 **Flow Overlay:** flow_score=0 / flow_state=NO CLEAR FLOW / drift_label=REOPENING / DEMAND_BOOM / gamma=🟢 POSITIVE GAMMA (WEAK)
 
@@ -501,8 +502,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.8583488515188693
-- **Z-Score (5d):** 0.7618675285355719
+- **Z-Score (1d):** -0.8583458607727519
+- **Z-Score (5d):** 0.7618682978275608
 
 ### EEM
 - **Crash?** False
