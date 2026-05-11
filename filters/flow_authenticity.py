@@ -56,6 +56,8 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
 
     spy = _to_float(market_data.get("SPY"))
     rsp = _to_float(market_data.get("RSP"))
+    qqq = _to_float(market_data.get("QQQ"))
+    qqqe = _to_float(market_data.get("QQQE"))
 
     breadth_note = "Sector proxy used"
 
@@ -83,7 +85,22 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
         else:
             breadth += 0
             breadth_note = "No clear breadth confirmation"
+            
+            
+        nasdaq_breadth_note = "QQQE/QQQ data missing"
 
+        if qqq > 0 and qqqe > 0:
+            qqqe_qqq_ratio = qqqe / qqq
+    
+            if qqqe_qqq_ratio >= 0.99:
+                breadth += 1
+                nasdaq_breadth_note = f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → broad Nasdaq participation"
+            elif qqqe_qqq_ratio >= 0.96:
+                nasdaq_breadth_note = f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → neutral Nasdaq breadth"
+            else:
+                breadth -= 1
+                nasdaq_breadth_note = f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → mega-cap concentrated Nasdaq rally"
+    
     # 2) Positioning / squeeze risk
     if spx_pos > 2:
         positioning -= 2  # crowded
