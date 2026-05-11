@@ -5,6 +5,7 @@ from scripts.data_processing import load_etf_data_from_csv
 from sklearn.metrics.pairwise import cosine_similarity
 from portfolio.save_portfolio import save_paper_portfolio
 from filters.growth_sustainability import growth_sustainability_filter
+from filters.flow_authenticity import flow_authenticity_filter
 
 import numpy as np
 from pathlib import Path
@@ -6918,6 +6919,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(structural_filter(market_data))
     sections.append("")
     sections.append(growth_sustainability_filter(market_data))
+    sections.append("")
+    sections.append(flow_authenticity_filter(market_data))
     sections.append("")
     sections.append(narrative_engine_filter(market_data))
     sections.append("")
