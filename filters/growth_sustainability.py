@@ -1,58 +1,74 @@
 # filters/growth_sustainability.py
 
-def growth_sustainability_filter(market_data, final_state):
-    us10y = market_data.get("US10Y", 0)
-    real = market_data.get("DFII10", 0)
-    curve = market_data.get("T10Y2Y", 0)
-    oil = market_data.get("WTI", 0)
-    dxy = market_data.get("DXY", 0)
-    liq_dir = final_state.get("liquidity_dir", "→")
-    credit_calm = final_state.get("credit_calm", True)
+from typing import Any, Dict
+
+
+def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
+    """
+    12.5) Growth Sustainability Filter [SHADOW]
+    - 출력 전용
+    - Final Exposure / Phase / Sector Allocation 영향 없음
+    """
+
+    us10y = float(market_data.get("US10Y") or 0)
+    real_yield = float(market_data.get("DFII10") or market_data.get("REAL_RATE") or 0)
+    curve = float(market_data.get("T10Y2Y") or 0)
+    oil = float(market_data.get("WTI") or 0)
+    dxy = float(market_data.get("DXY") or 0)
+
+    liquidity_dir = market_data.get("liquidity_dir", "→")
+    credit_calm = market_data.get("credit_calm", True)
+    drift_label = market_data.get("drift_label", "UNKNOWN")
 
     demand = 0
     financing = 0
     energy = 0
     policy = 0
 
-    # Demand proxy (drift + DXY)
-    if final_state.get("drift_label") in ["DISINFLATION_RISK_ON", "EARLY_RISK_ON"]:
+    # 1) Demand Proxy
+    if drift_label in ["DISINFLATION_RISK_ON", "EARLY_RISK_ON", "RISK_ON"]:
         demand += 2
-    if dxy < 103:
+    elif drift_label in ["GROWTH_SCARE", "OIL_SHOCK", "RISK_OFF"]:
+        demand -= 2
+
+    if dxy and dxy < 103:
         demand += 1
-    elif dxy > 106:
+    elif dxy and dxy > 106:
         demand -= 1
 
-    # Financing
-    if us10y < 4.5:
+    # 2) Financing Engine
+    if us10y and us10y < 4.5:
         financing += 1
-    else:
+    elif us10y and us10y >= 4.5:
         financing -= 1
 
-    if real < 2.0:
+    if real_yield and real_yield < 2.0:
         financing += 1
-    else:
+    elif real_yield and real_yield >= 2.0:
         financing -= 1
 
-    if credit_calm:
+    if credit_calm is True:
         financing += 2
-    else:
+    elif credit_calm is False:
         financing -= 2
 
-    # Energy burden
-    if oil < 85:
+    # 3) Energy Burden
+    if oil and oil < 85:
         energy += 2
-    elif oil > 95:
+    elif oil and oil >= 95:
         energy -= 2
+    elif oil and oil >= 85:
+        energy -= 1
 
-    # Policy capacity
-    if liq_dir == "UP":
+    # 4) Policy Capacity
+    if liquidity_dir == "UP":
         policy += 2
-    elif liq_dir == "DOWN":
+    elif liquidity_dir == "DOWN":
         policy -= 2
 
-    if curve > 0:
+    if curve and curve > 0:
         policy += 1
-    else:
+    elif curve and curve <= 0:
         policy -= 1
 
     total = demand + financing + energy + policy
@@ -68,18 +84,14 @@ def growth_sustainability_filter(market_data, final_state):
 
     report = f"""
 ### 12.5) Growth Sustainability Filter [SHADOW]
-- Score: {total}
-- Label: {label}
-- Demand: {demand}
-- Financing: {financing}
-- Energy: {energy}
-- Policy: {policy}
+- **Score:** {total}
+- **Label:** {label}
+- **Demand Proxy:** {demand}
+- **Financing:** {financing}
+- **Energy Burden:** {energy}
+- **Policy Capacity:** {policy}
+
+📌 Shadow Note: This filter is observation-only and does not affect Final Exposure, Phase, or Sector Allocation.
 """
 
-    return {
-        "report": report,
-        "state": {
-            "_shadow_gsi_score": total,
-            "_shadow_gsi_label": label
-        }
-    }
+    return report
