@@ -6920,6 +6920,7 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(growth_sustainability_filter(market_data))
     sections.append("")
+    sections.append("### DEBUG 12.6 INSERT POINT")
     sections.append(flow_authenticity_filter(market_data))
     sections.append("")
     sections.append(narrative_engine_filter(market_data))
