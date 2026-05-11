@@ -3,6 +3,28 @@
 from typing import Any, Dict
 
 
+
+from typing import Any, Dict
+
+
+def _to_float(value, default=0.0):
+    """
+    market_data 값이 숫자/문자/dict 어떤 형태여도 안전하게 float 변환
+    """
+    if value is None:
+        return default
+
+    if isinstance(value, dict):
+        for key in ["value", "latest", "close", "price", "current"]:
+            if key in value:
+                return _to_float(value.get(key), default)
+        return default
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
 def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
     """
     12.5) Growth Sustainability Filter [SHADOW]
