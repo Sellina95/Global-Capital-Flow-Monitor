@@ -92,7 +92,7 @@ def normalize_market_data_structure(market_data):
             except Exception:
                 normalized[key] = value
 
-    return normalized=
+    return normalized
 
 # macro_data.csv에 들어있는 키들 (여기서 추가된 지표는 자동으로 읽히지만,
 # 필수 daily macro 라인은 이 KEYS를 기준으로 출력)
