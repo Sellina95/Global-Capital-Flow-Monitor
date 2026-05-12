@@ -207,11 +207,25 @@ def fetch_macro_data() -> Tuple[Dict[str, float], Optional[str]]:
         if asof_date and name in MARKET_DATE_KEYS:
             market_date_candidates.append(asof_date)
 
+    print(f"[DEBUG] market_date_candidates={market_date_candidates}")
+
+    # ✅ 핵심 가드:
+    # 주요 market-date 기준 지표들이 실제 expected_market_date 데이터를 줬는지 확인
+    ready_count = sum(1 for d in market_date_candidates if d == expected_market_date)
+
+    # 최소 4개 이상은 전일 종가 날짜가 맞아야 저장 허용
+    if ready_count < 4:
+        print(
+            f"❌ Market data not ready. Skip save. "
+            f"expected={expected_market_date}, "
+            f"ready_count={ready_count}, "
+            f"candidates={market_date_candidates}"
+        )
+        return results, None
+
     market_date = expected_market_date
 
-    print(f"[DEBUG] market_date_candidates={market_date_candidates}")
     print(f"[DEBUG] final market_date={market_date}")
-
     return results, market_date
 
 
@@ -298,4 +312,8 @@ def append_to_csv(values: Dict[str, float], market_date: Optional[str]) -> None:
 # -------------------------
 if __name__ == "__main__":
     vals, market_date = fetch_macro_data()
-    append_to_csv(vals, market_date)
+
+    if market_date is None:
+        print("❌ Skip append_to_csv: previous market close data is not ready.")
+    else:
+        append_to_csv(vals, market_date)
