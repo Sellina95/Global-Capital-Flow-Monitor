@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-05-12 13:33:46",
-  "flow_state": "EARLY_TRACE",
-  "flow_score": 2,
-  "prev_flow_state": "NO_FLOW_BASE",
-  "prev_flow_score": 0,
-  "flow_delta": 2,
-  "persistence_days": 1,
-  "transition": "NO_FLOW_BASE -> EARLY_TRACE",
-  "transition_note": "기관성 흐름 초기 흔적 발생",
+  "timestamp": "2026-05-12 13:46:33",
+  "flow_state": "NO CLEAR FLOW",
+  "flow_score": 1,
+  "prev_flow_state": "EARLY_TRACE",
+  "prev_flow_score": 2,
+  "flow_delta": -1,
+  "persistence_days": 0,
+  "transition": "EARLY_TRACE -> NO CLEAR FLOW",
+  "transition_note": "기관성 흐름 상태 유지",
   "raw_flow_state": "NO CLEAR FLOW",
-  "raw_flow_score": 2
+  "raw_flow_score": 1
 }
