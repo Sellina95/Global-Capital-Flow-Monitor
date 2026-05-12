@@ -43,6 +43,7 @@ INDICATORS: Dict[str, str] = {
     "SMH": "SMH",
     "SOXX": "SOXX",
     "IWM": "IWM",
+    "VIX3M": "^VIX3M",
     
 }
 
