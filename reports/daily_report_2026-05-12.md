@@ -153,9 +153,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.21% / 5D=+2.95% | Strength: LOW
-- **WTI:** 🟡 REBOUND | Short-term: MIXED | 1D=+3.29% / 5D=-0.95% | Strength: MEDIUM
-- **DXY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.31% / 5D=-0.24% | Strength: LOW
-- **GOLD:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.14% / 5D=+3.43% | Strength: LOW
+- **WTI:** 🟡 REBOUND | Short-term: MIXED | 1D=+3.26% / 5D=-0.98% | Strength: MEDIUM
+- **DXY:** 🟡 REBOUND | Short-term: MIXED | 1D=+0.33% / 5D=-0.22% | Strength: LOW
+- **GOLD:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.09% / 5D=+3.48% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -165,7 +165,7 @@
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT UP
   - Oil (WTI): 🟡 REBOUND / MIXED
-  - Dollar (DXY): 🟡 REBOUND / SHORT DOWN
+  - Dollar (DXY): 🟡 REBOUND / MIXED
   - Gold (GOLD): 🟡 PULLBACK / SHORT UP
 
 ### ⚠ 6.5) Correlation Break Monitor
@@ -220,7 +220,7 @@ So What?
 - **주의:** Dealer Gamma Bias 숫자와 Pseudo Gamma State는 서로 다른 레이어
 
 - **Pseudo Gamma State:** 🟢 POSITIVE GAMMA (WEAK)
-- **Dealer Gamma Bias:** 8.42 (STABILIZING / dealer gamma proxy supportive)
+- **Dealer Gamma Bias:** 14.17 (STABILIZING / dealer gamma proxy supportive)
 - **Bias:** 안정적 시장
 - **Strategy:** 과도한 베팅 금지
 
@@ -366,7 +366,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `TIGHTENING` | **Price(Regime):** `SOFT RISK-OFF` | **Bucket:** `RISK-OFF` | **VIX:** `18.38`
-- **Positioning Data:** Z-Score: `2.14` (>1.8 시 Run) | Gamma: `8.42` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `2.14` (>1.8 시 Run) | Gamma: `14.17` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.14). 반전 가능성 상존.
 - **Action Signal:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
 
@@ -382,7 +382,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Final Multiplier:** 0.70x (VIX x Positioning x Confidence)
 - **Confidence Level:** LOW (flow_score=0)
 - **Slope Intensity:** -0.0400
-- **Positioning Layer:** ⚠️ Extreme Positioning Heat(2.14), Position Unwind, Positive Gamma(8.42)
+- **Positioning Layer:** ⚠️ Extreme Positioning Heat(2.14), Position Unwind, Positive Gamma(14.17)
 - **Brake Drivers:** ⚠️ Extreme Positioning Heat, VIX Spike, Low Confidence
 
 - **📊 Recommended Exposure:** **32%**
@@ -531,8 +531,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.858346115637842
-- **Z-Score (5d):** 0.7618672890286504
+- **Z-Score (1d):** -0.8583458607727519
+- **Z-Score (5d):** 0.7618682978275608
 
 ### EEM
 - **Crash?** False
@@ -549,8 +549,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.3735479417985112
-- **Z-Score (5d):** 0.895443264963189
+- **Z-Score (1d):** -0.3735482609421063
+- **Z-Score (5d):** 0.8954423711889417
 
 ### EWJ
 - **Crash?** False

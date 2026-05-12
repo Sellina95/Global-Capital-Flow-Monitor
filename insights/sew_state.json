@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-12 11:49:40",
+  "timestamp": "2026-05-12 12:09:10",
   "status": "RISK_COMPRESSION",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -20,9 +20,9 @@
       "pct_change": 0.14
     },
     "VIX": {
-      "zscore": -0.36,
+      "zscore": 0.82,
       "state": "NORMAL",
-      "pct_change": -0.74
+      "pct_change": -0.11
     },
     "DXY": {
       "zscore": -1.11,
