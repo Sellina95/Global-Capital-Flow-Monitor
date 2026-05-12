@@ -496,8 +496,8 @@ def merge_sovereign_spreads_into_macro_df(df_macro: pd.DataFrame) -> pd.DataFram
     out = out.loc[:, ~out.columns.duplicated()].copy()
     return out
     
-    
-def attach_breadth_layer(market_data: Dict[str, Any], macro_df: pd.DataFrame) -> Dict[str, Any]:
+   
+def attach_breadth_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     market_data에 breadth/equal-weight 데이터를 주입합니다.
     12.6 Flow Authenticity Shadow 전용
@@ -2243,6 +2243,7 @@ def generate_final_state_history():
             market_data = attach_geopolitical_ew_layer(market_data, df, idx) or market_data
             market_data = attach_country_risk_layer(market_data, df, idx) or market_data
             market_data = attach_geo_similarity_layer(market_data) or market_data
+            market_data = attach_breadth_layer(market_data) or market_data
             market_data = attach_sentiment_proxy_layer(market_data) or market_data
 
             # 1번 필터: MARKET_REGIME 저장
