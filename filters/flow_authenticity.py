@@ -60,6 +60,7 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
     qqqe = _to_float(market_data.get("BREADTH_QQQE"))
 
     breadth_note = "Sector proxy used"
+    nasdaq_breadth_note = "QQQE/QQQ data missing"
 
     if spy > 0 and rsp > 0:
         rsp_spy_ratio = rsp / spy
@@ -87,7 +88,7 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
             breadth_note = "No clear breadth confirmation"
             
             
-        nasdaq_breadth_note = "QQQE/QQQ data missing"
+        #nasdaq_breadth_note = "QQQE/QQQ data missing"
 
         if qqq > 0 and qqqe > 0:
             qqqe_qqq_ratio = qqqe / qqq
