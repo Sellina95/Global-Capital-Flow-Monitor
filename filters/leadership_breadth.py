@@ -113,7 +113,7 @@ def leadership_breadth_filter(market_data: Dict[str, Any]) -> str:
     else:
         notes.append("IWM/SPY return data missing")
 
-        # 5) Cyclical / Sector diffusion: XLF, XLI, XLY vs SPY
+    # 5) Cyclical / Sector diffusion: XLF, XLI, XLY vs SPY
     xlf = _to_float(market_data.get("LEAD_XLF"))
     xli = _to_float(market_data.get("LEAD_XLI"))
     xly = _to_float(market_data.get("LEAD_XLY"))
