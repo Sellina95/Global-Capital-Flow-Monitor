@@ -27,32 +27,23 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
     - 출력 전용 (Final Exposure 영향 없음)
     """
 
-    # Existing project-compatible proxies
     spx_pos = _to_float(market_data.get("SP500_POS_Z"))
     gamma = _to_float(market_data.get("DEALER_GAMMA_BIAS"))
     cta = _to_float(market_data.get("CTA_MOMENTUM_SCORE"))
     vix = _to_float(market_data.get("VIX"))
     dxy = _to_float(market_data.get("DXY"))
 
-    # Optional / existing booleans
     credit_calm = market_data.get("credit_calm", True)
 
-    # Sector participation proxy
     momentum_scores = market_data.get("MOMENTUM_SCORES", {}) or {}
-
-    xlk = momentum_scores.get("XLK", 0)
-    xlf = momentum_scores.get("XLF", 0)
-    xli = momentum_scores.get("XLI", 0)
+    xlk = _to_float(momentum_scores.get("XLK"))
+    xlf = _to_float(momentum_scores.get("XLF"))
+    xli = _to_float(momentum_scores.get("XLI"))
 
     breadth = 0
     positioning = 0
     credit = 0
     sector = 0
-
-    # 1) Breadth / concentration proxy
-    # Priority:
-    # - RSP/SPY가 있으면 equal-weight breadth를 우선 사용
-    # - 없으면 기존 sector proxy(XLK vs XLF/XLI) 사용
 
     spy = _to_float(market_data.get("BREADTH_SPY"))
     rsp = _to_float(market_data.get("BREADTH_RSP"))
@@ -62,6 +53,7 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
     breadth_note = "Sector proxy used"
     nasdaq_breadth_note = "QQQE/QQQ data missing"
 
+    # A) Broad market breadth: RSP/SPY
     if spy > 0 and rsp > 0:
         rsp_spy_ratio = rsp / spy
 
@@ -69,14 +61,11 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
             breadth += 2
             breadth_note = f"RSP/SPY={rsp_spy_ratio:.3f} → broad participation"
         elif rsp_spy_ratio >= 0.96:
-            breadth += 0
             breadth_note = f"RSP/SPY={rsp_spy_ratio:.3f} → neutral breadth"
         else:
             breadth -= 2
             breadth_note = f"RSP/SPY={rsp_spy_ratio:.3f} → narrow cap-weight leadership"
-
     else:
-        # fallback: sector participation proxy
         if xlk > 0 and (xlf > 0 or xli > 0):
             breadth += 2
             breadth_note = "XLK + XLF/XLI participation → broader rotation"
@@ -84,32 +73,35 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
             breadth -= 2
             breadth_note = "XLK only leadership → narrow rally"
         else:
-            breadth += 0
             breadth_note = "No clear breadth confirmation"
-            
-            
-        #nasdaq_breadth_note = "QQQE/QQQ data missing"
 
-        if qqq > 0 and qqqe > 0:
-            qqqe_qqq_ratio = qqqe / qqq
-    
-            if qqqe_qqq_ratio >= 0.99:
-                breadth += 1
-                nasdaq_breadth_note = f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → broad Nasdaq participation"
-            elif qqqe_qqq_ratio >= 0.96:
-                nasdaq_breadth_note = f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → neutral Nasdaq breadth"
-            else:
-                breadth -= 1
-                nasdaq_breadth_note = f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → mega-cap concentrated Nasdaq rally"
-    
+    # B) Nasdaq breadth: QQQE/QQQ
+    if qqq > 0 and qqqe > 0:
+        qqqe_qqq_ratio = qqqe / qqq
+
+        if qqqe_qqq_ratio >= 0.99:
+            breadth += 1
+            nasdaq_breadth_note = (
+                f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → broad Nasdaq participation"
+            )
+        elif qqqe_qqq_ratio >= 0.96:
+            nasdaq_breadth_note = (
+                f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → neutral Nasdaq breadth"
+            )
+        else:
+            breadth -= 1
+            nasdaq_breadth_note = (
+                f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → mega-cap concentrated Nasdaq rally"
+            )
+
     # 2) Positioning / squeeze risk
     if spx_pos > 2:
-        positioning -= 2  # crowded
+        positioning -= 2
     elif spx_pos < 0:
-        positioning += 1  # reset potential
+        positioning += 1
 
     if gamma > 1:
-        positioning -= 1  # squeeze / dealer support only
+        positioning -= 1
     elif gamma < 0:
         positioning += 1
 
@@ -125,6 +117,7 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
     # 4) Macro participation proxy
     if vix < 18:
         sector += 1
+
     if dxy < 103:
         sector += 1
     elif dxy > 106:
@@ -146,6 +139,7 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
 - **Score:** {total}
 - **Label:** {label}
 - **Breadth / Participation:** {breadth}
+- **Breadth Note:** {breadth_note}
 - **Nasdaq Breadth Note:** {nasdaq_breadth_note}
 - **Positioning / Gamma:** {positioning}
 - **Credit Confirmation:** {credit}
