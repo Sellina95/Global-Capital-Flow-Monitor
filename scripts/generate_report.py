@@ -497,7 +497,7 @@ def merge_sovereign_spreads_into_macro_df(df_macro: pd.DataFrame) -> pd.DataFram
     return out
     
    
-def attach_breadth_layer(
+def _breadth_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
     today_idx: int
@@ -560,6 +560,74 @@ def attach_breadth_layer(
         "BREADTH_QQQ_PREV": market_data.get("BREADTH_QQQ_PREV"),
         "BREADTH_QQQE": market_data.get("BREADTH_QQQE"),
         "BREADTH_QQQE_PREV": market_data.get("BREADTH_QQQE_PREV"),
+    })
+
+    return market_data
+
+def attach_leadership_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int
+) -> Dict[str, Any]:
+    """
+    12.7 Leadership Breadth Shadow 전용
+    - Mega-cap / AI / Semiconductor / Small-cap participation 확인
+    - 기준일 + 전일 값 주입
+    """
+
+    if market_data is None:
+        market_data = {}
+
+    if df is None or df.empty or today_idx is None:
+        return market_data
+
+    if today_idx < 0 or today_idx >= len(df):
+        return market_data
+
+    row = df.iloc[today_idx]
+    prev_row = df.iloc[today_idx - 1] if today_idx > 0 else None
+
+    try:
+        market_data["_LEADERSHIP_ASOF"] = pd.to_datetime(row["date"]).strftime("%Y-%m-%d")
+    except Exception:
+        market_data["_LEADERSHIP_ASOF"] = None
+
+    mapping = {
+        "QQQ": "LEAD_QQQ",
+        "SPY": "LEAD_SPY",
+        "SMH": "LEAD_SMH",
+        "SOXX": "LEAD_SOXX",
+        "IWM": "LEAD_IWM",
+        "XLK": "LEAD_XLK",
+        "XLF": "LEAD_XLF",
+        "XLI": "LEAD_XLI",
+        "XLY": "LEAD_XLY",
+    }
+
+    for src_col, target_key in mapping.items():
+        try:
+            val = row.get(src_col) if src_col in df.columns else None
+            market_data[target_key] = float(val) if pd.notna(val) else 0.0
+        except Exception:
+            market_data[target_key] = 0.0
+
+        prev_key = f"{target_key}_PREV"
+        try:
+            prev_val = prev_row.get(src_col) if prev_row is not None and src_col in df.columns else None
+            market_data[prev_key] = float(prev_val) if pd.notna(prev_val) else 0.0
+        except Exception:
+            market_data[prev_key] = 0.0
+
+    print("[DEBUG][LEADERSHIP ATTACHED]", {
+        "asof": market_data.get("_LEADERSHIP_ASOF"),
+        "LEAD_QQQ": market_data.get("LEAD_QQQ"),
+        "LEAD_QQQ_PREV": market_data.get("LEAD_QQQ_PREV"),
+        "LEAD_SMH": market_data.get("LEAD_SMH"),
+        "LEAD_SMH_PREV": market_data.get("LEAD_SMH_PREV"),
+        "LEAD_SOXX": market_data.get("LEAD_SOXX"),
+        "LEAD_SOXX_PREV": market_data.get("LEAD_SOXX_PREV"),
+        "LEAD_IWM": market_data.get("LEAD_IWM"),
+        "LEAD_IWM_PREV": market_data.get("LEAD_IWM_PREV"),
     })
 
     return market_data
@@ -1772,7 +1840,7 @@ def generate_daily_report() -> None:
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
     market_data = attach_drift_data_layer(market_data) or market_data
     market_data = attach_breadth_layer(market_data, df, today_idx) or market_data
-    
+    market_data = attach_leadership_layer(market_data, df, today_idx) or market_data
 
     
 
