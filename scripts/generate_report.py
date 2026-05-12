@@ -502,6 +502,13 @@ def attach_breadth_layer(
     df: pd.DataFrame,
     today_idx: int
 ) -> Dict[str, Any]:
+    """
+    market_data에 breadth/equal-weight 데이터를 주입합니다.
+    12.6 Flow Authenticity Shadow 전용
+    - 기준일(today_idx) 값
+    - 전일(today_idx - 1) 값
+    둘 다 주입해서 return spread 계산 가능하게 함
+    """
 
     if market_data is None:
         market_data = {}
@@ -513,6 +520,7 @@ def attach_breadth_layer(
         return market_data
 
     row = df.iloc[today_idx]
+    prev_row = df.iloc[today_idx - 1] if today_idx > 0 else None
 
     try:
         market_data["_BREADTH_ASOF"] = pd.to_datetime(row["date"]).strftime("%Y-%m-%d")
@@ -527,22 +535,31 @@ def attach_breadth_layer(
     }
 
     for src_col, target_key in mapping.items():
-        if src_col not in df.columns:
-            market_data[target_key] = 0.0
-            continue
-
-        val = row.get(src_col)
+        # today value
         try:
+            val = row.get(src_col) if src_col in df.columns else None
             market_data[target_key] = float(val) if pd.notna(val) else 0.0
         except Exception:
             market_data[target_key] = 0.0
 
+        # prev value
+        prev_key = f"{target_key}_PREV"
+        try:
+            prev_val = prev_row.get(src_col) if prev_row is not None and src_col in df.columns else None
+            market_data[prev_key] = float(prev_val) if pd.notna(prev_val) else 0.0
+        except Exception:
+            market_data[prev_key] = 0.0
+
     print("[DEBUG][BREADTH ATTACHED]", {
         "asof": market_data.get("_BREADTH_ASOF"),
         "BREADTH_SPY": market_data.get("BREADTH_SPY"),
+        "BREADTH_SPY_PREV": market_data.get("BREADTH_SPY_PREV"),
         "BREADTH_RSP": market_data.get("BREADTH_RSP"),
+        "BREADTH_RSP_PREV": market_data.get("BREADTH_RSP_PREV"),
         "BREADTH_QQQ": market_data.get("BREADTH_QQQ"),
+        "BREADTH_QQQ_PREV": market_data.get("BREADTH_QQQ_PREV"),
         "BREADTH_QQQE": market_data.get("BREADTH_QQQE"),
+        "BREADTH_QQQE_PREV": market_data.get("BREADTH_QQQE_PREV"),
     })
 
     return market_data
