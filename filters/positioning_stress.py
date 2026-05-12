@@ -18,15 +18,18 @@ def _to_float(value, default=0.0):
     except (TypeError, ValueError):
         return default
 
+
+# 원인:
+# report 블록 안에서 {term_note} / {front_note} / {gamma_note} / {positioning_note}
+# 쓰는데 위에서 해당 변수 초기화가 누락됐거나
+# 함수 들여쓰기 꼬여서 scope 밖.
+
+# positioning_stress_filter 함수 시작부를 아래처럼 통째로 교체
+
+
 def positioning_stress_filter(market_data: Dict[str, Any]) -> str:
     """
     12.8) Positioning Stress Filter [SHADOW]
-
-    목적:
-    - 현재 시장이 구조적 risk-on인지
-    - 숏커버 / forced chase / panic unwind인지 추정
-    - VIX term structure 기반
-    - 출력 전용 (Final Exposure 영향 없음)
     """
 
     vix = _to_float(market_data.get("VIX"))
@@ -38,136 +41,103 @@ def positioning_stress_filter(market_data: Dict[str, Any]) -> str:
     cta = _to_float(market_data.get("CTA_MOMENTUM_SCORE"))
 
     score = 0
-    notes = []
+
+    # 반드시 먼저 초기화
+    term_note = "VIX3M data missing"
+    front_note = "VIX9D data missing"
+    gamma_note = "Neutral gamma"
+    positioning_note = "Neutral positioning"
 
     # =========================================================
-    # 1) VIX Term Structure: VIX vs VIX3M
+    # 1) VIX Term Structure (VIX3M vs VIX)
     # =========================================================
     if vix > 0 and vix3m > 0:
-        vix_vix3m_ratio = vix / vix3m
         spread = vix3m - vix
 
-        if vix_vix3m_ratio < 0.95:
+        if spread > 2:
             score += 2
-            notes.append(
-                f"Term Structure: VIX/VIX3M={vix_vix3m_ratio:.2f}, "
-                f"spread={spread:.2f} → healthy contango"
-            )
-        elif vix_vix3m_ratio <= 1.05:
-            notes.append(
-                f"Term Structure: VIX/VIX3M={vix_vix3m_ratio:.2f}, "
-                f"spread={spread:.2f} → neutral / flattening"
-            )
-        else:
-            score -= 2
-            notes.append(
-                f"Term Structure: VIX/VIX3M={vix_vix3m_ratio:.2f}, "
-                f"spread={spread:.2f} → backwardation stress"
-            )
-    else:
-        notes.append("Term Structure: VIX3M data missing")
-
-    # =========================================================
-    # 2) Short-Term Event Hedge: VIX9D vs VIX
-    # =========================================================
-    if vix9d > 0 and vix > 0:
-        vix9d_ratio = vix9d / vix
-
-        if vix9d_ratio > 1.05:
-            score -= 2
-            notes.append(
-                f"Short-Term Hedge: VIX9D/VIX={vix9d_ratio:.2f} → event hedge spike"
-            )
-        elif vix9d_ratio < 0.95:
+            term_note = f"VIX3M-VIX={spread:.2f} → healthy contango / stable structure"
+        elif spread > 0:
             score += 1
-            notes.append(
-                f"Short-Term Hedge: VIX9D/VIX={vix9d_ratio:.2f} → calm front-end"
-            )
+            term_note = f"VIX3M-VIX={spread:.2f} → mild contango"
+        elif spread > -2:
+            score -= 1
+            term_note = f"VIX3M-VIX={spread:.2f} → flattening / caution"
         else:
-            notes.append(
-                f"Short-Term Hedge: VIX9D/VIX={vix9d_ratio:.2f} → neutral"
-            )
-    else:
-        notes.append("Short-Term Hedge: VIX9D data missing")
+            score -= 3
+            term_note = f"VIX3M-VIX={spread:.2f} → backwardation / stress event"
 
     # =========================================================
-    # 3) Gamma squeeze risk
+    # 2) Front-end hedge demand (VIX9D vs VIX)
+    # =========================================================
+    if vix > 0 and vix9d > 0:
+        front_ratio = vix9d / vix
+
+        if front_ratio < 0.95:
+            score += 1
+            front_note = f"VIX9D/VIX={front_ratio:.2f} → calm front-end hedge"
+        elif front_ratio <= 1.05:
+            front_note = f"VIX9D/VIX={front_ratio:.2f} → neutral short-term hedge"
+        else:
+            score -= 2
+            front_note = f"VIX9D/VIX={front_ratio:.2f} → front-end panic hedge"
+
+    # =========================================================
+    # 3) Gamma
     # =========================================================
     if gamma > 1:
         score -= 2
-        notes.append("Gamma Structure: Positive gamma extreme → dealer-supported squeeze risk")
+        gamma_note = "Positive gamma extreme → dealer-supported squeeze risk"
     elif gamma > 0:
         score -= 1
-        notes.append("Gamma Structure: Positive gamma mild")
+        gamma_note = "Positive gamma mild"
     elif gamma < -1:
         score += 1
-        notes.append("Gamma Structure: Negative gamma unwind risk but less artificial upside")
-    else:
-        notes.append("Gamma Structure: Neutral gamma")
+        gamma_note = "Negative gamma unwind risk but less artificial upside"
 
     # =========================================================
-    # 4) Position overcrowding
+    # 4) Positioning
     # =========================================================
     if spx_pos > 2:
         score -= 2
-        notes.append("Positioning: Crowded long positioning")
+        positioning_note = "Crowded long positioning"
     elif spx_pos > 1:
         score -= 1
-        notes.append("Positioning: Elevated long positioning")
+        positioning_note = "Elevated long positioning"
     elif spx_pos < -1:
         score += 1
-        notes.append("Positioning: Reset / under-owned market")
-    else:
-        notes.append("Positioning: Neutral positioning")
+        positioning_note = "Reset / under-owned market"
 
-    # =========================================================
-    # 5) CTA trend participation
-    # =========================================================
     if cta > 1:
         score -= 1
-        notes.append("CTA: Trend following crowded / chase risk")
     elif cta < 0:
         score += 1
-        notes.append("CTA: Trend reset / less crowded")
-    else:
-        notes.append("CTA: Neutral trend participation")
 
     # =========================================================
     # Label
     # =========================================================
-    if score >= 3:
+    if score >= 4:
         label = "STRUCTURAL_RISK_ON"
-    elif score >= 0:
+    elif score >= 1:
         label = "STABLE_BUT_CROWDED"
     elif score >= -3:
         label = "SQUEEZE_RISK"
     else:
         label = "POSITIONING_STRESS_EVENT"
 
-    notes_text = "\n".join([f"- {n}" for n in notes])
-    # 원인:
-    # report = f""" ... """ 블록이 닫히기 전에
-    # 📌 라인이 문자열 밖으로 튀어나왔거나
-    # 따옴표 종료 위치가 꼬인 상태.
-    
-    # 해결:
-    # 아래처럼 report 전체를 하나의 triple quote 안에 넣으면 됨.
-    
-    
     report = f"""
-    ### 12.8) Positioning Stress Filter [SHADOW]
-    
-    - **Score:** {score}
-    - **Label:** {label}
-    
-    **Positioning Notes**
-    - Term Structure: {term_note}
-    - Short-Term Hedge: {front_note}
-    - Gamma Structure: {gamma_note}
-    - Positioning: {positioning_note}
-    
-    📌 Shadow Note: This filter estimates whether current market behavior reflects structural participation or unstable positioning stress (squeeze / unwind / panic). No impact on Final Exposure, Phase, or Allocation.
-    """
-    
+### 12.8) Positioning Stress Filter [SHADOW]
+
+- **Score:** {score}
+- **Label:** {label}
+
+**Positioning Notes**
+- Term Structure: {term_note}
+- Short-Term Hedge: {front_note}
+- Gamma Structure: {gamma_note}
+- Positioning: {positioning_note}
+
+📌 Shadow Note: This filter estimates whether current market behavior reflects structural participation or unstable positioning stress (squeeze / unwind / panic). No impact on Final Exposure, Phase, or Allocation.
+"""
+
     return report
-       
