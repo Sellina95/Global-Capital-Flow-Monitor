@@ -13,9 +13,11 @@ DATA_DIR = BASE_DIR / "data"
 CSV_PATH = DATA_DIR / "macro_data.csv"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-KST = timezone(timedelta(hours=9))
-NY = ZoneInfo("America/New_York")  # ✅ 핵심
+now_kst = pd.Timestamp.now(tz="Asia/Seoul")
+expected_market_date = (now_kst.normalize() - pd.tseries.offsets.BDay(1)).strftime("%Y-%m-%d")
 
+print(f"[DEBUG] now_kst={now_kst}")
+print(f"[DEBUG] expected_market_date={expected_market_date}")
 # -------------------------
 # Indicators
 # -------------------------
