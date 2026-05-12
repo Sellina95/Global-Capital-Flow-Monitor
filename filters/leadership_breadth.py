@@ -113,6 +113,48 @@ def leadership_breadth_filter(market_data: Dict[str, Any]) -> str:
     else:
         notes.append("IWM/SPY return data missing")
 
+        # 5) Cyclical / Sector diffusion: XLF, XLI, XLY vs SPY
+    xlf = _to_float(market_data.get("LEAD_XLF"))
+    xli = _to_float(market_data.get("LEAD_XLI"))
+    xly = _to_float(market_data.get("LEAD_XLY"))
+
+    xlf_prev = _to_float(market_data.get("LEAD_XLF_PREV"))
+    xli_prev = _to_float(market_data.get("LEAD_XLI_PREV"))
+    xly_prev = _to_float(market_data.get("LEAD_XLY_PREV"))
+
+    diffusion_score = 0
+    diffusion_notes = []
+
+    for name, today, prev in [
+        ("XLF", xlf, xlf_prev),
+        ("XLI", xli, xli_prev),
+        ("XLY", xly, xly_prev),
+    ]:
+        if today > 0 and prev > 0 and spy > 0 and spy_prev > 0:
+            sector_ret = _ret(today, prev)
+            spy_ret_for_sector = _ret(spy, spy_prev)
+            spread = sector_ret - spy_ret_for_sector
+
+            if spread >= 0.003:
+                diffusion_score += 1
+                diffusion_notes.append(
+                    f"{name}-SPY spread={spread*100:.2f}%p → sector diffusion positive"
+                )
+            elif spread <= -0.003:
+                diffusion_score -= 1
+                diffusion_notes.append(
+                    f"{name}-SPY spread={spread*100:.2f}%p → sector diffusion weak"
+                )
+            else:
+                diffusion_notes.append(
+                    f"{name}-SPY spread={spread*100:.2f}%p → sector diffusion neutral"
+                )
+        else:
+            diffusion_notes.append(f"{name}/SPY return data missing")
+
+    score += diffusion_score
+    notes.extend(diffusion_notes)
+
     if score >= 4:
         label = "BROAD_LEADERSHIP"
     elif score >= 1:
@@ -123,6 +165,8 @@ def leadership_breadth_filter(market_data: Dict[str, Any]) -> str:
         label = "MEGA_CAP_SQUEEZE_RISK"
 
     notes_text = "\n".join([f"- {n}" for n in notes])
+
+    
 
     report = f"""
 ### 12.7) Leadership Breadth Filter [SHADOW]
