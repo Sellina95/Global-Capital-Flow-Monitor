@@ -497,10 +497,16 @@ def merge_sovereign_spreads_into_macro_df(df_macro: pd.DataFrame) -> pd.DataFram
     return out
     
    
-def attach_breadth_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+def attach_breadth_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int
+) -> Dict[str, Any]:
     """
     market_data에 breadth/equal-weight 데이터를 주입합니다.
     12.6 Flow Authenticity Shadow 전용
+    - 리포트 기준일(today_idx) row를 사용
+    - CSV 마지막 row(iloc[-1]) 사용 금지
     """
     if market_data is None:
         market_data = {}
@@ -510,20 +516,43 @@ def attach_breadth_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "RSP": 0.0,
         "QQQ": 0.0,
         "QQQE": 0.0,
+        "_BREADTH_ASOF": None,
     }
 
-    if macro_df is None or macro_df.empty:
+    if df is None or df.empty or today_idx is None:
         market_data.update(defaults)
         return market_data
 
-    latest = macro_df.iloc[-1]
+    if today_idx < 0 or today_idx >= len(df):
+        market_data.update(defaults)
+        return market_data
+
+    row = df.iloc[today_idx]
+
+    if "date" in df.columns:
+        try:
+            market_data["_BREADTH_ASOF"] = pd.to_datetime(row["date"]).strftime("%Y-%m-%d")
+        except Exception:
+            market_data["_BREADTH_ASOF"] = None
 
     for col in ["SPY", "RSP", "QQQ", "QQQE"]:
-        val = latest.get(col)
+        if col not in df.columns:
+            market_data[col] = defaults[col]
+            continue
+
+        val = row.get(col)
         try:
             market_data[col] = float(val) if pd.notna(val) else defaults[col]
         except Exception:
             market_data[col] = defaults[col]
+
+    print("[DEBUG][BREADTH ATTACHED]", {
+        "asof": market_data.get("_BREADTH_ASOF"),
+        "SPY": market_data.get("SPY"),
+        "RSP": market_data.get("RSP"),
+        "QQQ": market_data.get("QQQ"),
+        "QQQE": market_data.get("QQQE"),
+    })
 
     return market_data
     
@@ -1734,6 +1763,7 @@ def generate_daily_report() -> None:
 
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
     market_data = attach_drift_data_layer(market_data) or market_data
+    market_data = attach_breadth_layer(market_data, df, today_idx) or market_data
     
 
     
@@ -2216,7 +2246,7 @@ def generate_daily_report() -> None:
 
     
     
-def generate_final_state_history():
+"""def generate_final_state_history():
     BACKTEST_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     df = load_macro_df()
@@ -2355,7 +2385,7 @@ def generate_final_state_history():
     print(f"[OK] Final state history written: {output_path}")
     print(out_df.tail(5).to_string(index=False))
 
-    return out_df
+    return out_df"""
         
             
           
@@ -2380,7 +2410,7 @@ if __name__ == "__main__":
     # =========================
     # 🔥 ETF BACKTEST DEBUG BLOCK
     # =========================
-    print("\n" + "=" * 60)
+    """print("\n" + "=" * 60)
     print("🚀 ETF BACKTEST DEBUG START")
    
 
@@ -2475,6 +2505,6 @@ if __name__ == "__main__":
         print(f"❌ ETF BACKTEST ERROR: {e}")
 
     print("🚀 ETF BACKTEST DEBUG END")
-    print("=" * 60)
+    print("=" * 60)"""
 
     
