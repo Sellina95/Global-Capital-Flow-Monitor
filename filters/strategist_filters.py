@@ -7,6 +7,7 @@ from portfolio.save_portfolio import save_paper_portfolio
 from filters.growth_sustainability import growth_sustainability_filter
 from filters.flow_authenticity import flow_authenticity_filter
 from filters.leadership_breadth import leadership_breadth_filter
+from filters.positioning_stress import positioning_stress_filter
 
 import numpy as np
 from pathlib import Path
