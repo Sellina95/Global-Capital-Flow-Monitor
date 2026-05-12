@@ -1,4 +1,4 @@
-# filters/positioning_stress.py
+    # filters/positioning_stress.py
 
 from typing import Any, Dict
 
@@ -145,30 +145,29 @@ def positioning_stress_filter(market_data: Dict[str, Any]) -> str:
         label = "POSITIONING_STRESS_EVENT"
 
     notes_text = "\n".join([f"- {n}" for n in notes])
-
+    # 원인:
+    # report = f""" ... """ 블록이 닫히기 전에
+    # 📌 라인이 문자열 밖으로 튀어나왔거나
+    # 따옴표 종료 위치가 꼬인 상태.
+    
+    # 해결:
+    # 아래처럼 report 전체를 하나의 triple quote 안에 넣으면 됨.
+    
+    
     report = f"""
-### 12.8) Positioning Stress Filter [SHADOW]
-- **Score:** {score}
-- **Label:** {label}
-
-**Positioning Notes**
-{notes_text}
-
-📌 Shadow Note: This filter estimates whether current market behavior reflects structural participation or unstable positioning stress (squeeze / unwind / panic). No impact on Final Exposure, Phase, or Allocation.
-"""
-
+    ### 12.8) Positioning Stress Filter [SHADOW]
+    
+    - **Score:** {score}
+    - **Label:** {label}
+    
+    **Positioning Notes**
+    - Term Structure: {term_note}
+    - Short-Term Hedge: {front_note}
+    - Gamma Structure: {gamma_note}
+    - Positioning: {positioning_note}
+    
+    📌 Shadow Note: This filter estimates whether current market behavior reflects structural participation or unstable positioning stress (squeeze / unwind / panic). No impact on Final Exposure, Phase, or Allocation.
+    """
+    
     return report
-
-### 12.8) Positioning Stress Filter [SHADOW]
-- **Score:** {score}
-- **Label:** {label}
-
-### Positioning Notes
-- **Term Structure:** {term_note}
-- **Gamma Structure:** {gamma_note}
-- **Positioning:** {positioning_note}
-
-📌 Shadow Note: This filter estimates whether current market behavior reflects structural participation or unstable positioning stress (squeeze / unwind / panic). No impact on Final Exposure, Phase, or Allocation.
-"""
-
-    return report
+       
