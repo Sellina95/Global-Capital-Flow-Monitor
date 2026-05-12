@@ -497,7 +497,7 @@ def merge_sovereign_spreads_into_macro_df(df_macro: pd.DataFrame) -> pd.DataFram
     return out
     
    
-def _breadth_layer(
+def attach_breadth_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
     today_idx: int
