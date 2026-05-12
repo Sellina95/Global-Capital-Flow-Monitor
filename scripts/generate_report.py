@@ -52,7 +52,47 @@ REPORTS_DIR = BASE_DIR / "reports"
 BACKTEST_DATA_DIR = DATA_DIR / "backtests"
 BACKTEST_REPORTS_DIR = REPORTS_DIR / "backtests"
 
+# generate_report.py (또는 market_data 완성 직후 한 번만 넣기)
+# 목적:
+# 기존 market_data["VIX"].get("today") 구조를 유지하면서
+# float 구조도 자동 호환되게 표준화
+# => 프로젝트 전체 .get("today") 대량 수정 방지
 
+
+def normalize_market_data_structure(market_data):
+    """
+    float / int / None 값을
+    {"today": value} 구조로 자동 변환
+    기존 dict 구조는 유지
+    """
+
+    if market_data is None:
+        return {}
+
+    normalized = {}
+
+    for key, value in market_data.items():
+
+        # 이미 dict면 그대로 유지
+        if isinstance(value, dict):
+            normalized[key] = value
+
+        # 숫자형이면 dict 래핑
+        elif isinstance(value, (int, float)):
+            normalized[key] = {"today": float(value)}
+
+        # None 처리
+        elif value is None:
+            normalized[key] = {"today": 0.0}
+
+        # 기타 예외
+        else:
+            try:
+                normalized[key] = {"today": float(value)}
+            except Exception:
+                normalized[key] = value
+
+    return normalized=
 
 # macro_data.csv에 들어있는 키들 (여기서 추가된 지표는 자동으로 읽히지만,
 # 필수 daily macro 라인은 이 KEYS를 기준으로 출력)
@@ -1882,7 +1922,10 @@ def generate_daily_report() -> None:
     market_data = attach_positioning_layer(market_data) or market_data
     
     
-
+    # generate_report.py
+    # attach layer 전부 끝난 뒤 / FINAL_STATE 전에 딱 1번 추가
+    
+    market_data = normalize_market_data_structure(market_data)
     # Regime change monitor
     regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
 
