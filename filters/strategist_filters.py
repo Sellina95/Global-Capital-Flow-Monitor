@@ -6922,7 +6922,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(growth_sustainability_filter(market_data))
     sections.append("")
-    
+    sections.append(positioning_stress_filter(market_data))
+    sections.append("")
     sections.append(flow_authenticity_filter(market_data))
     sections.append("")
     sections.append(leadership_breadth_filter(market_data))
