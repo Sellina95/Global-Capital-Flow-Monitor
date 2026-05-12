@@ -11,7 +11,7 @@
 
 - **Portfolio Stance:** REDUCE / 25%
 
-- **[14번 구조·수급 괴리]:** 🚨 **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.13). 반전 가능성 상존.
+- **[14번 구조·수급 괴리]:** 🚨 **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.14). 반전 가능성 상존.
 ### 🟢 Current SEW Status
 - **SEW:** RISK_COMPRESSION | ⚠️ Risk Compression 발동 (권장 익스포저 55%)
 - **Event Type:** NORMAL → 정상 상태 / 구조적 리스크 없음
@@ -44,7 +44,7 @@
 - **Flow:** NO CLEAR FLOW / score=0
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK)
 - **Tactical Action:** REDUCE / DEFENSIVE / MEDIUM
-- **Positioning:** pos_z=2.13
+- **Positioning:** pos_z=2.14
 - **Warning Score:** 2 (6.6 섹터 상관관계 붕괴)
 - **Tactical Why:** Risk-off environment
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence 비정렬 → 방어적 태도 유지 → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Warning Score 2 → 익스포저 15% haircut → Tactical=REDUCE / Flow=NO CLEAR FLOW(0) / Drift=NO DRIFT(0) / Gamma=🟢 POSITIVE GAMMA (WEAK) → Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소
@@ -153,9 +153,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.21% / 5D=+2.95% | Strength: LOW
-- **WTI:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+3.22% / 5D=-1.02% | Strength: MEDIUM
-- **DXY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.33% / 5D=-0.22% | Strength: LOW
-- **GOLD:** 🟡 PULLBACK | Short-term: MIXED | 1D=-0.21% / 5D=+3.36% | Strength: LOW
+- **WTI:** 🟡 REBOUND | Short-term: MIXED | 1D=+3.29% / 5D=-0.95% | Strength: MEDIUM
+- **DXY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.31% / 5D=-0.24% | Strength: LOW
+- **GOLD:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.14% / 5D=+3.43% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -164,9 +164,9 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT UP
-  - Oil (WTI): 🟡 REBOUND / SHORT UP
+  - Oil (WTI): 🟡 REBOUND / MIXED
   - Dollar (DXY): 🟡 REBOUND / SHORT DOWN
-  - Gold (GOLD): 🟡 PULLBACK / MIXED
+  - Gold (GOLD): 🟡 PULLBACK / SHORT UP
 
 ### ⚠ 6.5) Correlation Break Monitor
 No significant correlation break detected.
@@ -220,7 +220,7 @@ So What?
 - **주의:** Dealer Gamma Bias 숫자와 Pseudo Gamma State는 서로 다른 레이어
 
 - **Pseudo Gamma State:** 🟢 POSITIVE GAMMA (WEAK)
-- **Dealer Gamma Bias:** 1.90 (STABILIZING / dealer gamma proxy supportive)
+- **Dealer Gamma Bias:** 8.42 (STABILIZING / dealer gamma proxy supportive)
 - **Bias:** 안정적 시장
 - **Strategy:** 과도한 베팅 금지
 
@@ -235,7 +235,7 @@ So What?
 
 - **Raw Flow State:** **NO CLEAR FLOW**
 - **Transition State:** **NO_FLOW_BASE**
-- **Flow Delta:** -1 (prev=1 → current=0)
+- **Flow Delta:** +0 (prev=0 → current=0)
 - **Persistence Days:** 0
 - **Transition Note:** 기관성 흐름 부재 상태 지속
 - **Confidence:** **LOW**
@@ -244,7 +244,7 @@ So What?
 - **Drift:** NO DRIFT / REOPENING / DEMAND_BOOM / NONE
 - **Gamma:** 🟢 POSITIVE GAMMA (WEAK) / 🟢 STABLE FLOW
 - **SEW:** RISK_COMPRESSION / NORMAL
-- **Positioning (POS_Z):** 2.13
+- **Positioning (POS_Z):** 2.14
 - **Validation Score:** 3 (boost applied: +2)
 
 - **Drivers:**
@@ -327,7 +327,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 
 ### 12.7) Leadership Breadth Filter [SHADOW]
-- **Score:** 0
+- **Score:** -1
 - **Label:** CONCENTRATED_LEADERSHIP
 
 **Leadership Notes**
@@ -335,6 +335,9 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - SMH/QQQ return data missing
 - SOXX/QQQ return data missing
 - IWM/SPY return data missing
+- XLF-SPY spread=-0.34%p → sector diffusion weak
+- XLI/SPY return data missing
+- XLY/SPY return data missing
 
 📌 Shadow Note: This filter checks whether leadership is broadening beyond mega-cap tech/AI. No impact on Final Exposure, Phase, or Allocation.
 
@@ -356,15 +359,15 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 - **🎯 Final Risk Action:** **REDUCE**
 - **Risk Budget (0~100):** **45**
-- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=NO DRIFT (REOPENING / DEMAND_BOOM) / 수급=2.13 ⚠️ 수급 과열 감지 → Phase=SOFT RISK-OFF (경계 강화)
+- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=NO DRIFT (REOPENING / DEMAND_BOOM) / 수급=2.14 ⚠️ 수급 과열 감지 → Phase=SOFT RISK-OFF (경계 강화)
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `TIGHTENING` | **Price(Regime):** `SOFT RISK-OFF` | **Bucket:** `RISK-OFF` | **VIX:** `18.38`
-- **Positioning Data:** Z-Score: `2.13` (>1.8 시 Run) | Gamma: `1.90` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
-- **Status:** **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.13). 반전 가능성 상존.
+- **Positioning Data:** Z-Score: `2.14` (>1.8 시 Run) | Gamma: `8.42` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Status:** **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.14). 반전 가능성 상존.
 - **Action Signal:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
 
 ### 🎯 15) Volatility-Controlled Exposure (v3.2)
@@ -374,12 +377,12 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **Base Risk Budget (13):** 45
 - **VIX Level:** 18.38 (NORMAL) | **Change:** +6.92%
 - **⚠️ STATUS:** RISK COMPRESSION
-- **Reason:** POS_Z Extreme (2.13)
+- **Reason:** POS_Z Extreme (2.14)
 - **Action:** 신규 추격 금지 / 일부 이익실현 / 베타 노출 축소
 - **Final Multiplier:** 0.70x (VIX x Positioning x Confidence)
 - **Confidence Level:** LOW (flow_score=0)
-- **Slope Intensity:** -0.0450
-- **Positioning Layer:** ⚠️ Extreme Positioning Heat(2.13), Position Unwind, Positive Gamma(1.90)
+- **Slope Intensity:** -0.0400
+- **Positioning Layer:** ⚠️ Extreme Positioning Heat(2.14), Position Unwind, Positive Gamma(8.42)
 - **Brake Drivers:** ⚠️ Extreme Positioning Heat, VIX Spike, Low Confidence
 
 - **📊 Recommended Exposure:** **32%**
@@ -546,8 +549,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.37354861152646773
-- **Z-Score (5d):** 0.8954429006773654
+- **Z-Score (1d):** -0.3735479417985112
+- **Z-Score (5d):** 0.895443264963189
 
 ### EWJ
 - **Crash?** False
