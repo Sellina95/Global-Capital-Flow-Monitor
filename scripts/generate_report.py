@@ -496,6 +496,37 @@ def merge_sovereign_spreads_into_macro_df(df_macro: pd.DataFrame) -> pd.DataFram
     out = out.loc[:, ~out.columns.duplicated()].copy()
     return out
     
+    
+def attach_breadth_layer(market_data: Dict[str, Any], macro_df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    market_data에 breadth/equal-weight 데이터를 주입합니다.
+    12.6 Flow Authenticity Shadow 전용
+    """
+    if market_data is None:
+        market_data = {}
+
+    defaults = {
+        "SPY": 0.0,
+        "RSP": 0.0,
+        "QQQ": 0.0,
+        "QQQE": 0.0,
+    }
+
+    if macro_df is None or macro_df.empty:
+        market_data.update(defaults)
+        return market_data
+
+    latest = macro_df.iloc[-1]
+
+    for col in ["SPY", "RSP", "QQQ", "QQQE"]:
+        val = latest.get(col)
+        try:
+            market_data[col] = float(val) if pd.notna(val) else defaults[col]
+        except Exception:
+            market_data[col] = defaults[col]
+
+    return market_data
+    
 def attach_sector_momentum_layer(market_data: Dict[str, Any], df: pd.DataFrame, today_idx: int) -> Dict[str, Any]:
     """
     Sector Momentum & Relative Strength Layer (v1)
