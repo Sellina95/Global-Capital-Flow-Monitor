@@ -19,6 +19,12 @@ def _to_float(value, default=0.0):
         return default
 
 
+def _ret(today: float, prev: float) -> float:
+    if today > 0 and prev > 0:
+        return (today / prev) - 1
+    return 0.0
+
+
 def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
     """
     12.6) Flow Authenticity Filter [SHADOW]
@@ -50,21 +56,28 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
     qqq = _to_float(market_data.get("BREADTH_QQQ"))
     qqqe = _to_float(market_data.get("BREADTH_QQQE"))
 
+    spy_prev = _to_float(market_data.get("BREADTH_SPY_PREV"))
+    rsp_prev = _to_float(market_data.get("BREADTH_RSP_PREV"))
+    qqq_prev = _to_float(market_data.get("BREADTH_QQQ_PREV"))
+    qqqe_prev = _to_float(market_data.get("BREADTH_QQQE_PREV"))
+
     breadth_note = "Sector proxy used"
-    nasdaq_breadth_note = "QQQE/QQQ data missing"
+    nasdaq_breadth_note = "QQQE/QQQ return data missing"
 
-    # A) Broad market breadth: RSP/SPY
-    if spy > 0 and rsp > 0:
-        rsp_spy_ratio = rsp / spy
+    # A) Broad market breadth: RSP return vs SPY return
+    if spy > 0 and rsp > 0 and spy_prev > 0 and rsp_prev > 0:
+        spy_ret = _ret(spy, spy_prev)
+        rsp_ret = _ret(rsp, rsp_prev)
+        spread = rsp_ret - spy_ret
 
-        if rsp_spy_ratio >= 0.99:
+        if spread >= 0.002:
             breadth += 2
-            breadth_note = f"RSP/SPY={rsp_spy_ratio:.3f} → broad participation"
-        elif rsp_spy_ratio >= 0.96:
-            breadth_note = f"RSP/SPY={rsp_spy_ratio:.3f} → neutral breadth"
+            breadth_note = f"RSP-SPY return spread={spread*100:.2f}%p → broad participation"
+        elif spread >= -0.003:
+            breadth_note = f"RSP-SPY return spread={spread*100:.2f}%p → neutral breadth"
         else:
             breadth -= 2
-            breadth_note = f"RSP/SPY={rsp_spy_ratio:.3f} → narrow cap-weight leadership"
+            breadth_note = f"RSP-SPY return spread={spread*100:.2f}%p → narrow cap-weight leadership"
     else:
         if xlk > 0 and (xlf > 0 or xli > 0):
             breadth += 2
@@ -75,23 +88,25 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
         else:
             breadth_note = "No clear breadth confirmation"
 
-    # B) Nasdaq breadth: QQQE/QQQ
-    if qqq > 0 and qqqe > 0:
-        qqqe_qqq_ratio = qqqe / qqq
+    # B) Nasdaq breadth: QQQE return vs QQQ return
+    if qqq > 0 and qqqe > 0 and qqq_prev > 0 and qqqe_prev > 0:
+        qqq_ret = _ret(qqq, qqq_prev)
+        qqqe_ret = _ret(qqqe, qqqe_prev)
+        nasdaq_spread = qqqe_ret - qqq_ret
 
-        if qqqe_qqq_ratio >= 0.99:
+        if nasdaq_spread >= 0.002:
             breadth += 1
             nasdaq_breadth_note = (
-                f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → broad Nasdaq participation"
+                f"QQQE-QQQ return spread={nasdaq_spread*100:.2f}%p → broad Nasdaq participation"
             )
-        elif qqqe_qqq_ratio >= 0.96:
+        elif nasdaq_spread >= -0.003:
             nasdaq_breadth_note = (
-                f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → neutral Nasdaq breadth"
+                f"QQQE-QQQ return spread={nasdaq_spread*100:.2f}%p → neutral Nasdaq breadth"
             )
         else:
             breadth -= 1
             nasdaq_breadth_note = (
-                f"QQQE/QQQ={qqqe_qqq_ratio:.3f} → mega-cap concentrated Nasdaq rally"
+                f"QQQE-QQQ return spread={nasdaq_spread*100:.2f}%p → mega-cap concentrated Nasdaq rally"
             )
 
     # 2) Positioning / squeeze risk
