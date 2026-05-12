@@ -32,9 +32,25 @@ def positioning_stress_filter(market_data: Dict[str, Any]) -> str:
     12.8) Positioning Stress Filter [SHADOW]
     """
 
+
     vix = _to_float(market_data.get("VIX"))
-    vix3m = _to_float(market_data.get("VIX3M"))
-    vix9d = _to_float(market_data.get("VIX9D"))
+
+    vix3m_raw = market_data.get("VIX3M")
+
+    if isinstance(vix3m_raw, dict):
+        vix3m = _to_float(vix3m_raw.get("today"))
+
+    else:
+        vix3m = _to_float(vix3m_raw)
+    vix9d_raw = market_data.get("VIX9D")
+
+    if isinstance(vix9d_raw, dict):
+        vix9d = _to_float(vix9d_raw.get("today"))
+
+    else:
+        vix9d = _to_float(vix9d_raw)
+
+
 
     gamma = _to_float(market_data.get("DEALER_GAMMA_BIAS"))
     spx_pos = _to_float(market_data.get("SP500_POS_Z"))
