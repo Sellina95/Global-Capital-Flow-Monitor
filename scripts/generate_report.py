@@ -502,56 +502,47 @@ def attach_breadth_layer(
     df: pd.DataFrame,
     today_idx: int
 ) -> Dict[str, Any]:
-    """
-    market_data에 breadth/equal-weight 데이터를 주입합니다.
-    12.6 Flow Authenticity Shadow 전용
-    - 리포트 기준일(today_idx) row를 사용
-    - CSV 마지막 row(iloc[-1]) 사용 금지
-    """
+
     if market_data is None:
         market_data = {}
 
-    defaults = {
-        "SPY": 0.0,
-        "RSP": 0.0,
-        "QQQ": 0.0,
-        "QQQE": 0.0,
-        "_BREADTH_ASOF": None,
-    }
-
     if df is None or df.empty or today_idx is None:
-        market_data.update(defaults)
         return market_data
 
     if today_idx < 0 or today_idx >= len(df):
-        market_data.update(defaults)
         return market_data
 
     row = df.iloc[today_idx]
 
-    if "date" in df.columns:
-        try:
-            market_data["_BREADTH_ASOF"] = pd.to_datetime(row["date"]).strftime("%Y-%m-%d")
-        except Exception:
-            market_data["_BREADTH_ASOF"] = None
+    try:
+        market_data["_BREADTH_ASOF"] = pd.to_datetime(row["date"]).strftime("%Y-%m-%d")
+    except Exception:
+        market_data["_BREADTH_ASOF"] = None
 
-    for col in ["SPY", "RSP", "QQQ", "QQQE"]:
-        if col not in df.columns:
-            market_data[col] = defaults[col]
+    mapping = {
+        "SPY": "BREADTH_SPY",
+        "RSP": "BREADTH_RSP",
+        "QQQ": "BREADTH_QQQ",
+        "QQQE": "BREADTH_QQQE",
+    }
+
+    for src_col, target_key in mapping.items():
+        if src_col not in df.columns:
+            market_data[target_key] = 0.0
             continue
 
-        val = row.get(col)
+        val = row.get(src_col)
         try:
-            market_data[col] = float(val) if pd.notna(val) else defaults[col]
+            market_data[target_key] = float(val) if pd.notna(val) else 0.0
         except Exception:
-            market_data[col] = defaults[col]
+            market_data[target_key] = 0.0
 
     print("[DEBUG][BREADTH ATTACHED]", {
         "asof": market_data.get("_BREADTH_ASOF"),
-        "SPY": market_data.get("SPY"),
-        "RSP": market_data.get("RSP"),
-        "QQQ": market_data.get("QQQ"),
-        "QQQE": market_data.get("QQQE"),
+        "BREADTH_SPY": market_data.get("BREADTH_SPY"),
+        "BREADTH_RSP": market_data.get("BREADTH_RSP"),
+        "BREADTH_QQQ": market_data.get("BREADTH_QQQ"),
+        "BREADTH_QQQE": market_data.get("BREADTH_QQQE"),
     })
 
     return market_data
