@@ -8,7 +8,7 @@ def _to_float(value, default=0.0):
         return default
 
     if isinstance(value, dict):
-        for key in ["value", "latest", "close", "price", "current"]:
+        for key in ["today", "value", "latest", "close", "price", "current"]:
             if key in value:
                 return _to_float(value.get(key), default)
         return default
