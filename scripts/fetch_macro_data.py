@@ -40,6 +40,10 @@ INDICATORS: Dict[str, str] = {
     "XAR": "XAR",
     "EEM": "EEM",
     "EMB": "EMB",
+    "SMH": "SMH",
+    "SOXX": "SOXX",
+    "IWM": "IWM",
+    
 }
 
 FALLBACK_TICKERS = {
