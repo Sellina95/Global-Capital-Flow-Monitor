@@ -1878,7 +1878,7 @@ def generate_daily_report() -> None:
     market_data = attach_drift_data_layer(market_data) or market_data
     market_data = attach_breadth_layer(market_data, df, today_idx) or market_data
     market_data = attach_leadership_layer(market_data, df, today_idx) or market_data
-	market_data = attach_volatility_structure_layer(market_data, df, today_idx) or market_data
+    market_data = attach_volatility_structure_layer(market_data, df, today_idx) or market_data
     market_data = attach_positioning_layer(market_data) or market_data
     
     
