@@ -4027,10 +4027,9 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     pos_slope = _to_float(market_data.get("POS_SLOPE"))
     if pos_slope is None:
-        pos_slope = get_recent_pos_slope("data/positioning_data.csv")
-    if pos_slope is None:
         pos_slope = 0.0
-    market_data["POS_SLOPE"] = pos_slope
+
+market_data["POS_SLOPE"] = pos_slope
 
     gamma = _to_float(market_data.get("DEALER_GAMMA_BIAS", 1.0))
     if gamma is None:
