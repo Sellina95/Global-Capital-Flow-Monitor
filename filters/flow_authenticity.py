@@ -54,10 +54,10 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
     # - RSP/SPY가 있으면 equal-weight breadth를 우선 사용
     # - 없으면 기존 sector proxy(XLK vs XLF/XLI) 사용
 
-    spy = _to_float(market_data.get("SPY"))
-    rsp = _to_float(market_data.get("RSP"))
-    qqq = _to_float(market_data.get("QQQ"))
-    qqqe = _to_float(market_data.get("QQQE"))
+    spy = _to_float(market_data.get("BREADTH_SPY"))
+    rsp = _to_float(market_data.get("BREADTH_RSP"))
+    qqq = _to_float(market_data.get("BREADTH_QQQ"))
+    qqqe = _to_float(market_data.get("BREADTH_QQQE"))
 
     breadth_note = "Sector proxy used"
 
