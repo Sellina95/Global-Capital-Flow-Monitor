@@ -52,11 +52,22 @@ REPORTS_DIR = BASE_DIR / "reports"
 BACKTEST_DATA_DIR = DATA_DIR / "backtests"
 BACKTEST_REPORTS_DIR = REPORTS_DIR / "backtests"
 
+
+
+def _latest_value(x, default=0.0):
+    if isinstance(x, dict):
+        return x.get("today", x.get("value", default))
+    try:
+        return float(x)
+    except Exception:
+        return default
+
 # generate_report.py (또는 market_data 완성 직후 한 번만 넣기)
 # 목적:
 # 기존 market_data["VIX"].get("today") 구조를 유지하면서
 # float 구조도 자동 호환되게 표준화
 # => 프로젝트 전체 .get("today") 대량 수정 방지
+
 
 
 def normalize_market_data_structure(market_data):
@@ -1954,12 +1965,20 @@ def generate_daily_report() -> None:
     market_data = attach_leadership_layer(market_data, df, today_idx) or market_data
     market_data = attach_volatility_structure_layer(market_data, df, today_idx) or market_data
     market_data = attach_positioning_layer(market_data) or market_data
-    
+    market_data = attach_positioning_layer(market_data) or market_data
+
+    print("[DEBUG][POSITIONING AFTER REAL ATTACH]")
+    print("SP500_POS_Z =", market_data.get("SP500_POS_Z"))
+    print("US10Y_POS_Z =", market_data.get("US10Y_POS_Z"))
+    print("DXY_POS_Z =", market_data.get("DXY_POS_Z"))
+    print("DEALER_GAMMA_BIAS =", market_data.get("DEALER_GAMMA_BIAS"))
+    print("CTA_MOMENTUM_SCORE =", market_data.get("CTA_MOMENTUM_SCORE"))
+    print("_POS_ASOF =", market_data.get("_POS_ASOF"))
     
     # generate_report.py
     # attach layer 전부 끝난 뒤 / FINAL_STATE 전에 딱 1번 추가
     
-    market_data = normalize_market_data_structure(market_data)
+    #market_data = normalize_market_data_structure(market_data)
     # Regime change monitor
     regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
 
@@ -1980,8 +1999,10 @@ def generate_daily_report() -> None:
             "T10Y2Y": float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0,
             "T10YIE": float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0,
             "DFII10": float(latest_fred["DFII10"]) if pd.notna(latest_fred.get("DFII10")) else 0.0,
-            "VIX": market_data["VIX"].get("today") if "VIX" in market_data else 20.0,
-            "DXY": market_data["DXY"].get("today") if "DXY" in market_data else 100.0,
+            "VIX": _latest_value(market_data.get("VIX"), 20.0),
+			"DXY": _latest_value(market_data.get("DXY"), 100.0),
+            "#VIX": market_data["VIX"].get("today") if "VIX" in market_data else 20.0,
+            #"DXY": market_data["DXY"].get("today") if "DXY" in market_data else 100.0,
         }
         print("[DEBUG] Fred Extra Saved:", market_data["_FRED_EXTRA"])
         print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
