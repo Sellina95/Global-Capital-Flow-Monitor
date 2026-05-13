@@ -2339,15 +2339,49 @@ def generate_daily_report() -> None:
             f"- **WTI 유가**: {market_data['WTI']['today']:.3f}"
         )
 
+    # 문제 원인:
+    # VIX dict key가 prev가 아니라 yesterday / previous / 혹은 normalize 후 다른 이름일 가능성 높음
+    # 그래서 prev=None → fallback → 현재값만 출력
+    
+    # =========================================
+    # 가장 안전한 수정 (키 호환성 확장)
+    # 기존 VIX 블록 통째로 교체
+    # =========================================
+    
     if "VIX" in market_data and market_data["VIX"].get("today") is not None:
-        prev = market_data["VIX"].get("prev")
-        pct = market_data["VIX"].get("pct_change")
-        lines.append(
-            f"- **변동성 지수 (VIX)**: {market_data['VIX']['today']:.3f}  "
-            f"({pct:+.2f}% vs {prev:.3f})" if (prev is not None and pct is not None) else
-            f"- **변동성 지수 (VIX)**: {market_data['VIX']['today']:.3f}"
+        vix_data = market_data["VIX"]
+    
+        prev = (
+            vix_data.get("prev")
+            or vix_data.get("yesterday")
+            or vix_data.get("previous")
         )
+    
+        pct = vix_data.get("pct_change")
+    
+        if prev is not None and pct is not None:
+            lines.append(
+                f"- **변동성 지수 (VIX)**: {vix_data['today']:.3f} "
+                f"({pct:+.2f}% vs {prev:.3f})"
+            )
+        else:
+            lines.append(
+                f"- **변동성 지수 (VIX)**: {vix_data['today']:.3f}"
+            )
+    
+    
+# =========================================
+# 추가 디버그 (하루만 확인 후 삭제 추천)
+# =========================================
+    print("[DEBUG][VIX DAILY BLOCK]", market_data.get("VIX"))
 
+
+# =========================================
+# 기대 결과:
+# - **변동성 지수 (VIX)**: 17.990 (-2.12% vs 18.380)
+# =========================================  
+	
+    
     if "USDKRW" in market_data and market_data["USDKRW"].get("today") is not None:
         prev = market_data["USDKRW"].get("prev")
         pct = market_data["USDKRW"].get("pct_change")
