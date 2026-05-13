@@ -16,7 +16,7 @@
 - **SEW:** RISK_COMPRESSION | ⚠️ Risk Compression 발동 (권장 익스포저 55%)
 - **Event Type:** NORMAL → 정상 상태 / 구조적 리스크 없음
 - **Spike Monitor:** Spike 0 / Extreme 0
-- **Current Reason:** ⚠️ CROWDING RISK: POS_Z Extreme (2.25) → Risk Compression (55%)
+- **Current Reason:** ⚠️ CROWDING RISK: POS_Z Extreme (2.12) → Risk Compression (55%)
 
 - **[15번 Hard Deadman]:** ✅ PASS
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
@@ -153,9 +153,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.15% / 5D=+1.99% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-1.23% / 5D=+6.14% | Strength: MEDIUM
-- **DXY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.04% / 5D=+0.32% | Strength: LOW
-- **GOLD:** 🟢 UP | Short-term: SHORT UP | 1D=+0.70% / 5D=+0.61% | Strength: LOW
+- **WTI:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.07% / 5D=+7.39% | Strength: MEDIUM
+- **DXY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.19% / 5D=+0.47% | Strength: LOW
+- **GOLD:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.61% / 5D=+0.52% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -164,9 +164,9 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟡 PULLBACK / SHORT UP
-  - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
+  - Oil (WTI): 🟡 PULLBACK / SHORT UP
   - Dollar (DXY): 🟢 UP / SHORT UP
-  - Gold (GOLD): 🟢 UP / SHORT UP
+  - Gold (GOLD): 🟢 UP / SHORT DOWN
 
 ### ⚠ 6.5) Correlation Break Monitor
 ⚠ Market Closed / Stale Data → Correlation signals evaluated conservatively.
@@ -280,7 +280,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 ### 🏗️ 12) Structural Filter (v3)
 - **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?
 - **핵심 신호:** US10Y(↑) / DXY(↑) / GOLD(↓) / VIX(→) / WTI(↑)
-- **Meaningful Move Check:** DXY=0.3573600831085324 / GOLD=-0.871004640156591 / US10Y=1.2018243076670228 / VIX=N/A / WTI=4.190884697808838
+- **Meaningful Move Check:** DXY=0.3573600831085324 / GOLD=-0.871004640156591 / US10Y=1.2018134950326758 / VIX=N/A / WTI=4.190884697808838
 - **판정:** **GLOBAL FINANCIAL TIGHTENING (글로벌 긴축 구조)**
 - **근거:** 금리↑ + 달러↑가 모두 의미 있는 수준으로 나타나 글로벌 자본 조달 비용 압박
 
@@ -299,13 +299,13 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 ### 12.8) Positioning Stress Filter [SHADOW]
 
-- **Score:** -1
+- **Score:** 0
 - **Label:** SQUEEZE_RISK
 
 **Positioning Notes**
 - Term Structure: VIX3M-VIX=3.05 → healthy contango / stable structure
 - Short-Term Hedge: VIX9D/VIX=0.91 → calm front-end hedge
-- Gamma Structure: Positive gamma extreme → dealer-supported squeeze risk
+- Gamma Structure: Positive gamma mild
 - Positioning: Crowded long positioning
 
 📌 Shadow Note: This filter estimates whether current market behavior reflects structural participation or unstable positioning stress (squeeze / unwind / panic). No impact on Final Exposure, Phase, or Allocation.
@@ -347,7 +347,7 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.350 / US10YΔ +0.053 (정상)
-- **Sentiment (Fear&Greed):** 59.86986305913397 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 59.90464633277453 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Phase:** EVENT-WATCHING (이벤트 관망) (Cap: 100)
@@ -517,8 +517,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.0274824687632456
-- **Z-Score (5d):** -0.16174816193215644
+- **Z-Score (1d):** -1.02748243471878
+- **Z-Score (5d):** -0.16174778880725216
 
 ### EEM
 - **Crash?** False
@@ -535,8 +535,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5038083639603386
-- **Z-Score (5d):** 0.1848600231360854
+- **Z-Score (1d):** -0.5038085680915486
+- **Z-Score (5d):** 0.18485988785030902
 
 ### EWJ
 - **Crash?** False
