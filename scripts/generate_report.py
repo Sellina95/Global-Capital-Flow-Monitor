@@ -2246,8 +2246,14 @@ def generate_daily_report() -> None:
     lines.append("## ⚡ Strategic War Room (통합 대응)")
     lines.append(f"> **시스템 상태: {war_room_emoji} {war_room_state}**")
     lines.append(f"> **판단 요약: {war_room_summary}**")
-    deadman_log = get_recent_deadman_log(hours=24)
+
+    # 🔥 generate_report.py
+    # 아래 한 줄:
+    # deadman_log = get_recent_deadman_log(hours=24)
     
+    # ❌ 이거 지우고
+    
+    deadman_log = get_today_deadman_log()    
 
     if deadman_log:
         lines.append("")
