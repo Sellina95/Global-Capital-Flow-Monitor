@@ -285,23 +285,59 @@ def interpret_sew_event(event_type: str) -> str:
     return mapping.get(event_type, "해석 불가")
 
 
-def get_today_deadman_log(log_path="insights/alerts.log"):
-    from datetime import datetime
 
-    today = datetime.now().strftime("%Y-%m-%d")
+# 🔥 기존 get_today_deadman_log 전체 교체
+# 위치: generate_report.py 또는 해당 함수 정의 파일
+
+def get_today_deadman_log(log_path="insights/alerts.log"):
+    """
+    현재 리포트 시점 기준:
+    지난 24시간(KST 기준) 내 가장 최근 DEADMAN 이벤트 반환
+
+    목적:
+    - '오늘 날짜 문자열 포함' 방식 제거
+    - UTC/KST 꼬임 방지
+    - 전날 밤 CPI/FOMC/장중 shock도 다음날 리포트에 반영
+    """
+
+    import os
+    from datetime import datetime, timedelta
+    import pandas as pd
 
     if not os.path.exists(log_path):
         return None
 
+    # KST 기준 현재
+    now_kst = pd.Timestamp.now(tz="Asia/Seoul")
+
+    # 최근 24시간 window
+    cutoff_kst = now_kst - pd.Timedelta(hours=24)
+
     with open(log_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
+    # 최신순 역순 탐색
     for line in reversed(lines):
-        if today in line and "SEW=DEADMAN" in line:
-            return line.strip()
+        try:
+            # 로그 시작부 예:
+            # [2026-05-12 13:33:46]
+            if not line.startswith("["):
+                continue
+
+            ts_str = line.split("]")[0].replace("[", "").strip()
+
+            # 현재 alerts.log는 UTC처럼 기록되는 구조 가능성 높음
+            # → UTC로 가정 후 KST 변환
+            ts_utc = pd.Timestamp(ts_str, tz="UTC")
+            ts_kst = ts_utc.tz_convert("Asia/Seoul")
+
+            if ts_kst >= cutoff_kst and "SEW=DEADMAN" in line:
+                return line.strip()
+
+        except Exception:
+            continue
 
     return None
-
 
 def get_flow_state(filepath: str = "insights/flow_state.json") -> dict:
     import os
@@ -2210,7 +2246,8 @@ def generate_daily_report() -> None:
     lines.append("## ⚡ Strategic War Room (통합 대응)")
     lines.append(f"> **시스템 상태: {war_room_emoji} {war_room_state}**")
     lines.append(f"> **판단 요약: {war_room_summary}**")
-    deadman_log = get_today_deadman_log()
+    deadman_log = get_recent_deadman_log(hours=24)
+    
 
     if deadman_log:
         lines.append("")
