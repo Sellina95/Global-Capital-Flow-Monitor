@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-05-12 13:46:33",
-  "flow_state": "NO CLEAR FLOW",
+  "timestamp": "2026-05-13 04:41:16",
+  "flow_state": "NO_FLOW_BASE",
   "flow_score": 1,
-  "prev_flow_state": "EARLY_TRACE",
-  "prev_flow_score": 2,
-  "flow_delta": -1,
+  "prev_flow_state": "NO CLEAR FLOW",
+  "prev_flow_score": 1,
+  "flow_delta": 0,
   "persistence_days": 0,
-  "transition": "EARLY_TRACE -> NO CLEAR FLOW",
-  "transition_note": "기관성 흐름 상태 유지",
+  "transition": "NO CLEAR FLOW -> NO_FLOW_BASE",
+  "transition_note": "기관성 흐름 부재 상태 지속",
   "raw_flow_state": "NO CLEAR FLOW",
   "raw_flow_score": 1
 }
