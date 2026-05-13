@@ -5,6 +5,11 @@
 ## ⚡ Strategic War Room (통합 대응)
 > **시스템 상태: ✅ STABLE**
 > **판단 요약: 포지셔닝 과열 감지 / Hard Deadman은 아니나 추격보다 리스크 축소 우선**
+
+### 🕓 Intraday Historical Trigger Log
+- [2026-05-12 13:33:46] ALERT | SEW=DEADMAN | EVENT=NORMAL | credit=UNKNOWN(N/A) | flow=NO_FLOW_BASE -> EARLY_TRACE | flow_delta=2 | persistence=1 | flow_alert=CHANGE | Exp=0% | 🚨 HARD DEADMAN: Real-time Cross-Asset Shock (spike=0, extreme=4) | spike=0 extreme=4 | corr_break=NO | email=YES | z={'SPY': -3.756308203533061, 'QQQ': -4.028312090631426, 'VIX': 0.9970386843272325, 'DXY': 4.188004497055036, 'WTI': 4.1997373223694705}
+👉 해석: 오늘 장중 데드맨/리스크 이벤트 이력이 있었으나, 현재 상태는 아래 SEW 현재값을 기준으로 별도 판단합니다.
+
 ### 🎯 Exposure Framework
 - **Base Exposure (전략 기준): 50%**
 - **Final Exposure (실행 기준): 50%**
@@ -50,7 +55,7 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Tactical=HOLD / Flow=NO CLEAR FLOW(1) / Drift=NO DRIFT(0) / Gamma=🟢 POSITIVE GAMMA → Tactical HOLD/MONITOR → 최종판단 변경 없음
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **EVENT-WATCHING (이벤트 관망)** → **TRANSITION / MIXED (전환·혼조)**
+- **현재 국면 유지:** ✅ **TRANSITION / MIXED (전환·혼조)**
 
 ---
 
@@ -153,9 +158,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.15% / 5D=+1.99% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-0.42% / 5D=+7.02% | Strength: MEDIUM
-- **DXY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.16% / 5D=+0.44% | Strength: LOW
-- **GOLD:** 🟢 UP | Short-term: SHORT UP | 1D=+0.72% / 5D=+0.63% | Strength: LOW
+- **WTI:** 🟡 PULLBACK | Short-term: MIXED | 1D=-0.34% / 5D=+7.10% | Strength: MEDIUM
+- **DXY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.18% / 5D=+0.45% | Strength: LOW
+- **GOLD:** 🟢 UP | Short-term: MIXED | 1D=+0.64% / 5D=+0.54% | Strength: LOW
 
 - **Drift Score:** 0
 - **State:** **NO DRIFT**
@@ -164,9 +169,9 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟡 PULLBACK / SHORT UP
-  - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
+  - Oil (WTI): 🟡 PULLBACK / MIXED
   - Dollar (DXY): 🟢 UP / SHORT DOWN
-  - Gold (GOLD): 🟢 UP / SHORT UP
+  - Gold (GOLD): 🟢 UP / MIXED
 
 ### ⚠ 6.5) Correlation Break Monitor
 ⚠ Market Closed / Stale Data → Correlation signals evaluated conservatively.
@@ -299,13 +304,13 @@ Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화
 
 ### 12.8) Positioning Stress Filter [SHADOW]
 
-- **Score:** 0
+- **Score:** -1
 - **Label:** SQUEEZE_RISK
 
 **Positioning Notes**
 - Term Structure: VIX3M-VIX=3.05 → healthy contango / stable structure
 - Short-Term Hedge: VIX9D/VIX=0.91 → calm front-end hedge
-- Gamma Structure: Positive gamma mild
+- Gamma Structure: Positive gamma extreme → dealer-supported squeeze risk
 - Positioning: Crowded long positioning
 
 📌 Shadow Note: This filter estimates whether current market behavior reflects structural participation or unstable positioning stress (squeeze / unwind / panic). No impact on Final Exposure, Phase, or Allocation.
@@ -523,8 +528,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.027479191248127
-- **Z-Score (5d):** -0.16174808953551664
+- **Z-Score (1d):** -1.02748243471878
+- **Z-Score (5d):** -0.16174778880725216
 
 ### EEM
 - **Crash?** False
@@ -541,8 +546,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.5038083639603386
-- **Z-Score (5d):** 0.1848600231360854
+- **Z-Score (1d):** -0.5038085680915486
+- **Z-Score (5d):** 0.18485988785030902
 
 ### EWJ
 - **Crash?** False
