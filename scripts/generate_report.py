@@ -672,16 +672,11 @@ def attach_leadership_layer(
 
     return market_data
     
-    
 def attach_volatility_structure_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
     today_idx: int
 ) -> Dict[str, Any]:
-    """
-    12.8 Positioning Stress / Volatility Structure Shadow 전용
-    - VIX / VIX3M / VIX9D를 macro_data 기준일 row에서 주입
-    """
 
     if market_data is None:
         market_data = {}
@@ -694,7 +689,9 @@ def attach_volatility_structure_layer(
 
     row = df.iloc[today_idx]
 
-    for col in ["VIX", "VIX3M", "VIX9D"]:
+    # VIX는 build_market_data에서 이미 today/prev/pct_change dict로 들어옴.
+    # 여기서 덮어쓰지 않는다.
+    for col in ["VIX3M", "VIX9D"]:
         try:
             val = row.get(col) if col in df.columns else None
             market_data[col] = float(val) if pd.notna(val) else 0.0
@@ -708,6 +705,7 @@ def attach_volatility_structure_layer(
     })
 
     return market_data
+
     
 def attach_sector_momentum_layer(market_data: Dict[str, Any], df: pd.DataFrame, today_idx: int) -> Dict[str, Any]:
     """
