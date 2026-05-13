@@ -86,7 +86,7 @@ def save_trade_log(
     - 거래가 없어도(HOLD only / Dead Man) 날짜 row는 반드시 저장
     """
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = pd.Timestamp.now(tz="Asia/Seoul").strftime("%Y-%m-%d")
     rows = []
 
     all_etfs = sorted(set(prev_weights.keys()) | set(target_weights.keys()))
@@ -186,6 +186,7 @@ def load_previous_exposure(filepath: str = "data/paper_portfolio_log.csv") -> fl
     - 오늘 row는 제외
     - 없으면 50.0 반환
     """
+    
     today = datetime.now().strftime("%Y-%m-%d")
 
     if not os.path.exists(filepath):
@@ -223,7 +224,7 @@ def load_previous_weights(filepath: str = "data/paper_portfolio_log.csv") -> dic
     """
     오늘 row를 제외하고 직전 ETF weights를 가져온다.
     """
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = pd.Timestamp.now(tz="Asia/Seoul").strftime("%Y-%m-%d")
 
     if not os.path.exists(filepath):
         return {}
@@ -280,7 +281,8 @@ def save_paper_portfolio(
     """
 
     filepath = "data/paper_portfolio_log.csv"
-    today = datetime.now().strftime("%Y-%m-%d")
+
+    today = pd.Timestamp.now(tz="Asia/Seoul").strftime("%Y-%m-%d")
 
     # 🔥 방어: weights 없으면 완전 현금 상태로 강제
     if not weights:
