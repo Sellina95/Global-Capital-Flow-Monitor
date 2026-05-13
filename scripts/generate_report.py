@@ -1939,13 +1939,7 @@ def generate_daily_report() -> None:
     print("[DEBUG][POS_SLOPE ATTACHED]")
     print("POS_SLOPE =", market_data.get("POS_SLOPE"))
     
-    print("[DEBUG][POSITIONING AFTER ATTACH]")
-    print("SP500_POS_Z =", market_data.get("SP500_POS_Z"))
-    print("US10Y_POS_Z =", market_data.get("US10Y_POS_Z"))
-    print("DXY_POS_Z =", market_data.get("DXY_POS_Z"))
-    print("DEALER_GAMMA_BIAS =", market_data.get("DEALER_GAMMA_BIAS"))
-    print("CTA_MOMENTUM_SCORE =", market_data.get("CTA_MOMENTUM_SCORE"))
-    print("_POS_ASOF =", market_data.get("_POS_ASOF"))
+    
   
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
@@ -1994,21 +1988,20 @@ def generate_daily_report() -> None:
 
     if not df_fred_extra.empty:
         latest_fred = df_fred_extra.iloc[-1]
-
+    
         market_data["_FRED_EXTRA"] = {
             "T10Y2Y": float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0,
             "T10YIE": float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0,
             "DFII10": float(latest_fred["DFII10"]) if pd.notna(latest_fred.get("DFII10")) else 0.0,
             "VIX": _latest_value(market_data.get("VIX"), 20.0),
-			"DXY": _latest_value(market_data.get("DXY"), 100.0),
-            "#VIX": market_data["VIX"].get("today") if "VIX" in market_data else 20.0,
-            #"DXY": market_data["DXY"].get("today") if "DXY" in market_data else 100.0,
+            "DXY": _latest_value(market_data.get("DXY"), 100.0),
         }
+    
         print("[DEBUG] Fred Extra Saved:", market_data["_FRED_EXTRA"])
         print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
     else:
         print("[DEBUG] Fred Extra Saved: skipped (empty fred df)")
-
+    
     print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
 
    
