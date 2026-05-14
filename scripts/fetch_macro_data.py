@@ -26,6 +26,8 @@ INDICATORS: Dict[str, str] = {
     "XLF": "XLF",
     "XLE": "XLE",
     "XLRE": "XLRE",
+    "XLI": "XLI",
+    "XLY": "XLY",
     "QQQ": "QQQ",
     "SPY": "SPY",
     "RSP": "RSP",
