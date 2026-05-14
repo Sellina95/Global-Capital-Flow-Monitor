@@ -715,7 +715,15 @@ def attach_leadership_layer(
         "LEAD_SOXX_PREV": market_data.get("LEAD_SOXX_PREV"),
         "LEAD_IWM": market_data.get("LEAD_IWM"),
         "LEAD_IWM_PREV": market_data.get("LEAD_IWM_PREV"),
-    })
+        "LEAD_XLF": market_data.get("LEAD_XLF"),
+        "LEAD_XLF_PREV": market_data.get("LEAD_XLF_PREV"),
+        "LEAD_XLI": market_data.get("LEAD_XLI"),
+        "LEAD_XLI_PREV": market_data.get("LEAD_XLI_PREV"),
+        "LEAD_XLY": market_data.get("LEAD_XLY"),
+        "LEAD_XLY_PREV": market_data.get("LEAD_XLY_PREV"),
+        "HAS_XLI_COL": "XLI" in df.columns,
+        "HAS_XLY_COL": "XLY" in df.columns,
+})
 
     return market_data
     
