@@ -1,38 +1,38 @@
 {
-  "timestamp": "2026-05-13 13:34:21",
-  "status": "DEADMAN",
-  "event_type": "MACRO_UNWIND",
-  "spike_count": 2,
-  "extreme_count": 1,
-  "recommended_exposure": 0,
-  "deadman": true,
-  "summary": "🚨 HARD DEADMAN 발동 (익스포저 0% / 자산 보호 모드)",
-  "deadman_reason": "🚨 HARD DEADMAN: Real-time Cross-Asset Shock (spike=2, extreme=1)",
+  "timestamp": "2026-05-14 04:41:02",
+  "status": "RISK_COMPRESSION",
+  "event_type": "NORMAL",
+  "spike_count": 0,
+  "extreme_count": 0,
+  "recommended_exposure": 55,
+  "deadman": false,
+  "summary": "⚠️ Risk Compression 발동 (권장 익스포저 55%)",
+  "deadman_reason": "⚠️ CROWDING RISK: POS_Z Extreme (2.12) → Risk Compression (55%)",
   "assets": {
     "SPY": {
-      "zscore": -2.31,
-      "state": "WATCH",
-      "pct_change": -0.05
+      "zscore": -0.26,
+      "state": "NORMAL",
+      "pct_change": -0.14
     },
     "QQQ": {
-      "zscore": 2.67,
-      "state": "ALERT",
-      "pct_change": 0.45
+      "zscore": 0.82,
+      "state": "NORMAL",
+      "pct_change": -0.17
     },
     "VIX": {
-      "zscore": -0.37,
+      "zscore": -1.17,
       "state": "NORMAL",
-      "pct_change": -0.66
+      "pct_change": 0.06
     },
     "DXY": {
-      "zscore": 4.17,
-      "state": "EXTREME",
-      "pct_change": 0.27
+      "zscore": 0.11,
+      "state": "NORMAL",
+      "pct_change": -0.02
     },
     "WTI": {
-      "zscore": -3.16,
-      "state": "ALERT",
-      "pct_change": -0.43
+      "zscore": 0.26,
+      "state": "NORMAL",
+      "pct_change": 0.01
     }
   }
 }
