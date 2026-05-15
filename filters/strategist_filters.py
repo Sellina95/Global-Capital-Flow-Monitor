@@ -282,32 +282,98 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
             return drift.get(asset, {}).get(key)
         except Exception:
             return None
-
+            
     # -----------------------------
-    # Score 계산 (기존 유지)
+    # Drift Score v5 (Early + Structural + Event)
     # -----------------------------
     score = 0
     reasons = []
 
-    # WTI (디스인플레이션 핵심)
-    if g("WTI", "ret_1d") is not None and g("WTI", "ret_1d") <= -5:
-        score += 1
-        reasons.append("WTI 1D downside extension")
+    spy = g("SPY", "ret_1d") or 0
+    rsp = g("RSP", "ret_1d") or 0
+    qqqe = g("QQQE", "ret_1d") or 0
+    wti = g("WTI", "ret_1d") or 0
+    dxy = g("DXY", "ret_1d") or 0
+    gold = g("GOLD", "ret_1d") or 0
+    hyg = g("HYG", "ret_1d") or 0
+    lqd = g("LQD", "ret_1d") or 0
 
-    # SPY 상승
-    if g("SPY", "ret_1d") is not None and g("SPY", "ret_1d") >= 1:
-        score += 1
-        reasons.append("SPY 1D continuation")
+    xlk = g("XLK", "ret_1d") or 0
+    xli = g("XLI", "ret_1d") or 0
+    xlf = g("XLF", "ret_1d") or 0
+    xly = g("XLY", "ret_1d") or 0
+    xlp = g("XLP", "ret_1d") or 0
+    xlu = g("XLU", "ret_1d") or 0
 
-    # GOLD 상승
-    if g("GOLD", "ret_1d") is not None and g("GOLD", "ret_1d") >= 1:
+    # -----------------------------
+    # [A] EARLY DRIFT
+    # -----------------------------
+    if spy > 0.3:
         score += 1
-        reasons.append("Gold strength")
+        reasons.append("SPY positive drift")
 
-    # DXY 약세
-    if g("DXY", "ret_1d") is not None and g("DXY", "ret_1d") <= -0.2:
+    if rsp > 0:
         score += 1
-        reasons.append("DXY softening")
+        reasons.append("Breadth participation (RSP)")
+
+    if qqqe > 0:
+        score += 1
+        reasons.append("Equal-weight Nasdaq participation")
+
+    if hyg >= lqd:
+        score += 1
+        reasons.append("Credit supports risk")
+
+    leadership_hits = sum([
+        xlk > 0,
+        xli > 0,
+        xlf > 0,
+        xly > 0,
+    ])
+
+    if leadership_hits >= 2:
+        score += 1
+        reasons.append("Sector breadth expanding")
+
+    # -----------------------------
+    # [B] STRUCTURAL DRIFT
+    # -----------------------------
+    if spy >= 0.75:
+        score += 2
+        reasons.append("Strong SPY continuation")
+
+    if leadership_hits >= 3:
+        score += 2
+        reasons.append("Broad cyclical leadership")
+
+    if xlp <= 0 and xlu <= 0:
+        score += 1
+        reasons.append("Defensives lagging")
+
+    if dxy <= 0.3:
+        score += 1
+        reasons.append("Dollar not restrictive")
+
+    # -----------------------------
+    # [C] EVENT / EXTREME
+    # -----------------------------
+    if abs(wti) >= 4:
+        score += 2
+        reasons.append("WTI shock")
+
+    if abs(gold) >= 2:
+        score += 1
+        reasons.append("Gold event move")
+
+    if g("SPY", "norm_1d") is not None and abs(g("SPY", "norm_1d")) >= 1.5:
+        score += 2
+        reasons.append("SPY > 1.5 ATR")
+
+    if g("WTI", "norm_1d") is not None and abs(g("WTI", "norm_1d")) >= 2:
+        score += 2
+        reasons.append("WTI extreme ATR")
+
+  
 
     # -----------------------------
     # ATR 기반 강화 (기존 유지)
@@ -323,10 +389,12 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
     # -----------------------------
     # State 정의 (기존 유지)
     # -----------------------------
-    if score >= 4:
-        state = "🔥 STRONG TREND (방향성 자금 흐름 감지)"
+    if score >= 8:
+        state = "🔥 EXTREME DRIFT"
+    elif score >= 5:
+        state = "⚡ STRUCTURAL DRIFT"
     elif score >= 2:
-        state = "⚡ TREND FORMING (초기 흐름 감지)"
+        state = "👀 EARLY DRIFT"
     elif score == 1:
         state = "WEAK DRIFT (노이즈 가능)"
     else:
@@ -342,7 +410,17 @@ def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
     dxy = g("DXY", "ret_1d")
     gold = g("GOLD", "ret_1d")
 
-    if spy and wti and dxy:
+    # -----------------------------
+    # NEW: Stealth accumulation
+    # -----------------------------
+    if spy is not None and rsp is not None:
+        if spy > 0 and rsp > 0 and leadership_hits >= 2:
+            label = "STEALTH_ACCUMULATION"
+
+    # -----------------------------
+    # 기존 Macro Label
+    # -----------------------------
+    elif spy and wti and dxy:
         if spy > 0 and wti < 0 and dxy < 0:
             label = "DISINFLATION_RISK_ON"
         elif spy < 0 and wti > 0 and dxy > 0:
