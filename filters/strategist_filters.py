@@ -3623,17 +3623,19 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         struct_alert = "⚠️ 에너지 비용 전이"
         v2_cap = 40
 
-    
-   # --------------------------------------------------
+    # --------------------------------------------------
     # 2.7️⃣ Drift Adjustment (ADD ONLY)
     # --------------------------------------------------
     drift_tilt = 0
-    if drift_score >= 4:
-        drift_tilt = 5
-    elif drift_score >= 2:
+
+    # 기존보다 과민 반응 완화:
+    # Drift는 "조기 탐지" 용도이지, 단독 국면 전환 트리거가 아님
+    if drift_score >= 6:
         drift_tilt = 3
-    elif drift_score <= -2:
-        drift_tilt = -5
+    elif drift_score >= 3:
+        drift_tilt = 1
+    elif drift_score <= -3:
+        drift_tilt = -3
     
     budget += drift_tilt
     
@@ -3651,16 +3653,16 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     
     flow_gamma_tilt = 0
     
-    # 상승 초기 정렬: Drift + Flow + Gamma TRANSITION
-    if drift_score >= 2 and flow_score >= 3 and "TRANSITION" in gamma_state:
-        flow_gamma_tilt = 3
+    # 상승 초기 정렬:
+    # Drift 단독이 아니라 Flow 확인 + Gamma 전환까지 필요
+    if drift_score >= 3 and flow_score >= 3 and "TRANSITION" in gamma_state:
+        flow_gamma_tilt = 2
     
-    # 더 강한 상승 압력: Drift + Flow 강하고 Gamma POSITIVE
-    elif drift_score >= 3 and flow_score >= 4 and "POSITIVE" in gamma_state:
-        flow_gamma_tilt = 5
-    
-    # 하락/충돌 상황은 아직 보수적으로 0 처리
-    # (지금은 시스템 안정화가 우선이라 과한 감점 넣지 않음)
+    # 더 강한 상승 압력:
+    # 진짜 강한 Drift + 강한 Flow + Positive Gamma
+    elif drift_score >= 5 and flow_score >= 4 and "POSITIVE" in gamma_state:
+        flow_gamma_tilt = 4
+   
     
     budget += flow_gamma_tilt
         # --------------------------------------------------
