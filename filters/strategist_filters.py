@@ -964,9 +964,17 @@ def get_regime_label(market_data: Dict[str, Any]) -> str:
     # =====================================================
     # 1) FULL RISK ON
     # =====================================================
+    # =====================================================
+    # 1) FULL RISK ON
+    # =====================================================
     elif combo == (-1, -1, -1):
-        regime = "RISK-ON (완화 기대·리스크 선호)"
 
+        # 유가 급락이면 단순 Risk-On보다
+        # 디스인플레이션 / 성장둔화 가능성 고려
+        if wti_pct is not None and wti_pct <= -3:
+            regime = "DISINFLATION / GROWTH TRANSITION"
+        else:
+            regime = "RISK-ON (완화 기대·리스크 선호)"
     # =====================================================
     # 2) FULL RISK OFF
     # 단, 진짜 강한 공포일 때만
@@ -980,8 +988,26 @@ def get_regime_label(market_data: Dict[str, Any]) -> str:
     # =====================================================
     # 3) EVENT WATCHING
     # =====================================================
-    elif vix_dir == 0 and (us10y_dir != 0 or dxy_dir != 0):
-        regime = "EVENT-WATCHING (이벤트 관망)"
+    # =====================================================
+    # 5) PARTIAL RISK ON
+    # 진짜 부분 리스크온은 VIX↓ + (금리↓ 또는 달러↓)만으로 부족.
+    # DXY↑ / 유가↑ / 긴축 구조에서는 TRANSITION으로 둔다.
+    # =====================================================
+    elif vix_dir == -1 and (dxy_dir == -1 or us10y_dir == -1):
+
+        # 달러가 같이 약해질 때만 부분 Risk-On 인정
+        if dxy_dir == -1:
+            regime = "RISK-ON (부분 정렬)"
+
+        # 달러는 강한데 금리만 내려가면 risk-on 확정 아님
+        elif us10y_dir == -1 and dxy_dir == 1:
+            if wti_pct is not None and wti_pct > 1:
+                regime = "TRANSITION / MIXED (전환·혼조)"
+            else:
+                regime = "EVENT-WATCHING (이벤트 관망)"
+
+        else:
+            regime = "TRANSITION / MIXED (전환·혼조)"
 
     # =====================================================
     # 4) TIGHTENING
