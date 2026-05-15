@@ -3627,8 +3627,12 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         flow_regime_tilt = 4
     elif flow_score >= 5:
         flow_regime_tilt = 3
-    elif flow_score >= 3:
+        
+    elif flow_score >=3:
         flow_regime_tilt = 2
+    elif flow_score >=1:
+        flow_regime_tilt = 1
+    
 
     # SOFT RISK-OFF + Flow improving이면 과도한 보수성만 완화
     if "SOFT RISK-OFF" in phase_upper and flow_score >= 3:
