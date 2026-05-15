@@ -6529,28 +6529,38 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
     validation_boost = min(validation_score, 2)
     flow_score += validation_boost
 
-    # 7) Flow state
+        
+        # 7) Flow state
     if flow_score >= 7:
         flow_state = "🔥 BUILDING HARD"
         confidence = "HIGH"
         interpretation = "뉴스 전 방향성 자금 축적 가능성 높음"
         action_bias = "EARLY PREP"
+    
     elif flow_score >= 5:
         flow_state = "⚡ BUILDING"
         confidence = "MEDIUM-HIGH"
         interpretation = "기관성 흐름 형성 가능성"
         action_bias = "WATCHLIST"
+    
     elif flow_score >= 3:
         flow_state = "👀 EARLY TRACE"
         confidence = "MEDIUM"
         interpretation = "흔적은 있으나 확신은 이르다"
         action_bias = "MONITOR"
+    
+    elif flow_score >= 1:
+        flow_state = "🌱 LIGHT TRACE"
+        confidence = "LOW-MEDIUM"
+        interpretation = "약한 초기 수급 흔적은 있으나 확정적 기관 흐름은 아님"
+        action_bias = "OBSERVE"
+    
     else:
         flow_state = "NO CLEAR FLOW"
         confidence = "LOW"
         interpretation = "기관성 축적 흔적 불충분"
         action_bias = "IGNORE"
-
+    
     prev_flow = load_previous_flow_state()
 
     prev_flow_state = str(prev_flow.get("flow_state", "N/A") or "N/A")
