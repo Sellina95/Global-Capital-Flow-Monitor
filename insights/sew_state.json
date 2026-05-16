@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-15 13:59:03",
+  "timestamp": "2026-05-16 04:27:20",
   "status": "RISK_COMPRESSION",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -10,29 +10,29 @@
   "deadman_reason": "⚠️ CROWDING RISK: POS_Z Extreme (2.32) → Risk Compression (55%)",
   "assets": {
     "SPY": {
-      "zscore": -0.42,
+      "zscore": 0.56,
       "state": "NORMAL",
-      "pct_change": 0.01
+      "pct_change": -0.21
     },
     "QQQ": {
-      "zscore": -0.68,
+      "zscore": 0.14,
       "state": "NORMAL",
-      "pct_change": 0.01
+      "pct_change": -0.34
     },
     "VIX": {
-      "zscore": -0.71,
+      "zscore": -1.36,
       "state": "NORMAL",
-      "pct_change": -1.16
+      "pct_change": 0.99
     },
     "DXY": {
-      "zscore": -0.48,
-      "state": "NORMAL",
-      "pct_change": 0.02
+      "zscore": 2.15,
+      "state": "WATCH",
+      "pct_change": 0.09
     },
     "WTI": {
-      "zscore": 0.07,
+      "zscore": -0.58,
       "state": "NORMAL",
-      "pct_change": 0.61
+      "pct_change": 0.14
     }
   }
 }
