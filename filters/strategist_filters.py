@@ -348,7 +348,7 @@ def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
         else:
             hy_oas = market_data.get("HY_OAS")
 
-        hy_oas = float(hy_oas) if hy_oas is not None else None
+        hy_oas = _to_float(hy_oas)
 
         if hy_oas is not None:
             if hy_oas < 3.0:
@@ -370,10 +370,20 @@ def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "VIX_DIR": vix_dir,
         "WTI_DIR": wti_dir,
 
-        "US10Y_PCT": us10y.get("pct"),
-        "DXY_PCT": dxy.get("pct"),
-        "VIX_PCT": vix.get("pct"),
-        "WTI_PCT": wti.get("pct"),
+        "US10Y_PCT": us10y.get("pct_change"),
+        "DXY_PCT": dxy.get("pct_change"),
+        "VIX_PCT": vix.get("pct_change"),
+        "WTI_PCT": wti.get("pct_change"),
+        
+        "US10Y_DELTA": us10y.get("delta"),
+        "DXY_DELTA": dxy.get("delta"),
+        "VIX_DELTA": vix.get("delta"),
+        "WTI_DELTA": wti.get("delta"),
+        
+        "US10Y_STRENGTH": _move_strength(us10y.get("pct_change")),
+        "DXY_STRENGTH": _move_strength(dxy.get("pct_change")),
+        "VIX_STRENGTH": _move_strength(vix.get("pct_change")),
+        "WTI_STRENGTH": _move_strength(wti.get("pct_change")),
 
         "VIX_TODAY": vix.get("today"),
 
