@@ -22,7 +22,7 @@
 - **[14번 수급 시그널]:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
 
 ### 📌 Interpretation
-- 금일 시장은 **SOFT RISK-OFF (경계 강화) 환경**입니다.
+- 금일 시장은 **SOFT RISK-OFF 환경**입니다.
 - 기관성 자금 흐름은 아직 뚜렷하지 않아, 공격적 확장에는 신중함이 필요합니다.
 - 드리프트 강도가 유의미하여 추세 지속 가능성이 존재합니다.
 - 따라서 **신규 진입보다는 기존 포지션 관리 및 일부 리스크 축소가 우선**입니다.
@@ -37,7 +37,7 @@
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **REDUCE**
 - **Final Exposure:** **30%**
-- **Base Context:** phase=SOFT RISK-OFF (경계 강화) / narrative=REDUCE / base_exposure=32%
+- **Base Context:** phase=SOFT RISK-OFF / narrative=REDUCE / base_exposure=32%
 - **SEW:** RISK_COMPRESSION / NORMAL
 - **Divergence:** N/A / **MONITOR REVERSAL (RUN 액션 준비)**
 - **Drift:** 👀 EARLY DRIFT / NEUTRAL / NONE / score=3
@@ -74,8 +74,8 @@
 
 - **VIX 레벨:** 18.43 → **Mid (Neutral/Mixed)**
 - **핵심 조합(전일 대비 방향):** US10Y(↑) / DXY(↑) / VIX(↑)
-- **판정:** **SOFT RISK-OFF (경계 강화) (Flow Weak)**
-- **근거:** 금리/달러/변동성 축이 한 방향으로 정렬되지 않음
+- **판정:** **SOFT RISK-OFF | Flow:  (Flow Weak)**
+- **근거:** Macro Narrative=TIGHTENING_GROWTH_SCARE / Policy=MIXED / Credit=COOL
 
 ### 💧 2) Liquidity Filter (Enhanced)
 - **질문:** 시장에 새 돈이 들어오는가, 말라가는가?
@@ -363,7 +363,7 @@ So What?
 - **Sentiment (Fear&Greed):** 59.54643395438248 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
-- **Phase:** SOFT RISK-OFF (경계 강화) (Cap: 45)
+- **Phase:** SOFT RISK-OFF (Cap: 45)
 - **Drift:** 👀 EARLY DRIFT / NEUTRAL / NONE
 - **Drift Score:** 3
 - **Flow Score:** 2
@@ -372,7 +372,7 @@ So What?
 
 - **🎯 Final Risk Action:** **REDUCE**
 - **Risk Budget (0~100):** **45**
-- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=👀 EARLY DRIFT (NEUTRAL) / 수급=2.15 ⚠️ 수급 과열 감지 → Phase=SOFT RISK-OFF (경계 강화)
+- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=👀 EARLY DRIFT (NEUTRAL) / 수급=2.15 ⚠️ 수급 과열 감지 → Phase=SOFT RISK-OFF
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
@@ -419,12 +419,12 @@ So What?
 
 ### 🏭 18) Sector Allocation Engine (v3.3)
 
-**Context:** phase=SOFT RISK-OFF (경계 강화) / T10Y2Y=0.50 (MODERATE STEEP) / VIX=18.43 (VOLATILITY NORMAL) / liquidity=UP-MID / credit=True
+**Context:** phase=SOFT RISK-OFF / T10Y2Y=0.50 (MODERATE STEEP) / VIX=18.43 (VOLATILITY NORMAL) / liquidity=UP-MID / credit=True
 
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
 **Macro Profile:** SOFT_RISK_OFF_DISINFLATION
-**Macro Inputs Debug:** phase=SOFT RISK-OFF (경계 강화) / us10y_pct=+3.00% / dxy_pct=+0.39% / wti_pct=-0.15% / vix=18.43 / liq_easy=True / liq_tight=False / credit_calm=True / flow_score=2
+**Macro Inputs Debug:** phase=SOFT RISK-OFF / us10y_pct=+3.00% / dxy_pct=+0.39% / wti_pct=-0.15% / vix=18.43 / liq_easy=True / liq_tight=False / credit_calm=True / flow_score=2
 
 **Flow Overlay:** flow_score=2 / flow_state=🌱 LIGHT TRACE / drift_label=NEUTRAL / gamma=🟡 TRANSITION
 
@@ -548,8 +548,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** HIGH
-- **Z-Score (1d):** -1.949002627505544
-- **Z-Score (5d):** -2.0607919403493478
+- **Z-Score (1d):** -1.9490030004612593
+- **Z-Score (5d):** -2.0607916509331723
 
 ### EEM
 - **Crash?** True
@@ -566,8 +566,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.6316865613570037
-- **Z-Score (5d):** -1.421021550187135
+- **Z-Score (1d):** -1.6316864420696295
+- **Z-Score (5d):** -1.421021804938318
 
 ### EWJ
 - **Crash?** False
