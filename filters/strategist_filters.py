@@ -19,6 +19,30 @@ import math
 # Helpers
 # =========================
 
+def _move_strength(pct: Optional[float]) -> str:
+    """
+    방향(+, -)이 아니라 움직임 강도 자체를 평가
+    기준:
+    VERY_LOW / LOW / MEDIUM / HIGH / EXTREME
+    """
+    if pct is None:
+        return "UNKNOWN"
+
+    try:
+        x = abs(float(pct))
+    except Exception:
+        return "UNKNOWN"
+
+    if x < 0.2:
+        return "VERY_LOW"
+    elif x < 0.5:
+        return "LOW"
+    elif x < 1.0:
+        return "MEDIUM"
+    elif x < 2.0:
+        return "HIGH"
+    return "EXTREME"
+
 def rank_deleveraging_priority(
     score: Dict[str, float],
     weights: Dict[str, float],
@@ -321,7 +345,8 @@ def map_to_portfolio_regime(policy_state: str, macro_narrative: str, tape: Dict[
 
     return "TRANSITION / MIXED"
 
-    
+
+
 def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Layer A — Cross-Asset Raw Tape
@@ -337,6 +362,8 @@ def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
     dxy_dir = _sign_from(dxy)
     vix_dir = _sign_from(vix)
     wti_dir = _sign_from(wti)
+    
+    
 
     hy_oas = None
     hy_status = "UNKNOWN"
