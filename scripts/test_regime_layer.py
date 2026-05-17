@@ -35,7 +35,8 @@ history_template = {
     "WTI_HIST": [70, 72, 74, 73, 75, 76, 74.5, 73.8],
 }
 
-cases = {
+# 기존 test_cases = { ... } 를 아래처럼 교체
+test_cases = {
     "Goldilocks": {
         **history_template,
         "US10Y": {"today": 4.0, "prev": 4.2},
@@ -90,7 +91,6 @@ cases = {
         "HY_OAS": {"today": 4.2},
     },
 }
-
 for case in test_cases:
     tape = build_cross_asset_tape(case)
     macro = interpret_macro_narrative(tape)
