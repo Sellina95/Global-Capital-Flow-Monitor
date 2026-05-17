@@ -390,6 +390,28 @@ def map_to_portfolio_regime(policy_state: str, macro_narrative: str, tape: Dict[
         if vix_today < 18:
             return "RISK-ON / LIQUIDITY"
         return "EVENT-WATCHING / POLICY SHIFT"
+        
+    # --------------------------------------------------
+    # Shock Override Layer (Magnitude-aware)
+    # --------------------------------------------------
+    us10y_z = abs(_to_float(tape.get("US10Y_Z")) or 0)
+    dxy_z = abs(_to_float(tape.get("DXY_Z")) or 0)
+    vix_z = abs(_to_float(tape.get("VIX_Z")) or 0)
+    
+    shock_count = sum([
+        us10y_z >= 2.5,
+        dxy_z >= 2.0,
+        vix_z >= 2.5,
+    ])
+    
+    # 동시다발 충격 → 방향보다 위험 우선
+    if shock_count >= 3:
+        if "DISINFLATION" in macro_narrative:
+            return "VOLATILE DISINFLATION"
+        elif "REFLATION" in macro_narrative:
+            return "OVERHEATED REFLATION"
+        elif "STAGFLATION" in macro_narrative:
+            return "HARD RISK-OFF / MACRO SHOCK"
 
     return "TRANSITION / MIXED"
 
@@ -1334,8 +1356,8 @@ def market_regime_filter(market_data: Dict[str, Any]) -> str:
     print("[DEBUG][CROSS_ASSET_TAPE]", tape)
     macro_narrative = interpret_macro_narrative(tape)
     policy_state = str(market_data.get("POLICY_BACKBONE_STATE", "MIXED"))
-    #regime = map_to_portfolio_regime(policy_state, macro_narrative, tape)
-    regime = map_to_portfolio_regime("EASING", macro, tape)
+    regime = map_to_portfolio_regime(policy_state, macro_narrative, tape)
+    #regime = map_to_portfolio_regime("EASING", macro, tape)
         # --------------------------------------------------
     # Flow Context Overlay (Display only, all regimes)
     # 내부 MARKET_REGIME 값은 건드리지 않고, 리포트 표시용으로만 사용
