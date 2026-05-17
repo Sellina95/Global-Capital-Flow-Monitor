@@ -56,6 +56,7 @@ test_cases = [
         "WTI": {"today": 96, "prev": 90},
         "HY_OAS": {"today": 4.2},
     },
+    
 ]
 
 for case in test_cases:
@@ -68,3 +69,4 @@ for case in test_cases:
     print("TAPE:", tape)
     print("MACRO:", macro)
     print("REGIME:", regime)
+    
