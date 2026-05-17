@@ -35,61 +35,61 @@ history_template = {
     "WTI_HIST": [70, 72, 74, 73, 75, 76, 74.5, 73.8],
 }
 
-test_cases = [
-    {
-		**history_template,    
-        "name": "Goldilocks",
+cases = {
+    "Goldilocks": {
+        **history_template,
         "US10Y": {"today": 4.0, "prev": 4.2},
-        "DXY": {"today": 98, "prev": 99},
-        "VIX": {"today": 13, "prev": 15},
-        "WTI": {"today": 70, "prev": 73},
+        "DXY": {"today": 98.0, "prev": 99.0},
+        "VIX": {"today": 13.0, "prev": 15.0},
+        "WTI": {"today": 70.0, "prev": 73.0},
         "HY_OAS": {"today": 2.8},
     },
-    {   **history_template,
-        "name": "Tightening Growth Scare",
+
+    "Tightening Growth Scare": {
+        **history_template,
         "US10Y": {"today": 4.6, "prev": 4.4},
         "DXY": {"today": 99.3, "prev": 98.8},
         "VIX": {"today": 18.4, "prev": 17.2},
-        "WTI": {"today": 101, "prev": 105},
+        "WTI": {"today": 101.0, "prev": 105.0},
         "HY_OAS": {"today": 2.76},
     },
-    {   **history_template,
-        "name": "Inflation Shock",
+
+    "Inflation Shock": {
+        **history_template,
         "US10Y": {"today": 4.8, "prev": 4.5},
-        "DXY": {"today": 103, "prev": 101},
-        "VIX": {"today": 24, "prev": 18},
-        "WTI": {"today": 95, "prev": 88},
+        "DXY": {"today": 103.0, "prev": 101.0},
+        "VIX": {"today": 24.0, "prev": 18.0},
+        "WTI": {"today": 95.0, "prev": 88.0},
         "HY_OAS": {"today": 4.8},
     },
-    
-    {   **history_template,
-        "name": "Reflation",
+
+    "Reflation": {
+        **history_template,
         "US10Y": {"today": 4.7, "prev": 4.5},
-        "DXY": {"today": 98, "prev": 99},
-        "VIX": {"today": 14, "prev": 16},
-        "WTI": {"today": 90, "prev": 84},
+        "DXY": {"today": 98.0, "prev": 99.0},
+        "VIX": {"today": 14.0, "prev": 16.0},
+        "WTI": {"today": 90.0, "prev": 84.0},
         "HY_OAS": {"today": 2.9},
     },
 
-    {   **history_template,
-        "name": "Policy Easing",
+    "Policy Easing": {
+        **history_template,
         "US10Y": {"today": 4.0, "prev": 4.3},
-        "DXY": {"today": 97, "prev": 99},
-        "VIX": {"today": 15, "prev": 16},
-        "WTI": {"today": 72, "prev": 74},
+        "DXY": {"today": 99.0, "prev": 101.0},
+        "VIX": {"today": 15.0, "prev": 16.0},
+        "WTI": {"today": 72.0, "prev": 74.0},
         "HY_OAS": {"today": 2.8},
     },
 
-    {   **history_template,
-        "name": "Stagflation",
+    "Stagflation": {
+        **history_template,
         "US10Y": {"today": 4.9, "prev": 4.6},
-        "DXY": {"today": 103, "prev": 101},
-        "VIX": {"today": 19, "prev": 17},
-        "WTI": {"today": 96, "prev": 90},
+        "DXY": {"today": 103.0, "prev": 101.0},
+        "VIX": {"today": 19.0, "prev": 17.0},
+        "WTI": {"today": 96.0, "prev": 90.0},
         "HY_OAS": {"today": 4.2},
     },
-    
-]
+}
 
 for case in test_cases:
     tape = build_cross_asset_tape(case)
