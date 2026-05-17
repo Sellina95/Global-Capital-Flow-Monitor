@@ -29,6 +29,33 @@ test_cases = [
         "WTI": {"today": 95, "prev": 88},
         "HY_OAS": {"today": 4.8},
     },
+    
+        {
+        "name": "Reflation",
+        "US10Y": {"today": 4.7, "prev": 4.5},
+        "DXY": {"today": 98, "prev": 99},
+        "VIX": {"today": 14, "prev": 16},
+        "WTI": {"today": 90, "prev": 84},
+        "HY_OAS": {"today": 2.9},
+    },
+
+    {
+        "name": "Policy Easing",
+        "US10Y": {"today": 4.0, "prev": 4.3},
+        "DXY": {"today": 97, "prev": 99},
+        "VIX": {"today": 15, "prev": 16},
+        "WTI": {"today": 72, "prev": 74},
+        "HY_OAS": {"today": 2.8},
+    },
+
+    {
+        "name": "Stagflation",
+        "US10Y": {"today": 4.9, "prev": 4.6},
+        "DXY": {"today": 103, "prev": 101},
+        "VIX": {"today": 19, "prev": 17},
+        "WTI": {"today": 96, "prev": 90},
+        "HY_OAS": {"today": 4.2},
+    },
 ]
 
 for case in test_cases:
