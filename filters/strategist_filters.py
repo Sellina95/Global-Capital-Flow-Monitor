@@ -3733,6 +3733,8 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     phase = market_data.get("MARKET_REGIME", "N/A")
     phase_upper = str(phase).upper()
     
+    macro_narrative = str(market_data.get("MACRO_NARRATIVE", "N/A") or "N/A").upper()
+    cross_asset_tape = market_data.get("CROSS_ASSET_TAPE", {}) or {}
     policy_upper = policy_bias_line.upper()
     mixed = "MIXED" in policy_upper
     easing = "EASING" in policy_upper
@@ -3913,7 +3915,35 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         flow_regime_tilt += 2
 
     budget += flow_regime_tilt
-    
+
+    # --------------------------------------------------
+    # 2.79️⃣ Macro Narrative Tilt (NEW)
+    # Layer B subtype 반영
+    # --------------------------------------------------
+    macro_tilt = 0
+
+    if "GOLDILOCKS" in phase_upper:
+        macro_tilt += 8
+
+    elif "REFLATION" in phase_upper:
+        macro_tilt += 6
+
+    elif "LIQUIDITY" in phase_upper:
+        macro_tilt += 5
+
+    elif "TIGHTENING_GROWTH_SCARE" in macro_narrative:
+        macro_tilt -= 8
+
+    elif "STAGFLATION" in phase_upper:
+        macro_tilt -= 12
+
+    elif "INFLATION SHOCK" in phase_upper:
+        macro_tilt -= 18
+
+    elif "HARD RISK-OFF" in phase_upper:
+        macro_tilt -= 20
+
+    budget += macro_tilt
 
     # --------------------------------------------------
     # 2.8️⃣ Positioning Penalty
@@ -4058,6 +4088,10 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         "flow_state": flow.get("state", "N/A"),
         "flow_confidence": flow.get("confidence", "N/A"),
         "flow_regime_tilt": flow_regime_tilt,
+        
+        "macro_narrative": macro_narrative,
+        "cross_asset_tape": cross_asset_tape,
+        "macro_tilt": macro_tilt,
     }
     market_data["FINAL_STATE"] = final_state
 
@@ -4074,6 +4108,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Credit Calm:** {credit_calm}")
     lines.append(f"- **Liquidity (NET_LIQ):** {liq_dir_tag} ({liq_level_bucket})")
     lines.append(f"- **Phase:** {phase} (Cap: {cap})")
+    lines.append(f"- **Macro Narrative:** {macro_narrative} (Tilt: {macro_tilt:+d})")
 
     if struct_alert:
         lines.append(f"- **[SPECIAL ALERT]**: **{struct_alert}** (Structural Cap: {v2_cap})")
