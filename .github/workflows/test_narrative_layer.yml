@@ -1,0 +1,26 @@
+name: Test Narrative Layer
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-narrative:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt || true
+
+      - name: Run Narrative Layer Test
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python -u scripts/test_narrative_layer.py
