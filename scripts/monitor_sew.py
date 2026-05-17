@@ -31,7 +31,7 @@ def get_credit_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
     hy_pct = None
 
     # 1) flat context 형태
-    for key in ["HY_OAS", "hy_oas"]:
+    for key in ["HY_OAS", "hy_oas", "hy_oas_today", "HY_OAS_TODAY"]:
         if key in market_data:
             hy_today = safe_float(market_data.get(key))
             break
