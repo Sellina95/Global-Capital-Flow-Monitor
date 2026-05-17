@@ -52,6 +52,51 @@ def get_credit_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
         hy_today = safe_float(hy_obj.get("today") or hy_obj.get("current"))
         hy_prev = safe_float(hy_obj.get("prev"))
         hy_pct = safe_float(hy_obj.get("pct_change"))
+        
+    # market_data_history에는 credit 변수가 없으므로
+    # prev/pct는 credit_spread_data.csv에서 계산
+    try:
+        from pathlib import Path
+    
+        credit_path = Path("data/credit_spread_data.csv")
+        if credit_path.exists():
+            df_credit = pd.read_csv(credit_path)
+    
+            if "date" in df_credit.columns and "HY_OAS" in df_credit.columns:
+                df_credit["date"] = pd.to_datetime(df_credit["date"], errors="coerce")
+                df_credit["HY_OAS"] = pd.to_numeric(df_credit["HY_OAS"], errors="coerce")
+                df_credit = (
+                    df_credit.dropna(subset=["date", "HY_OAS"])
+                    .sort_values("date")
+                    .reset_index(drop=True)
+                )
+    
+                if not df_credit.empty:
+                    latest = df_credit.iloc[-1]
+                    prev = df_credit.iloc[-2] if len(df_credit) >= 2 else None
+    
+                    if hy_today is None:
+                        hy_today = safe_float(latest["HY_OAS"])
+    
+                    if hy_prev is None and prev is not None:
+                        hy_prev = safe_float(prev["HY_OAS"])
+    
+                    if hy_pct is None and hy_today is not None and hy_prev not in (None, 0):
+                        hy_pct = ((hy_today - hy_prev) / hy_prev) * 100
+    
+    except Exception as e:
+        print(f"[WARN][CREDIT CSV READ FAILED] {e}")
+        
+        
+        # HY_OAS sanity check
+    if hy_today is not None:
+        if hy_today < 0:
+            print(f"[WARN][INVALID HY_OAS] Negative HY_OAS detected: {hy_today}")
+            hy_today = None
+            hy_prev = None
+            hy_pct = None
+        elif hy_today > 100:
+            hy_today = hy_today / 100.0
 
     if hy_today is None:
         return {
