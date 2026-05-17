@@ -1,0 +1,27 @@
+name: Test Regime Layer
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-regime:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt || true
+          pip install pandas numpy
+
+      - name: Run Regime Layer Test
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python -u scripts/test_regime_layer.py
