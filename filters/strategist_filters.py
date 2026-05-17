@@ -3938,7 +3938,7 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         macro_tilt -= 12
 
     elif "INFLATION SHOCK" in phase_upper:
-        macro_tilt -= 18
+        macro_tilt -= 12
 
     elif "HARD RISK-OFF" in phase_upper:
         macro_tilt -= 20
