@@ -293,6 +293,8 @@ def map_to_portfolio_regime(policy_state: str, macro_narrative: str, tape: Dict[
 
     # 4) 디스인플레이션
     if macro_narrative == "DISINFLATION":
+        if tape.get("VIX_TODAY", 20) < 15 and tape.get("HY_OAS_STATUS") == "COOL":
+            return "GOLDILOCKS"
         if "EASING" in str(policy_state):
             return "GOLDILOCKS"
         return "EARLY RISK-ON"
