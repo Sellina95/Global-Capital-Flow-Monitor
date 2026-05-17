@@ -226,6 +226,94 @@ def classify_drift_label(drift: Dict[str, Any]) -> str:
     # --------------------------------------------------
     return "MIXED"
     
+def interpret_macro_narrative(tape: Dict[str, Any]) -> str:
+    """
+    Layer B — Macro Interpretation
+    Cross-Asset Tape를 거시 서사로 해석
+    """
+
+    us10y = tape.get("US10Y_DIR", 0)
+    dxy = tape.get("DXY_DIR", 0)
+    vix = tape.get("VIX_DIR", 0)
+    wti = tape.get("WTI_DIR", 0)
+
+    hy_status = str(tape.get("HY_OAS_STATUS", "UNKNOWN"))
+
+    # 1) 진짜 크레딧 위기
+    if hy_status in ["HOT", "FRACTURE"] and vix == 1:
+        return "CREDIT_STRESS"
+
+    # 2) 금리↑ + 달러↑ + 유가↑
+    if us10y == 1 and dxy == 1 and wti == 1:
+        return "INFLATION_PRESSURE"
+
+    # 3) 금리↑ + 달러↑ + 유가↓
+    if us10y == 1 and dxy == 1 and wti == -1:
+        return "TIGHTENING_GROWTH_SCARE"
+
+    # 4) 금리↓ + 달러↓ + 유가↓
+    if us10y == -1 and dxy == -1 and wti == -1:
+        return "DISINFLATION"
+
+    # 5) 금리↑ + 달러↓ + 유가↑
+    if us10y == 1 and dxy == -1 and wti == 1:
+        return "REFLATION"
+        
+    # STAGFLATION
+    if us10y == 1 and wti == 1 and hy_status in ["WATCH", "HOT", "FRACTURE"]:
+        return "STAGFLATION_RISK"
+
+    # POLICY EASING / LIQUIDITY SUPPORT
+    if us10y == -1 and dxy == -1 and vix != 1:
+        return "POLICY_EASING"
+
+    return "UNKNOWN_TRANSITION"
+    
+def map_to_portfolio_regime(policy_state: str, macro_narrative: str, tape: Dict[str, Any]) -> str:
+    """
+    Layer C — Final Portfolio Regime
+    Policy + Macro Narrative + Tape → 최종 포트폴리오 국면
+    """
+
+    vix_today = tape.get("VIX_TODAY", 20)
+
+    # 1) 크레딧 스트레스
+    if macro_narrative == "CREDIT_STRESS":
+        return "HARD RISK-OFF"
+
+    # 2) 긴축 + 성장둔화
+    if macro_narrative == "TIGHTENING_GROWTH_SCARE":
+        if vix_today >= 22:
+            return "HARD RISK-OFF"
+        return "SOFT RISK-OFF"
+
+    # 3) 인플레 압력
+    if macro_narrative == "INFLATION_PRESSURE":
+        return "EVENT-WATCHING / INFLATION"
+
+    # 4) 디스인플레이션
+    if macro_narrative == "DISINFLATION":
+        if "EASING" in str(policy_state):
+            return "GOLDILOCKS"
+        return "EARLY RISK-ON"
+
+    # 5) 리플레이션
+    if macro_narrative == "REFLATION":
+        return "RISK-ON / REFLATION"
+
+    # 6) 스태그플레이션
+    if macro_narrative == "STAGFLATION_RISK":
+        return "SOFT RISK-OFF / STAGFLATION"
+
+    # 7) 정책 완화
+    if macro_narrative == "POLICY_EASING":
+        if vix_today < 18:
+            return "RISK-ON / LIQUIDITY"
+        return "EVENT-WATCHING / POLICY SHIFT"
+
+    return "TRANSITION / MIXED"
+
+    
 def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Layer A — Cross-Asset Raw Tape
@@ -1131,9 +1219,9 @@ def market_regime_filter(market_data: Dict[str, Any]) -> str:
     market_data["CROSS_ASSET_TAPE"] = tape
     
     print("[DEBUG][CROSS_ASSET_TAPE]", tape)
-    
-    regime = get_regime_label(market_data)
-    
+    macro_narrative = interpret_macro_narrative(tape)
+    policy_state = str(market_data.get("POLICY_BACKBONE_STATE", "MIXED"))
+    regime = map_to_portfolio_regime(policy_state, macro_narrative, tape)
   
         # --------------------------------------------------
     # Flow Context Overlay (Display only, all regimes)
@@ -1156,14 +1244,14 @@ def market_regime_filter(market_data: Dict[str, Any]) -> str:
     else:
         flow_suffix = " (Flow Weak)"
 
-    display_regime = f"{regime}{flow_suffix}"
 
+    display_context = f"{regime} | Flow: {flow_suffix}"
     
 
     # ✅ Phase/Regime를 다른 필터(Narrative Engine 등)에서 쓰도록 저장
     market_data["MARKET_REGIME"] = regime
 
-    reason = "금리/달러/변동성 축이 한 방향으로 정렬되지 않음"
+    reason = f"Macro Narrative={macro_narrative} / Policy={policy_state} / Credit={tape.get('HY_OAS_STATUS')}"
     if regime.startswith("WAITING"):
         reason = "핵심 축(금리/달러/변동성) 모두 보합 → 방향성 부재"
     elif regime.startswith("RISK-ON") and "부분" not in regime:
@@ -1189,7 +1277,7 @@ def market_regime_filter(market_data: Dict[str, Any]) -> str:
         f"- **핵심 조합(전일 대비 방향):** "
         f"US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})"
     )
-    lines.append(f"- **판정:** **{display_regime}**")
+    lines.append(f"- **판정:** **{display_context}**")
     lines.append(f"- **근거:** {reason}")
     return "\n".join(lines)
 
