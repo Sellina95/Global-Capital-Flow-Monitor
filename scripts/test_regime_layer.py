@@ -91,13 +91,14 @@ test_cases = {
         "HY_OAS": {"today": 4.2},
     },
 }
-for case in test_cases:
+for name, case in test_cases.items():
     tape = build_cross_asset_tape(case)
+
     macro = interpret_macro_narrative(tape)
     regime = map_to_portfolio_regime("MIXED", macro, tape)
 
     print("=" * 60)
-    print(case["name"])
+    print(name)
     print("TAPE:", tape)
     print("MACRO:", macro)
     print("REGIME:", regime)
