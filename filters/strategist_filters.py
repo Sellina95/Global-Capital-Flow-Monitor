@@ -399,6 +399,7 @@ def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
     판단하지 않고, 원재료만 표준화한다.
     """
 
+  
     us10y = _get_series(market_data, "US10Y")
     dxy = _get_series(market_data, "DXY")
     vix = _get_series(market_data, "VIX")
@@ -447,41 +448,45 @@ def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
     vix_z, vix_z_strength = _compute_zscore_strength(vix.get("pct_change"), vix_hist)
     wti_z, wti_z_strength = _compute_zscore_strength(wti.get("pct_change"), wti_hist)
     
+    
     tape = {
+        "US10Y_DIR": us10y_dir,
+        "DXY_DIR": dxy_dir,
+        "VIX_DIR": vix_dir,
+        "WTI_DIR": wti_dir,
+
         "US10Y_Z": us10y_z,
         "DXY_Z": dxy_z,
         "VIX_Z": vix_z,
         "WTI_Z": wti_z,
-        
+
         "US10Y_Z_STRENGTH": us10y_z_strength,
         "DXY_Z_STRENGTH": dxy_z_strength,
         "VIX_Z_STRENGTH": vix_z_strength,
         "WTI_Z_STRENGTH": wti_z_strength,
-        
+
         "US10Y_PCT": us10y.get("pct_change"),
         "DXY_PCT": dxy.get("pct_change"),
         "VIX_PCT": vix.get("pct_change"),
         "WTI_PCT": wti.get("pct_change"),
-        
+
         "US10Y_DELTA": us10y.get("delta"),
         "DXY_DELTA": dxy.get("delta"),
         "VIX_DELTA": vix.get("delta"),
         "WTI_DELTA": wti.get("delta"),
-        
+
         "US10Y_STRENGTH": _move_strength(us10y.get("pct_change")),
         "DXY_STRENGTH": _move_strength(dxy.get("pct_change")),
         "VIX_STRENGTH": _move_strength(vix.get("pct_change")),
         "WTI_STRENGTH": _move_strength(wti.get("pct_change")),
-        
-        
-        
-        "VIX_TODAY": vix.get("today"),
 
+        "VIX_TODAY": vix.get("today"),
         "HY_OAS_LEVEL": hy_oas,
         "HY_OAS_STATUS": hy_status,
     }
 
     return tape
+   
     
 
 def classify_drift_label(drift_inputs: Dict[str, Any]) -> str:
