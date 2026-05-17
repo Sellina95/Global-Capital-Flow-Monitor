@@ -238,9 +238,14 @@ def interpret_macro_narrative(tape: Dict[str, Any]) -> str:
     wti = tape.get("WTI_DIR", 0)
 
     hy_status = str(tape.get("HY_OAS_STATUS", "UNKNOWN"))
-
-    # 1) 진짜 크레딧 위기
-    if hy_status in ["HOT", "FRACTURE"] and vix == 1:
+    
+    
+    # STAGFLATION: 유가/금리/달러 상승 + 크레딧 경계
+    if us10y == 1 and dxy == 1 and wti == 1 and hy_status in ["WATCH", "HOT"]:
+        return "STAGFLATION_RISK"
+    
+    # 진짜 크레딧 위기
+    if hy_status == "FRACTURE" or (hy_status == "HOT" and vix == 1 and tape.get("VIX_TODAY", 0) >= 22):
         return "CREDIT_STRESS"
 
     # 2) 금리↑ + 달러↑ + 유가↑
@@ -259,9 +264,7 @@ def interpret_macro_narrative(tape: Dict[str, Any]) -> str:
     if us10y == 1 and dxy == -1 and wti == 1:
         return "REFLATION"
         
-    # STAGFLATION
-    if us10y == 1 and wti == 1 and hy_status in ["WATCH", "HOT", "FRACTURE"]:
-        return "STAGFLATION_RISK"
+
 
     # POLICY EASING / LIQUIDITY SUPPORT
     if us10y == -1 and dxy == -1 and vix != 1:
@@ -1223,8 +1226,8 @@ def market_regime_filter(market_data: Dict[str, Any]) -> str:
     print("[DEBUG][CROSS_ASSET_TAPE]", tape)
     macro_narrative = interpret_macro_narrative(tape)
     policy_state = str(market_data.get("POLICY_BACKBONE_STATE", "MIXED"))
-    regime = map_to_portfolio_regime(policy_state, macro_narrative, tape)
-  
+    #regime = map_to_portfolio_regime(policy_state, macro_narrative, tape)
+    regime = map_to_portfolio_regime("EASING", macro, tape)
         # --------------------------------------------------
     # Flow Context Overlay (Display only, all regimes)
     # 내부 MARKET_REGIME 값은 건드리지 않고, 리포트 표시용으로만 사용
