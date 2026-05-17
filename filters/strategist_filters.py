@@ -441,7 +441,12 @@ def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
     except Exception:
         hy_oas = None
         hy_status = "UNKNOWN"
-
+        
+    us10y_z, us10y_z_strength = _compute_zscore_strength(us10y.get("pct_change"), us10y_hist)
+    dxy_z, dxy_z_strength = _compute_zscore_strength(dxy.get("pct_change"), dxy_hist)
+    vix_z, vix_z_strength = _compute_zscore_strength(vix.get("pct_change"), vix_hist)
+    wti_z, wti_z_strength = _compute_zscore_strength(wti.get("pct_change"), wti_hist)
+    
     tape = {
         "US10Y_Z": us10y_z,
         "DXY_Z": dxy_z,
@@ -469,11 +474,7 @@ def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "WTI_STRENGTH": _move_strength(wti.get("pct_change")),
         
         
-        us10y_z, us10y_z_strength = _compute_zscore_strength(us10y.get("pct_change"), us10y_hist)
-        dxy_z, dxy_z_strength = _compute_zscore_strength(dxy.get("pct_change"), dxy_hist)
-        vix_z, vix_z_strength = _compute_zscore_strength(vix.get("pct_change"), vix_hist)
-        wti_z, wti_z_strength = _compute_zscore_strength(wti.get("pct_change"), wti_hist)
-
+        
         "VIX_TODAY": vix.get("today"),
 
         "HY_OAS_LEVEL": hy_oas,
