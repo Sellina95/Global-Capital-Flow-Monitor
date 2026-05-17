@@ -36,7 +36,29 @@ test_cases = {
         "HY_OAS": {"today": 4.8},
         "STRUCT_V2_STATE": "STAGFLATION",
         "POLICY_BIAS_LINE": "Policy Bias: TIGHTENING",
+        
+    
     },
+    
+    "Stagflation": {
+        **base_template,
+        "MARKET_REGIME": "SOFT RISK-OFF / STAGFLATION",
+        "MACRO_NARRATIVE": "STAGFLATION_RISK",
+        "HY_OAS": {"today": 4.2},
+        "STRUCT_V2_STATE": "STAGFLATION",
+        "POLICY_BIAS_LINE": "Policy Bias: TIGHTENING",
+    },
+
+    "Credit Crisis": {
+        **base_template,
+        "MARKET_REGIME": "HARD RISK-OFF / CREDIT CRISIS",
+        "MACRO_NARRATIVE": "CREDIT_STRESS",
+        "HY_OAS": {"today": 7.5},
+        "STRUCT_V2_STATE": "SYSTEMIC",
+        "POLICY_BIAS_LINE": "Policy Bias: TIGHTENING",
+    },
+    
+    
 }
 
 for name, market_data in test_cases.items():
