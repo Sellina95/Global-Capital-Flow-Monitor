@@ -226,6 +226,67 @@ def classify_drift_label(drift: Dict[str, Any]) -> str:
     # --------------------------------------------------
     return "MIXED"
     
+def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Layer A — Cross-Asset Raw Tape
+    판단하지 않고, 원재료만 표준화한다.
+    """
+
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    vix = _get_series(market_data, "VIX")
+    wti = _get_series(market_data, "WTI")
+
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    vix_dir = _sign_from(vix)
+    wti_dir = _sign_from(wti)
+
+    hy_oas = None
+    hy_status = "UNKNOWN"
+
+    try:
+        hy_obj = market_data.get("HY_OAS", {})
+        if isinstance(hy_obj, dict):
+            hy_oas = hy_obj.get("today")
+        else:
+            hy_oas = market_data.get("HY_OAS")
+
+        hy_oas = float(hy_oas) if hy_oas is not None else None
+
+        if hy_oas is not None:
+            if hy_oas < 3.0:
+                hy_status = "COOL"
+            elif hy_oas < 4.0:
+                hy_status = "WATCH"
+            elif hy_oas < 6.0:
+                hy_status = "HOT"
+            else:
+                hy_status = "FRACTURE"
+
+    except Exception:
+        hy_oas = None
+        hy_status = "UNKNOWN"
+
+    tape = {
+        "US10Y_DIR": us10y_dir,
+        "DXY_DIR": dxy_dir,
+        "VIX_DIR": vix_dir,
+        "WTI_DIR": wti_dir,
+
+        "US10Y_PCT": us10y.get("pct"),
+        "DXY_PCT": dxy.get("pct"),
+        "VIX_PCT": vix.get("pct"),
+        "WTI_PCT": wti.get("pct"),
+
+        "VIX_TODAY": vix.get("today"),
+
+        "HY_OAS_LEVEL": hy_oas,
+        "HY_OAS_STATUS": hy_status,
+    }
+
+    return tape
+    
 
 def classify_drift_label(drift_inputs: Dict[str, Any]) -> str:
     """
