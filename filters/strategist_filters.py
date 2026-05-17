@@ -305,10 +305,13 @@ def map_to_portfolio_regime(policy_state: str, macro_narrative: str, tape: Dict[
     # 5) 리플레이션
     if macro_narrative == "REFLATION":
         return "RISK-ON / REFLATION"
-
-    # 6) 스태그플레이션
+       
+    #)스테그플레이션     
     if macro_narrative == "STAGFLATION_RISK":
+        if tape.get("VIX_TODAY", 0) >= 22 and tape.get("HY_OAS_STATUS") in ["HOT", "FRACTURE"]:
+            return "HARD RISK-OFF / INFLATION SHOCK"
         return "SOFT RISK-OFF / STAGFLATION"
+
 
     # 7) 정책 완화
     if macro_narrative == "POLICY_EASING":
