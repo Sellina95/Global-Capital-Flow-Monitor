@@ -42,6 +42,54 @@ def _move_strength(pct: Optional[float]) -> str:
     elif x < 2.0:
         return "HIGH"
     return "EXTREME"
+    
+def _compute_zscore_strength(
+    pct: Optional[float],
+    history: Optional[list],
+    lookback: int = 20
+) -> tuple[Optional[float], str]:
+    """
+    최근 lookback 기준 표준편차 대비 현재 움직임 강도
+    반환:
+    (z_score, z_strength)
+    """
+    if pct is None or history is None:
+        return None, "UNKNOWN"
+
+    try:
+        valid = [float(x) for x in history if x is not None]
+
+        if len(valid) < lookback:
+            return None, "UNKNOWN"
+
+        sample = valid[-lookback:]
+
+        mean_val = sum(sample) / len(sample)
+
+        variance = sum((x - mean_val) ** 2 for x in sample) / len(sample)
+        std_val = variance ** 0.5
+
+        if std_val == 0:
+            return 0.0, "VERY_LOW"
+
+        z = (float(pct) - mean_val) / std_val
+        abs_z = abs(z)
+
+        if abs_z < 0.5:
+            strength = "VERY_LOW"
+        elif abs_z < 1.0:
+            strength = "LOW"
+        elif abs_z < 1.5:
+            strength = "MEDIUM"
+        elif abs_z < 2.0:
+            strength = "HIGH"
+        else:
+            strength = "EXTREME"
+
+        return round(z, 2), strength
+
+    except Exception:
+        return None, "UNKNOWN"
 
 def rank_deleveraging_priority(
     score: Dict[str, float],
@@ -345,8 +393,6 @@ def map_to_portfolio_regime(policy_state: str, macro_narrative: str, tape: Dict[
 
     return "TRANSITION / MIXED"
 
-
-
 def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Layer A — Cross-Asset Raw Tape
@@ -357,6 +403,11 @@ def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
     dxy = _get_series(market_data, "DXY")
     vix = _get_series(market_data, "VIX")
     wti = _get_series(market_data, "WTI")
+    
+    us10y_hist = market_data.get("US10Y_PCT_HISTORY", [])
+    dxy_hist = market_data.get("DXY_PCT_HISTORY", [])
+    vix_hist = market_data.get("VIX_PCT_HISTORY", [])
+    wti_hist = market_data.get("WTI_PCT_HISTORY", [])
 
     us10y_dir = _sign_from(us10y)
     dxy_dir = _sign_from(dxy)
@@ -392,11 +443,16 @@ def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
         hy_status = "UNKNOWN"
 
     tape = {
-        "US10Y_DIR": us10y_dir,
-        "DXY_DIR": dxy_dir,
-        "VIX_DIR": vix_dir,
-        "WTI_DIR": wti_dir,
-
+        "US10Y_Z": us10y_z,
+        "DXY_Z": dxy_z,
+        "VIX_Z": vix_z,
+        "WTI_Z": wti_z,
+        
+        "US10Y_Z_STRENGTH": us10y_z_strength,
+        "DXY_Z_STRENGTH": dxy_z_strength,
+        "VIX_Z_STRENGTH": vix_z_strength,
+        "WTI_Z_STRENGTH": wti_z_strength,
+        
         "US10Y_PCT": us10y.get("pct_change"),
         "DXY_PCT": dxy.get("pct_change"),
         "VIX_PCT": vix.get("pct_change"),
@@ -411,6 +467,12 @@ def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "DXY_STRENGTH": _move_strength(dxy.get("pct_change")),
         "VIX_STRENGTH": _move_strength(vix.get("pct_change")),
         "WTI_STRENGTH": _move_strength(wti.get("pct_change")),
+        
+        
+        us10y_z, us10y_z_strength = _compute_zscore_strength(us10y.get("pct_change"), us10y_hist)
+        dxy_z, dxy_z_strength = _compute_zscore_strength(dxy.get("pct_change"), dxy_hist)
+        vix_z, vix_z_strength = _compute_zscore_strength(vix.get("pct_change"), vix_hist)
+        wti_z, wti_z_strength = _compute_zscore_strength(wti.get("pct_change"), wti_hist)
 
         "VIX_TODAY": vix.get("today"),
 
