@@ -6160,7 +6160,6 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         if len(top_rationales) >= 12:
             break
    
-
     # -------------------------
     # 6) 출력
     # -------------------------
@@ -6276,12 +6275,9 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         lines.append("- No major theory-vs-flow divergence detected.")
     
     # -------------------------
-    # 18.5) Execution Weight Allocation Logic
-    # -------------------------
     # -------------------------
     # 18.5) Execution Weight Allocation Logic
     # -------------------------
-
     final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
     #final_exposure = 70 # test only
     # -------------------------
@@ -6289,22 +6285,23 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     base_final_exposure = final_exposure
     exposure_override_reason = "None"
+    # -------------------------
+    # 18.45) Regime Controller
+    # 총노출 조정 금지 → Sector Weight Only
+    # -------------------------
+    base_final_exposure = final_exposure
     
-    if regime_controller == "DISLOCATION":
-        final_exposure *= 0.85
-        exposure_override_reason = "DISLOCATION → 섹터 괴리 확대, 총노출 15% 축소"
+    exposure_override_reason = (
+        f"{regime_controller} → Sector Weight Only (No Exposure Change)"
+    )
     
-    elif regime_controller == "FLOW_MARKET":
-        final_exposure *= 1.10
-        exposure_override_reason = "FLOW_MARKET → 실제 자금흐름 우세, 총노출 10% 확대"
+    # ✅ 15번 결과 그대로 유지
+    final_exposure = round(max(0.0, min(final_exposure, 100.0)), 1)
     
-    elif regime_controller == "THEORY_MARKET":
-        final_exposure *= 0.90
-        exposure_override_reason = "THEORY_MARKET → 거시 논리 우세, 총노출 10% 축소"
-    
-    else:
-        exposure_override_reason = "BALANCED → 총노출 유지"
-    
+    market_data["BASE_RECOMMENDED_EXPOSURE"] = base_final_exposure
+    market_data["REGIME_ADJUSTED_EXPOSURE"] = final_exposure
+    market_data["EXPOSURE_OVERRIDE_REASON"] = exposure_override_reason
+     
     final_exposure = round(max(0.0, min(final_exposure, 100.0)), 1)
     
     market_data["BASE_RECOMMENDED_EXPOSURE"] = base_final_exposure
