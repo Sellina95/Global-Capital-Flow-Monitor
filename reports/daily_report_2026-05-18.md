@@ -50,7 +50,8 @@
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence 비정렬 → 방어적 태도 유지 → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=HOLD / Flow=🌱 LIGHT TRACE(2) / Drift=👀 EARLY DRIFT(3) / Gamma=🟡 TRANSITION → Tactical HOLD/MONITOR → 최종판단 변경 없음
 
 ### 🚩 Market Regime Status
-- **현재 국면 유지:** ✅ **SOFT RISK-OFF (경계 강화)**
+- **Operational Phase:** ✅ **EVENT-WATCHING / INFLATION**
+- **Structural Regime:** **INFLATION_PRESSURE**
 
 ---
 
@@ -153,9 +154,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-1.21% / 5D=+0.20% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-2.62% / 5D=+4.68% | Strength: MEDIUM
-- **DXY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.05% / 5D=+1.40% | Strength: LOW
-- **GOLD:** 🔴 DOWN | Short-term: SHORT UP | 1D=-0.24% / 5D=-3.68% | Strength: LOW
+- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-2.50% / 5D=+4.80% | Strength: MEDIUM
+- **DXY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.04% / 5D=+1.40% | Strength: LOW
+- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.39% / 5D=-3.83% | Strength: MEDIUM
 
 - **Drift Score:** 3
 - **State:** **👀 EARLY DRIFT**
@@ -166,7 +167,7 @@
   - Equity (SPY): 🟡 PULLBACK / SHORT DOWN
   - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
   - Dollar (DXY): 🟢 UP / SHORT DOWN
-  - Gold (GOLD): 🔴 DOWN / SHORT UP
+  - Gold (GOLD): 🔴 DOWN / SHORT DOWN
 
 - **Drivers:**
   - Credit supports risk
@@ -370,7 +371,7 @@ So What?
 - **Drift:** 👀 EARLY DRIFT / NEUTRAL / NONE
 - **Drift Score:** 3
 - **Flow Score:** 2
-- **Flow Continuity:** FLOW_FADE → 🌱 LIGHT TRACE (N/A, tilt=+0)
+- **Flow Continuity:** 🌱 LIGHT TRACE → 🌱 LIGHT TRACE (N/A, tilt=+0)
 - **Flow Regime Tilt:** +1 / Flow-Gamma Tilt: +0
 
 - **🎯 Final Risk Action:** **STRONG REDUCE**
@@ -539,8 +540,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** HIGH
-- **Z-Score (1d):** -1.949002627505544
-- **Z-Score (5d):** -2.0607919403493478
+- **Z-Score (1d):** -1.9489965379616514
+- **Z-Score (5d):** -2.060790949245864
 
 ### EEM
 - **Crash?** True
@@ -557,8 +558,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.6316848414344334
-- **Z-Score (5d):** -1.4210212912081883
+- **Z-Score (1d):** -1.6316865614055291
+- **Z-Score (5d):** -1.421021453627744
 
 ### EWJ
 - **Crash?** False
