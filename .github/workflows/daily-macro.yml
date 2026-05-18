@@ -165,6 +165,10 @@ jobs:
           print(df[cols].tail(10).to_string(index=False))
           PY
 
+
+      - name: Backfill macro missing tickers
+        run: python scripts/backfill_macro_missing_tickers.py
+
       - name: Run report generator
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
