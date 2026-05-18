@@ -190,20 +190,7 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
     interpretation = _build_interpretation(label, demand, financing, energy, policy)
 
     report = f"""
-### 12.5) Growth Sustainability Filter [SHADOW]
-- **Score:** {total}
-- **Label:** {label}
-- **Demand Proxy:** {demand}
-- **Financing:** {financing}
-- **Energy Burden:** {energy}
-- **Policy Capacity:** {policy}
-- **Strategic Interpretation:** {interpretation}
-- **Input Check:** {input_summary}
-
-📌 Shadow Note: This filter is observation-only and does not affect Final Exposure, Phase, or Sector Allocation.
-"""
-
-    return report
+    
 
 ### 12.5) Growth Sustainability Filter [SHADOW]
 - **Score:** {total}
