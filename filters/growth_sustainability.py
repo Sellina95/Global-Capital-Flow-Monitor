@@ -61,7 +61,18 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
     """
 
     final_state = market_data.get("FINAL_STATE", {}) or {}
+    print("[DEBUG][12.5 CREDIT KEYS]", {
+        k: market_data.get(k)
+        for k in market_data.keys()
+        if "credit" in k.lower() or "oas" in k.lower() or "hy" in k.lower()
+    })
 
+    print("[DEBUG][12.5 DRIFT KEYS]", {
+        k: market_data.get(k)
+        for k in market_data.keys()
+        if "drift" in k.lower()
+    })
+    
     # 1) Macro price inputs
     us10y = _to_float(market_data.get("GROWTH_US10Y"))
     oil = _to_float(market_data.get("GROWTH_WTI"))
