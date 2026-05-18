@@ -1379,12 +1379,12 @@ def market_regime_filter(market_data: Dict[str, Any]) -> str:
     else:
         flow_suffix = " (Flow Weak)"
 
-
     display_context = f"{regime} | Flow: {flow_suffix}"
     
-
     # ✅ Phase/Regime를 다른 필터(Narrative Engine 등)에서 쓰도록 저장
     market_data["MARKET_REGIME"] = regime
+    market_data["MACRO_NARRATIVE"] = macro_narrative
+    market_data["CROSS_ASSET_TAPE"] = tape
 
     reason = f"Macro Narrative={macro_narrative} / Policy={policy_state} / Credit={tape.get('HY_OAS_STATUS')}"
     if regime.startswith("WAITING"):
@@ -4066,6 +4066,11 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
 
     elif "INFLATION SHOCK" in phase_upper:
         macro_tilt -= 12
+        
+    elif "INFLATION" in phase_upper:
+        macro_tilt -= 6
+        if macro_narrative == "N/A":
+            macro_narrative = "INFLATION_RISK"
 
     elif "HARD RISK-OFF" in phase_upper:
         macro_tilt -= 20
