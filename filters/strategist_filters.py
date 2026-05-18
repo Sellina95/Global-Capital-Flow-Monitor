@@ -6478,9 +6478,10 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             cash_weight += diff
 
         total_allocated = round(sum(weights.values()) + cash_weight, 1)
-		strategic_cash = round(100.0 - final_exposure, 1)
+    
+        strategic_cash = round(100.0 - final_exposure, 1)
         tactical_reserve = round(cash_weight - strategic_cash, 1)
-        
+    
         allocation_lines.append(f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |")
         allocation_lines.append("")
         allocation_lines.append(f"- **Allocation Check:** Sector Weights + Cash = **{total_allocated:.1f}%**")
