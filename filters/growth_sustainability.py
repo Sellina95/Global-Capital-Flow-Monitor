@@ -1,7 +1,7 @@
 # filters/growth_sustainability.py
 
 from typing import Any, Dict, Optional
-
+import pandas as pd
 
 def _to_float(value, default: Optional[float] = None) -> Optional[float]:
     """
