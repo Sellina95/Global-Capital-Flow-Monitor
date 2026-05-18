@@ -59,12 +59,15 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
     - Final Exposure / Phase / Sector Allocation 영향 없음
     """
 
-    us10y = _to_float(market_data.get("US10Y"))
-    real_yield = _to_float(market_data.get("DFII10") or market_data.get("REAL_RATE"))
-    curve = _to_float(market_data.get("T10Y2Y"))
-    oil = _to_float(market_data.get("WTI"))
-    dxy = _to_float(market_data.get("DXY"))
-
+    us10y = _to_float(market_data.get("GROWTH_US10Y"))
+    real_yield = _to_float(
+        market_data.get("GROWTH_DFII10")
+        or market_data.get("GROWTH_REAL_RATE")
+    )
+    curve = _to_float(market_data.get("GROWTH_T10Y2Y"))
+    oil = _to_float(market_data.get("GROWTH_WTI"))
+    dxy = _to_float(market_data.get("GROWTH_DXY"))
+    
     liquidity_dir = (
         market_data.get("liquidity_dir")
         or market_data.get("NET_LIQ_DIR")
