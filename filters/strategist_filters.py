@@ -4695,7 +4695,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         exposure = 0
         status = "HARD_DEADMAN"
     elif risk_compression:
-        exposure = max(25, exposure)
+        exposure = min(25, exposure)
         status = "RISK_COMPRESSION"
     else:
         status = "NORMAL"
