@@ -4493,6 +4493,15 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     def _clamp(x, lo=0, hi=100):
         return max(lo, min(int(round(x)), hi))
+              
+    def _dedupe(items):
+        seen = set()
+        result = []
+        for x in items:
+            if x not in seen:
+                result.append(x)
+                seen.add(x)
+        return result
 
     risk_budget = _to_float(market_data.get("RISK_BUDGET", 50))
     if risk_budget is None:
@@ -4610,6 +4619,14 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
             brake_drivers.append("VIX Spike")
         elif vix_pct < -5:
             multiplier *= 1.05
+            
+    if vix_today is not None and vix_pct is not None:
+        if vix_today >= 20 and vix_pct >= 10:
+            exposure *= 0.85
+            brake_drivers.append("VIX Convexity Shock")
+        elif vix_today >= 18 and vix_pct >= 5:
+            exposure *= 0.92
+            brake_drivers.append("VIX Convexity Warning")
 
     # --------------------------------------------------
     # 2️⃣ Positioning Layer
@@ -4671,27 +4688,21 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         elif hy_level >= 4.0:
             exposure *= 0.90
             brake_drivers.append("Mild Credit Stress")
-
+            
+    if hy_pct is not None:
+        if hy_pct >= 10:
+            exposure *= 0.85
+            brake_drivers.append("HY OAS Spike")
+        elif hy_pct >= 5:
+            exposure *= 0.93
+            brake_drivers.append("HY OAS Rising")        
+    
     # --------------------------------------------------
     # 6️⃣ Confidence Scaling
     # --------------------------------------------------
-    if flow_score <= 1:
-        confidence = "LOW"
-        confidence_multiplier = 0.90
-        brake_drivers.append("Low Confidence")
-    elif flow_score <= 3:
-        confidence = "MEDIUM-LOW"
-        confidence_multiplier = 0.95
-        brake_drivers.append("Medium-Low Confidence")
-    elif flow_score <= 5:
-        confidence = "MEDIUM"
-        confidence_multiplier = 1.00
-    else:
-        confidence = "HIGH"
-        confidence_multiplier = 1.05
-
-    exposure *= confidence_multiplier
-
+    confidence = "N/A"
+    confidence_multiplier = 1.00
+    
     # --------------------------------------------------
     # 7️⃣ Final Override
     # --------------------------------------------------
@@ -4699,7 +4710,6 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         exposure = 0
         status = "HARD_DEADMAN"
     elif risk_compression:
-        exposure = min(25, exposure)
         status = "RISK_COMPRESSION"
     else:
         status = "NORMAL"
@@ -4709,6 +4719,8 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     market_data["RECOMMENDED_EXPOSURE"] = exposure
     market_data["PREV_EXPOSURE"] = exposure
     market_data["SEW_STATUS"] = status
+    brake_drivers = _dedupe(brake_drivers)
+    pos_notes = _dedupe(pos_notes)
 
     # --------------------------------------------------
     # Output
