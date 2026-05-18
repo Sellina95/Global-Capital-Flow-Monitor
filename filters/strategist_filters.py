@@ -3890,6 +3890,16 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     
     macro_narrative = str(market_data.get("MACRO_NARRATIVE", "N/A") or "N/A").upper()
     cross_asset_tape = market_data.get("CROSS_ASSET_TAPE", {}) or {}
+    
+    macro_tilt_map = {
+    "DISINFLATION": +4,
+    "REFLATION": +3,
+    "TIGHTENING_GROWTH_SCARE": -4,
+    "STAGFLATION_RISK": -6,
+    "CREDIT_STRESS": -8,
+    }
+    macro_tilt = macro_tilt_map.get(str(macro_narrative).upper(), 0)
+    
     policy_upper = policy_bias_line.upper()
     mixed = "MIXED" in policy_upper
     easing = "EASING" in policy_upper
@@ -4533,10 +4543,23 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     risk_compression = False
     compression_reason = ""
 
-    # Credit Crisis = 진짜 0%
+    # --------------------------------------------------
+    # HARD DEADMAN — Absolute Credit Fracture
+    # --------------------------------------------------
     if hy_level is not None and hy_level >= 6.0:
         hard_deadman = True
         hard_deadman_reason = f"Credit Crisis / HY_OAS {hy_level:.2f}%"
+    
+    # --------------------------------------------------
+    # HARD DEADMAN — Structural Macro Shock
+    # --------------------------------------------------
+    elif macro_narrative == "CREDIT_STRESS":
+        hard_deadman = True
+        hard_deadman_reason = "Structural Credit Stress"
+    
+    elif macro_narrative == "STAGFLATION_RISK" and cross_asset_tape.get("VIX_Z", 0) >= 3:
+        hard_deadman = True
+        hard_deadman_reason = "Stagflation Shock + Volatility Spike"
 
     # VIX Panic + 급등 = 진짜 0% 후보
     elif vix_today is not None and vix_today >= 30:
