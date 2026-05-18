@@ -351,7 +351,35 @@ def map_to_portfolio_regime(policy_state: str, macro_narrative: str, tape: Dict[
     """
 
     vix_today = tape.get("VIX_TODAY", 20)
-
+    vix_z = abs(_to_float(tape.get("VIX_Z")) or 0)
+    dxy_z = abs(_to_float(tape.get("DXY_Z")) or 0)
+    us10y_z = abs(_to_float(tape.get("US10Y_Z")) or 0)
+    wti_z = abs(_to_float(tape.get("WTI_Z")) or 0)
+    hy_status = str(tape.get("HY_OAS_STATUS", "UNKNOWN")).upper()
+    
+    # --------------------------------------------------
+    # STEP 1-B: Sigma Shock Override (최우선)
+    # --------------------------------------------------
+    if (
+        vix_z >= 3
+        and dxy_z >= 2
+        and (hy_status in ["HOT", "FRACTURE"])
+    ):
+        return "SHOCK RISK-OFF / SYSTEMIC"
+    
+    if (
+        vix_z >= 2.5
+        and us10y_z >= 2
+        and wti_z >= 2
+    ):
+        return "SHOCK RISK-OFF / INFLATION"
+    
+    if (
+        vix_z >= 2
+        and dxy_z >= 1.5
+    ):
+        return "HARD RISK-OFF"
+    
     # 1) 크레딧 스트레스
     if macro_narrative == "CREDIT_STRESS":
         return "HARD RISK-OFF"
