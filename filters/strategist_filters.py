@@ -4234,9 +4234,10 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Sentiment (Fear&Greed):** {fear if fear is not None else 'N/A'} ({sent_state})")
     lines.append(f"- **Credit Calm:** {credit_calm}")
     lines.append(f"- **Liquidity (NET_LIQ):** {liq_dir_tag} ({liq_level_bucket})")
-    lines.append(f"- **Phase:** {phase} (Cap: {cap})")
-    lines.append(f"- **Macro Narrative:** {macro_narrative} (Tilt: {macro_tilt:+d})")
-
+    lines.append(f"- **Structural Regime:** {macro_narrative}")
+    lines.append(f"- **Operational Phase:** {phase} (Cap: {cap})")
+    lines.append(f"- **Macro Tilt:** {macro_tilt:+d}")
+    
     if struct_alert:
         lines.append(f"- **[SPECIAL ALERT]**: **{struct_alert}** (Structural Cap: {v2_cap})")
 
