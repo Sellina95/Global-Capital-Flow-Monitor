@@ -727,6 +727,65 @@ def attach_leadership_layer(
 
     return market_data
     
+def attach_growth_sustainability_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int
+) -> Dict[str, Any]:
+    """
+    12.5 Growth Sustainability Shadow 전용
+    - macro_data row에서 성장 지속성 판단에 필요한 원자료 주입
+    """
+
+    if market_data is None:
+        market_data = {}
+
+    if df is None or df.empty or today_idx is None:
+        return market_data
+
+    if today_idx < 0 or today_idx >= len(df):
+        return market_data
+
+    row = df.iloc[today_idx]
+
+    try:
+        market_data["_GROWTH_ASOF"] = pd.to_datetime(row["date"]).strftime("%Y-%m-%d")
+    except Exception:
+        market_data["_GROWTH_ASOF"] = None
+
+    mapping = {
+        "US10Y": "US10Y",
+        "DXY": "DXY",
+        "WTI": "WTI",
+        "T10Y2Y": "T10Y2Y",
+        "DFII10": "DFII10",
+        "REAL_RATE": "REAL_RATE",
+    }
+
+    for src_col, target_key in mapping.items():
+        try:
+            val = row.get(src_col) if src_col in df.columns else None
+            if pd.notna(val):
+                market_data[target_key] = float(val)
+        except Exception:
+            pass
+
+    print("[DEBUG][GROWTH ATTACHED]", {
+        "asof": market_data.get("_GROWTH_ASOF"),
+        "US10Y": market_data.get("US10Y"),
+        "DXY": market_data.get("DXY"),
+        "WTI": market_data.get("WTI"),
+        "T10Y2Y": market_data.get("T10Y2Y"),
+        "DFII10": market_data.get("DFII10"),
+        "REAL_RATE": market_data.get("REAL_RATE"),
+        "liquidity_dir": market_data.get("liquidity_dir"),
+        "NET_LIQ_DIR": market_data.get("NET_LIQ_DIR"),
+        "credit_calm": market_data.get("credit_calm"),
+        "drift_label": market_data.get("drift_label"),
+    })
+
+    return market_data
+    
 def attach_volatility_structure_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
@@ -746,6 +805,7 @@ def attach_volatility_structure_layer(
 
     # VIX는 build_market_data에서 이미 today/prev/pct_change dict로 들어옴.
     # 여기서 덮어쓰지 않는다.
+    
     for col in ["VIX3M", "VIX9D"]:
         try:
             val = row.get(col) if col in df.columns else None
@@ -1963,11 +2023,12 @@ def generate_daily_report() -> None:
 
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
     market_data = attach_drift_data_layer(market_data) or market_data
+    market_data = attach_growth_sustainability_layer(market_data, df, today_idx)
     market_data = attach_breadth_layer(market_data, df, today_idx) or market_data
     market_data = attach_leadership_layer(market_data, df, today_idx) or market_data
     market_data = attach_volatility_structure_layer(market_data, df, today_idx) or market_data
     market_data = attach_positioning_layer(market_data) or market_data
-    market_data = attach_positioning_layer(market_data) or market_data
+
 
     print("[DEBUG][POSITIONING AFTER REAL ATTACH]")
     print("SP500_POS_Z =", market_data.get("SP500_POS_Z"))
