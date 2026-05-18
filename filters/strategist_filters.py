@@ -4745,13 +4745,9 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         lines.append("- **⚠️ STATUS:** RISK COMPRESSION")
         lines.append(f"- **Reason:** {compression_reason}")
         lines.append("- **Action:** 신규 추격 금지 / 일부 이익실현 / 베타 노출 축소")
-        lines.append(f"- **Final Multiplier:** {total_multiplier:.2f}x (VIX x Positioning x Confidence)")
-        lines.append(f"- **Confidence Level:** {confidence} (flow_score={flow_score})")
+        lines.append(f"- **Final Multiplier:** {total_multiplier:.2f}x (VIX x Positioning x Credit/Convexity)")
         lines.append(f"- **Slope Intensity:** {pos_slope:.4f}")
-    else:
-        lines.append(f"- **Final Multiplier:** {total_multiplier:.2f}x (VIX x Positioning x Confidence)")
-        lines.append(f"- **Confidence Level:** {confidence} (flow_score={flow_score})")
-        lines.append(f"- **Slope Intensity:** {pos_slope:.4f}")
+  
 
     if pos_notes:
         lines.append(f"- **Positioning Layer:** ⚠️ {', '.join(pos_notes)}")
