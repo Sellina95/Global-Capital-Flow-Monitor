@@ -48,6 +48,14 @@ history_template = {
     "WTI_HIST": [
         70.0, 72.0, 74.0, 73.0, 75.0, 76.0, 74.5, 73.8
     ],
+    "Credit Crisis": {
+        **history_template,
+        "US10Y": {"today": 5.2, "prev": 4.8},
+        "DXY": {"today": 106.0, "prev": 103.0},
+        "VIX": {"today": 38.0, "prev": 24.0},
+        "WTI": {"today": 82.0, "prev": 80.0},
+        "HY_OAS": {"today": 7.5},
+},
 }
 
 # 기존 test_cases = { ... } 를 아래처럼 교체
