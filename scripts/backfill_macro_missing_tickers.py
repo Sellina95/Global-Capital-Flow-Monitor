@@ -1,3 +1,4 @@
+#macro_data.csv 파일에 특정 티커 과거데이터가 없을시 아래 티커에 넣고 돌리면 생성
 import os
 from datetime import datetime, timedelta
 
@@ -14,6 +15,8 @@ BACKFILL_TICKERS = {
     "SMH": "SMH",
     "SOXX": "SOXX",
     "IWM": "IWM",
+    "XLI": "XLI",
+    "XLY": "XLY",
     "VIX3M": "^VIX3M",
     "VIX9D": "^VIX9D",
 }
