@@ -11,7 +11,7 @@
 
 - **Portfolio Stance:** STRONG REDUCE / 20%
 
-- **[14번 구조·수급 괴리]:** 🚨 **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.17). 반전 가능성 상존.
+- **[14번 구조·수급 괴리]:** 🚨 **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.18). 반전 가능성 상존.
 ### 🟢 Current SEW Status
 - **SEW:** RISK_COMPRESSION | ⚠️ Risk Compression 발동 (권장 익스포저 55%)
 - **Event Type:** NORMAL → 정상 상태 / 구조적 리스크 없음
@@ -23,7 +23,6 @@
 
 ### 📌 Interpretation
 - 금일 시장은 **EVENT-WATCHING / INFLATION 환경**입니다.
-- 전일 SEW 기준 기관성 자금 축적이 강화되었습니다 (TRACE_BUILDING, score=4). 금일은 추세 확인 및 선택적 확대 가능성을 점검해야 합니다.
 - 기관성 자금 유입은 **EARLY TRACE(초기 흔적)** 단계로, 이탈 신호가 아니라 초기 관찰 구간입니다.
 - 드리프트 강도가 유의미하여 추세 지속 가능성이 존재합니다.
 - 따라서 **현 수준에서 포지션 유지 및 관망 전략이 적절**합니다.
@@ -45,7 +44,7 @@
 - **Flow:** 👀 EARLY TRACE / score=3
 - **Gamma:** 🟡 TRANSITION
 - **Tactical Action:** HOLD / NONE / LOW
-- **Positioning:** pos_z=2.17
+- **Positioning:** pos_z=2.18
 - **Warning Score:** 1 (6.6 섹터 상관관계 붕괴)
 - **Tactical Why:** No actionable alignment
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence 비정렬 → 방어적 태도 유지 → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=HOLD / Flow=👀 EARLY TRACE(3) / Drift=⚡ STRUCTURAL DRIFT(5) / Gamma=🟡 TRANSITION → Tactical HOLD/MONITOR → 최종판단 변경 없음
@@ -155,9 +154,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-1.21% / 5D=+0.20% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-5.97% / 5D=+1.08% | Strength: MEDIUM
+- **WTI:** 🟡 PULLBACK | Short-term: MIXED | 1D=-5.73% / 5D=+1.34% | Strength: MEDIUM
 - **DXY:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-0.24% / 5D=+1.11% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.29% / 5D=-3.17% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.42% / 5D=-3.05% | Strength: LOW
 
 - **Drift Score:** 5
 - **State:** **⚡ STRUCTURAL DRIFT**
@@ -166,7 +165,7 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟡 PULLBACK / SHORT DOWN
-  - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
+  - Oil (WTI): 🟡 PULLBACK / MIXED
   - Dollar (DXY): 🟡 PULLBACK / SHORT DOWN
   - Gold (GOLD): 🟡 REBOUND / SHORT UP
 
@@ -247,17 +246,17 @@ So What?
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
 - **Raw Flow State:** **👀 EARLY TRACE**
-- **Transition State:** **FLOW_FADE**
-- **Flow Delta:** -1 (prev=4 → current=3)
+- **Transition State:** **👀 EARLY TRACE**
+- **Flow Delta:** +0 (prev=3 → current=3)
 - **Persistence Days:** 1
-- **Transition Note:** 기관성 흐름은 남아 있으나 강도 약화
+- **Transition Note:** 기관성 흐름 상태 유지
 - **Confidence:** **MEDIUM**
 - **Action Bias:** **MONITOR**
 
 - **Drift:** ⚡ STRUCTURAL DRIFT / NEUTRAL / NONE
 - **Gamma:** 🟡 TRANSITION / 🟢 EARLY FLOW WITHOUT SHOCK
 - **SEW:** RISK_COMPRESSION / NORMAL
-- **Positioning (POS_Z):** 2.17
+- **Positioning (POS_Z):** 2.18
 - **Validation Score:** 1 (boost applied: +1)
 
 - **Drivers:**
@@ -307,11 +306,11 @@ So What?
 - **Score:** 0
 - **Label:** LATE_CYCLE_STRAIN
 - **Demand Proxy:** 1
-- **Financing:** -1
+- **Financing:** -2
 - **Energy Burden:** -2
-- **Policy Capacity:** 2
+- **Policy Capacity:** 3
 - **Strategic Interpretation:** Growth momentum is weakening and the cycle is showing strain. Financing, demand, or policy support is not strong enough.
-- **Input Check:** US10Y=4.59499979019165, RealYield=missing, T10Y2Y=missing, WTI=105.41999816894533, DXY=99.2699966430664, LiquidityDir=UP, CreditCalm=None, DriftLabel=UNKNOWN, FredAsof=error: name 'pd' is not defined
+- **Input Check:** US10Y=4.59499979019165, RealYield=2.0, T10Y2Y=0.5, WTI=105.41999816894533, DXY=99.2699966430664, LiquidityDir=UP, CreditCalm=None, DriftLabel=UNKNOWN, FredAsof=2026-05-15
 
 📌 Shadow Note: This filter is observation-only and does not affect Final Exposure, Phase, or Sector Allocation.
 
@@ -377,20 +376,20 @@ So What?
 - **Drift:** ⚡ STRUCTURAL DRIFT / NEUTRAL / NONE
 - **Drift Score:** 5
 - **Flow Score:** 3
-- **Flow Continuity:** TRACE_BUILDING → 👀 EARLY TRACE (FLOW_PERSISTENCE, tilt=+1)
+- **Flow Continuity:** FLOW_FADE → 👀 EARLY TRACE (FLOW_PERSISTENCE, tilt=+1)
 - **Flow Regime Tilt:** +2 / Flow-Gamma Tilt: +2
 
 - **🎯 Final Risk Action:** **STRONG REDUCE**
 - **Risk Budget (0~100):** **30**
-- **Narrative:** 구조=TIGHTENING(스태그플레이션) / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ STRUCTURAL DRIFT (NEUTRAL) / 수급=2.17 ⚠️ 수급 과열 감지 → Phase=EVENT-WATCHING / INFLATION
+- **Narrative:** 구조=TIGHTENING(스태그플레이션) / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ STRUCTURAL DRIFT (NEUTRAL) / 수급=2.18 ⚠️ 수급 과열 감지 → Phase=EVENT-WATCHING / INFLATION
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `TIGHTENING` | **Price(Regime):** `EVENT-WATCHING` | **Bucket:** `MIXED` | **VIX:** `18.43`
-- **Positioning Data:** Z-Score: `2.17` (>1.8 시 Run) | Gamma: `1.50` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
-- **Status:** **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.17). 반전 가능성 상존.
+- **Positioning Data:** Z-Score: `2.18` (>1.8 시 Run) | Gamma: `1.50` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Status:** **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.18). 반전 가능성 상존.
 - **Action Signal:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
 
 ### 🎯 15) Volatility-Controlled Exposure (v3.2)
@@ -400,11 +399,11 @@ So What?
 - **Base Risk Budget (13):** 30
 - **VIX Level:** 18.43 (NORMAL) | **Change:** +6.78%
 - **⚠️ STATUS:** RISK COMPRESSION
-- **Reason:** POS_Z Extreme (2.17)
+- **Reason:** POS_Z Extreme (2.18)
 - **Action:** 신규 추격 금지 / 일부 이익실현 / 베타 노출 축소
 - **Final Multiplier:** 0.72x (VIX x Positioning x Credit/Convexity)
-- **Slope Intensity:** 0.0100
-- **Positioning Layer:** ⚠️ Extreme Positioning Heat(2.17)
+- **Slope Intensity:** 0.0150
+- **Positioning Layer:** ⚠️ Extreme Positioning Heat(2.18)
 - **Brake Drivers:** ⚠️ Extreme Positioning Heat, VIX Spike, VIX Convexity Warning
 
 - **📊 Recommended Exposure:** **20%**
@@ -544,8 +543,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** HIGH
-- **Z-Score (1d):** -1.9489965379616514
-- **Z-Score (5d):** -2.060790949245864
+- **Z-Score (1d):** -1.9490030004612593
+- **Z-Score (5d):** -2.0607916509331723
 
 ### EEM
 - **Crash?** True
@@ -562,8 +561,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.6316865614055291
-- **Z-Score (5d):** -1.421021453627744
+- **Z-Score (1d):** -1.6316847180141214
+- **Z-Score (5d):** -1.4210211507569845
 
 ### EWJ
 - **Crash?** False
