@@ -127,20 +127,22 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
         else final_state.get("credit_calm")
     )
 
-    hy_oas = _to_float(
-        market_data.get("HY_OAS")
-        or market_data.get("hy_oas_today")
-        or final_state.get("hy_oas_today")
+    hy_oas_raw = market_data.get("HY_OAS")
+    if isinstance(hy_oas_raw, dict):
+        hy_oas = _to_float(hy_oas_raw.get("today"))
+    else:
+        hy_oas = _to_float(hy_oas_raw)
+
+    drift_label = (
+        ((market_data.get("DRIFT_DATA") or {}).get("DRIFT") or {}).get("label")
+        or final_state.get("drift_label")
+        or "UNKNOWN"
     )
 
     if credit_calm is None and hy_oas is not None:
         credit_calm = hy_oas < 5.0
 
-    drift_label = (
-        market_data.get("drift_label")
-        or final_state.get("drift_label")
-        or "UNKNOWN"
-    )
+  
 
     demand = 0
     financing = 0
