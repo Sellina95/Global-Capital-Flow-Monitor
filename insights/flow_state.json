@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-05-18 12:28:31",
+  "timestamp": "2026-05-18 12:48:49",
   "flow_state": "FLOW_FADE",
-  "flow_score": 3,
-  "prev_flow_state": "TRACE_BUILDING",
-  "prev_flow_score": 5,
-  "flow_delta": -2,
-  "persistence_days": 2,
-  "transition": "TRACE_BUILDING -> FLOW_FADE",
+  "flow_score": 2,
+  "prev_flow_state": "FLOW_FADE",
+  "prev_flow_score": 3,
+  "flow_delta": -1,
+  "persistence_days": 1,
+  "transition": "FLOW_FADE -> FLOW_FADE",
   "transition_note": "기관성 흐름은 남아 있으나 강도 약화",
-  "raw_flow_state": "👀 EARLY TRACE",
-  "raw_flow_score": 3
+  "raw_flow_state": "🌱 LIGHT TRACE",
+  "raw_flow_score": 2
 }
