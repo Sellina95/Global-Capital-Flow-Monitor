@@ -4,21 +4,26 @@
 
 ## ⚡ Strategic War Room (통합 대응)
 > **시스템 상태: 🚨 ALERT**
-> **판단 요약: 포지셔닝 과열 감지 / Hard Deadman은 아니나 추격보다 리스크 축소 우선**
+> **판단 요약: 데드맨 스위치 발동 / 자산 보호 모드 강제 전환**
+
+### 🕓 Intraday Historical Trigger Log
+- [2026-05-18 13:34:37] ALERT | SEW=DEADMAN | EVENT=NORMAL | credit=CREDIT_CALM(2.76%) | flow=👀 EARLY TRACE -> 👀 EARLY TRACE | flow_delta=0 | persistence=1 | flow_alert=NONE | Exp=0% | 🚨 HARD DEADMAN: Real-time Cross-Asset Shock (spike=1, extreme=2) | spike=1 extreme=2 | corr_break=NO | email=YES | z={'SPY': -0.1113396993100014, 'QQQ': 2.6330406074917376, 'VIX': 0.7472213181660198, 'DXY': -3.9888002239850193, 'WTI': -4.038704496618738}
+👉 해석: 오늘 장중 HARD DEADMAN 이벤트가 발생했으며, 현재도 자산 보호 모드가 유지 중입니다.
+
 ### 🎯 Exposure Framework
 - **Base Exposure (전략 기준): 20%**
-- **Final Exposure (실행 기준): 20%**
+- **Final Exposure (실행 기준): 0%**
 
-- **Portfolio Stance:** STRONG REDUCE / 20%
+- **Portfolio Stance:** EXIT / 0%
 
-- **[14번 구조·수급 괴리]:** 🚨 **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.15). 반전 가능성 상존.
+- **[14번 구조·수급 괴리]:** 🚨 **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.16). 반전 가능성 상존.
 ### 🟢 Current SEW Status
-- **SEW:** RISK_COMPRESSION | ⚠️ Risk Compression 발동 (권장 익스포저 55%)
+- **SEW:** DEADMAN | 🚨 HARD DEADMAN 발동 (익스포저 0% / 자산 보호 모드)
 - **Event Type:** NORMAL → 정상 상태 / 구조적 리스크 없음
-- **Spike Monitor:** Spike 0 / Extreme 0
-- **Current Reason:** ⚠️ CROWDING RISK: POS_Z Extreme (2.15) → Risk Compression (55%)
+- **Spike Monitor:** Spike 1 / Extreme 2
+- **Current Reason:** 🚨 HARD DEADMAN: Real-time Cross-Asset Shock (spike=1, extreme=2)
 
-- **[15번 Hard Deadman]:** ✅ PASS
+- **[15번 데드맨]:** 🚨 ACTIVATED
 - **[14번 수급 시그널]:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
 
 ### 📌 Interpretation
@@ -38,19 +43,19 @@
   - No actionable alignment
 
 ## 🎯 Final Decision (War Room Override)
-- **Final Action:** **STRONG REDUCE**
-- **Final Exposure:** **20%**
+- **Final Action:** **EXIT**
+- **Final Exposure:** **0%**
 - **Base Context:** phase=EVENT-WATCHING / INFLATION / narrative=STRONG REDUCE / base_exposure=20%
-- **SEW:** RISK_COMPRESSION / NORMAL
+- **SEW:** DEADMAN / NORMAL
 - **Divergence:** N/A / **MONITOR REVERSAL (RUN 액션 준비)**
 - **Drift:** ⚡ STRUCTURAL DRIFT / NEUTRAL / NONE / score=5
-- **Flow:** 👀 EARLY TRACE / score=3
+- **Flow:** 👀 EARLY TRACE / score=4
 - **Gamma:** 🟡 TRANSITION
 - **Tactical Action:** HOLD / NONE / LOW
-- **Positioning:** pos_z=2.15
+- **Positioning:** pos_z=2.16
 - **Warning Score:** 1 (6.6 섹터 상관관계 붕괴)
 - **Tactical Why:** No actionable alignment
-- **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence 비정렬 → 방어적 태도 유지 → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=HOLD / Flow=👀 EARLY TRACE(3) / Drift=⚡ STRUCTURAL DRIFT(5) / Gamma=🟡 TRANSITION → Tactical HOLD/MONITOR → 최종판단 변경 없음
+- **Why:** SEW DEADMAN 발동 → 즉시 EXIT / 익스포저 0% → 상위 레이어(SEW/Divergence)가 Narrative보다 우선 → Warning Score 1 → 경미한 이상신호, 모니터링 강화 → Tactical=HOLD / Flow=👀 EARLY TRACE(4) / Drift=⚡ STRUCTURAL DRIFT(5) / Gamma=🟡 TRANSITION → Tactical HOLD/MONITOR → 최종판단 변경 없음
 
 ### 🚩 Market Regime Status
 - **Operational Phase:** ✅ **EVENT-WATCHING / INFLATION**
@@ -156,10 +161,10 @@
 ### 🌊 Drift Monitor (v4)
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
-- **SPY:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-1.21% / 5D=+0.20% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: MIXED | 1D=-5.54% / 5D=+1.54% | Strength: MEDIUM
-- **DXY:** 🟡 PULLBACK | Short-term: MIXED | 1D=-0.22% / 5D=+1.13% | Strength: LOW
-- **GOLD:** 🟡 REBOUND | Short-term: MIXED | 1D=+0.30% / 5D=-3.16% | Strength: LOW
+- **SPY:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.09% / 5D=-0.10% | Strength: LOW
+- **WTI:** 🟡 PULLBACK | Short-term: MIXED | 1D=-5.51% / 5D=+1.57% | Strength: MEDIUM
+- **DXY:** 🟡 PULLBACK | Short-term: MIXED | 1D=-0.21% / 5D=+1.15% | Strength: LOW
+- **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.45% / 5D=-3.02% | Strength: LOW
 
 - **Drift Score:** 5
 - **State:** **⚡ STRUCTURAL DRIFT**
@@ -167,14 +172,14 @@
 - **SEW Combo Signal:** NONE
 
 - **Market Drift Summary:**
-  - Equity (SPY): 🟡 PULLBACK / SHORT DOWN
+  - Equity (SPY): 🔴 DOWN / SHORT DOWN
   - Oil (WTI): 🟡 PULLBACK / MIXED
   - Dollar (DXY): 🟡 PULLBACK / MIXED
-  - Gold (GOLD): 🟡 REBOUND / MIXED
+  - Gold (GOLD): 🟡 REBOUND / SHORT UP
 
 - **Drivers:**
   - Credit supports risk
-  - Defensives lagging
+  - Sector breadth expanding
   - Dollar not restrictive
   - WTI shock
 
@@ -210,12 +215,12 @@ So What?
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** China_Trade_2018
-- **Cosine Similarity Score:** 0.464
+- **Cosine Similarity Score:** 0.441
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - China_Trade_2018: 0.464
-  - Taiwan_Tension: 0.403
-  - Ukraine_2022: 0.364
+  - China_Trade_2018: 0.441
+  - Taiwan_Tension: 0.348
+  - Ukraine_2022: 0.337
 - **Top Drivers:**
   - EMB: z_used=+1.48 (z1d=-1.58, z5d=-1.33, raw_w=0.12, norm_w=0.09) → contrib=+0.14
   - EEM: z_used=+1.63 (z1d=-1.82, z5d=-1.34, raw_w=0.10, norm_w=0.08) → contrib=+0.13
@@ -235,38 +240,40 @@ So What?
 - **주의:** Dealer Gamma Bias 숫자와 Pseudo Gamma State는 서로 다른 레이어
 
 - **Pseudo Gamma State:** 🟡 TRANSITION
-- **Dealer Gamma Bias:** 1.50 (NEUTRAL / transition zone)
+- **Dealer Gamma Bias:** 1.49 (NEUTRAL / transition zone)
 - **Bias:** 초기 방향성 형성 / 감마 전환 구간
 - **Strategy:** 포지션 확대 신중 / 초기 진입 구간
 
 - **Drift Score:** 5 (⚡ STRUCTURAL DRIFT)
 - **VIX:** 18.43000030517578
-- **SEW:** RISK_COMPRESSION / NORMAL
+- **SEW:** DEADMAN / NORMAL
 
-- **🚀 Combo Signal:** 🟢 EARLY FLOW WITHOUT SHOCK
+- **🚀 Combo Signal:** ⚠️ SHOCK but gamma not fully negative
 
 ### 🏦 Institutional Flow Engine (v2-minimal)
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
 - **Raw Flow State:** **👀 EARLY TRACE**
-- **Transition State:** **👀 EARLY TRACE**
-- **Flow Delta:** +0 (prev=3 → current=3)
-- **Persistence Days:** 1
-- **Transition Note:** 기관성 흐름 상태 유지
+- **Transition State:** **TRACE_BUILDING**
+- **Flow Delta:** +1 (prev=3 → current=4)
+- **Persistence Days:** 2
+- **Transition Note:** 기관성 흐름이 전일 대비 강화
 - **Confidence:** **MEDIUM**
 - **Action Bias:** **MONITOR**
 
 - **Drift:** ⚡ STRUCTURAL DRIFT / NEUTRAL / NONE
-- **Gamma:** 🟡 TRANSITION / 🟢 EARLY FLOW WITHOUT SHOCK
-- **SEW:** RISK_COMPRESSION / NORMAL
-- **Positioning (POS_Z):** 2.15
-- **Validation Score:** 1 (boost applied: +1)
+- **Gamma:** 🟡 TRANSITION / ⚠️ SHOCK but gamma not fully negative
+- **SEW:** DEADMAN / NORMAL
+- **Positioning (POS_Z):** 2.16
+- **Validation Score:** 3 (boost applied: +2)
 
 - **Drivers:**
   - Drift strong
   - Gamma transition
   - Positioning overheated
+  - Cross-asset risk participation
   - Credit confirms risk appetite
+  - Leadership breadth expanding
 
 ### 🎯 8) Incentive Filter (Wall St. Logic)
 
@@ -368,7 +375,7 @@ So What?
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCIΔ +0.000 / DXYΔ +0.390 / US10YΔ +0.134 (스태그플레이션)
-- **Sentiment (Fear&Greed):** 59.5838384067533 (NEUTRAL)
+- **Sentiment (Fear&Greed):** 59.56700362162455 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Structural Regime:** INFLATION_PRESSURE
@@ -377,21 +384,21 @@ So What?
 - **[SPECIAL ALERT]**: **⚠️ 에너지 비용 전이** (Structural Cap: 40)
 - **Drift:** ⚡ STRUCTURAL DRIFT / NEUTRAL / NONE
 - **Drift Score:** 5
-- **Flow Score:** 3
+- **Flow Score:** 4
 - **Flow Continuity:** 👀 EARLY TRACE → 👀 EARLY TRACE (FLOW_PERSISTENCE, tilt=+1)
 - **Flow Regime Tilt:** +2 / Flow-Gamma Tilt: +2
 
 - **🎯 Final Risk Action:** **STRONG REDUCE**
 - **Risk Budget (0~100):** **30**
-- **Narrative:** 구조=TIGHTENING(스태그플레이션) / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ STRUCTURAL DRIFT (NEUTRAL) / 수급=2.15 ⚠️ 수급 과열 감지 → Phase=EVENT-WATCHING / INFLATION
+- **Narrative:** 구조=TIGHTENING(스태그플레이션) / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=⚡ STRUCTURAL DRIFT (NEUTRAL) / 수급=2.16 ⚠️ 수급 과열 감지 → Phase=EVENT-WATCHING / INFLATION
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `TIGHTENING` | **Price(Regime):** `EVENT-WATCHING` | **Bucket:** `MIXED` | **VIX:** `18.43`
-- **Positioning Data:** Z-Score: `2.15` (>1.8 시 Run) | Gamma: `1.50` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
-- **Status:** **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.15). 반전 가능성 상존.
+- **Positioning Data:** Z-Score: `2.16` (>1.8 시 Run) | Gamma: `1.49` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Status:** **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.16). 반전 가능성 상존.
 - **Action Signal:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
 
 ### 🎯 15) Volatility-Controlled Exposure (v3.2)
@@ -401,11 +408,11 @@ So What?
 - **Base Risk Budget (13):** 30
 - **VIX Level:** 18.43 (NORMAL) | **Change:** +6.78%
 - **⚠️ STATUS:** RISK COMPRESSION
-- **Reason:** POS_Z Extreme (2.15)
+- **Reason:** POS_Z Extreme (2.16)
 - **Action:** 신규 추격 금지 / 일부 이익실현 / 베타 노출 축소
 - **Final Multiplier:** 0.72x (VIX x Positioning x Credit/Convexity)
-- **Slope Intensity:** 0.0000
-- **Positioning Layer:** ⚠️ Extreme Positioning Heat(2.15)
+- **Slope Intensity:** 0.0050
+- **Positioning Layer:** ⚠️ Extreme Positioning Heat(2.16)
 - **Brake Drivers:** ⚠️ Extreme Positioning Heat, VIX Spike, VIX Convexity Warning
 
 - **📊 Recommended Exposure:** **20%**
@@ -434,27 +441,28 @@ So What?
 **Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM
 
 **Macro Profile:** STAGFLATION_STRESS
-**Macro Inputs Debug:** phase=EVENT-WATCHING / INFLATION / us10y_pct=+3.00% / dxy_pct=+0.39% / wti_pct=+4.20% / vix=18.43 / liq_easy=True / liq_tight=False / credit_calm=True / flow_score=3
+**Macro Inputs Debug:** phase=EVENT-WATCHING / INFLATION / us10y_pct=+3.00% / dxy_pct=+0.39% / wti_pct=+4.20% / vix=18.43 / liq_easy=True / liq_tight=False / credit_calm=True / flow_score=4
 
-**Flow Overlay:** flow_score=3 / flow_state=👀 EARLY TRACE / drift_label=NEUTRAL / gamma=🟡 TRANSITION
+**Flow Overlay:** flow_score=4 / flow_state=👀 EARLY TRACE / drift_label=NEUTRAL / gamma=🟡 TRANSITION
+**Flow Notes:** NEUTRAL + FLOW ACTIVE → XLK/XLI 소폭 가점 | Gamma TRANSITION → 초기 리더 소폭 가점
 
 **Overweight:** Technology, Materials
 
 **Underweight:** Consumer Discretionary, Industrials, Financials, Real Estate, Utilities, Energy
 
 **Scoreboard:**
-- Technology: +1.0  (+2 LIQ, -1 PHASE, +2 MOM, = +1.0)
+- Technology: +1.1  (+2 LIQ, -1 PHASE, +1 FLOW, +2 MOM, = +1.1)
 - Materials: +0.2  (+0.5 PHASE, = +0.2)
 - Energy: -0.1  (+0.5 PHASE, +1 MOM, = -0.1)
 - Utilities: -0.8  (-1 LIQ, -1 PHASE, = -0.8)
 - Real Estate: -1.3  (-1 PHASE, -2 MOM, = -1.3)
 - Financials: -1.3  (+1 LIQ, +2 CURVE, -2 MOM, = -1.3)
-- Industrials: -1.5  (+1.5 LIQ, +1 CURVE, -2 MOM, = -1.5)
+- Industrials: -1.5  (+1.5 LIQ, +1 CURVE, +0.5 FLOW, -2 MOM, = -1.5)
 - Consumer Discretionary: -2.1  (+1.5 LIQ, -0.5 PHASE, -2 MOM, = -2.1)
 
 **Rationale (Why the score exists: 섹터 점수의 핵심 드라이버)**
 - OW Technology: +2: 유동성 완화 → 성장주/베타 우호
-- OW Technology: +2: Relative Strength 강세 (vs SPY) → 자금 유입 확인
+- OW Technology: +0.5: Flow Overlay → 초기 흐름에서 성장주 선행 반응
 - OW Materials: +0.5: Stagflation Stress → 원자재 민감 섹터 일부 우호
 - UW Consumer Discretionary: THEORY_TRAP → 거시/이론 우호 대비 실제 자금흐름 및 상대강도 약세
 - UW Consumer Discretionary: +1.5: 유동성 완화 → 소비 민감주 우호
@@ -467,7 +475,7 @@ So What?
 - UW Financials: +2: 완만한 스티프닝(0.50) → 예대마진 개선
 
 **Regime Controller:**
-- DISLOCATION (avg_divergence=-0.91, dispersion=1.82)
+- DISLOCATION (avg_divergence=-0.87, dispersion=1.82)
 Correlation Break: True / Leader=UNKNOWN
 - Interpretation: 섹터별 괴리가 큰 불안정 장세 → 포지션 축소와 리더 섹터 검증 필요
 - Correlation Break: True / Leader=UNKNOWN
@@ -478,7 +486,7 @@ Correlation Break: True / Leader=UNKNOWN
 - Health Care: NEUTRAL (theory=+0.0, flow=+0.0, final=+0.0)
 - Real Estate: AVOID (theory=-1.0, flow=-1.4, final=-1.3)
 - Financials: THEORY_TRAP (theory=+3.0, flow=-1.4, final=-1.3)
-- Industrials: THEORY_TRAP (theory=+2.5, flow=-1.4, final=-1.5)
+- Industrials: THEORY_TRAP (theory=+2.5, flow=-1.2, final=-1.5)
 - Consumer Discretionary: THEORY_TRAP (theory=+1.0, flow=-1.4, final=-2.1)
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
@@ -487,34 +495,34 @@ Correlation Break: True / Leader=UNKNOWN
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Technology | +1.5 | ALIGNED | **12.0%** | DELEVERAGE |
-| Materials | +0.2 | ALIGNED | **2.0%** | DELEVERAGE |
-| **Cash & Hedge** | - | - | **86.0%** | DEFENSIVE |
+| Technology | +1.6 | ALIGNED | **12.0%** | DELEVERAGE |
+| Materials | +0.2 | ALIGNED | **1.9%** | DELEVERAGE |
+| **Cash & Hedge** | - | - | **86.1%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 - **Regime Cap Profile:** STAGFLATION_STRESS
 - **Regime Cap Applied:**
-  - Technology: 18.0% → 12.0% (-6.0%)
+  - Technology: 18.1% → 12.0% (-6.1%)
 - **Strategic Cash (15):** 80.0%
-- **Tactical Reserve (Cap / Unallocated):** 6.0%
+- **Tactical Reserve (Cap / Unallocated):** 6.1%
 
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Momentum → Score → Current Weight
-1. Materials (priority_score=-0.1, score=0.21, weight=2.0%, div=ALIGNED, mom=0)
-2. Technology (priority_score=-1.98, score=1.47, weight=12.0%, div=ALIGNED, mom=2)
+1. Materials (priority_score=-0.1, score=0.21, weight=1.9%, div=ALIGNED, mom=0)
+2. Technology (priority_score=-2.04, score=1.6, weight=12.0%, div=ALIGNED, mom=2)
 
 **Leveraging Priority Preview:**
 - 기준: Score → Momentum → Positive Divergence
-1. Technology (priority_score=4.47, score=1.47, weight=12.0%, div=ALIGNED, mom=2)
-2. Materials (priority_score=0.21, score=0.21, weight=2.0%, div=ALIGNED, mom=0)
+1. Technology (priority_score=4.60, score=1.6, weight=12.0%, div=ALIGNED, mom=2)
+2. Materials (priority_score=0.21, score=0.21, weight=1.9%, div=ALIGNED, mom=0)
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action | Divergence | Classification |
 | :--- | :---: | :---: | :--- | :--- | :--- |
 | Technology | XLK | 12.0% | ADD | ALIGNED | ALIGNED |
-| Materials | XLB | 2.0% | MICRO | ALIGNED | ALIGNED |
+| Materials | XLB | 1.9% | MICRO | ALIGNED | ALIGNED |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -544,15 +552,15 @@ Correlation Break: True / Leader=UNKNOWN
 
 ### BND
 - **Crash?** False
-- **Risk Level:** HIGH
-- **Z-Score (1d):** -1.9489965379616514
-- **Z-Score (5d):** -2.060790949245864
+- **Risk Level:** NORMAL
+- **Z-Score (1d):** 0.3021485999648983
+- **Z-Score (5d):** -1.3911654646638858
 
 ### EEM
 - **Crash?** True
 - **Risk Level:** EXTREME
-- **Z-Score (1d):** -1.8188290128438034
-- **Z-Score (5d):** -1.3423102965390517
+- **Z-Score (1d):** 0.42488188011575523
+- **Z-Score (5d):** -1.052316365672955
 
 ### EIS
 - **Crash?** True
@@ -563,35 +571,35 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.6316847180141214
-- **Z-Score (5d):** -1.4210211507569845
+- **Z-Score (1d):** 0.29430372990186476
+- **Z-Score (5d):** -1.080216618951183
 
 ### EWJ
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.669205820392232
-- **Z-Score (5d):** -0.4245254483648674
+- **Z-Score (1d):** -0.00026737130597520386
+- **Z-Score (5d):** -0.4422236794556176
 
 ### FXI
 - **Crash?** True
 - **Risk Level:** EXTREME
-- **Z-Score (1d):** -2.0343919125863374
-- **Z-Score (5d):** -1.0341037227232401
+- **Z-Score (1d):** 0.25563285738766156
+- **Z-Score (5d):** -1.148007318381703
 
 ### GLD
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.206049017302294
-- **Z-Score (5d):** -0.7968536399541987
+- **Z-Score (1d):** 0.50228126425896
+- **Z-Score (5d):** -0.6518510145875737
 
 ### SPY
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.4388155112602363
-- **Z-Score (5d):** -0.24656820366513002
+- **Z-Score (1d):** -0.16045394900312476
+- **Z-Score (5d):** -0.35675112981356205
 
 ### VXX
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.1790844033244116
-- **Z-Score (5d):** -0.10125749031070685
+- **Z-Score (1d):** -0.28994502110542186
+- **Z-Score (5d):** -0.4503202231731399
