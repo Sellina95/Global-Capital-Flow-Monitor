@@ -106,7 +106,14 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
         or "UNKNOWN"
     )
     credit_calm = market_data.get("credit_calm", None)
-    drift_label = market_data.get("drift_label", "UNKNOWN")
+
+    if credit_calm is None:
+        hy_oas = _to_float(market_data.get("HY_OAS"))
+        if hy_oas is not None:
+            credit_calm = hy_oas < 5.0
+    else:
+        hy_oas = _to_float(market_data.get("HY_OAS"))
+        drift_label = market_data.get("drift_label", "UNKNOWN")
 
     demand = 0
     financing = 0
@@ -174,6 +181,7 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
         f"DXY={dxy if dxy is not None else 'missing'}, "
         f"LiquidityDir={liquidity_dir}, "
         f"CreditCalm={credit_calm}, "
+        f"HY_OAS={hy_oas if hy_oas is not None else 'missing'}, "
         f"DriftLabel={drift_label}, "
         f"FredAsof={fred_asof}"
     )
