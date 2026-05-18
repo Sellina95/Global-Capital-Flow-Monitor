@@ -51,23 +51,55 @@ def _build_interpretation(label: str, demand: int, financing: int, energy: int, 
         "Structural stress is elevated. Growth support is weak while macro burdens are rising."
     )
 
-
 def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
     """
     12.5) Growth Sustainability Filter [SHADOW]
     - 출력 전용
     - Final Exposure / Phase / Sector Allocation 영향 없음
+    - 기존 market_data 구조를 건드리지 않고, 필요한 FRED 값은 파일에서 직접 참조
     """
 
+    # 1) Macro price inputs
     us10y = _to_float(market_data.get("GROWTH_US10Y"))
-    real_yield = _to_float(
-        market_data.get("GROWTH_DFII10")
-        or market_data.get("GROWTH_REAL_RATE")
-    )
-    curve = _to_float(market_data.get("GROWTH_T10Y2Y"))
     oil = _to_float(market_data.get("GROWTH_WTI"))
     dxy = _to_float(market_data.get("GROWTH_DXY"))
-    
+
+    # 2) FRED inputs: read directly without modifying market_data
+    real_yield = None
+    curve = None
+    fred_asof = "missing"
+
+    try:
+        fred_df = pd.read_csv("data/fred_macro_sctorallo.csv")
+
+        if "date" in fred_df.columns and not fred_df.empty:
+            fred_df["date"] = pd.to_datetime(fred_df["date"])
+            fred_df = fred_df.sort_values("date")
+
+            target_date = pd.to_datetime(
+                market_data.get("date")
+                or market_data.get("_DATA_ASOF")
+                or market_data.get("_GROWTH_ASOF")
+                or fred_df["date"].max()
+            )
+
+            fred_valid = fred_df[fred_df["date"] <= target_date]
+
+            if not fred_valid.empty:
+                fred_row = fred_valid.iloc[-1]
+                fred_asof = pd.to_datetime(fred_row["date"]).strftime("%Y-%m-%d")
+
+                real_yield = _to_float(
+                    fred_row.get("DFII10")
+                    if pd.notna(fred_row.get("DFII10", None))
+                    else fred_row.get("REAL_RATE")
+                )
+
+                curve = _to_float(fred_row.get("T10Y2Y"))
+
+    except Exception as e:
+        fred_asof = f"error: {e}"
+
     liquidity_dir = (
         market_data.get("liquidity_dir")
         or market_data.get("NET_LIQ_DIR")
@@ -133,7 +165,7 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
             policy -= 1
 
     total = demand + financing + energy + policy
-    
+
     input_summary = (
         f"US10Y={us10y if us10y is not None else 'missing'}, "
         f"RealYield={real_yield if real_yield is not None else 'missing'}, "
@@ -142,9 +174,9 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
         f"DXY={dxy if dxy is not None else 'missing'}, "
         f"LiquidityDir={liquidity_dir}, "
         f"CreditCalm={credit_calm}, "
-        f"DriftLabel={drift_label}"
+        f"DriftLabel={drift_label}, "
+        f"FredAsof={fred_asof}"
     )
-    
 
     if total >= 5:
         label = "DURABLE_GROWTH"
@@ -158,6 +190,21 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
     interpretation = _build_interpretation(label, demand, financing, energy, policy)
 
     report = f"""
+### 12.5) Growth Sustainability Filter [SHADOW]
+- **Score:** {total}
+- **Label:** {label}
+- **Demand Proxy:** {demand}
+- **Financing:** {financing}
+- **Energy Burden:** {energy}
+- **Policy Capacity:** {policy}
+- **Strategic Interpretation:** {interpretation}
+- **Input Check:** {input_summary}
+
+📌 Shadow Note: This filter is observation-only and does not affect Final Exposure, Phase, or Sector Allocation.
+"""
+
+    return report
+
 ### 12.5) Growth Sustainability Filter [SHADOW]
 - **Score:** {total}
 - **Label:** {label}
