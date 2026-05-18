@@ -363,14 +363,14 @@ def map_to_portfolio_regime(policy_state: str, macro_narrative: str, tape: Dict[
     if (
         vix_z >= 3
         and dxy_z >= 2
-        and (hy_status in ["HOT", "FRACTURE"])
+        and hy_status == "FRACTURE"
     ):
         return "SHOCK RISK-OFF / SYSTEMIC"
     
     if (
         vix_z >= 2.5
         and us10y_z >= 2
-        and wti_z >= 2
+        and wti_z >= 1.5
     ):
         return "SHOCK RISK-OFF / INFLATION"
     
