@@ -51,6 +51,7 @@ def _build_interpretation(label: str, demand: int, financing: int, energy: int, 
         "Structural stress is elevated. Growth support is weak while macro burdens are rising."
     )
 
+
 def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
     """
     12.5) Growth Sustainability Filter [SHADOW]
@@ -58,6 +59,8 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
     - Final Exposure / Phase / Sector Allocation 영향 없음
     - 기존 market_data 구조를 건드리지 않고, 필요한 FRED 값은 파일에서 직접 참조
     """
+
+    final_state = market_data.get("FINAL_STATE", {}) or {}
 
     # 1) Macro price inputs
     us10y = _to_float(market_data.get("GROWTH_US10Y"))
@@ -103,17 +106,30 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
     liquidity_dir = (
         market_data.get("liquidity_dir")
         or market_data.get("NET_LIQ_DIR")
+        or final_state.get("liquidity_dir")
         or "UNKNOWN"
     )
-    credit_calm = market_data.get("credit_calm", None)
 
-    if credit_calm is None:
-        hy_oas = _to_float(market_data.get("HY_OAS"))
-        if hy_oas is not None:
-            credit_calm = hy_oas < 5.0
-    else:
-        hy_oas = _to_float(market_data.get("HY_OAS"))
-        drift_label = market_data.get("drift_label", "UNKNOWN")
+    credit_calm = (
+        market_data.get("credit_calm")
+        if market_data.get("credit_calm") is not None
+        else final_state.get("credit_calm")
+    )
+
+    hy_oas = _to_float(
+        market_data.get("HY_OAS")
+        or market_data.get("hy_oas_today")
+        or final_state.get("hy_oas_today")
+    )
+
+    if credit_calm is None and hy_oas is not None:
+        credit_calm = hy_oas < 5.0
+
+    drift_label = (
+        market_data.get("drift_label")
+        or final_state.get("drift_label")
+        or "UNKNOWN"
+    )
 
     demand = 0
     financing = 0
@@ -198,7 +214,6 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
     interpretation = _build_interpretation(label, demand, financing, energy, policy)
 
     report = f"""
-    
 
 ### 12.5) Growth Sustainability Filter [SHADOW]
 - **Score:** {total}
