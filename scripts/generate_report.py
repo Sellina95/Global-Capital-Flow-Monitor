@@ -734,7 +734,7 @@ def attach_growth_sustainability_layer(
 ) -> Dict[str, Any]:
     """
     12.5 Growth Sustainability Shadow 전용
-    - macro_data row에서 성장 지속성 판단에 필요한 원자료 주입
+    기존 market_data 키는 절대 덮어쓰지 않고 GROWTH_* 키만 주입
     """
 
     if market_data is None:
@@ -754,12 +754,12 @@ def attach_growth_sustainability_layer(
         market_data["_GROWTH_ASOF"] = None
 
     mapping = {
-        "US10Y": "US10Y",
-        "DXY": "DXY",
-        "WTI": "WTI",
-        "T10Y2Y": "T10Y2Y",
-        "DFII10": "DFII10",
-        "REAL_RATE": "REAL_RATE",
+        "US10Y": "GROWTH_US10Y",
+        "DXY": "GROWTH_DXY",
+        "WTI": "GROWTH_WTI",
+        "T10Y2Y": "GROWTH_T10Y2Y",
+        "DFII10": "GROWTH_DFII10",
+        "REAL_RATE": "GROWTH_REAL_RATE",
     }
 
     for src_col, target_key in mapping.items():
@@ -772,20 +772,16 @@ def attach_growth_sustainability_layer(
 
     print("[DEBUG][GROWTH ATTACHED]", {
         "asof": market_data.get("_GROWTH_ASOF"),
-        "US10Y": market_data.get("US10Y"),
-        "DXY": market_data.get("DXY"),
-        "WTI": market_data.get("WTI"),
-        "T10Y2Y": market_data.get("T10Y2Y"),
-        "DFII10": market_data.get("DFII10"),
-        "REAL_RATE": market_data.get("REAL_RATE"),
-        "liquidity_dir": market_data.get("liquidity_dir"),
-        "NET_LIQ_DIR": market_data.get("NET_LIQ_DIR"),
-        "credit_calm": market_data.get("credit_calm"),
-        "drift_label": market_data.get("drift_label"),
+        "GROWTH_US10Y": market_data.get("GROWTH_US10Y"),
+        "GROWTH_DXY": market_data.get("GROWTH_DXY"),
+        "GROWTH_WTI": market_data.get("GROWTH_WTI"),
+        "GROWTH_T10Y2Y": market_data.get("GROWTH_T10Y2Y"),
+        "GROWTH_DFII10": market_data.get("GROWTH_DFII10"),
+        "GROWTH_REAL_RATE": market_data.get("GROWTH_REAL_RATE"),
     })
 
     return market_data
-    
+
 def attach_volatility_structure_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
