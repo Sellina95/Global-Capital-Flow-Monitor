@@ -23,9 +23,6 @@
 
 ### 📌 Interpretation
 - 금일 시장은 **EVENT-WATCHING / INFLATION 환경**입니다.
-- 전일 SEW 기준 기관성 자금 축적이 강화되었습니다 (TRACE_BUILDING, score=3). 금일은 추세 확인 및 선택적 확대 가능성을 점검해야 합니다.
-- ⚠️ 전일 대비 기관성 흐름이 약화되었습니다 (TRACE_BUILDING → 🌱 LIGHT TRACE). 노이즈성 신호였는지 확인이 필요합니다.
-- ⚠️ 전일 대비 기관성 흐름이 약화되었습니다 (TRACE_BUILDING → 🌱 LIGHT TRACE). 전일 신호의 지속성 재검토가 필요합니다.
 - 기관성 자금 흐름은 아직 뚜렷하지 않아, 공격적 확장에는 신중함이 필요합니다.
 - 드리프트 강도가 유의미하여 추세 지속 가능성이 존재합니다.
 - 따라서 **현 수준에서 포지션 유지 및 관망 전략이 적절**합니다.
@@ -156,9 +153,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-1.21% / 5D=+0.20% | Strength: LOW
-- **WTI:** 🟡 PULLBACK | Short-term: MIXED | 1D=-2.19% / 5D=+5.14% | Strength: MEDIUM
-- **DXY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.06% / 5D=+1.42% | Strength: LOW
-- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.33% / 5D=-3.77% | Strength: MEDIUM
+- **WTI:** 🟡 PULLBACK | Short-term: SHORT DOWN | 1D=-2.62% / 5D=+4.68% | Strength: MEDIUM
+- **DXY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.05% / 5D=+1.40% | Strength: LOW
+- **GOLD:** 🔴 DOWN | Short-term: SHORT UP | 1D=-0.24% / 5D=-3.68% | Strength: LOW
 
 - **Drift Score:** 3
 - **State:** **👀 EARLY DRIFT**
@@ -167,9 +164,9 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟡 PULLBACK / SHORT DOWN
-  - Oil (WTI): 🟡 PULLBACK / MIXED
-  - Dollar (DXY): 🟢 UP / SHORT UP
-  - Gold (GOLD): 🔴 DOWN / SHORT DOWN
+  - Oil (WTI): 🟡 PULLBACK / SHORT DOWN
+  - Dollar (DXY): 🟢 UP / SHORT DOWN
+  - Gold (GOLD): 🔴 DOWN / SHORT UP
 
 - **Drivers:**
   - Credit supports risk
@@ -247,10 +244,10 @@ So What?
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
 - **Raw Flow State:** **🌱 LIGHT TRACE**
-- **Transition State:** **FLOW_FADE**
-- **Flow Delta:** -1 (prev=3 → current=2)
+- **Transition State:** **🌱 LIGHT TRACE**
+- **Flow Delta:** +0 (prev=2 → current=2)
 - **Persistence Days:** 1
-- **Transition Note:** 기관성 흐름은 남아 있으나 강도 약화
+- **Transition Note:** 기관성 흐름 상태 유지
 - **Confidence:** **LOW-MEDIUM**
 - **Action Bias:** **OBSERVE**
 
@@ -366,18 +363,18 @@ So What?
 - **Sentiment (Fear&Greed):** 59.54643395438248 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
-- **Structural Regime:** N/A
+- **Structural Regime:** INFLATION_PRESSURE
 - **Operational Phase:** EVENT-WATCHING / INFLATION (Cap: 30)
-- **Macro Tilt:** +0
+- **Macro Tilt:** -6
 - **[SPECIAL ALERT]**: **⚠️ 에너지 비용 전이** (Structural Cap: 40)
 - **Drift:** 👀 EARLY DRIFT / NEUTRAL / NONE
 - **Drift Score:** 3
 - **Flow Score:** 2
-- **Flow Continuity:** TRACE_BUILDING → 🌱 LIGHT TRACE (FLOW_FADE, tilt=-3)
+- **Flow Continuity:** FLOW_FADE → 🌱 LIGHT TRACE (N/A, tilt=+0)
 - **Flow Regime Tilt:** +1 / Flow-Gamma Tilt: +0
 
 - **🎯 Final Risk Action:** **STRONG REDUCE**
-- **Risk Budget (0~100):** **30**
+- **Risk Budget (0~100):** **28**
 - **Narrative:** 구조=TIGHTENING(스태그플레이션) / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=👀 EARLY DRIFT (NEUTRAL) / 수급=2.01 ⚠️ 수급 과열 감지 → Phase=EVENT-WATCHING / INFLATION
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
@@ -393,7 +390,7 @@ So What?
 - **정의:** 13번 Risk Budget 실행 브레이크 레이어
 - **추가 이유:** 전략 판단(13) 이후 실제 진입 강도를 조절하기 위함
 
-- **Base Risk Budget (13):** 30
+- **Base Risk Budget (13):** 28
 - **VIX Level:** 18.43 (NORMAL) | **Change:** +6.78%
 - **⚠️ STATUS:** RISK COMPRESSION
 - **Reason:** POS_Z Extreme (2.01)
@@ -542,8 +539,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** HIGH
-- **Z-Score (1d):** -1.9490030004612593
-- **Z-Score (5d):** -2.0607916509331723
+- **Z-Score (1d):** -1.949002627505544
+- **Z-Score (5d):** -2.0607919403493478
 
 ### EEM
 - **Crash?** True
