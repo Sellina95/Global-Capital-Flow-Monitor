@@ -12,6 +12,7 @@ from filters.positioning_stress import positioning_stress_filter
 import numpy as np
 from pathlib import Path
 
+
 import pandas as pd
 import math
 
@@ -4533,6 +4534,9 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     exposure = risk_budget
     brake_drivers = []
     pos_notes = []
+    
+    macro_narrative = str(market_data.get("MACRO_NARRATIVE", "N/A") or "N/A").upper()
+    cross_asset_tape = market_data.get("CROSS_ASSET_TAPE", {}) or {}
 
     # --------------------------------------------------
     # 0️⃣ Hard Deadman / Soft Compression 분리
