@@ -2353,13 +2353,18 @@ def generate_daily_report() -> None:
     # 🚩 Market Regime Status (여기 넣기)
     # -------------------------
     lines.append("### 🚩 Market Regime Status")
+
+    current_operational = market_data.get("MARKET_REGIME", "N/A")
+    current_structural = market_data.get("MACRO_NARRATIVE", "N/A")
+    
     if regime_result.get("status") == "DETECTED":
         lines.append(
-            f"- **국면 전환 감지:** 🚨 **{regime_result.get('prev_regime')}** → **{regime_result.get('current_regime')}**"
+            f"- **국면 전환 감지:** 🚨 **{regime_result.get('prev_regime')}** → **{current_operational}**"
         )
     else:
-        lines.append(f"- **현재 국면 유지:** ✅ **{regime_result.get('current_regime')}**")
+        lines.append(f"- **Operational Phase:** ✅ **{current_operational}**")
     
+    lines.append(f"- **Structural Regime:** **{current_structural}**")
     lines.append("")
     lines.append("---")
     lines.append("")
