@@ -130,6 +130,18 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
             policy -= 1
 
     total = demand + financing + energy + policy
+    
+    input_summary = (
+        f"US10Y={us10y if us10y is not None else 'missing'}, "
+        f"RealYield={real_yield if real_yield is not None else 'missing'}, "
+        f"T10Y2Y={curve if curve is not None else 'missing'}, "
+        f"WTI={oil if oil is not None else 'missing'}, "
+        f"DXY={dxy if dxy is not None else 'missing'}, "
+        f"LiquidityDir={liquidity_dir}, "
+        f"CreditCalm={credit_calm}, "
+        f"DriftLabel={drift_label}"
+    )
+    
 
     if total >= 5:
         label = "DURABLE_GROWTH"
@@ -151,6 +163,7 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
 - **Energy Burden:** {energy}
 - **Policy Capacity:** {policy}
 - **Strategic Interpretation:** {interpretation}
+- **Input Check:** {input_summary}
 
 📌 Shadow Note: This filter is observation-only and does not affect Final Exposure, Phase, or Sector Allocation.
 """
