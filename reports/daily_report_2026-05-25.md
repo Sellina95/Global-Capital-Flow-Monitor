@@ -546,8 +546,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.43051144325309765
-- **Z-Score (5d):** 1.0279427946970199
+- **Z-Score (1d):** 0.43051148894027097
+- **Z-Score (5d):** 1.0279436929089392
 
 ### EEM
 - **Crash?** False
@@ -564,8 +564,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3967274306532307
-- **Z-Score (5d):** 0.5923881703939935
+- **Z-Score (1d):** 0.3967271671846621
+- **Z-Score (5d):** 0.5923883266552115
 
 ### EWJ
 - **Crash?** False
