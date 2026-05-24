@@ -104,13 +104,158 @@ def normalize_market_data_structure(market_data):
                 normalized[key] = value
 
     return normalized
-
+    
 # macro_data.csv에 들어있는 키들 (여기서 추가된 지표는 자동으로 읽히지만,
 # 필수 daily macro 라인은 이 KEYS를 기준으로 출력)
 KEYS = ["US10Y", "DXY", "WTI", "VIX", "USDKRW"]
 
 # 리포트 상단에 따로 Liquidity Snapshot 블럭을 띄울지 (Fed Plumbing Filter가 있으니 보통 False 추천)
 SHOW_LIQUIDITY_SNAPSHOT = False
+
+# =========================================================
+# Structural Interpretation Layer (12.5~12.8)
+# =========================================================
+
+def evaluate_growth_sustainability(
+    liquidity_dir=None,
+    hy_oas=None,
+    real_rate=None,
+    dxy=None,
+    breadth_ratio=None,
+):
+    score = 0
+    reasons = []
+
+    if liquidity_dir == "UP":
+        score += 1
+        reasons.append("liquidity improving")
+
+    if hy_oas is not None and hy_oas < 4.5:
+        score += 1
+        reasons.append("credit stress contained")
+
+    if real_rate is not None and real_rate < 2.0:
+        score += 1
+        reasons.append("real yields manageable")
+
+    if dxy is not None and dxy < 105:
+        score += 1
+        reasons.append("USD funding pressure moderate")
+
+    if breadth_ratio is not None and breadth_ratio > 0.995:
+        score += 1
+        reasons.append("broad participation confirmed")
+
+    if score >= 4:
+        state = "STRONG"
+    elif score >= 2:
+        state = "MODERATE"
+    else:
+        state = "FRAGILE"
+
+    return {
+        "state": state,
+        "score": score,
+        "reason": ", ".join(reasons) if reasons else "limited confirmation",
+    }
+
+
+def evaluate_short_covering_risk(
+    vix_change=None,
+    breadth_ratio=None,
+    credit_confirmed=True,
+):
+    score = 0
+    reasons = []
+
+    if vix_change is not None and vix_change < -5:
+        score += 1
+        reasons.append("aggressive volatility compression")
+
+    if breadth_ratio is not None and breadth_ratio < 0.99:
+        score += 1
+        reasons.append("narrow participation")
+
+    if not credit_confirmed:
+        score += 1
+        reasons.append("credit confirmation weak")
+
+    if score >= 2:
+        state = "ELEVATED"
+    elif score == 1:
+        state = "WATCH"
+    else:
+        state = "LOW"
+
+    return {
+        "state": state,
+        "score": score,
+        "reason": ", ".join(reasons) if reasons else "broad demand participation",
+    }
+
+
+def evaluate_breadth_quality(
+    rsp_vs_spy=None,
+    cyclical_confirm=False,
+):
+    score = 0
+    reasons = []
+
+    if rsp_vs_spy is not None and rsp_vs_spy > 0.995:
+        score += 1
+        reasons.append("equal-weight participation improving")
+
+    if cyclical_confirm:
+        score += 1
+        reasons.append("cyclical sectors participating")
+
+    if score == 2:
+        state = "HEALTHY"
+    elif score == 1:
+        state = "MIXED"
+    else:
+        state = "NARROW"
+
+    return {
+        "state": state,
+        "score": score,
+        "reason": ", ".join(reasons) if reasons else "leadership concentrated",
+    }
+
+
+def evaluate_financing_condition(
+    us10y=None,
+    real_rate=None,
+    hy_oas=None,
+):
+    score = 0
+    reasons = []
+
+    if us10y is not None and us10y < 5:
+        score += 1
+        reasons.append("long-end yields stable")
+
+    if real_rate is not None and real_rate < 2.2:
+        score += 1
+        reasons.append("real financing pressure manageable")
+
+    if hy_oas is not None and hy_oas < 5:
+        score += 1
+        reasons.append("credit financing conditions stable")
+
+    if score == 3:
+        state = "SUPPORTIVE"
+    elif score == 2:
+        state = "NEUTRAL"
+    else:
+        state = "TIGHTENING"
+
+    return {
+        "state": state,
+        "score": score,
+        "reason": ", ".join(reasons) if reasons else "financing stress rising",
+    }
+
 
 def build_strategic_interpretation(
     market_data: Dict[str, Any],
@@ -373,6 +518,66 @@ def build_pm_summary(
 
     lines.append(
         f"이에 따라 최종 실행 기준 익스포저는 약 {final_exposure}% 수준으로 유지되었습니다."
+    )
+
+    # =========================================================
+    # Structural Interpretation Layer
+    # =========================================================
+    
+    breadth_ratio = None
+    
+    try:
+        rsp = market_data.get("RSP")
+        spy = market_data.get("SPY")
+    
+        if rsp and spy:
+            breadth_ratio = rsp / spy
+    except Exception:
+        breadth_ratio = None
+    
+    
+    growth_eval = evaluate_growth_sustainability(
+        liquidity_dir=market_data.get("NET_LIQ_DIR"),
+        hy_oas=market_data.get("HY_OAS"),
+        real_rate=market_data.get("REAL_RATE"),
+        dxy=market_data.get("DXY"),
+        breadth_ratio=breadth_ratio,
+    )
+    
+    short_eval = evaluate_short_covering_risk(
+        vix_change=market_data.get("VIX_pct"),
+        breadth_ratio=breadth_ratio,
+        credit_confirmed=market_data.get("CREDIT_CALM", True),
+    )
+    
+    breadth_eval = evaluate_breadth_quality(
+        rsp_vs_spy=breadth_ratio,
+        cyclical_confirm=market_data.get("FLOW_SCORE", 0) >= 4,
+    )
+    
+    financing_eval = evaluate_financing_condition(
+        us10y=market_data.get("US10Y"),
+        real_rate=market_data.get("REAL_RATE"),
+        hy_oas=market_data.get("HY_OAS"),
+    )
+    
+    pm_summary_lines.append("")
+    pm_summary_lines.append("### Structural Interpretation Layer")
+    
+    pm_summary_lines.append(
+        f"- Growth Sustainability: **{growth_eval['state']}** → {growth_eval['reason']}"
+    )
+    
+    pm_summary_lines.append(
+        f"- Short Covering Risk: **{short_eval['state']}** → {short_eval['reason']}"
+    )
+    
+    pm_summary_lines.append(
+        f"- Breadth Quality: **{breadth_eval['state']}** → {breadth_eval['reason']}"
+    )
+    
+    pm_summary_lines.append(
+        f"- Financing Condition: **{financing_eval['state']}** → {financing_eval['reason']}"
     )
 
     return lines
