@@ -123,6 +123,16 @@ def evaluate_growth_sustainability(
     dxy=None,
     breadth_ratio=None,
 ):
+
+    if isinstance(hy_oas, dict):
+        hy_oas = hy_oas.get("today")
+    
+    if isinstance(real_rate, dict):
+        real_rate = real_rate.get("today")
+    
+    if isinstance(dxy, dict):
+        dxy = dxy.get("today")
+
     score = 0
     reasons = []
 
@@ -165,6 +175,11 @@ def evaluate_short_covering_risk(
     breadth_ratio=None,
     credit_confirmed=True,
 ):
+
+    if isinstance(vix_change, dict):
+        vix_change = vix_change.get("pct_change")
+  
+    
     score = 0
     reasons = []
 
@@ -228,6 +243,16 @@ def evaluate_financing_condition(
     real_rate=None,
     hy_oas=None,
 ):
+
+    if isinstance(us10y, dict):
+        us10y = us10y.get("today")
+    
+    if isinstance(real_rate, dict):
+        real_rate = real_rate.get("today")
+    
+    if isinstance(hy_oas, dict):
+        hy_oas = hy_oas.get("today")
+        
     score = 0
     reasons = []
 
