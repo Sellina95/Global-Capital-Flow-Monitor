@@ -164,7 +164,6 @@ def build_strategic_interpretation(
 
     risk_budget = final_state.get("risk_budget", "N/A")
 
-
 	final_exposure = (
         final_action_result.get("final_exposure")
         or final_action_result.get("exposure")
