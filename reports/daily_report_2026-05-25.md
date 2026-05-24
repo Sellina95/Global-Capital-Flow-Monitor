@@ -329,11 +329,11 @@ No significant sector-level correlation break detected.
 
 
 ### 12.6) Flow Authenticity Filter [SHADOW]
-- **Score:** 5
-- **Label:** REAL_ACCUMULATION
-- **Breadth / Participation:** 3
-- **Breadth Note:** RSP-SPY return spread=0.52%p → broad participation
-- **Nasdaq Breadth Note:** QQQE-QQQ return spread=0.55%p → broad Nasdaq participation
+- **Score:** 0
+- **Label:** SHORT_COVERING
+- **Breadth / Participation:** -2
+- **Breadth Note:** XLK only leadership → narrow rally
+- **Nasdaq Breadth Note:** QQQE/QQQ return data missing
 - **Positioning / Gamma:** -2
 - **Credit Confirmation:** 2
 - **Macro Participation:** 2
@@ -343,17 +343,17 @@ No significant sector-level correlation break detected.
 
 
 ### 12.7) Leadership Breadth Filter [SHADOW]
-- **Score:** 6
-- **Label:** BROAD_LEADERSHIP
+- **Score:** 0
+- **Label:** CONCENTRATED_LEADERSHIP
 
 **Leadership Notes**
 - QQQ-SPY spread=0.03%p → neutral growth leadership
-- SMH-QQQ spread=1.06%p → semiconductor participation strong
-- SOXX-QQQ spread=1.98%p → SOX proxy confirms chip breadth
-- IWM-SPY spread=0.54%p → small-cap participation confirms broader risk-on
+- SMH/QQQ return data missing
+- SOXX/QQQ return data missing
+- IWM/SPY return data missing
 - XLF-SPY spread=0.01%p → sector diffusion neutral
-- XLI-SPY spread=0.33%p → sector diffusion positive
-- XLY-SPY spread=0.01%p → sector diffusion neutral
+- XLI/SPY return data missing
+- XLY/SPY return data missing
 
 📌 Shadow Note: This filter checks whether leadership is broadening beyond mega-cap tech/AI. No impact on Final Exposure, Phase, or Allocation.
 
@@ -432,85 +432,92 @@ No significant sector-level correlation break detected.
 
 **Flow Overlay:** flow_score=3 / flow_state=👀 EARLY TRACE / drift_label=NEUTRAL / gamma=🟡 POSITIVE-TRANSITION
 
-**Overweight:** Technology, Consumer Staples, Health Care
+**Overweight:** Technology, Industrials, Consumer Discretionary, Consumer Staples, Health Care
 
-**Underweight:** Consumer Discretionary, Industrials, Financials, Utilities, Real Estate
+**Underweight:** Utilities, Financials, Real Estate
 
 **Scoreboard:**
-- Technology: +1.6  (+2 LIQ, +2 MOM, = +1.6)
-- Consumer Staples: +0.2  (+0.5 PHASE, = +0.2)
-- Health Care: +0.2  (+0.5 PHASE, = +0.2)
-- Real Estate: -0.3  (-1 MOM, = -0.3)
-- Utilities: -0.4  (-1 LIQ, = -0.4)
-- Financials: -1.3  (+1 LIQ, +2 CURVE, -2 MOM, = -1.3)
-- Industrials: -1.5  (+1.5 LIQ, +1 CURVE, -2 MOM, = -1.5)
-- Consumer Discretionary: -1.6  (+1.5 LIQ, -1 MOM, = -1.6)
+- Technology: +1.9  (+2 LIQ, +2 MOM, = +1.9)
+- Industrials: +1.4  (+1.5 LIQ, +1 CURVE, = +1.4)
+- Consumer Discretionary: +0.9  (+1.5 LIQ, = +0.9)
+- Consumer Staples: +0.3  (+0.5 PHASE, = +0.3)
+- Health Care: +0.3  (+0.5 PHASE, = +0.3)
+- Real Estate: -0.2  (-1 MOM, = -0.2)
+- Financials: -0.3  (+1 LIQ, +2 CURVE, -2 MOM, = -0.3)
+- Utilities: -0.6  (-1 LIQ, = -0.6)
 
 **Rationale (Why the score exists: 섹터 점수의 핵심 드라이버)**
 - OW Technology: +2: 유동성 완화 → 성장주/베타 우호
 - OW Technology: +2: Relative Strength 강세 (vs SPY) → 자금 유입 확인
+- OW Industrials: FLOW_WEAK → 이론상 우호하나 실제 자금 유입 확인 부족
+- OW Industrials: +1.5: 유동성 완화 → 경기민감 회복
+- OW Industrials: +1: 완만한 스티프닝(0.43) → 성장 기대 반영
+- OW Consumer Discretionary: +1.5: 유동성 완화 → 소비 민감주 우호
 - OW Consumer Staples: +0.5: Balanced Macro Profile → 방어 보완
-- OW Health Care: +0.5: Balanced Macro Profile → 퀄리티 보완
-- UW Consumer Discretionary: THEORY_TRAP → 거시/이론 우호 대비 실제 자금흐름 및 상대강도 약세
-- UW Consumer Discretionary: +1.5: 유동성 완화 → 소비 민감주 우호
-- UW Consumer Discretionary: -1: Relative Strength 약세 (vs SPY) → 소외 섹터
-- UW Industrials: THEORY_TRAP → 거시/이론 우호 대비 실제 자금흐름 및 상대강도 약세
-- UW Industrials: +1.5: 유동성 완화 → 경기민감 회복
-- UW Industrials: +1: 완만한 스티프닝(0.43) → 성장 기대 반영
+- UW Utilities: -1: 유동성 완화 → 방어주 상대매력 저하
 - UW Financials: THEORY_TRAP → 거시/이론 우호 대비 실제 자금흐름 및 상대강도 약세
 - UW Financials: +1: 유동성 완화 → 위험선호 회복
 - UW Financials: +2: 완만한 스티프닝(0.43) → 예대마진 개선
+- UW Real Estate: -1: Relative Strength 약세 (vs SPY) → 소외 섹터
 
 **Regime Controller:**
-- DISLOCATION (avg_divergence=-1.07, dispersion=1.63)
+- BALANCED (avg_divergence=-0.88, dispersion=1.40)
 Correlation Break: True / Leader=UNKNOWN
-- Interpretation: 섹터별 괴리가 큰 불안정 장세 → 포지션 축소와 리더 섹터 검증 필요
+- Interpretation: 균형 장세 / 강한 방향성보다 선별적 배분 필요
 - Correlation Break: True / Leader=UNKNOWN
 
 **Divergence / Classification Monitor (Theory vs Flow alignment: 이론과 실제 자금흐름 정렬 여부)**
-- Technology: HIGH_CONVICTION_ALIGNED (theory=+2.0, flow=+1.4, final=+1.6)
+- Technology: HIGH_CONVICTION_ALIGNED (theory=+2.0, flow=+1.4, final=+1.9)
+- Industrials: FLOW_WEAK (theory=+2.5, flow=+0.0, final=+1.4)
 - Communication Services: NEUTRAL (theory=+0.0, flow=+0.0, final=+0.0)
 - Energy: NEUTRAL (theory=+0.0, flow=+0.0, final=+0.0)
 - Materials: NEUTRAL (theory=+0.0, flow=+0.0, final=+0.0)
-- Financials: THEORY_TRAP (theory=+3.0, flow=-1.4, final=-1.3)
-- Industrials: THEORY_TRAP (theory=+2.5, flow=-1.4, final=-1.5)
-- Consumer Discretionary: THEORY_TRAP (theory=+1.5, flow=-0.7, final=-1.6)
+- Financials: THEORY_TRAP (theory=+3.0, flow=-1.4, final=-0.3)
 
 ### 💰 18.5) Tactical Asset Allocation (Execution Weight)
 - **Strategic Exposure (15):** **55.0%** → **Regime Adjusted:** **55.0%**
-- **Exposure Override:** DISLOCATION → Sector Weight Only (No Exposure Change)
+- **Exposure Override:** BALANCED → Sector Weight Only (No Exposure Change)
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Technology | +2.1 | ALIGNED | **46.9%** | HOLD |
-| Consumer Staples | +0.2 | ALIGNED | **3.1%** | HOLD |
-| Health Care | +0.2 | ALIGNED | **4.6%** | HOLD |
-| **Cash & Hedge** | - | - | **45.4%** | DEFENSIVE |
+| Technology | +2.4 | ALIGNED | **34.9%** | REBALANCE |
+| Industrials | +1.1 | NEGATIVE_DIVERGENCE | **5.1%** | NEW |
+| Consumer Discretionary | +0.6 | ALIGNED | **7.4%** | NEW |
+| Consumer Staples | +0.3 | ALIGNED | **3.1%** | HOLD |
+| Health Care | +0.3 | ALIGNED | **4.6%** | HOLD |
+| **Cash & Hedge** | - | - | **44.9%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 - **Regime Cap Profile:** BALANCED
 - **Regime Cap Applied:** None
 - **Strategic Cash (15):** 45.0%
-- **Tactical Reserve (Cap / Unallocated):** 0.4%
+- **Tactical Reserve (Cap / Unallocated):** -0.1%
 
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Momentum → Score → Current Weight
-1. Consumer Staples (priority_score=-0.1, score=0.21, weight=3.1%, div=ALIGNED, mom=0)
-2. Health Care (priority_score=-0.1, score=0.21, weight=4.6%, div=ALIGNED, mom=0)
-3. Technology (priority_score=-3.7, score=2.12, weight=46.9%, div=ALIGNED, mom=2)
+1. Industrials (priority_score=5.95, score=1.1099999999999999, weight=5.1%, div=NEGATIVE_DIVERGENCE, mom=0)
+2. Consumer Staples (priority_score=-0.15, score=0.3, weight=3.1%, div=ALIGNED, mom=0)
+3. Health Care (priority_score=-0.15, score=0.3, weight=4.6%, div=ALIGNED, mom=0)
+4. Consumer Discretionary (priority_score=-0.29, score=0.5800000000000001, weight=7.4%, div=ALIGNED, mom=0)
+5. Technology (priority_score=-4.42, score=2.38, weight=34.9%, div=ALIGNED, mom=2)
 
 **Leveraging Priority Preview:**
 - 기준: Score → Momentum → Positive Divergence
-1. Technology (priority_score=7.12, score=2.12, weight=46.9%, div=ALIGNED, mom=2)
-2. Consumer Staples (priority_score=0.21, score=0.21, weight=3.1%, div=ALIGNED, mom=0)
-3. Health Care (priority_score=0.21, score=0.21, weight=4.6%, div=ALIGNED, mom=0)
+1. Technology (priority_score=7.38, score=2.38, weight=34.9%, div=ALIGNED, mom=2)
+2. Consumer Discretionary (priority_score=0.58, score=0.5800000000000001, weight=7.4%, div=ALIGNED, mom=0)
+3. Consumer Staples (priority_score=0.30, score=0.3, weight=3.1%, div=ALIGNED, mom=0)
+4. Health Care (priority_score=0.30, score=0.3, weight=4.6%, div=ALIGNED, mom=0)
+5. Industrials (priority_score=-1.89, score=1.1099999999999999, weight=5.1%, div=NEGATIVE_DIVERGENCE, mom=0)
+- **Divergence Adjustment:** Industrials penalized in weight sizing
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action | Divergence | Classification |
 | :--- | :---: | :---: | :--- | :--- | :--- |
-| Technology | XLK | 46.9% | CORE_LEADER | ALIGNED | HIGH_CONVICTION_ALIGNED |
+| Technology | XLK | 34.9% | CORE_LEADER | ALIGNED | HIGH_CONVICTION_ALIGNED |
+| Industrials | XLI | 5.1% | WATCHLIST_SMALL | NEGATIVE_DIVERGENCE | FLOW_WEAK |
+| Consumer Discretionary | XLY | 7.4% | SMALL | ALIGNED | ALIGNED |
 | Consumer Staples | XLP | 3.1% | SMALL | ALIGNED | ALIGNED |
 | Health Care | XLV | 4.6% | SMALL | ALIGNED | ALIGNED |
 
@@ -557,8 +564,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3967267451769221
-- **Z-Score (5d):** 0.5923877947219599
+- **Z-Score (1d):** 0.3967274306532307
+- **Z-Score (5d):** 0.5923881703939935
 
 ### EWJ
 - **Crash?** False
