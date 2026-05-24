@@ -166,8 +166,8 @@ jobs:
           PY
 
 
-      - name: Backfill macro missing tickers
-        run: python scripts/backfill_macro_missing_tickers.py
+      #- name: Backfill macro missing tickers
+        #run: python scripts/backfill_macro_missing_tickers.py
 
       - name: Run report generator
         env:
