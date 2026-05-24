@@ -460,82 +460,24 @@ def build_strategic_interpretation(
             "추가 확대는 breadth와 flow confirmation 이후가 더 안전합니다. "
             f"현재 실행 기준 노출은 약 **{final_exposure}%**입니다."
         )
+        
+        # ---------------------------------------------------
+    # 7) Structural Interpretation Layer
+    # ---------------------------------------------------
 
-    return lines
-
-def build_pm_summary(
-    market_data,
-    final_state,
-    final_action_result,
-):
-    lines = []
-
-    phase = str(final_state.get("phase", "UNKNOWN"))
-
-    final_exposure = (
-        final_action_result.get("final_exposure")
-        or final_state.get("final_exposure")
-        or "N/A"
-    )
-
-    flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
-
-    flow_state = flow.get("state", "N/A")
-    flow_score = flow.get("score", 0)
-
-    drift_label = (
-        (market_data.get("DRIFT") or {}).get("label")
-        or "UNKNOWN"
-    )
-
-    drift_score = (
-        market_data.get("DRIFT_SCORE")
-        or (market_data.get("DRIFT") or {}).get("score", 0)
-    )
-
-    pos_z = (
-        market_data.get("POS_Z")
-        or final_state.get("pos_z")
-        or "N/A"
-    )
-
-    lines.append("## 🧠 Strategic Interpretation (PM Summary)")
-    lines.append("")
-
-    lines.append(
-        f"금일 시장은 {phase} 환경이었습니다."
-    )
-
-    lines.append(
-        f"기관성 흐름은 {flow_state}(score={flow_score}) 상태였으며, "
-        f"Drift는 {drift_label}(score={drift_score}) 상태로 관찰되었습니다."
-    )
-
-    lines.append(
-        f"또한 Positioning heat(POS_Z={pos_z})가 관찰되고 있었기 때문에 "
-        "신규 추격보다 sizing control과 exposure discipline이 중요했습니다."
-    )
-
-    lines.append(
-        f"이에 따라 최종 실행 기준 익스포저는 약 {final_exposure}% 수준으로 유지되었습니다."
-    )
-
-    # =========================================================
-    # Structural Interpretation Layer
-    # =========================================================
-    
     breadth_ratio = None
-    
+
     try:
         rsp = market_data.get("RSP")
         spy = market_data.get("SPY")
-    
+
         if rsp and spy:
             breadth_ratio = rsp / spy
+
     except Exception:
         breadth_ratio = None
-    
-    
+
+
     growth_eval = evaluate_growth_sustainability(
         liquidity_dir=market_data.get("NET_LIQ_DIR"),
         hy_oas=market_data.get("HY_OAS"),
@@ -543,44 +485,53 @@ def build_pm_summary(
         dxy=market_data.get("DXY"),
         breadth_ratio=breadth_ratio,
     )
-    
+
     short_eval = evaluate_short_covering_risk(
         vix_change=market_data.get("VIX_pct"),
         breadth_ratio=breadth_ratio,
         credit_confirmed=market_data.get("CREDIT_CALM", True),
     )
-    
+
     breadth_eval = evaluate_breadth_quality(
         rsp_vs_spy=breadth_ratio,
         cyclical_confirm=market_data.get("FLOW_SCORE", 0) >= 4,
     )
-    
+
     financing_eval = evaluate_financing_condition(
         us10y=market_data.get("US10Y"),
         real_rate=market_data.get("REAL_RATE"),
         hy_oas=market_data.get("HY_OAS"),
     )
-    
+
     lines.append("")
-    lines.append("### Structural Interpretation Layer")
-    
+    lines.append("- **Structural Layer:**")
+
     lines.append(
-        f"- Growth Sustainability: **{growth_eval['state']}** → {growth_eval['reason']}"
+        f"  - Growth Sustainability → "
+        f"**{growth_eval['state']}** "
+        f"({growth_eval['reason']})"
     )
-    
+
     lines.append(
-        f"- Short Covering Risk: **{short_eval['state']}** → {short_eval['reason']}"
+        f"  - Short Covering Risk → "
+        f"**{short_eval['state']}** "
+        f"({short_eval['reason']})"
     )
-    
+
     lines.append(
-        f"- Breadth Quality: **{breadth_eval['state']}** → {breadth_eval['reason']}"
+        f"  - Breadth Quality → "
+        f"**{breadth_eval['state']}** "
+        f"({breadth_eval['reason']})"
     )
-    
+
     lines.append(
-        f"- Financing Condition: **{financing_eval['state']}** → {financing_eval['reason']}"
+        f"  - Financing Condition → "
+        f"**{financing_eval['state']}** "
+        f"({financing_eval['reason']})"
     )
 
     return lines
+
 
 def interpret_sew_event(event_type: str) -> str:
     """
