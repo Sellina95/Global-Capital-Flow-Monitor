@@ -326,13 +326,15 @@ def build_pm_summary(
     lines = []
 
     phase = str(final_state.get("phase", "UNKNOWN"))
-        final_exposure = (
+
+    final_exposure = (
         final_action_result.get("final_exposure")
         or final_state.get("final_exposure")
         or "N/A"
     )
 
     flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+
     flow_state = flow.get("state", "N/A")
     flow_score = flow.get("score", 0)
 
