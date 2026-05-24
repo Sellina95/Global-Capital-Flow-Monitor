@@ -163,8 +163,15 @@ def build_strategic_interpretation(
     drift_score = final_state.get("drift_score", "N/A")
 
     risk_budget = final_state.get("risk_budget", "N/A")
-    final_exposure = final_action_result.get("final_exposure", risk_budget)
 
+
+	final_exposure = (
+        final_action_result.get("final_exposure")
+        or final_action_result.get("exposure")
+        or final_state.get("final_exposure")
+        or final_state.get("risk_budget")
+        or "N/A"
+    )
     # 1) Header
     lines.append(f"- 금일 시장은 **{phase} 환경**입니다.")
 
@@ -257,6 +264,62 @@ def build_strategic_interpretation(
 
     return lines
 
+def build_pm_summary(
+    market_data,
+    final_state,
+    final_action_result,
+):
+    lines = []
+
+    phase = str(final_state.get("phase", "UNKNOWN"))
+        final_exposure = (
+        final_action_result.get("final_exposure")
+        or final_state.get("final_exposure")
+        or "N/A"
+    )
+
+    flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+    flow_state = flow.get("state", "N/A")
+    flow_score = flow.get("score", 0)
+
+    drift_label = (
+        (market_data.get("DRIFT") or {}).get("label")
+        or "UNKNOWN"
+    )
+
+    drift_score = (
+        market_data.get("DRIFT_SCORE")
+        or (market_data.get("DRIFT") or {}).get("score", 0)
+    )
+
+    pos_z = (
+        market_data.get("POS_Z")
+        or final_state.get("pos_z")
+        or "N/A"
+    )
+
+    lines.append("## 🧠 Strategic Interpretation (PM Summary)")
+    lines.append("")
+
+    lines.append(
+        f"금일 시장은 {phase} 환경이었습니다."
+    )
+
+    lines.append(
+        f"기관성 흐름은 {flow_state}(score={flow_score}) 상태였으며, "
+        f"Drift는 {drift_label}(score={drift_score}) 상태로 관찰되었습니다."
+    )
+
+    lines.append(
+        f"또한 Positioning heat(POS_Z={pos_z})가 관찰되고 있었기 때문에 "
+        "신규 추격보다 sizing control과 exposure discipline이 중요했습니다."
+    )
+
+    lines.append(
+        f"이에 따라 최종 실행 기준 익스포저는 약 {final_exposure}% 수준으로 유지되었습니다."
+    )
+
+    return lines
 
 def interpret_sew_event(event_type: str) -> str:
     """
@@ -2369,6 +2432,7 @@ def generate_daily_report() -> None:
     lines.append("")
     
     # ✅ Interpretation
+    # ✅ Strategic Interpretation / PM Summary
     final_state = market_data.get("FINAL_STATE", {}) or {}
     
     exposure_interp_lines = build_strategic_interpretation(
@@ -2377,9 +2441,10 @@ def generate_daily_report() -> None:
         action_result,
     )
     
-    lines.append("### 📌 Interpretation")
+    lines.append("### 🧠 Strategic Interpretation (PM Summary)")
     lines.extend(exposure_interp_lines)
     lines.append("")
+    
     
     # ✅ Final Action Engine
     lines.append("### 🎯 Final Action Engine(Raw Signal)")
