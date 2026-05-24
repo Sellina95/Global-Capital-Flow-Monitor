@@ -21,7 +21,7 @@
 - **[15번 Hard Deadman]:** ✅ PASS
 - **[14번 수급 시그널]:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
 
-### 📌 Interpretation
+### 🧠 Strategic Interpretation (PM Summary)
 - 금일 시장은 **TRANSITION / MIXED 환경**입니다.
 - **Structure:** 달러 강세·에너지 가격 부담가 동반되며 금융환경의 tightening pressure가 강화되는 구간입니다.
 - **Liquidity:** 가격 환경은 긴축적으로 움직였지만, Net Liquidity는 증가 방향을 보이며 단기 달러 체력은 일부 유지되고 있습니다.
@@ -372,7 +372,7 @@ No significant sector-level correlation break detected.
 - **Drift:** ⚡ STRUCTURAL DRIFT / NEUTRAL / NONE
 - **Drift Score:** 5
 - **Flow Score:** 3
-- **Flow Continuity:** FLOW_FADE → 👀 EARLY TRACE (FLOW_PERSISTENCE, tilt=+1)
+- **Flow Continuity:** 👀 EARLY TRACE → 👀 EARLY TRACE (FLOW_PERSISTENCE, tilt=+1)
 - **Flow Regime Tilt:** +2 / Flow-Gamma Tilt: +2
 
 - **🎯 Final Risk Action:** **REDUCE (POS_OVERHEATED)**
@@ -546,8 +546,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.43051144325309765
-- **Z-Score (5d):** 1.0279429786774865
+- **Z-Score (1d):** 0.43051148894027097
+- **Z-Score (5d):** 1.0279436929089392
 
 ### EEM
 - **Crash?** False
@@ -564,8 +564,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3967267451769221
-- **Z-Score (5d):** 0.5923877947219599
+- **Z-Score (1d):** 0.3967270086436756
+- **Z-Score (5d):** 0.5923882013223167
 
 ### EWJ
 - **Crash?** False
