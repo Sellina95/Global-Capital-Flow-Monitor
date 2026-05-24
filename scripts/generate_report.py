@@ -561,22 +561,22 @@ def build_pm_summary(
         hy_oas=market_data.get("HY_OAS"),
     )
     
-    pm_summary_lines.append("")
-    pm_summary_lines.append("### Structural Interpretation Layer")
+    lines.append("")
+    lines.append("### Structural Interpretation Layer")
     
-    pm_summary_lines.append(
+    lines.append(
         f"- Growth Sustainability: **{growth_eval['state']}** → {growth_eval['reason']}"
     )
     
-    pm_summary_lines.append(
+    lines.append(
         f"- Short Covering Risk: **{short_eval['state']}** → {short_eval['reason']}"
     )
     
-    pm_summary_lines.append(
+    lines.append(
         f"- Breadth Quality: **{breadth_eval['state']}** → {breadth_eval['reason']}"
     )
     
-    pm_summary_lines.append(
+    lines.append(
         f"- Financing Condition: **{financing_eval['state']}** → {financing_eval['reason']}"
     )
 
