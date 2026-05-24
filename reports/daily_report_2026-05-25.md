@@ -29,6 +29,12 @@
 - **Risk:** 포지셔닝 과열(POS_Z=2.24)이 관찰되며, 크레딧은 안정적입니다. 따라서 신규 추격보다는 sizing control과 exposure discipline이 중요합니다.
 - **Allocation:** 이에 따라 전체 베타 노출은 낮게 유지하며, 현금을 전략 자산으로 보유하는 접근이 적절합니다. 현재 실행 기준 노출은 약 **63%**입니다.
 
+- **Structural Layer:**
+  - Growth Sustainability → **MODERATE** (liquidity improving, credit stress contained, USD funding pressure moderate)
+  - Short Covering Risk → **LOW** (broad demand participation)
+  - Breadth Quality → **NARROW** (leadership concentrated)
+  - Financing Condition → **SUPPORTIVE** (long-end yields stable, real financing pressure manageable, credit financing conditions stable)
+
 ### 🎯 Final Action Engine(Raw Signal)
 - **Action:** REDUCE
 - **Size:** TAKE PROFIT
@@ -546,8 +552,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.43051148894027097
-- **Z-Score (5d):** 1.0279436929089392
+- **Z-Score (1d):** 0.4305106508296945
+- **Z-Score (5d):** 1.0279429485124392
 
 ### EEM
 - **Crash?** False
@@ -564,8 +570,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3967271671846621
-- **Z-Score (5d):** 0.5923883266552115
+- **Z-Score (1d):** 0.3967270086436756
+- **Z-Score (5d):** 0.592388302156253
 
 ### EWJ
 - **Crash?** False
