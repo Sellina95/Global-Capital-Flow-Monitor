@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-05-24 15:41:25",
+  "timestamp": "2026-05-24 16:12:03",
   "flow_state": "👀 EARLY TRACE",
   "flow_score": 3,
-  "prev_flow_state": "FLOW_FADE",
+  "prev_flow_state": "👀 EARLY TRACE",
   "prev_flow_score": 3,
   "flow_delta": 0,
   "persistence_days": 1,
-  "transition": "FLOW_FADE -> 👀 EARLY TRACE",
+  "transition": "👀 EARLY TRACE -> 👀 EARLY TRACE",
   "transition_note": "기관성 흐름 상태 유지",
   "raw_flow_state": "👀 EARLY TRACE",
   "raw_flow_score": 3
