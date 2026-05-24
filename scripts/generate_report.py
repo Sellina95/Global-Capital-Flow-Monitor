@@ -117,154 +117,146 @@ def build_strategic_interpretation(
     final_state: Dict[str, Any],
     final_action_result: Dict[str, Any],
 ) -> list[str]:
-
-    flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
-    flow_score = flow.get("score", 0)
-    flow_state = str(flow.get("state", "N/A") or "N/A").upper()
-
-    prev_flow_state = str(market_data.get("PREV_FLOW_STATE", "N/A") or "N/A").upper()
-    prev_flow_score = market_data.get("PREV_FLOW_SCORE", 0)
-    prev_flow_timestamp = market_data.get("PREV_FLOW_TIMESTAMP")
-
-    drift = market_data.get("DRIFT", {}) or {}
-    drift_label = str(
-        drift.get("label")
-        or market_data.get("DRIFT_LABEL")
-        or final_state.get("drift_label")
-        or "N/A"
-    ).upper()
-
-    drift_score = market_data.get("DRIFT_SCORE", drift.get("score", 0))
-
-    gamma_state = str(market_data.get("GAMMA_STATE", "N/A") or "N/A").upper()
-    sew_status = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
-    phase = str(final_state.get("phase", "N/A") or "N/A").upper()
-
-    final_action = str(final_action_result.get("action", "HOLD") or "HOLD").upper()
-
-    try:
-        flow_score = int(flow_score)
-    except Exception:
-        flow_score = 0
-
-    try:
-        drift_score = int(drift_score)
-    except Exception:
-        drift_score = 0
-
-    risk_on_early_flow = (
-        "RISK-ON" in phase
-        and flow_score >= 3
-        and "DISINFLATION_RISK_ON" in drift_label
-        and "DEADMAN" not in sew_status
-        and "ALERT" not in sew_status
-    )
+    """
+    상단 Strategy Note
+    - Structure → Liquidity → Participation → Risk → Allocation 흐름
+    - 기존 Interpretation의 중복 Flow 문장 제거
+    - 리포트 상단에서 PM Summary 역할
+    """
 
     lines = []
 
+    phase = str(final_state.get("phase", "N/A") or "N/A")
+    final_action = str(final_action_result.get("action", final_state.get("risk_action", "HOLD")) or "HOLD").upper()
+
+    # Core macro inputs
+    us10y = market_data.get("US10Y", {})
+    dxy = market_data.get("DXY", {})
+    wti = market_data.get("WTI", {})
+    vix = market_data.get("VIX", {})
+
+    def pct_from(x):
+        if isinstance(x, dict):
+            return x.get("pct_change")
+        return None
+
+    us10y_pct = pct_from(us10y)
+    dxy_pct = pct_from(dxy)
+    wti_pct = pct_from(wti)
+    vix_pct = pct_from(vix)
+
+    liquidity_dir = (
+        final_state.get("liquidity_dir")
+        or market_data.get("liquidity_dir")
+        or market_data.get("NET_LIQ_DIR")
+        or "UNKNOWN"
+    )
+
+    credit_calm = final_state.get("credit_calm", market_data.get("credit_calm"))
+    pos_z = final_state.get("pos_z", "N/A")
+
+    flow_state = final_state.get("flow_state", "N/A")
+    flow_score = final_state.get("flow_score", "N/A")
+
+    drift_state = final_state.get("drift_state", "N/A")
+    drift_label = final_state.get("drift_label", "N/A")
+    drift_score = final_state.get("drift_score", "N/A")
+
+    risk_budget = final_state.get("risk_budget", "N/A")
+    final_exposure = final_action_result.get("final_exposure", risk_budget)
+
+    # 1) Header
     lines.append(f"- 금일 시장은 **{phase} 환경**입니다.")
-    
-    if "EARLY TRACE" in prev_flow_state:
+
+    # 2) Structure
+    structure_parts = []
+
+    if us10y_pct is not None and us10y_pct > 0:
+        structure_parts.append("장기금리 상승")
+    if dxy_pct is not None and dxy_pct > 0:
+        structure_parts.append("달러 강세")
+    if wti_pct is not None and wti_pct > 0:
+        structure_parts.append("에너지 가격 부담")
+    if vix_pct is not None and vix_pct > 0:
+        structure_parts.append("변동성 확대")
+
+    if structure_parts:
         lines.append(
-            f"- 전일 SEW 기준 기관성 초기 흐름이 관찰되었습니다 "
-            f"({prev_flow_state}, score={prev_flow_score}). "
-            "금일은 리더 섹터 지속 여부와 흐름의 강화 여부를 확인해야 합니다."
+            "- **Structure:** "
+            + "·".join(structure_parts)
+            + "가 동반되며 금융환경의 tightening pressure가 강화되는 구간입니다."
         )
-    elif "BUILDING" in prev_flow_state:
-        lines.append(
-            f"- 전일 SEW 기준 기관성 자금 축적이 강화되었습니다 "
-            f"({prev_flow_state}, score={prev_flow_score}). "
-            "금일은 추세 확인 및 선택적 확대 가능성을 점검해야 합니다."
-        )
-    elif "NO CLEAR FLOW" in prev_flow_state:
-        lines.append(
-            "- 전일 SEW 기준 기관성 흐름은 뚜렷하지 않았습니다. "
-            "금일 리포트의 신규 Flow 신호가 실제 개선인지 확인이 필요합니다."
-        )
-
-
-    # -------------------------
-    # Flow Continuity Monitor
-    # -------------------------
-    flow_transition_note = ""
-
-    if "NO CLEAR FLOW" in prev_flow_state and flow_score >= 3:
-        flow_transition_note = (
-            "⚡ 전일 대비 기관성 흐름이 새롭게 발생했습니다 "
-            f"({prev_flow_state} → {flow_state}). 초기 축적 가능성 점검 구간입니다."
-        )
-
-    elif "EARLY TRACE" in prev_flow_state and flow_score >= 5:
-        flow_transition_note = (
-            "🔥 전일 초기 흐름이 금일 강화되었습니다 "
-            f"({prev_flow_state} → {flow_state}). 실제 자금 축적 지속 가능성을 확인해야 합니다."
-        )
-
-    elif ("BUILDING" in prev_flow_state or "EARLY TRACE" in prev_flow_state) and flow_score <= 2:
-        flow_transition_note = (
-            "⚠️ 전일 대비 기관성 흐름이 약화되었습니다 "
-            f"({prev_flow_state} → {flow_state}). 노이즈성 신호였는지 확인이 필요합니다."
-        )
-
-    elif prev_flow_state == flow_state and flow_score >= 3:
-        flow_transition_note = (
-            f"➡️ 기관성 흐름 상태가 유지되고 있습니다 ({flow_state}). "
-            "연속성 여부가 중요합니다."
-        )
-
-    if flow_transition_note:
-        lines.append(f"- {flow_transition_note}")
-
-    # -------------------------
-    # Flow Continuity Monitor
-    # -------------------------
-    if "NO CLEAR FLOW" in prev_flow_state and flow_score >= 3:
-        lines.append(
-            f"- ⚡ 전일 대비 기관성 흐름이 새롭게 발생했습니다 "
-            f"({prev_flow_state} → {flow_state}). 초기 자금 축적 가능성 점검 구간입니다."
-        )
-
-    elif "EARLY TRACE" in prev_flow_state and flow_score >= 5:
-        lines.append(
-            f"- 🔥 전일 초기 흐름이 금일 강화되었습니다 "
-            f"({prev_flow_state} → {flow_state}). 실제 기관 축적 지속 여부 확인이 중요합니다."
-        )
-
-    elif ("EARLY TRACE" in prev_flow_state or "BUILDING" in prev_flow_state) and flow_score <= 2:
-        lines.append(
-            f"- ⚠️ 전일 대비 기관성 흐름이 약화되었습니다 "
-            f"({prev_flow_state} → {flow_state}). 전일 신호의 지속성 재검토가 필요합니다."
-        )
-
-    elif prev_flow_state == flow_state and flow_score >= 3:
-        lines.append(
-            f"- ➡️ 기관성 흐름 상태가 유지되고 있습니다 ({flow_state}). "
-            "연속성 여부가 중요합니다."
-        )
-    
-
-    if flow_score <= 2:
-        lines.append("- 기관성 자금 흐름은 아직 뚜렷하지 않아, 공격적 확장에는 신중함이 필요합니다.")
-    elif flow_score <= 4:
-        lines.append("- 기관성 자금 유입은 **EARLY TRACE(초기 흔적)** 단계로, 이탈 신호가 아니라 초기 관찰 구간입니다.")
     else:
-        lines.append("- 기관성 자금 유입이 비교적 뚜렷하게 형성되는 구간입니다.")
+        lines.append(
+            "- **Structure:** 금리·달러·유가·변동성 압력이 뚜렷하게 한 방향으로 쏠리지는 않아, 구조 판단은 중립적으로 유지합니다."
+        )
 
-    if drift_score <= 2:
-        lines.append("- 드리프트 강도는 아직 약해 추세 신뢰도는 제한적입니다.")
+    # 3) Liquidity
+    if str(liquidity_dir).upper() == "UP":
+        lines.append(
+            "- **Liquidity:** 가격 환경은 긴축적으로 움직였지만, Net Liquidity는 증가 방향을 보이며 단기 달러 체력은 일부 유지되고 있습니다."
+        )
+    elif str(liquidity_dir).upper() == "DOWN":
+        lines.append(
+            "- **Liquidity:** 가격 환경과 실제 유동성 흐름이 모두 부담을 주고 있어, 리스크 자산의 방어력이 약해질 수 있습니다."
+        )
     else:
-        lines.append("- 드리프트 강도가 유의미하여 추세 지속 가능성이 존재합니다.")
+        lines.append(
+            "- **Liquidity:** 유동성 방향은 명확하지 않아, 가격 신호와 크레딧·수급 확인을 함께 봐야 합니다."
+        )
 
-    if risk_on_early_flow:
-        lines.append("- 따라서 **리스크 축소보다는 기존 노출 유지와 리더 섹터 중심의 선별적 확대 관찰이 적절**합니다.")
-    elif final_action in ["REDUCE", "EXIT"]:
-        lines.append("- 따라서 **신규 진입보다는 기존 포지션 관리 및 일부 리스크 축소가 우선**입니다.")
+    # 4) Participation
+    lines.append(
+        f"- **Participation:** 기관성 흐름은 **{flow_state}**(score={flow_score}) 상태이며, "
+        f"Drift는 **{drift_state} / {drift_label}**(score={drift_score})로 관찰됩니다. "
+        "다만 breadth와 리더십 확산 여부는 추가 확인이 필요합니다."
+    )
+
+    # 5) Risk
+    risk_parts = []
+
+    try:
+        if float(pos_z) >= 2:
+            risk_parts.append(f"포지셔닝 과열(POS_Z={pos_z})")
+    except Exception:
+        pass
+
+    if credit_calm is True:
+        credit_text = "크레딧은 안정적"
+    elif credit_calm is False:
+        credit_text = "크레딧 스트레스가 관찰"
+    else:
+        credit_text = "크레딧 신호는 중립/확인 필요"
+
+    if risk_parts:
+        lines.append(
+            f"- **Risk:** {', '.join(risk_parts)}이 관찰되며, {credit_text}입니다. "
+            "따라서 신규 추격보다는 sizing control과 exposure discipline이 중요합니다."
+        )
+    else:
+        lines.append(
+            f"- **Risk:** {credit_text}이며, 현재 구간에서는 단일 지표보다 포지셔닝·변동성·수급의 조합을 확인하는 것이 중요합니다."
+        )
+
+    # 6) Allocation
+    if final_action in ["REDUCE", "STRONG REDUCE", "EXIT"]:
+        lines.append(
+            f"- **Allocation:** 이에 따라 전체 베타 노출은 낮게 유지하며, 현금을 전략 자산으로 보유하는 접근이 적절합니다. "
+            f"현재 실행 기준 노출은 약 **{final_exposure}%**입니다."
+        )
     elif final_action in ["ADD", "EARLY BUY", "INCREASE"]:
-        lines.append("- 따라서 **단계적 진입 및 리스크 확대 전략이 유효**합니다.")
+        lines.append(
+            f"- **Allocation:** 조건부 리스크 확대가 가능하지만, 리더 섹터 중심의 단계적 진입이 적절합니다. "
+            f"현재 실행 기준 노출은 약 **{final_exposure}%**입니다."
+        )
     else:
-        lines.append("- 따라서 **현 수준에서 포지션 유지 및 관망 전략이 적절**합니다.")
+        lines.append(
+            f"- **Allocation:** 현 수준에서는 포지션 유지와 관망이 적절하며, 추가 확대는 breadth와 flow confirmation 이후가 더 안전합니다. "
+            f"현재 실행 기준 노출은 약 **{final_exposure}%**입니다."
+        )
 
     return lines
+
 
 def interpret_sew_event(event_type: str) -> str:
     """
