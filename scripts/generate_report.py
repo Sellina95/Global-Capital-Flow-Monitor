@@ -163,14 +163,15 @@ def build_strategic_interpretation(
     drift_score = final_state.get("drift_score", "N/A")
 
     risk_budget = final_state.get("risk_budget", "N/A")
-
-	final_exposure = (
+    
+    final_exposure = (
         final_action_result.get("final_exposure")
         or final_action_result.get("exposure")
         or final_state.get("final_exposure")
         or final_state.get("risk_budget")
         or "N/A"
     )
+	
     # 1) Header
     lines.append(f"- 금일 시장은 **{phase} 환경**입니다.")
 
