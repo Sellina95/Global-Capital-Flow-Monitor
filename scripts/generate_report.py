@@ -2671,6 +2671,8 @@ def generate_daily_report() -> None:
     # ✅ Interpretation
     # ✅ Strategic Interpretation / PM Summary
     final_state = market_data.get("FINAL_STATE", {}) or {}
+    print("[DEBUG][INTERPRET INPUT]")
+    print(final_decision)
     
     exposure_interp_lines = build_strategic_interpretation(
         market_data,
