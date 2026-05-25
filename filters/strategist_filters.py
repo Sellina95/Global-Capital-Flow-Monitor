@@ -1642,7 +1642,7 @@ def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
         components.append(f"{name}Δ {_fmt_delta(d)}")
 
     add_component("REAL_RATE", real_d, 1.0)   # real yield up = tighter
-    add_component("FCI", fci_d, 1.0)          # conditions tighter = tighter
+    components.append("FCIΔ n/a (low-frequency)")         # conditions tighter = tighter
     add_component("DXY", dxy_d, 1.0)          # dollar stronger = tighter
     add_component("US10Y", us10y_d, 0.5)      # nominal up = tighter (weaker weight)
 
