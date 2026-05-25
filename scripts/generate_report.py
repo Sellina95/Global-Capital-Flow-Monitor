@@ -345,11 +345,9 @@ def build_strategic_interpretation(
     final_exposure = (
         final_action_result.get("exposure")
         or final_action_result.get("final_exposure")
-        or final_action_result.get("recommended_exposure")
-        or final_state.get("final_exposure")
         or "N/A"
     )
-
+    
     # ---------------------------------------------------
     # 1) Header
     # ---------------------------------------------------
@@ -2677,7 +2675,7 @@ def generate_daily_report() -> None:
     exposure_interp_lines = build_strategic_interpretation(
         market_data,
         final_state,
-        action_result,
+        final_decision_state,
     )
     
     lines.append("### 🧠 Strategic Interpretation (PM Summary)")
