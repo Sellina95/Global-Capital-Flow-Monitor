@@ -343,10 +343,10 @@ def build_strategic_interpretation(
     drift_score = final_state.get("drift_score", "N/A")
 
     final_exposure = (
-        final_action_result.get("final_exposure")
-        or final_action_result.get("exposure")
+        final_action_result.get("exposure")
+        or final_action_result.get("final_exposure")
+        or final_action_result.get("recommended_exposure")
         or final_state.get("final_exposure")
-        or final_state.get("risk_budget")
         or "N/A"
     )
 
