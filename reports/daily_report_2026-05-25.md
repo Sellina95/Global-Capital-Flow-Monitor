@@ -27,7 +27,7 @@
 - **Liquidity:** 가격 환경은 긴축적으로 움직였지만, Net Liquidity는 증가 방향을 보이며 단기 달러 체력은 일부 유지되고 있습니다.
 - **Participation:** 기관성 흐름은 **👀 EARLY TRACE**(score=3) 상태이며, Drift는 **⚡ STRUCTURAL DRIFT / NEUTRAL**(score=5)로 관찰됩니다. 다만 breadth와 리더십 확산 여부는 추가 확인이 필요합니다.
 - **Risk:** 포지셔닝 과열(POS_Z=2.22)이 관찰되며, 크레딧은 안정적입니다. 따라서 신규 추격보다는 sizing control과 exposure discipline이 중요합니다.
-- **Allocation:** 이에 따라 전체 베타 노출은 낮게 유지하며, 현금을 전략 자산으로 보유하는 접근이 적절합니다. 현재 실행 기준 노출은 약 **N/A%**입니다.
+- **Allocation:** 현 수준에서는 포지션 유지와 관망이 적절하며, 추가 확대는 breadth와 flow confirmation 이후가 더 안전합니다. 현재 실행 기준 노출은 약 **55%**입니다.
 
 - **Structural Layer:**
   - Growth Sustainability → **MODERATE** (liquidity improving, credit stress contained, USD funding pressure moderate)
@@ -164,7 +164,7 @@
 
 - **SPY:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.39% / 5D=+0.87% | Strength: LOW
 - **WTI:** ⚪ SIDEWAYS | Short-term: MIXED | 1D=+0.00% / 5D=-11.10% | Strength: HIGH
-- **DXY:** 🟡 PULLBACK | Short-term: MIXED | 1D=-0.30% / 5D=+0.05% | Strength: LOW
+- **DXY:** 🟡 PULLBACK | Short-term: SHORT UP | 1D=-0.28% / 5D=+0.07% | Strength: LOW
 - **GOLD:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.05% / 5D=-0.64% | Strength: LOW
 
 - **Drift Score:** 5
@@ -175,7 +175,7 @@
 - **Market Drift Summary:**
   - Equity (SPY): 🟢 UP / SHORT DOWN
   - Oil (WTI): ⚪ SIDEWAYS / MIXED
-  - Dollar (DXY): 🟡 PULLBACK / MIXED
+  - Dollar (DXY): 🟡 PULLBACK / SHORT UP
   - Gold (GOLD): 🟡 REBOUND / SHORT UP
 
 - **Drivers:**
@@ -552,8 +552,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.43051144325309765
-- **Z-Score (5d):** 1.0279427946970199
+- **Z-Score (1d):** 0.4305106508296945
+- **Z-Score (5d):** 1.0279429485124392
 
 ### EEM
 - **Crash?** False
