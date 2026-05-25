@@ -1473,12 +1473,13 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
     dxy_dir   = _sign_from(dxy)
     vix_dir   = _sign_from(vix)
 
-    # Direction: for FCI/REAL_RATE, lower is better
+    # Direction: REAL_RATE는 daily dir 사용, FCI는 low-frequency proxy로 direction 비강조
     fci_raw_dir = _sign_from(fci)
     rr_raw_dir  = _sign_from(rr)
-    fci_eff_dir = -fci_raw_dir if _valid(fci.get("today")) else 0
-    rr_eff_dir  = -rr_raw_dir  if _valid(rr.get("today")) else 0
 
+    fci_eff_dir = None
+    rr_eff_dir  = -rr_raw_dir if _valid(rr.get("today")) else 0
+    
     def fci_level_label(x: Optional[float]) -> str:
         if x is None or pd.isna(x):
             return "N/A"
@@ -1551,21 +1552,19 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
         lines.append("- **현실(FCI):** N/A (not available)")
     else:
         lines.append(
-            f"- **현실(FCI):** level={fci_level} / dir({_dir_str(fci_eff_dir)})"
-            + (f" | as of: {fci_asof} (FRED last available)" if fci_asof else "")
+            f"- **현실(FCI):** level={fci_level} / update=low-frequency"
+            + (f" | as of: {fci_asof} (latest available)" if fci_asof else "")
         )
-
     if not _valid(rr.get("today")):
         lines.append("- **유인(Real Rates):** N/A (not available)")
     else:
         lines.append(
             f"- **유인(Real Rates):** level={rr_level} / dir({_dir_str(rr_eff_dir)})"
-            + (f" | as of: {rr_asof} (FRED last available)" if rr_asof else "")
+            + (f" | as of: {rr_asof} (latest available)" if rr_asof else "")
         )
-
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
-    lines.append("- **Note:** FCI/Real Rates는 매일 갱신되지 않을 수 있어, ‘최근 available 값’을 반영함")
+    lines.append("- **Note:** FCI는 저빈도 금융환경 프록시로 level 중심 해석, Real Rates는 영업일 기준 변화 방향을 함께 반영함")
     return "\n".join(lines)
 
 
