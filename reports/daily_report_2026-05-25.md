@@ -92,8 +92,8 @@
 - **추가 이유:** US10Y/DXY/VIX는 ‘시장의 기대’를 보여주고, FCI는 ‘현실의 압박’을, Real Rates는 ‘위험을 감수할 유인’을 보여준다.
 
 - **기대(가격) 신호:** US10Y(↓) / DXY(↑) / VIX(↓)
-- **현실(FCI):** level=EASY (완화) / update=low-frequency | as of: 2026-05-25 (latest available)
-- **유인(Real Rates):** level=RESTRICTIVE (유인↓) / dir(→) | as of: 2026-05-25 (latest available)
+- **현실(FCI):** value=-0.523 / level=EASY (완화) / update=low-frequency | as of: 2026-05-25 (latest available)
+- **유인(Real Rates):** value=2.180 / level=RESTRICTIVE (유인↓) / dir(→) | as of: 2026-05-25 (latest available)
 - **판정:** **LIQUIDITY MIXED / FRAGILE (혼조·취약)**
 - **근거:** 기대(가격)와 현실(FCI)/유인(실질금리) 정렬이 불완전
 - **Note:** FCI는 저빈도 금융환경 프록시로 level 중심 해석, Real Rates는 영업일 기준 변화 방향을 함께 반영함
@@ -102,7 +102,7 @@
 - **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?
 
 - **가격(현재) 신호:** US10Y(↓) / DXY(↑) / VIX(↓)
-- **Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.000 / FCIΔ n/a (low-frequency) / DXYΔ +0.130 / US10YΔ -0.028**
+- **Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.000 / FCI value=-0.523 (low-frequency) / DXYΔ +0.130 / US10YΔ -0.028**
 - **Expectations: dict received.**
 
 - **판정:** **POLICY MIXED (정책 신호 혼조)**
@@ -236,7 +236,7 @@ No significant sector-level correlation break detected.
 - **주의:** Dealer Gamma Bias 숫자와 Pseudo Gamma State는 서로 다른 레이어
 
 - **Pseudo Gamma State:** 🟡 POSITIVE-TRANSITION
-- **Dealer Gamma Bias:** 1.80 (STABILIZING / dealer gamma proxy supportive)
+- **Dealer Gamma Bias:** 1.79 (STABILIZING / dealer gamma proxy supportive)
 - **Bias:** VIX는 안정적이나 Drift가 형성 중
 - **Strategy:** 초기 방향성 관찰 / 과도한 추격 금지
 
@@ -368,8 +368,8 @@ No significant sector-level correlation break detected.
 - **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
-- **Structure Bias:** Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.000 / FCIΔ n/a (low-frequency) / DXYΔ +0.130 / US10YΔ -0.028 (정상)
-- **Sentiment (Fear&Greed):** 64.06286381223724 (NEUTRAL)
+- **Structure Bias:** Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.000 / FCI value=-0.523 (low-frequency) / DXYΔ +0.130 / US10YΔ -0.028 (정상)
+- **Sentiment (Fear&Greed):** 64.10475218109902 (NEUTRAL)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** UP (MID)
 - **Structural Regime:** UNKNOWN_TRANSITION
@@ -390,7 +390,7 @@ No significant sector-level correlation break detected.
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `MIXED` | **Price(Regime):** `TRANSITION / MIXED` | **Bucket:** `MIXED` | **VIX:** `16.70`
-- **Positioning Data:** Z-Score: `2.22` (>1.8 시 Run) | Gamma: `1.80` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `2.22` (>1.8 시 Run) | Gamma: `1.79` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **⚡ TREND EXHAUSTION** -> **해석:** 추세와 정책은 일치하나 포지션 에너지 고갈(Z:2.22). 반전 가능성 상존.
 - **Action Signal:** 🚨 **MONITOR REVERSAL (RUN 액션 준비)**
 
@@ -405,7 +405,7 @@ No significant sector-level correlation break detected.
 - **Action:** 신규 추격 금지 / 일부 이익실현 / 베타 노출 축소
 - **Final Multiplier:** 0.92x (VIX x Positioning x Credit/Convexity)
 - **Slope Intensity:** -0.0050
-- **Positioning Layer:** ⚠️ Extreme Positioning Heat(2.22), Position Unwind, Positive Gamma(1.80)
+- **Positioning Layer:** ⚠️ Extreme Positioning Heat(2.22), Position Unwind, Positive Gamma(1.79)
 - **Brake Drivers:** ⚠️ Extreme Positioning Heat
 
 - **📊 Recommended Exposure:** **58%**
@@ -570,8 +570,8 @@ Correlation Break: True / Leader=UNKNOWN
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.3967271671846621
-- **Z-Score (5d):** 0.5923880003633955
+- **Z-Score (1d):** 0.3967270086436756
+- **Z-Score (5d):** 0.5923882013223167
 
 ### EWJ
 - **Crash?** False
