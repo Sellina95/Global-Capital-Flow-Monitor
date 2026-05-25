@@ -1535,7 +1535,7 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
 
     fci_asof = market_data.get("_FCI_ASOF")
     rr_asof  = market_data.get("_REAL_ASOF")
-
+ 
     lines = []
     lines.append("### 💧 2) Liquidity Filter (Enhanced)")
     lines.append("- **질문:** 시장에 새 돈이 들어오는가, 말라가는가?")
@@ -1548,25 +1548,31 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
         f"- **기대(가격) 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})"
     )
 
+    fci_value = _to_float(fci.get("today"))
+    rr_value = _to_float(rr.get("today"))
+    
     if not _valid(fci.get("today")):
         lines.append("- **현실(FCI):** N/A (not available)")
     else:
         lines.append(
-            f"- **현실(FCI):** level={fci_level} / update=low-frequency"
+            f"- **현실(FCI):** value={fci_value:.3f} / level={fci_level} / update=low-frequency"
             + (f" | as of: {fci_asof} (latest available)" if fci_asof else "")
         )
+    
     if not _valid(rr.get("today")):
         lines.append("- **유인(Real Rates):** N/A (not available)")
     else:
         lines.append(
-            f"- **유인(Real Rates):** level={rr_level} / dir({_dir_str(rr_eff_dir)})"
+            f"- **유인(Real Rates):** value={rr_value:.3f} / level={rr_level} / dir({_dir_str(rr_eff_dir)})"
             + (f" | as of: {rr_asof} (latest available)" if rr_asof else "")
         )
+    
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
     lines.append("- **Note:** FCI는 저빈도 금융환경 프록시로 level 중심 해석, Real Rates는 영업일 기준 변화 방향을 함께 반영함")
+    
     return "\n".join(lines)
-
+    
 
 # =========================
 # 3) Policy
@@ -1642,7 +1648,12 @@ def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
         components.append(f"{name}Δ {_fmt_delta(d)}")
 
     add_component("REAL_RATE", real_d, 1.0)   # real yield up = tighter
-    components.append("FCIΔ n/a (low-frequency)")         # conditions tighter = tighter
+    fci_value = _to_float(fci.get("today"))
+
+    if fci_value is None:
+        components.append("FCI value=N/A (low-frequency)")
+    else:
+        components.append(f"FCI value={fci_value:.3f} (low-frequency)")
     add_component("DXY", dxy_d, 1.0)          # dollar stronger = tighter
     add_component("US10Y", us10y_d, 0.5)      # nominal up = tighter (weaker weight)
 
