@@ -265,13 +265,43 @@ def fetch_positioning_center():
             raise ValueError("total_call_oi is 0, cannot compute PCR")
 
         pcr = total_put_oi / total_call_oi
-        gamma_proxy = round(pcr * (20 / vix_current), 2)
 
         print(f"   pcr = {pcr:.6f}")
+        
+        # -------------------------------------------------------------------------
+        # [ARCHITECT NOTE: Proxy Boundary Defense]
+        # True dealer gamma requires strike-level gamma aggregation.
+        # This engine uses free-data PCR/VIX proxy only.
+        #
+        # High PCR usually implies downside hedge demand / possible short-gamma stress,
+        # NOT supportive positive gamma.
+        #
+        # Therefore:
+        # - Use inverse PCR to avoid interpreting put-hedge spikes
+        #   as stabilizing gamma support.
+        # - This remains a positioning proxy, not real dealer GEX.
+        # -------------------------------------------------------------------------
+        
+        if pcr <= 0:
+            raise ValueError("Invalid PCR value")
+        
+        gamma_proxy = round((1 / pcr) * (20 / vix_current), 2)
+        
+        # Optional interpretation label
+        if pcr >= 1.5:
+            gamma_label = "PUT_HEDGE_STRESS"
+        elif gamma_proxy >= 1.2:
+            gamma_label = "SQUEEZE_SUPPORTIVE_PROXY"
+        else:
+            gamma_label = "NEUTRAL_OPTION_POSITIONING"
+        
         print(f"   gamma_proxy = {gamma_proxy}")
-
+        print(f"   gamma_label = {gamma_label}")
+        
         results["DEALER_GAMMA_BIAS"] = gamma_proxy
+        results["DEALER_GAMMA_LABEL"] = gamma_label
         results["GAMMA_FETCH_OK"] = 1
+
 
     except Exception as e:
         print(f"   ❌ Dealer Gamma 분석 실패: {e}")
