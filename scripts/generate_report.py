@@ -1829,14 +1829,15 @@ def attach_positioning_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     pos_df = load_positioning_df()
 
     defaults = {
-        "SP500_POS_Z": 0.0,
-        "US10Y_POS_Z": 0.0,
-        "DXY_POS_Z": 0.0,
-        "DEALER_GAMMA_BIAS": 1.0,
-        "CTA_MOMENTUM_SCORE": 0.0,
-        "GAMMA_FETCH_OK": 0,
-        "CTA_FETCH_OK": 0,
-        "_POS_ASOF": None,
+    "SP500_POS_Z": 0.0,
+    "US10Y_POS_Z": 0.0,
+    "DXY_POS_Z": 0.0,
+    "DEALER_GAMMA_BIAS": 1.0,
+    "DEALER_GAMMA_LABEL": "NEUTRAL_OPTION_POSITIONING",
+    "CTA_MOMENTUM_SCORE": 0.0,
+    "GAMMA_FETCH_OK": 0,
+    "CTA_FETCH_OK": 0,
+    "_POS_ASOF": None,
     }
 
     if pos_df.empty:
@@ -1851,9 +1852,8 @@ def attach_positioning_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         "US10Y_POS_Z",
         "DXY_POS_Z",
         "DEALER_GAMMA_BIAS",
+        "DEALER_GAMMA_LABEL",
         "CTA_MOMENTUM_SCORE",
-        "GAMMA_FETCH_OK",
-        "CTA_FETCH_OK",
     ]:
         val = latest.get(col)
         try:
