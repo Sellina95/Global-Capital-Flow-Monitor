@@ -4507,7 +4507,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     def _dedupe(items):
         seen = set()
         result = []
-        for x in items:
+        for x in items:5ㅂ
             if x not in seen:
                 result.append(x)
                 seen.add(x)
@@ -4685,7 +4685,25 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     exposure *= multiplier
     exposure *= pos_multiplier
-
+    
+    
+    # --------------------------------------------------
+    # Leadership Breadth Offset
+    # crowded + broad participation
+    # --------------------------------------------------
+    
+    leadership_score = float(
+        market_data.get("LEADERSHIP_BREADTH_SCORE", 0) or 0
+    )
+    
+    if (
+        leadership_score >= 6
+        and credit_calm is True
+        and pos_z >= 2.0
+    ):
+        pos_multiplier *= 1.05
+        pos_notes.append(f"Leadership Breadth Offset({leadership_score:.1f})")
+    
     # --------------------------------------------------
     # 5️⃣ Credit Layer
     # --------------------------------------------------
