@@ -894,7 +894,7 @@ def correlation_break_filter(market_data: Dict[str, Any]) -> str:
             lines.append(f"- {b}")
         lines.append("")
         lines.append("So What?")
-        lines.append("- 결론: **공식이 깨진 구간** → 방향 베팅보다 **사이징 보수적 + 퀄리티/리더 중심**")
+        lines.append("- 결론: **공식이 깨진 구간** → 총노출 추가 감산보다 **추격 자제 + 퀄리티/리더 중심 배분**")
     else:
         lines.append("No significant correlation break detected.")
 
@@ -996,7 +996,7 @@ def sector_correlation_break_filter(market_data: Dict[str, Any]) -> str:
             lines.append(f"- {b}")
         lines.append("")
         lines.append("So What?")
-        lines.append("- 결론: **섹터 ‘공식’이 깨진 구간** → 방향 베팅보다 **사이징 축소 + 리더 중심**")
+        lines.append("- 결론: **섹터 ‘공식’이 깨진 구간** → 총노출 추가 감산보다 **섹터 배분 보수화 + 리더 중심**")
     else:
         lines.append("No significant sector-level correlation break detected.")
 
