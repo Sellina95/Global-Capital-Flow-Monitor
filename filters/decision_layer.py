@@ -399,12 +399,10 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
             final_action = "HOLD"
         elif final_action == "HOLD":
             final_action = "REDUCE"
-        final_exposure = int(final_exposure * 0.75)
-        reason_chain.append("Warning Score 3+ → 공격적 확장 금지 / 익스포저 25% haircut")
-
+        reason_chain.append("Warning Score 3+ → 공격적 확장 금지 / 총노출 추가 감산 없이 방어적 배분")
+        
     elif warning_score == 2:
-        final_exposure = int(final_exposure * 0.85)
-        reason_chain.append("Warning Score 2 → 익스포저 15% haircut")
+        reason_chain.append("Warning Score 2 → 섹터/상관관계 경고, 총노출 추가 감산 없이 배분 보수화")
 
     elif warning_score == 1:
         reason_chain.append("Warning Score 1 → 경미한 이상신호, 모니터링 강화")
@@ -452,17 +450,13 @@ def war_room_final_decision_filter(market_data: Dict[str, Any]) -> str:
 
         elif final_action in ["INCREASE", "ADD", "EARLY BUY"]:
             final_action = "HOLD"
-            final_exposure = int(final_exposure * 0.9)
-            reason_chain.append("Tactical REDUCE → 확장 억제 / 익스포저 10% 축소")
-
+            reason_chain.append("Tactical REDUCE → 확장 억제 / 총노출 추가 감산 없음")
+            
         elif final_action == "HOLD":
             final_action = "REDUCE"
-            final_exposure = int(final_exposure * 0.9)
-            reason_chain.append("Tactical REDUCE → HOLD에서 REDUCE 전환 / 익스포저 10% 축소")
-
+            reason_chain.append("Tactical REDUCE → HOLD에서 REDUCE 전환 / 총노출 추가 감산 없음")
         else:
-            final_exposure = int(final_exposure * 0.95)
-            reason_chain.append("Tactical REDUCE → 방어 기조 유지 / 익스포저 5% 추가 축소")
+            reason_chain.append("Tactical REDUCE → 방어 기조 유지 / 총노출 추가 감산 없이 배분 보수화")
 
     elif tactical_action in ["ADD", "EARLY BUY", "INCREASE"]:
         if sew_status == "STABLE" and div_status == "ALIGNED" and warning_score <= 1:
