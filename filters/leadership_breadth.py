@@ -163,9 +163,12 @@ def leadership_breadth_filter(market_data: Dict[str, Any]) -> str:
         label = "CONCENTRATED_LEADERSHIP"
     else:
         label = "MEGA_CAP_SQUEEZE_RISK"
-
+    
+    market_data["LEADERSHIP_BREADTH_SCORE"] = score
+    market_data["LEADERSHIP_BREADTH_LABEL"] = label
+    
     notes_text = "\n".join([f"- {n}" for n in notes])
-
+    
     
 
     report = f"""
