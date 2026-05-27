@@ -4507,7 +4507,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     def _dedupe(items):
         seen = set()
         result = []
-        for x in items:5ㅂ
+        for x in items:
             if x not in seen:
                 result.append(x)
                 seen.add(x)
