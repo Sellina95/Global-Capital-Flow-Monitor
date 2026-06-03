@@ -142,16 +142,5 @@ def classify_participation_quality(context):
         "participation_mode": mode
     }
 
-test_context = {
-    "leadership_state": "MEGACAP_ONLY",
-    "breadth_score": -1,
-    "leader_type": "MEGACAP_TECH",
-    "participation_signal": "WEAK",
-    "positioning_state": "SQUEEZE_RISK",
-    "positioning_score": -3,
-    "squeeze_risk": "HIGH",
-    "gamma_signal": "SHORT_GAMMA",
-    "vol_structure": "DISLOCATION",
-}
 
 print(classify_participation_quality(test_context))
