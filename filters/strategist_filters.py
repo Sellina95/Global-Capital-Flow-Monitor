@@ -5144,6 +5144,21 @@ def build_tactical_allocation(
 
     print("[DEBUG][18_PARTICIPATION_META]", quality_meta)
     
+    sector_style_map = {
+        "Technology": "HIGH_BETA",
+        "Communication Services": "HIGH_BETA",
+        "Real Estate": "HIGH_BETA",
+
+        "Consumer Discretionary": "CYCLICAL",
+        "Industrials": "CYCLICAL",
+        "Materials": "CYCLICAL",
+        "Energy": "CYCLICAL",
+        "Financials": "CYCLICAL",
+
+        "Consumer Staples": "DEFENSIVE",
+        "Health Care": "DEFENSIVE",
+        "Utilities": "DEFENSIVE",
+    }
 
     # 🔥 NameError 방지: 함수 전체 스코프 최상단
     cap_applied = []
@@ -5337,19 +5352,20 @@ def build_tactical_allocation(
                 }
             )
     # -------------------------
+    # -------------------------
     # 6.5) Participation Quality Caps
     # -------------------------
     for sector in list(weights.keys()):
-        classification = sector_classification.get(sector, "ALIGNED")
+        sector_style = sector_style_map.get(sector, "CORE")
 
         participation_cap = None
 
-        if classification == "HIGH_BETA":
+        if sector_style == "HIGH_BETA":
             participation_cap = policy.get("high_beta_cap", 1.0) * 100.0
-        elif classification == "SMALL_CAP":
-            participation_cap = policy.get("small_cap_cap", 1.0) * 100.0
-        elif classification == "CYCLICAL":
+        elif sector_style == "CYCLICAL":
             participation_cap = policy.get("cyclical_cap", 1.0) * 100.0
+        elif sector_style == "SMALL_CAP":
+            participation_cap = policy.get("small_cap_cap", 1.0) * 100.0
 
         if participation_cap is not None and weights[sector] > participation_cap:
             original_weight = weights[sector]
@@ -5363,7 +5379,7 @@ def build_tactical_allocation(
                     "reduced_by": round(original_weight - participation_cap, 1),
                     "reason": f"PARTICIPATION_CAP_{participation_mode}",
                 }
-            )            
+            )         
 
     # -------------------------
     # 7) Exposure compression
