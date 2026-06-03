@@ -234,7 +234,7 @@ def leadership_breadth_filter(market_data: Dict[str, Any]) -> str:
 **Leadership Notes**
 {notes_text}
 
-📌 Shadow Note: This filter checks whether leadership is broadening beyond mega-cap tech/AI. No impact on Final Exposure, Phase, or Allocation.
+📌 Shadow Note: This filter checks whether leadership is broadening beyond mega-cap tech/AI. No impact on Final Exposure or Phase, but used as context for Sector Allocation risk controls.
 """
 
     return report

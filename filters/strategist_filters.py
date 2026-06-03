@@ -93,6 +93,7 @@ def _compute_zscore_strength(
     except Exception:
         return None, "UNKNOWN"
 
+
 def rank_deleveraging_priority(
     score: Dict[str, float],
     weights: Dict[str, float],
@@ -1077,10 +1078,36 @@ def sector_correlation_break_state(market_data: Dict[str, Any]) -> Dict[str, Any
             breaks.append("DXY ↑ but XLK ↑")
             score += 1
 
+    breakdown_type = "NONE"
+
+    if len(breaks) > 0:
+        if "DXY ↑ but XLK ↑" in breaks:
+            breakdown_type = "MACRO_TIGHTENING_TECH_RALLY"
+
+        elif "US10Y ↑ but XLF ↓" in breaks:
+            breakdown_type = "XLF_BETRAYAL"
+
+        elif "WTI ↑ but XLE ↓" in breaks:
+            breakdown_type = "ENERGY_BETRAYAL"
+
+        elif "US10Y ↓ but XLK ↓" in breaks:
+            breakdown_type = "GROWTH_FAILED_ON_RATE_RELIEF"
+
+        elif "US10Y ↓ but XLF ↓" in breaks:
+            breakdown_type = "FINANCIALS_WEAK_ON_RATE_RELIEF"
+
+        elif "VIX ↑ but XLF ↑" in breaks:
+            breakdown_type = "FINANCIALS_RESILIENCE_UNDER_VOL"
+
+        else:
+            breakdown_type = "UNCLASSIFIED_SECTOR_BREAK"
+
     return {
         "break": len(breaks) > 0,
         "score": score,
         "reasons": breaks,
+        "breakdown_type": breakdown_type,
+        "primary_reason": breaks[0] if breaks else "NONE",
     }
 
     
@@ -5109,6 +5136,41 @@ def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
     else:
         return (0, "VOLATILITY NORMAL", f"absolute mode: VIX {current_vix:.1f}")
 
+
+def determine_cash_return_policy(
+    market_quality_context: Dict[str, Any],
+    participation_mode: str,
+) -> bool:
+    """
+    Decide whether capped residual equity budget should be returned to cash.
+    """
+
+    hard_cash_modes = {
+        "COMPRESSED_SQUEEZE",
+        "VOL_STRUCTURE_DEFENSE",
+        "FAILED_BREADTH_MODE",
+        "CAP_RESTRICTED",
+        "DEFENSIVE_SELECTIVE",
+    }
+
+    if participation_mode in hard_cash_modes:
+        return True
+
+    participation_signal = market_quality_context.get("participation_signal", "WEAK")
+    positioning_state = market_quality_context.get("positioning_state", "NORMAL")
+    vol_structure = market_quality_context.get("vol_structure", "NORMAL")
+
+    if participation_signal == "FAILED":
+        return True
+
+    if positioning_state in ["STRESSED", "SQUEEZE_RISK"]:
+        return True
+
+    if vol_structure in ["INVERTED_SHORT_TERM", "DISLOCATION"]:
+        return True
+
+    return False
+
 def build_tactical_allocation(
     score: Dict[str, float],
     ow_sorted: list,
@@ -5145,6 +5207,17 @@ def build_tactical_allocation(
 
     print("[DEBUG][18_PARTICIPATION_META]", quality_meta)
     print("[DEBUG][18_POLICY]", participation_mode, policy)
+
+    cash_return_required = determine_cash_return_policy(
+        market_quality_context,
+        participation_mode,
+    )
+
+    print(
+        "[DEBUG][18_CASH_POLICY]",
+        participation_mode,
+        cash_return_required,
+    )
     
     sector_style_map = {
         "Technology": "HIGH_BETA",
@@ -5381,7 +5454,97 @@ def build_tactical_allocation(
                     "reduced_by": round(original_weight - participation_cap, 1),
                     "reason": f"PARTICIPATION_CAP_{participation_mode}",
                 }
-            )         
+            ) 
+    # -------------------------
+    # 6.6) Residual Reallocation Policy
+    # -------------------------
+    current_sum = sum(weights.values())
+    residual_budget = max(0.0, float(total_exposure) - current_sum)
+
+    can_redistribute = (
+        residual_budget > 0
+        and not cash_return_required
+        and market_quality_context.get("leadership_state") == "BROAD"
+        and market_quality_context.get("participation_signal") == "CONFIRMED"
+        and market_quality_context.get("vol_structure") == "NORMAL"
+        and market_quality_context.get("positioning_state") not in ["STRESSED", "SQUEEZE_RISK"]
+    )
+
+    if can_redistribute:
+        eligible_sectors = []
+
+        for sector in adjusted_scores.keys():
+            if sector not in weights:
+                continue
+
+            sector_style = sector_style_map.get(sector, "CORE")
+            classification = sector_classification.get(sector, "ALIGNED")
+            div_flag = divergence_flags.get(sector, "ALIGNED")
+
+            if classification in ["THEORY_TRAP", "AVOID"]:
+                continue
+
+            if div_flag == "NEGATIVE_DIVERGENCE":
+                continue
+
+            if (
+                sector_style == "CYCLICAL"
+                and not policy.get("allow_cyclical_expansion", False)
+            ):
+                continue
+
+            already_capped = any(
+                c.get("sector") == sector
+                for c in cap_applied
+            )
+
+            if already_capped:
+                continue
+
+            eligible_sectors.append(sector)
+
+        eligible_score_sum = sum(
+            adjusted_scores.get(sector, 0.0)
+            for sector in eligible_sectors
+        )
+
+        if eligible_score_sum > 0:
+            for sector in eligible_sectors:
+                add_weight = (
+                    adjusted_scores.get(sector, 0.0)
+                    / eligible_score_sum
+                    * residual_budget
+                )
+                weights[sector] = weights.get(sector, 0.0) + add_weight
+
+            residual_reallocation_action = "REALLOCATED_TO_ELIGIBLE_SECTORS"
+
+            print(
+                "[DEBUG][18_RESIDUAL_REALLOCATED]",
+                round(residual_budget, 1),
+                eligible_sectors,
+            )
+        else:
+            residual_reallocation_action = "REALLOCATION_SKIPPED_NO_ELIGIBLE_SECTOR"
+
+            print(
+                "[DEBUG][18_RESIDUAL_REALLOCATION_SKIPPED]",
+                round(residual_budget, 1),
+                "NO_ELIGIBLE_SECTOR",
+            )
+
+    else:
+        residual_reallocation_action = (
+            "RETURN_TO_CASH"
+            if cash_return_required
+            else "REALLOCATION_CONDITIONS_NOT_MET"
+        )
+
+        print(
+            "[DEBUG][18_RESIDUAL_REALLOCATION_BLOCKED]",
+            round(residual_budget, 1),
+            residual_reallocation_action,
+        )        
 
     # -------------------------
     # 7) Exposure compression
@@ -5395,12 +5558,31 @@ def build_tactical_allocation(
             weights[sector] *= scale
 
     # -------------------------
-    # 8) Rounding
+    # 8) Rounding + Residual Cash Return
     # -------------------------
     for sector in list(weights.keys()):
         weights[sector] = round(weights[sector], 1)
 
-    cash_weight = round(100.0 - sum(weights.values()), 1)
+    allocated_equity = round(sum(weights.values()), 1)
+
+    residual_cash_return = round(
+        max(0.0, float(total_exposure) - allocated_equity),
+        1
+    )
+
+    if cash_return_required:
+        residual_cash_action = "RETURN_TO_CASH"
+    elif residual_reallocation_action == "REALLOCATED_TO_ELIGIBLE_SECTORS":
+        residual_cash_action = "REALLOCATED"
+    else:
+        residual_cash_action = "UNALLOCATED_RESIDUAL_CASH"
+
+    cash_weight = round(100.0 - allocated_equity, 1)
+
+    print("[DEBUG][18_ALLOCATED_EQUITY]", allocated_equity)
+    print("[DEBUG][18_RESIDUAL_CASH_RETURN]", residual_cash_return)
+    print("[DEBUG][18_RESIDUAL_CASH_ACTION]", residual_cash_action)
+    print("[DEBUG][18_CASH_WEIGHT]", cash_weight)
     print("[DEBUG][18_CAP_APPLIED]", cap_applied)
     print("[DEBUG][18_FINAL_WEIGHTS]", weights)
     # -------------------------
@@ -5409,6 +5591,9 @@ def build_tactical_allocation(
     return {
         "weights": weights,
         "cash_weight": cash_weight,
+        "allocated_equity": allocated_equity,
+        "residual_cash_return": residual_cash_return,
+        "residual_cash_action": residual_cash_action,
         "total_score_sum": round(total_score_sum, 2),
         "adjusted_scores": adjusted_scores,
         "cap_applied": cap_applied,
@@ -5416,6 +5601,7 @@ def build_tactical_allocation(
         "participation_quality": quality_meta["participation_quality"],
         "participation_quality_score": quality_meta["participation_quality_score"],
         "participation_mode": participation_mode,
+        "residual_reallocation_action": residual_reallocation_action,
     }
     
 def apply_rebalance_threshold(
@@ -6071,42 +6257,80 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     market_data["AVG_DIVERGENCE"] = avg_divergence
     market_data["DIVERGENCE_DISPERSION"] = divergence_dispersion
 
-    # -------------------------
+
     # H-4) Correlation Break Integration
     # -------------------------
-    corr_msg = correlation_break_filter(market_data)
-    is_corr_break = bool(corr_msg)
+    corr_state = correlation_break_state(market_data)
+    sector_corr_state = sector_correlation_break_state(market_data)
+
+    is_corr_break = (
+        bool(corr_state.get("break"))
+        or bool(sector_corr_state.get("break"))
+    )
+
+    breakdown_type = sector_corr_state.get("breakdown_type", "NONE")
+
+    market_data["CORRELATION_BREAK_ACTIVE"] = is_corr_break
+    market_data["CORRELATION_BREAK_TYPE"] = breakdown_type
+    market_data["CORRELATION_BREAK_REASONS"] = (
+        corr_state.get("reasons", [])
+        + sector_corr_state.get("reasons", [])
+    )
 
     if is_corr_break:
-        break_sector = None
-
-        corr_lower = str(corr_msg).lower()
-
-        if "technology" in corr_lower or "xlk" in corr_lower:
-            break_sector = "Technology"
-        elif "health" in corr_lower or "xlv" in corr_lower:
-            break_sector = "Health Care"
-        elif "energy" in corr_lower or "xle" in corr_lower:
-            break_sector = "Energy"
-
-        # 시장 전체 신뢰도 할인
         for s in final_score:
             final_score[s] = round(final_score[s] * 0.90, 2)
 
-        # Break sector는 상대강도 유지
-        if break_sector and break_sector in final_score:
-            final_score[break_sector] = round(final_score[break_sector] + 0.3, 2)
+        if breakdown_type == "MACRO_TIGHTENING_TECH_RALLY":
+            if "Technology" in final_score:
+                final_score["Technology"] = round(final_score["Technology"] + 0.5, 2)
+            if "Communication Services" in final_score:
+                final_score["Communication Services"] = round(final_score["Communication Services"] + 0.3, 2)
 
-        market_data["CORRELATION_BREAK_ACTIVE"] = True
-        market_data["CORRELATION_BREAK_SECTOR"] = break_sector or "UNKNOWN"
+            for s in ["Financials", "Industrials", "Consumer Discretionary", "Real Estate"]:
+                if s in final_score:
+                    final_score[s] = round(final_score[s] - 0.5, 2)
 
-    else:
-        market_data["CORRELATION_BREAK_ACTIVE"] = False
-        market_data["CORRELATION_BREAK_SECTOR"] = None
+        elif breakdown_type == "XLF_BETRAYAL":
+            if "Financials" in final_score:
+                final_score["Financials"] = round(final_score["Financials"] - 0.8, 2)
+
+        elif breakdown_type == "ENERGY_BETRAYAL":
+            if "Energy" in final_score:
+                final_score["Energy"] = round(final_score["Energy"] - 0.8, 2)
+            if "Materials" in final_score:
+                final_score["Materials"] = round(final_score["Materials"] - 0.3, 2)
+
+        elif breakdown_type == "GROWTH_FAILED_ON_RATE_RELIEF":
+            if "Technology" in final_score:
+                final_score["Technology"] = round(final_score["Technology"] - 0.5, 2)
+            if "Communication Services" in final_score:
+                final_score["Communication Services"] = round(final_score["Communication Services"] - 0.3, 2)
+
+            for s in ["Consumer Staples", "Health Care", "Utilities"]:
+                if s in final_score:
+                    final_score[s] = round(final_score[s] + 0.3, 2)
+
+        elif breakdown_type == "FINANCIALS_WEAK_ON_RATE_RELIEF":
+            if "Financials" in final_score:
+                final_score["Financials"] = round(final_score["Financials"] - 0.5, 2)
+
+        elif breakdown_type == "FINANCIALS_RESILIENCE_UNDER_VOL":
+            if "Financials" in final_score:
+                final_score["Financials"] = round(final_score["Financials"] + 0.3, 2)
+
+            for s in ["Technology", "Consumer Discretionary"]:
+                if s in final_score:
+                    final_score[s] = round(final_score[s] - 0.3, 2)
+
+        else:
+            for s in ["Real Estate", "Consumer Discretionary", "Financials"]:
+                if s in final_score:
+                    final_score[s] = round(final_score[s] - 0.2, 2)
 
     score = final_score
-    
     market_data["SECTOR_FINAL_SCORE"] = final_score
+    
    
     # -------------------------
     # I) Conflict Resolver
@@ -6342,15 +6566,15 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         f"(avg_divergence={avg_divergence:+.2f}, dispersion={divergence_dispersion:.2f})"
     )
     corr_active = market_data.get("CORRELATION_BREAK_ACTIVE", False)
-    corr_sector = market_data.get("CORRELATION_BREAK_SECTOR", None)
-    
-    lines.append(f"Correlation Break: {corr_active} / Leader={corr_sector}")
+    corr_type = market_data.get("CORRELATION_BREAK_TYPE", "NONE")
+    corr_reasons = market_data.get("CORRELATION_BREAK_REASONS", [])
+
+    lines.append(f"- Correlation Break: {corr_active} / Type={corr_type}")
+
+    if corr_reasons:
+        lines.append(f"- Break Reasons: {' | '.join(corr_reasons)}")
+
     lines.append(f"- Interpretation: {controller_comment}")
-    lines.append(
-        f"- Correlation Break: "
-        f"{market_data.get('CORRELATION_BREAK_ACTIVE', False)} / "
-        f"Leader={market_data.get('CORRELATION_BREAK_SECTOR', None)}"
-    )
 
     lines.append("")
     lines.append("**Divergence / Classification Monitor (Theory vs Flow alignment: 이론과 실제 자금흐름 정렬 여부)**")
@@ -6381,8 +6605,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # 18.45) Regime Controller Exposure Override
     # -------------------------
-    base_final_exposure = final_exposure
-    exposure_override_reason = "None"
+
     # -------------------------
     # 18.45) Regime Controller
     # 총노출 조정 금지 → Sector Weight Only
@@ -6392,13 +6615,6 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     exposure_override_reason = (
         f"{regime_controller} → Sector Weight Only (No Exposure Change)"
     )
-    
-    # ✅ 15번 결과 그대로 유지
-    final_exposure = round(max(0.0, min(final_exposure, 100.0)), 1)
-    
-    market_data["BASE_RECOMMENDED_EXPOSURE"] = base_final_exposure
-    market_data["REGIME_ADJUSTED_EXPOSURE"] = final_exposure
-    market_data["EXPOSURE_OVERRIDE_REASON"] = exposure_override_reason
      
     final_exposure = round(max(0.0, min(final_exposure, 100.0)), 1)
     
@@ -6422,17 +6638,11 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     print("prev_exposure =", prev_exposure)
     print("final_exposure =", final_exposure)
     print("deleveraging_required =", deleveraging_required)
-
-    corr_msg = correlation_break_filter(market_data)
-    is_corr_break = bool(corr_msg)
-
-    if is_corr_break:
-        if "Technology" in score:
-            score["Technology"] += 0.5
-
-        for s in ["Industrials", "Consumer Discretionary"]:
-            if s in score:
-                score[s] -= 0.3
+    print(
+        "[DEBUG][18_CORR_BREAK]",
+        market_data.get("CORRELATION_BREAK_ACTIVE"),
+        market_data.get("CORRELATION_BREAK_TYPE"),
+    )
 
        # score 조정 후 정렬 재계산
     ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
@@ -6609,7 +6819,7 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         allocation_lines.append(f"- **Regime Cap Profile:** {cap_macro_profile}")
     
         if cap_applied:
-            allocation_lines.append("- **Regime Cap Applied:**")
+            allocation_lines.append("- **Participation / Quality Cap Applied:**")
             for row in cap_applied:
                 allocation_lines.append(
                     f"  - {row['sector']}: {row['original']:.1f}% → "

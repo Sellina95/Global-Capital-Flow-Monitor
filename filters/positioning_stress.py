@@ -213,7 +213,7 @@ def positioning_stress_filter(market_data: Dict[str, Any]) -> str:
 - Gamma Structure: {gamma_note}
 - Positioning: {positioning_note}
 
-📌 Shadow Note: This filter estimates whether current market behavior reflects structural participation or unstable positioning stress (squeeze / unwind / panic). No impact on Final Exposure, Phase, or Allocation.
+📌 Shadow Note: This filter estimates whether current market behavior reflects structural participation or unstable positioning stress (squeeze / unwind / panic). No impact on Final Exposure or Phase, but used as context for Sector Allocation risk controls.
 """
 
     return report

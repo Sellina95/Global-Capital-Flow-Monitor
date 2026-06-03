@@ -484,7 +484,7 @@ def build_strategic_interpretation(
             f"현재 실행 기준 노출은 약 **{final_exposure}%**입니다."
         )
         
-        # ---------------------------------------------------
+    # ---------------------------------------------------
     # 7) Structural Interpretation Layer
     # ---------------------------------------------------
 
@@ -519,6 +519,48 @@ def build_strategic_interpretation(
         rsp_vs_spy=breadth_ratio,
         cyclical_confirm=market_data.get("FLOW_SCORE", 0) >= 4,
     )
+        # 12.7 / 12.8 Leadership & Positioning override
+    leadership_state = (
+        market_data.get("leadership_state")
+        or market_data.get("LEADERSHIP_STATE")
+        or market_data.get("leadership_18_state")
+    )
+
+    participation_signal = (
+        market_data.get("participation_signal")
+        or market_data.get("PARTICIPATION_SIGNAL")
+        or market_data.get("leadership_participation_signal")
+    ) 
+
+    positioning_state = (
+        market_data.get("positioning_state")
+        or market_data.get("POSITIONING_STATE")
+        or market_data.get("positioning_18_state")
+    )
+
+    if participation_signal == "FAILED":
+        breadth_eval = {
+            "state": "FAILED",
+            "reason": "participation failed despite index-level movement",
+        }
+
+    elif leadership_state == "BROAD" and participation_signal == "CONFIRMED":
+        if positioning_state in ["SQUEEZE_RISK", "STRESSED"]:
+            breadth_eval = {
+                "state": "BROAD_BUT_FRAGILE",
+                "reason": "leadership is broadening, but positioning stress keeps participation quality fragile",
+            }
+        else:
+            breadth_eval = {
+                "state": "BROAD",
+                "reason": "leadership broadening confirmed",
+            }
+
+    elif leadership_state in ["NARROW", "MEGACAP_ONLY"]:
+        breadth_eval = {
+            "state": "NARROW",
+            "reason": "leadership remains concentrated",
+        }
 
     financing_eval = evaluate_financing_condition(
         us10y=market_data.get("US10Y"),
