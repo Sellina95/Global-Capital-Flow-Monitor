@@ -1,38 +1,38 @@
 {
-  "timestamp": "2026-06-02 05:27:50",
+  "timestamp": "2026-06-03 04:59:54",
   "status": "RISK_COMPRESSION",
   "event_type": "NORMAL",
-  "spike_count": 1,
+  "spike_count": 0,
   "extreme_count": 0,
   "recommended_exposure": 55,
   "deadman": false,
   "summary": "⚠️ Risk Compression 발동 (권장 익스포저 55%)",
-  "deadman_reason": "⚠️ CROWDING RISK: POS_Z Extreme (2.40) → Risk Compression (55%)",
+  "deadman_reason": "⚠️ CROWDING RISK: POS_Z Extreme (2.48) → Risk Compression (55%)",
   "assets": {
     "SPY": {
-      "zscore": 1.38,
+      "zscore": -0.44,
       "state": "NORMAL",
-      "pct_change": -0.1
+      "pct_change": 0.02
     },
     "QQQ": {
-      "zscore": 0.39,
-      "state": "NORMAL",
-      "pct_change": -0.09
-    },
-    "VIX": {
-      "zscore": 0.89,
+      "zscore": 0.28,
       "state": "NORMAL",
       "pct_change": 0.12
     },
+    "VIX": {
+      "zscore": 1.88,
+      "state": "WATCH",
+      "pct_change": -0.19
+    },
     "DXY": {
-      "zscore": -2.72,
-      "state": "ALERT",
-      "pct_change": -0.0
+      "zscore": -1.52,
+      "state": "NORMAL",
+      "pct_change": -0.05
     },
     "WTI": {
-      "zscore": -0.65,
+      "zscore": -0.46,
       "state": "NORMAL",
-      "pct_change": 0.15
+      "pct_change": 0.09
     }
   }
 }
