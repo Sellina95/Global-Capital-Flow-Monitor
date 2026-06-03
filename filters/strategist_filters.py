@@ -5171,7 +5171,10 @@ def build_tactical_allocation(
         if classification == "HIGH_CONVICTION_ALIGNED":
             multiplier *= 1.15
         elif classification == "FLOW_WEAK":
-            multiplier *= 0.60
+            if policy.get("flow_weak_penalty", False):
+                multiplier *= 0.60
+            else:
+                multiplier *= 1.00
         elif classification == "THEORY_TRAP":
             multiplier *= 0.40
         elif classification == "POSITIVE_DIVERGENCE":
