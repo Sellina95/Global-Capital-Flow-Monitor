@@ -5138,12 +5138,13 @@ def build_tactical_allocation(
         "participation_quality_score": 0,
         "participation_mode": "BALANCED",
     }
-    print("[DEBUG][18_POLICY]", participation_mode, policy)
+    
 	
     participation_mode = quality_meta["participation_mode"]
     policy = mode_policy.get(participation_mode, mode_policy["BALANCED"])
 
     print("[DEBUG][18_PARTICIPATION_META]", quality_meta)
+    print("[DEBUG][18_POLICY]", participation_mode, policy)
     
     sector_style_map = {
         "Technology": "HIGH_BETA",
