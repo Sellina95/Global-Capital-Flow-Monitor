@@ -5119,6 +5119,7 @@ def build_tactical_allocation(
     momentum_scores: Dict[str, float] = None,
     sector_classification: Dict[str, str] = None,
     macro_profile: str = "BALANCED",
+    market_quality_context: Dict[str, Any] = None,
 ) -> Dict[str, Any]:
     """
     18.5) Tactical Asset Allocation Builder - v4.1
@@ -5130,6 +5131,19 @@ def build_tactical_allocation(
     sector_classification = sector_classification or {}
     momentum_scores = momentum_scores or {}
     macro_profile = str(macro_profile or "BALANCED").upper()
+    market_quality_context = market_quality_context or {}
+
+    quality_meta = classify_participation_quality(market_quality_context) if market_quality_context else {
+        "participation_quality": "NEUTRAL_PARTICIPATION",
+        "participation_quality_score": 0,
+        "participation_mode": "BALANCED",
+    }
+
+    participation_mode = quality_meta["participation_mode"]
+    policy = mode_policy.get(participation_mode, mode_policy["BALANCED"])
+
+    print("[DEBUG][18_PARTICIPATION_META]", quality_meta)
+    
 
     # 🔥 NameError 방지: 함수 전체 스코프 최상단
     cap_applied = []
@@ -5349,6 +5363,9 @@ def build_tactical_allocation(
         "adjusted_scores": adjusted_scores,
         "cap_applied": cap_applied,
         "macro_profile": macro_profile,
+        "participation_quality": quality_meta["participation_quality"],
+        "participation_quality_score": quality_meta["participation_quality_score"],
+        "participation_mode": participation_mode,
     }
     
 def apply_rebalance_threshold(
@@ -6380,6 +6397,25 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         sector: momentum_scores.get(ticker_map.get(sector, ""), 0)
         for sector in ow_sorted
     }
+    # -------------------------
+    # 18.49) Market Quality Context
+    # 12.7 Leadership Breadth + 12.8 Positioning Stress
+    # -------------------------
+    market_quality_context = {
+        "leadership_state": market_data.get("LEADERSHIP_STATE", "NARROW"),
+        "breadth_score": market_data.get("BREADTH_SCORE_18", 0),
+        "leader_type": market_data.get("LEADER_TYPE", "NONE"),
+        "participation_signal": market_data.get("PARTICIPATION_SIGNAL", "WEAK"),
+
+        "positioning_state": market_data.get("POSITIONING_STATE", "ELEVATED"),
+        "positioning_score": market_data.get("POSITIONING_SCORE_18", -1),
+        "squeeze_risk": market_data.get("SQUEEZE_RISK", "MEDIUM"),
+        "gamma_signal": market_data.get("GAMMA_SIGNAL", "STABLE"),
+        "vol_structure": market_data.get("VOL_STRUCTURE", "COMPRESSION"),
+    }
+
+    print("[DEBUG][18_MARKET_QUALITY_CONTEXT]", market_quality_context)
+    
 
     alloc_result = build_tactical_allocation(
         score=score,
@@ -6391,12 +6427,16 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         momentum_scores=sector_momentum,
         sector_classification=sector_classification,
         macro_profile=macro_profile,
+        market_quality_context=market_quality_context,
     )
     weights = alloc_result["weights"]
     cash_weight = alloc_result["cash_weight"]
     total_score_sum = alloc_result["total_score_sum"]
     cap_applied = alloc_result.get("cap_applied", [])
     cap_macro_profile = alloc_result.get("macro_profile", macro_profile)
+    participation_quality = alloc_result.get("participation_quality", "NEUTRAL_PARTICIPATION")
+    participation_quality_score = alloc_result.get("participation_quality_score", 0)
+    participation_mode = alloc_result.get("participation_mode", "BALANCED")
 
     # -------------------------
     # Rebalancing Threshold
