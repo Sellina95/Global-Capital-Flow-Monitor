@@ -4696,6 +4696,8 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     leadership_score = float(
         market_data.get("LEADERSHIP_BREADTH_SCORE", 0) or 0
     )
+    credit_status = market_data.get("HY_OAS_STATUS", "")
+    credit_calm = credit_status in ["COOL", "CALM", "NORMAL"]
     
     if (
         leadership_score >= 6
