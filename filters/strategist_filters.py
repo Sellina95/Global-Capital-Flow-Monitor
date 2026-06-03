@@ -142,7 +142,7 @@ def rank_deleveraging_priority(
             class_score = 4.0
 
         elif classification == "FLOW_WEAK":
-            class_score = 2.5
+            class_score = 0.0
 
         elif classification == "AVOID":
             class_score = 5.0
@@ -5336,6 +5336,34 @@ def build_tactical_allocation(
                     "reduced_by": round(original_weight - cap, 1),
                 }
             )
+    # -------------------------
+    # 6.5) Participation Quality Caps
+    # -------------------------
+    for sector in list(weights.keys()):
+        classification = sector_classification.get(sector, "ALIGNED")
+
+        participation_cap = None
+
+        if classification == "HIGH_BETA":
+            participation_cap = policy.get("high_beta_cap", 1.0) * 100.0
+        elif classification == "SMALL_CAP":
+            participation_cap = policy.get("small_cap_cap", 1.0) * 100.0
+        elif classification == "CYCLICAL":
+            participation_cap = policy.get("cyclical_cap", 1.0) * 100.0
+
+        if participation_cap is not None and weights[sector] > participation_cap:
+            original_weight = weights[sector]
+            weights[sector] = participation_cap
+
+            cap_applied.append(
+                {
+                    "sector": sector,
+                    "original": round(original_weight, 1),
+                    "cap": round(participation_cap, 1),
+                    "reduced_by": round(original_weight - participation_cap, 1),
+                    "reason": f"PARTICIPATION_CAP_{participation_mode}",
+                }
+            )            
 
     # -------------------------
     # 7) Exposure compression
