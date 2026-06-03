@@ -5138,7 +5138,8 @@ def build_tactical_allocation(
         "participation_quality_score": 0,
         "participation_mode": "BALANCED",
     }
-
+    print("[DEBUG][18_POLICY]", participation_mode, policy)
+	
     participation_mode = quality_meta["participation_mode"]
     policy = mode_policy.get(participation_mode, mode_policy["BALANCED"])
 
@@ -5399,7 +5400,8 @@ def build_tactical_allocation(
         weights[sector] = round(weights[sector], 1)
 
     cash_weight = round(100.0 - sum(weights.values()), 1)
-
+    print("[DEBUG][18_CAP_APPLIED]", cap_applied)
+    print("[DEBUG][18_FINAL_WEIGHTS]", weights)
     # -------------------------
     # Final Return
     # -------------------------
