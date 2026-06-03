@@ -166,6 +166,45 @@ def leadership_breadth_filter(market_data: Dict[str, Any]) -> str:
     
     market_data["LEADERSHIP_BREADTH_SCORE"] = score
     market_data["LEADERSHIP_BREADTH_LABEL"] = label
+
+    # 18.0 Sector Allocation용 normalized leadership outputs
+    if label == "BROAD_LEADERSHIP":
+        leadership_state = "BROAD"
+        breadth_score_18 = 2
+        leader_type = "BROAD_MARKET"
+        participation_signal = "CONFIRMED"
+
+    elif label == "SELECTIVE_EXPANSION":
+        leadership_state = "MODERATE"
+        breadth_score_18 = 1
+        leader_type = "SEMIS_LED"
+        participation_signal = "PARTIAL"
+
+    elif label == "CONCENTRATED_LEADERSHIP":
+        leadership_state = "NARROW"
+        breadth_score_18 = 0
+        leader_type = "MEGACAP_TECH"
+        participation_signal = "WEAK"
+
+    else:  # MEGA_CAP_SQUEEZE_RISK
+        leadership_state = "MEGACAP_ONLY"
+        breadth_score_18 = -1
+        leader_type = "MEGACAP_TECH"
+        participation_signal = "WEAK"
+
+    market_data["LEADERSHIP_STATE"] = leadership_state
+    market_data["BREADTH_SCORE_18"] = breadth_score_18
+    market_data["LEADER_TYPE"] = leader_type
+    market_data["PARTICIPATION_SIGNAL"] = participation_signal
+
+    print(
+        "[DEBUG][LEADERSHIP_18]",
+        market_data.get("LEADERSHIP_STATE"),
+        market_data.get("BREADTH_SCORE_18"),
+        market_data.get("LEADER_TYPE"),
+        market_data.get("PARTICIPATION_SIGNAL"),
+    )
+    
     
     notes_text = "\n".join([f"- {n}" for n in notes])
     
