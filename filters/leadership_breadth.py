@@ -167,8 +167,17 @@ def leadership_breadth_filter(market_data: Dict[str, Any]) -> str:
     market_data["LEADERSHIP_BREADTH_SCORE"] = score
     market_data["LEADERSHIP_BREADTH_LABEL"] = label
 
-    # 18.0 Sector Allocation용 normalized leadership outputs
-    if label == "BROAD_LEADERSHIP":
+    # -----------------------------------------
+    # 18.0 Sector Allocation Mapping
+    # -----------------------------------------
+
+    if score <= -4:
+        leadership_state = "FAILED_BREADTH"
+        breadth_score_18 = -2
+        leader_type = "NONE"
+        participation_signal = "FAILED"
+
+    elif label == "BROAD_LEADERSHIP":
         leadership_state = "BROAD"
         breadth_score_18 = 2
         leader_type = "BROAD_MARKET"
@@ -186,11 +195,17 @@ def leadership_breadth_filter(market_data: Dict[str, Any]) -> str:
         leader_type = "MEGACAP_TECH"
         participation_signal = "WEAK"
 
-    else:  # MEGA_CAP_SQUEEZE_RISK
+    elif label == "MEGA_CAP_SQUEEZE_RISK":
         leadership_state = "MEGACAP_ONLY"
         breadth_score_18 = -1
         leader_type = "MEGACAP_TECH"
         participation_signal = "WEAK"
+
+    else:
+        leadership_state = "FAILED_BREADTH"
+        breadth_score_18 = -2
+        leader_type = "NONE"
+        participation_signal = "FAILED"
 
     market_data["LEADERSHIP_STATE"] = leadership_state
     market_data["BREADTH_SCORE_18"] = breadth_score_18
@@ -199,12 +214,13 @@ def leadership_breadth_filter(market_data: Dict[str, Any]) -> str:
 
     print(
         "[DEBUG][LEADERSHIP_18]",
-        market_data.get("LEADERSHIP_STATE"),
-        market_data.get("BREADTH_SCORE_18"),
-        market_data.get("LEADER_TYPE"),
-        market_data.get("PARTICIPATION_SIGNAL"),
+        leadership_state,
+        breadth_score_18,
+        leader_type,
+        participation_signal,
     )
-    
+
+   
     
     notes_text = "\n".join([f"- {n}" for n in notes])
     
