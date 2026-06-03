@@ -141,7 +141,67 @@ def positioning_stress_filter(market_data: Dict[str, Any]) -> str:
     else:
         label = "POSITIONING_STRESS_EVENT"
 
+    
+    # -----------------------------------------
+    # 18.0 Sector Allocation Mapping
+    # -----------------------------------------
+    if label == "STRUCTURAL_RISK_ON":
+        positioning_state = "CALM"
+        positioning_score_18 = 0
+        squeeze_risk = "LOW"
+
+    elif label == "STABLE_BUT_CROWDED":
+        positioning_state = "ELEVATED"
+        positioning_score_18 = -1
+        squeeze_risk = "MEDIUM"
+
+    elif label == "SQUEEZE_RISK":
+        positioning_state = "SQUEEZE_RISK"
+        positioning_score_18 = -3
+        squeeze_risk = "HIGH"
+
+    else:  # POSITIONING_STRESS_EVENT
+        positioning_state = "STRESSED"
+        positioning_score_18 = -2
+        squeeze_risk = "HIGH"
+
+    if gamma > 1:
+        gamma_signal = "CALL_OVERHEATED"
+    elif gamma > 0:
+        gamma_signal = "STABLE"
+    elif gamma < -1:
+        gamma_signal = "SHORT_GAMMA"
+    else:
+        gamma_signal = "STABLE"
+
+    if vix > 0 and vix3m > 0 and vix9d > 0:
+        if (vix3m - vix) <= -2:
+            vol_structure = "DISLOCATION"
+        elif (vix9d / vix) > 1.05:
+            vol_structure = "INVERTED_SHORT_TERM"
+        elif (vix3m - vix) > 2 and (vix9d / vix) < 0.95:
+            vol_structure = "NORMAL"
+        else:
+            vol_structure = "COMPRESSION"
+    else:
+        vol_structure = "COMPRESSION"
+
+    market_data["POSITIONING_STATE"] = positioning_state
+    market_data["POSITIONING_SCORE_18"] = positioning_score_18
+    market_data["SQUEEZE_RISK"] = squeeze_risk
+    market_data["GAMMA_SIGNAL"] = gamma_signal
+    market_data["VOL_STRUCTURE"] = vol_structure
+
+    print(
+        "[DEBUG][POSITIONING_18]",
+        positioning_state,
+        positioning_score_18,
+        squeeze_risk,
+        gamma_signal,
+        vol_structure,
+    )
     report = f"""
+    
 ### 12.8) Positioning Stress Filter [SHADOW]
 
 - **Score:** {score}
