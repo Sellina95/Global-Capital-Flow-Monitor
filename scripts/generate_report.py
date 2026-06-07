@@ -2729,6 +2729,20 @@ def generate_daily_report() -> None:
         final_state,
         final_decision_state,
     )
+    structural_lines = []
+    capture = False
+
+    for line in exposure_interp_lines:
+        if "Structural Layer" in line:
+            capture = True
+
+        if capture:
+            structural_lines.append(line)
+
+    if structural_lines:
+        lines.append("### 🔬 Structural Layer (12.5~12.8)")
+        lines.extend(structural_lines)
+        lines.append("")
     
     #lines.append("### 🧠 Strategic Interpretation (PM Summary)")
     #lines.extend(exposure_interp_lines)
