@@ -41,6 +41,7 @@ from scripts.fetch_expectation_data import fetch_expectation_data
 from scripts.fetch_sentiment import fetch_cnn_fear_greed
 from scripts.risk_alerts import check_regime_change_and_alert
 from scripts.fetch_positioning_data import get_recent_pos_slope
+from scripts.pm_final_brief import generate_pm_final_brief
 
 
 
@@ -2609,6 +2610,11 @@ def generate_daily_report() -> None:
     # -------------------------
     exec_block = executive_summary_filter(market_data)
     decision_block = decision_layer_filter(market_data)
+    # -------------------------
+    # 13.5) PM Final Brief
+    # -------------------------
+    pm_brief_block = generate_pm_final_brief(market_data)
+    
 
     
     # -------------------------
@@ -2652,6 +2658,12 @@ def generate_daily_report() -> None:
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
     lines.append(f"**Date:** {report_date}")
     lines.append(f"**Data as of:** {data_as_of_date}")
+    lines.append("")
+    lines.append(pm_brief_block)
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("# 🔬 ENGINE DIAGNOSTICS")
     lines.append("")
     
     lines.append("## ⚡ Strategic War Room (통합 대응)")
@@ -2718,21 +2730,21 @@ def generate_daily_report() -> None:
         final_decision_state,
     )
     
-    lines.append("### 🧠 Strategic Interpretation (PM Summary)")
-    lines.extend(exposure_interp_lines)
-    lines.append("")
+    #lines.append("### 🧠 Strategic Interpretation (PM Summary)")
+    #lines.extend(exposure_interp_lines)
+    #lines.append("")
     
     
     # ✅ Final Action Engine
-    lines.append("### 🎯 Final Action Engine(Raw Signal)")
-    lines.append(f"- **Action:** {final_action_name}")
-    lines.append(f"- **Size:** {final_action_size}")
-    lines.append(f"- **Confidence:** {final_action_confidence}")
-    if final_action_reasons:
-        lines.append("- **Reason:**")
-        for r in final_action_reasons:
-            lines.append(f"  - {r}")
-    lines.append("")
+    #lines.append("### 🎯 Final Action Engine(Raw Signal)")
+    #lines.append(f"- **Action:** {final_action_name}")
+    #lines.append(f"- **Size:** {final_action_size}")
+    #lines.append(f"- **Confidence:** {final_action_confidence}")
+    #if final_action_reasons:
+        #lines.append("- **Reason:**")
+        #for r in final_action_reasons:
+            #lines.append(f"  - {r}")
+    #lines.append("")
     
     # ✅ War Room Final Decision (🔥 핵심)
     lines.append(final_decision_text)
@@ -2871,8 +2883,6 @@ def generate_daily_report() -> None:
     # -------------------------
     # Summary / Decision layers first
     # -------------------------
-    lines.append("")
-    lines.append("---")
     lines.append("")
     lines.append("---")
     lines.append("")

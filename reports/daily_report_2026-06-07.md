@@ -2,6 +2,82 @@
 **Date:** 2026-06-07
 **Data as of:** 2026-06-05
 
+🏦 GLOBAL MACRO DAILY — PM FINAL BRIEF
+
+🧭 1. Executive Summary
+Markets are operating in a SOFT RISK-OFF regime as liquidity conditions remain down and volatility pressures have increased. Participation remains 🌱 LIGHT TRACE, while positioning risk sits at 1.8. Maintain disciplined exposure and avoid adding marginal risk.
+
+🌍 2. Macro Regime
+Liquidity: 🔻 Tightening
+Flow: 🟡 Early Trace
+Volatility: 🔺 Rising
+Structure: TIGHTENING
+
+⚠️ 3. Key Macro Conflict
+
+1) Liquidity vs Credit
+• Liquidity: Tightening
+• Credit: Stable
+Interpretation:
+Liquidity conditions are deteriorating, but credit markets have not yet confirmed stress.
+Early-stage fragility signal rather than crisis.
+
+2) Positioning Crowding
+• POS_Z = 1.80
+Interpretation:
+Positioning remains elevated. Main risk is an air-pocket correction rather than structural collapse.
+
+📊 4. Cross Asset Summary
+Equities: 🔴 Weakening
+Bonds: 🟡 Neutral
+USD: 🔺 Stronger
+Oil: 🔻 Falling
+Volatility: 🔺 Rising
+
+Interpretation:
+A stronger dollar and rising volatility continue to tighten financial conditions.
+Falling oil prices partially offset inflation pressure.
+
+🧠 5. Market Interpretation
+Current market is best described as 'TIGHTENING_GROWTH_SCARE'.
+Liquidity is slowing, but systemic stress remains contained.
+Credit markets remain stable, although participation quality requires monitoring.
+
+⚠️ 6. Risk Matrix
+Inflation Risk      🟡 Moderate
+Liquidity Risk      🔴 Elevated
+Positioning Risk    🔴 Elevated
+Credit Risk         🟢 Low
+Geopolitical Risk   🟡 Elevated
+
+🏭 7. Sector Implication
+🟢 Preferred:
+- Health Care
+- Consumer Staples
+- Utilities
+
+🔴 Avoid:
+- High-beta cyclicals
+- Crowded growth leadership
+- Rate-sensitive long-duration equities
+
+🎯 8. Tactical Recommendation
+Recommendation: STRONG REDUCE / DEFENSIVE
+Confidence: MEDIUM
+Rationale:
+- Risk-off environment
+Maintain defensive discipline, avoid aggressive risk expansion, and prioritize cash plus resilient sectors.
+
+🏁 10. Final PM View
+Action: STRONG REDUCE
+Exposure: 15%
+Bias: SOFT RISK-OFF
+Key focus: monitor liquidity, participation quality, and positioning risk.
+
+---
+
+# 🔬 ENGINE DIAGNOSTICS
+
 ## ⚡ Strategic War Room (통합 대응)
 > **시스템 상태: ✅ STABLE**
 > **판단 요약: 포지셔닝 과열 감지 / Hard Deadman은 아니나 추격보다 리스크 축소 우선**
@@ -20,27 +96,6 @@
 
 - **[15번 Hard Deadman]:** ✅ PASS
 - **[14번 수급 시그널]:** 🚨 **STAY (포지션 유지)**
-
-### 🧠 Strategic Interpretation (PM Summary)
-- 금일 시장은 **SOFT RISK-OFF 환경**입니다.
-- **Structure:** 장기금리 상승·달러 강세·변동성 확대가 동반되며 금융환경의 tightening pressure가 강화되는 구간입니다.
-- **Liquidity:** 가격 환경과 실제 유동성 흐름이 모두 부담을 주고 있어, 리스크 자산의 방어력이 약해질 수 있습니다.
-- **Participation:** 기관성 흐름은 **🌱 LIGHT TRACE**(score=2) 상태이며, Drift는 **👀 EARLY DRIFT / NEUTRAL**(score=2)로 관찰됩니다. 다만 breadth와 리더십 확산 여부는 추가 확인이 필요합니다.
-- **Risk:** 크레딧은 안정적이며, 현재 구간에서는 단일 지표보다 포지셔닝·변동성·수급의 조합을 확인하는 것이 중요합니다.
-- **Allocation:** 이에 따라 전체 베타 노출은 낮게 유지하며, 현금을 전략 자산으로 보유하는 접근이 적절합니다. 현재 실행 기준 노출은 약 **15%**입니다.
-
-- **Structural Layer:**
-  - Growth Sustainability → **MODERATE** (credit stress contained, USD funding pressure moderate)
-  - Short Covering Risk → **LOW** (broad demand participation)
-  - Breadth Quality → **NARROW** (leadership remains concentrated)
-  - Financing Condition → **SUPPORTIVE** (long-end yields stable, real financing pressure manageable, credit financing conditions stable)
-
-### 🎯 Final Action Engine(Raw Signal)
-- **Action:** REDUCE
-- **Size:** DEFENSIVE
-- **Confidence:** MEDIUM
-- **Reason:**
-  - Risk-off environment
 
 ## 🎯 Final Decision (War Room Override)
 - **Final Action:** **STRONG REDUCE**
@@ -70,8 +125,6 @@
 - **WTI 유가**: 90.540  (-2.69% vs 93.040)
 - **변동성 지수 (VIX)**: 21.510 (+39.68% vs 15.400)
 - **원/달러 환율**: 1533.070  (+0.19% vs 1530.110)
-
----
 
 ---
 
