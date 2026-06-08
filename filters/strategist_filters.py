@@ -4164,13 +4164,14 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     elif pos_z >= 1.5:
         budget -= 4
         pos_alert = " ⚠️ 수급 다소 과열"
-# =========================================================
-# PATCH 위치:
-# narrative_engine_filter()
-# ---------------------------------------------------------
-# 기존 코드의 "3️⃣ Phase Cap" 섹션만 아래처럼 교체
-# (다른 부분 건드리지 말고 이 if/elif 블록만 교체)
-# =========================================================
+
+	# --------------------------------------------------
+    # 2.9️⃣ Event-Watching Floor
+    # --------------------------------------------------
+    # EVENT-WATCHING은 Risk-Off가 아니라 관망 국면.
+    # 크레딧이 안정적이면 과도한 현금화 방지.
+    if ("EVENT-WATCHING" in phase_upper or "WAITING" in phase_upper) and credit_calm is True:
+        budget = max(budget, 25)
 
     # --------------------------------------------------
     # 3️⃣ Phase Cap
