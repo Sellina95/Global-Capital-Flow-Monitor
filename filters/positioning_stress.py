@@ -186,6 +186,29 @@ def positioning_stress_filter(market_data: Dict[str, Any]) -> str:
     else:
         vol_structure = "COMPRESSION"
 
+    if label == "STRUCTURAL_RISK_ON":
+        positioning_interpretation = (
+            "Positioning remains healthy and does not appear excessively crowded."
+        )
+
+    elif label == "STABLE_BUT_CROWDED":
+        positioning_interpretation = (
+            "Positioning is becoming crowded, but market structure remains stable."
+        )
+
+    elif label == "SQUEEZE_RISK":
+        positioning_interpretation = (
+            "Positioning is stretched and vulnerable to squeeze-driven reversals."
+        )
+
+    else:
+        positioning_interpretation = (
+            "Positioning stress is elevated and market fragility has increased."
+        )
+
+    market_data["POSITIONING_LABEL"] = label
+    market_data["POSITIONING_INTERPRETATION"] = positioning_interpretation
+
     market_data["POSITIONING_STATE"] = positioning_state
     market_data["POSITIONING_SCORE_18"] = positioning_score_18
     market_data["SQUEEZE_RISK"] = squeeze_risk
@@ -201,11 +224,12 @@ def positioning_stress_filter(market_data: Dict[str, Any]) -> str:
         vol_structure,
     )
     report = f"""
-    
+
 ### 12.8) Positioning Stress Filter [SHADOW]
 
 - **Score:** {score}
 - **Label:** {label}
+- **Strategic Interpretation:** {positioning_interpretation}
 
 **Positioning Notes**
 - Term Structure: {term_note}

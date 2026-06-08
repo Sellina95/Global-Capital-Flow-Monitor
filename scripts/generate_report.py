@@ -574,26 +574,26 @@ def build_strategic_interpretation(
 
     lines.append(
         f"  - Growth Sustainability → "
-        f"**{growth_eval['state']}** "
-        f"({growth_eval['reason']})"
+        f"**{market_data.get('GROWTH_SUSTAINABILITY_LABEL','N/A')}** "
+        f"({market_data.get('GROWTH_SUSTAINABILITY_INTERPRETATION','N/A')})"
     )
 
     lines.append(
-        f"  - Short Covering Risk → "
-        f"**{short_eval['state']}** "
-        f"({short_eval['reason']})"
+        f"  - Flow Authenticity → "
+        f"**{market_data.get('FLOW_AUTHENTICITY_LABEL','N/A')}** "
+        f"({market_data.get('FLOW_AUTHENTICITY_INTERPRETATION','N/A')})"
     )
 
     lines.append(
-        f"  - Breadth Quality → "
-        f"**{breadth_eval['state']}** "
-        f"({breadth_eval['reason']})"
+        f"  - Leadership Breadth → "
+        f"**{market_data.get('LEADERSHIP_BREADTH_LABEL','N/A')}** "
+        f"({market_data.get('LEADERSHIP_INTERPRETATION','N/A')})"
     )
 
     lines.append(
-        f"  - Financing Condition → "
-        f"**{financing_eval['state']}** "
-        f"({financing_eval['reason']})"
+        f"  - Positioning Stress → "
+        f"**{market_data.get('POSITIONING_LABEL','N/A')}** "
+        f"({market_data.get('POSITIONING_INTERPRETATION','N/A')})"
     )
 
     return lines
@@ -2723,6 +2723,18 @@ def generate_daily_report() -> None:
     # ✅ Interpretation
     # ✅ Strategic Interpretation / PM Summary
     final_state = market_data.get("FINAL_STATE", {}) or {}
+
+    print("\n[DEBUG][MARKET_DATA_KEYS]")
+    for k in sorted(market_data.keys()):
+        if any(x in k for x in [
+            "GROWTH",
+            "FLOW",
+            "LEAD",
+            "POSITION",
+            "BREADTH",
+            "PARTICIPATION"
+        ]):
+            print(k, "=", market_data.get(k))
     
     exposure_interp_lines = build_strategic_interpretation(
         market_data,

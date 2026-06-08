@@ -226,7 +226,10 @@ def growth_sustainability_filter(market_data: Dict[str, Any]) -> str:
         label = "STRUCTURAL_STRESS"
 
     interpretation = _build_interpretation(label, demand, financing, energy, policy)
+    market_data["GROWTH_SUSTAINABILITY_LABEL"] = label
 
+    market_data["GROWTH_SUSTAINABILITY_SCORE"] = total
+    market_data["GROWTH_SUSTAINABILITY_INTERPRETATION"] = interpretation
     report = f"""
 
 ### 12.5) Growth Sustainability Filter [SHADOW]

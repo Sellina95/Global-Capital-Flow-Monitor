@@ -149,10 +149,35 @@ def flow_authenticity_filter(market_data: Dict[str, Any]) -> str:
     else:
         label = "SQUEEZE_FADE_RISK"
 
+    if label == "REAL_ACCUMULATION":
+        interpretation = (
+            "Institutional participation appears broad and persistent."
+        )
+
+    elif label == "EARLY_ROTATION":
+        interpretation = (
+            "Participation is emerging, but confirmation remains limited."
+        )
+
+    elif label == "SHORT_COVERING":
+        interpretation = (
+            "Price strength may be driven more by positioning than durable accumulation."
+        )
+
+    else:
+        interpretation = (
+            "Participation quality is weak and rally durability remains questionable."
+        )
+
+    market_data["FLOW_AUTHENTICITY_LABEL"] = label
+    market_data["FLOW_AUTHENTICITY_SCORE"] = total
+    market_data["FLOW_AUTHENTICITY_INTERPRETATION"] = interpretation
+
     report = f"""
 ### 12.6) Flow Authenticity Filter [SHADOW]
 - **Score:** {total}
 - **Label:** {label}
+- **Strategic Interpretation:** {interpretation}
 - **Breadth / Participation:** {breadth}
 - **Breadth Note:** {breadth_note}
 - **Nasdaq Breadth Note:** {nasdaq_breadth_note}

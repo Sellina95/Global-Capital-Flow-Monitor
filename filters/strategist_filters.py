@@ -5247,6 +5247,21 @@ def build_tactical_allocation(
         for sector in ow_sorted
         if float(score.get(sector, 0)) > 0
     }
+    if (
+        "Technology" not in positive_scores
+        and score.get("Technology", 0) > -1.0
+        and market_quality_context.get("leadership_state") in ["BROAD", "MODERATE"]
+        and market_quality_context.get("participation_signal") in ["PARTIAL", "CONFIRMED"]
+    ):
+        positive_scores["Technology"] = 0.3
+        print(
+            "[DEBUG][TECH_RESCUE]",
+            score.get("Technology", 0),
+            market_quality_context.get("leadership_state"),
+            market_quality_context.get("participation_signal"),
+
+        )
+
 
     # -------------------------
     # 2) Classification adjustment
@@ -7515,16 +7530,26 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         return x
 
     phase_norm = normalize_text(raw_phase)
-    gamma_norm = normalize_text(raw_gamma)
+    
     sew_norm = normalize_text(raw_sew)
     flow_norm = normalize_text(flow_state)
 
     is_risk_on = "RISK-ON" in phase_norm or "RISK ON" in phase_norm
     is_risk_off = "RISK-OFF" in phase_norm or "RISK OFF" in phase_norm
 
-    is_gamma_positive = "POSITIVE" in gamma_norm
-    is_gamma_transition = "TRANSITION" in gamma_norm
-    is_gamma_negative = "NEGATIVE" in gamma_norm
+    gamma_signal = str(market_data.get("GAMMA_SIGNAL", "STABLE")).upper()
+    dealer_gamma_bias = market_data.get("DEALER_GAMMA_BIAS", None)
+
+    is_gamma_positive = gamma_signal in ["STABLE", "CALL_OVERHEATED"]
+    is_gamma_transition = gamma_signal == "STABLE"
+    is_gamma_negative = gamma_signal == "SHORT_GAMMA"
+
+    gamma_norm = gamma_signal
+
+    print("[DEBUG][ACTION_ENGINE_GAMMA_SOURCE]")
+    print(" dealer_gamma_bias =", dealer_gamma_bias)
+    print(" gamma_signal =", gamma_signal)
+    print(" gamma_norm =", gamma_norm)
 
     is_sew_stable = "STABLE" in sew_norm
     is_sew_watch = "WATCH" in sew_norm

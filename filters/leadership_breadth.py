@@ -211,7 +211,29 @@ def leadership_breadth_filter(market_data: Dict[str, Any]) -> str:
     market_data["BREADTH_SCORE_18"] = breadth_score_18
     market_data["LEADER_TYPE"] = leader_type
     market_data["PARTICIPATION_SIGNAL"] = participation_signal
+    
+    if label == "BROAD_LEADERSHIP":
+        leadership_interpretation = (
+            "Leadership is broadening across sectors, confirming healthier market participation."
+        )
+    elif label == "SELECTIVE_EXPANSION":
+        leadership_interpretation = (
+            "Leadership is improving selectively, but broad market confirmation remains incomplete."
+        )
+    elif label == "CONCENTRATED_LEADERSHIP":
+        leadership_interpretation = (
+            "Leadership remains concentrated, with limited confirmation beyond key growth or mega-cap areas."
+        )
+    elif label == "MEGA_CAP_SQUEEZE_RISK":
+        leadership_interpretation = (
+            "Leadership is heavily concentrated in mega-cap/AI-related names, increasing squeeze and reversal risk."
+        )
+    else:
+        leadership_interpretation = (
+            "Leadership breadth has failed, suggesting weak or unreliable market participation."
+        )
 
+    market_data["LEADERSHIP_INTERPRETATION"] = leadership_interpretation
     print(
         "[DEBUG][LEADERSHIP_18]",
         leadership_state,
@@ -230,6 +252,7 @@ def leadership_breadth_filter(market_data: Dict[str, Any]) -> str:
 ### 12.7) Leadership Breadth Filter [SHADOW]
 - **Score:** {score}
 - **Label:** {label}
+- **Strategic Interpretation:** {leadership_interpretation}
 
 **Leadership Notes**
 {notes_text}
