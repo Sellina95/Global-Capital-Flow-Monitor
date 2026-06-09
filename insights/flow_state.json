@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-06-08 05:46:10",
+  "timestamp": "2026-06-09 05:19:47",
   "flow_state": "🌱 LIGHT TRACE",
   "flow_score": 2,
-  "prev_flow_state": "FLOW_FADE",
+  "prev_flow_state": "🌱 LIGHT TRACE",
   "prev_flow_score": 2,
   "flow_delta": 0,
   "persistence_days": 0,
-  "transition": "FLOW_FADE -> 🌱 LIGHT TRACE",
+  "transition": "🌱 LIGHT TRACE -> 🌱 LIGHT TRACE",
   "transition_note": "기관성 흐름 상태 유지",
   "raw_flow_state": "🌱 LIGHT TRACE",
   "raw_flow_score": 2
