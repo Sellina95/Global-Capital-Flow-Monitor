@@ -970,6 +970,16 @@ def attach_breadth_layer(
         except Exception:
             market_data[prev_key] = 0.0
 
+        # prev2 value
+        prev2_key = f"{target_key}_PREV2"
+        try:
+            prev2_row = df.iloc[today_idx - 2] if today_idx >= 2 else None
+            prev2_val = prev2_row.get(src_col) if prev2_row is not None and src_col in df.columns else None
+            market_data[prev2_key] = float(prev2_val) if pd.notna(prev2_val) else 0.0
+        except Exception:
+            market_data[prev2_key] = 0.0
+
+
     print("[DEBUG][BREADTH ATTACHED]", {
         "asof": market_data.get("_BREADTH_ASOF"),
         "BREADTH_SPY": market_data.get("BREADTH_SPY"),
@@ -1038,6 +1048,15 @@ def attach_leadership_layer(
         except Exception:
             market_data[prev_key] = 0.0
 
+        # prev2 value
+        prev2_key = f"{target_key}_PREV2"
+        try:
+            prev2_row = df.iloc[today_idx - 2] if today_idx >= 2 else None
+            prev2_val = prev2_row.get(src_col) if prev2_row is not None and src_col in df.columns else None
+            market_data[prev2_key] = float(prev2_val) if pd.notna(prev2_val) else 0.0
+        except Exception:
+            market_data[prev2_key] = 0.0
+
     print("[DEBUG][LEADERSHIP ATTACHED]", {
         "asof": market_data.get("_LEADERSHIP_ASOF"),
         "LEAD_QQQ": market_data.get("LEAD_QQQ"),
@@ -1056,6 +1075,8 @@ def attach_leadership_layer(
         "LEAD_XLY_PREV": market_data.get("LEAD_XLY_PREV"),
         "HAS_XLI_COL": "XLI" in df.columns,
         "HAS_XLY_COL": "XLY" in df.columns,
+        "BREADTH_RSP_PREV2": market_data.get("BREADTH_RSP_PREV2"),
+        "BREADTH_QQQE_PREV2": market_data.get("BREADTH_QQQE_PREV2"),
 })
 
     return market_data

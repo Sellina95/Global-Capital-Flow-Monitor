@@ -54,6 +54,48 @@ def generate_pm_final_brief(market_data):
     lines.append("🏦 GLOBAL MACRO DAILY — PM FINAL BRIEF")
     lines.append("")
 
+    # Rally Confidence Assessment
+
+    rally_score = 0
+
+    # 12.6
+    flow_label = market_data.get("FLOW_AUTHENTICITY_LABEL", "")
+
+    # 12.5
+    growth_label = market_data.get("GROWTH_SUSTAINABILITY_LABEL", "")
+
+    # 12.7
+    leadership_label = market_data.get("LEADERSHIP_BREADTH_LABEL", "")
+
+    # 12.8
+    positioning_label = (
+        market_data.get("POSITIONING_STRESS_LABEL")
+        or market_data.get("POSITIONING_LABEL")
+        or market_data.get("POSITIONING_STATE")
+        or ""
+    )
+
+    if flow_label == "REAL_ACCUMULATION":
+        rally_score += 1
+
+    if growth_label == "STRUCTURAL_STRESS":
+        rally_score -= 1
+
+    if leadership_label == "BROAD_LEADERSHIP":
+        rally_score += 1
+    elif leadership_label == "MEGA_CAP_SQUEEZE_RISK":
+        rally_score -= 1
+
+    if positioning_label == "SQUEEZE_RISK":
+        rally_score -= 1
+
+    if rally_score >= 1:
+        rally_confidence = "HIGH"
+    elif rally_score == 0:
+        rally_confidence = "MEDIUM"
+    else:
+        rally_confidence = "LOW"
+
     lines.append("🧭 1. Executive Summary")
 
     summary = (
@@ -64,6 +106,35 @@ def generate_pm_final_brief(market_data):
     )
 
     lines.append(summary)
+
+    if rally_confidence == "HIGH":
+        confidence_display = "🟢 HIGH"
+    elif rally_confidence == "MEDIUM":
+        confidence_display = "🟡 MEDIUM"
+    else:
+        confidence_display = "🔴 LOW"
+
+    lines.append(f"Rally Confidence: {confidence_display}")
+
+    rally_message_map = {
+        "LOW": (
+            "Participation is improving, but liquidity remains tight and positioning risk is elevated. "
+            "Treat the rally as low-confidence until flow persistence and leadership quality improve."
+        ),
+        "MEDIUM": (
+            "Participation is emerging, but confirmation remains limited. "
+            "Wait for stronger breadth and persistence before increasing risk exposure."
+        ),
+        "HIGH": (
+            "Participation and leadership support trend continuation. "
+            "Risk exposure may be maintained, subject to volatility and positioning controls."
+        ),
+    }
+
+    lines.append(rally_message_map.get(rally_confidence, rally_message_map["MEDIUM"]))
+
+
+
     lines.append("")
 
     lines.append("🌍 2. Macro Regime")
@@ -125,18 +196,94 @@ def generate_pm_final_brief(market_data):
 
     lines.append("")
     lines.append("Interpretation:")
+   
 
-    if dxy_dir > 0 and vix_dir > 0:
-
+    if dxy_dir > 0 and vix_dir > 0 and us10y_dir > 0:
         lines.append(
-            "A stronger dollar and rising volatility continue to tighten financial conditions."
+            "Rates, dollar, and volatility are rising together, signaling broad financial-condition tightening."
+        )
+        lines.append(
+            "Risk assets should be treated cautiously unless credit and breadth strongly confirm participation."
         )
 
-    if wti_dir < 0:
-
+    elif dxy_dir > 0 and vix_dir > 0:
         lines.append(
-            "Falling oil prices partially offset inflation pressure."
+            "A stronger dollar and rising volatility are tightening risk appetite."
         )
+        lines.append(
+            "This favors defensive exposure and discourages aggressive risk expansion."
+        )
+
+    elif dxy_dir < 0 and vix_dir < 0 and us10y_dir <= 0:
+        lines.append(
+            "A weaker dollar and lower volatility are easing financial conditions."
+        )
+        lines.append(
+            "This supports risk assets, provided breadth and credit remain stable."
+        )
+
+    elif dxy_dir < 0 and vix_dir < 0 and us10y_dir > 0:
+        lines.append(
+            "Dollar weakness and lower volatility are providing temporary breathing room for equities."
+        )
+        lines.append(
+            "However, rising yields limit the quality of the risk-on signal."
+        )
+
+    elif us10y_dir > 0 and wti_dir > 0:
+        lines.append(
+            "Rising yields and oil prices point to reflation pressure."
+        )
+        lines.append(
+            "This can support cyclicals in the short run but keeps inflation and duration risk elevated."
+        )
+
+    elif us10y_dir < 0 and wti_dir < 0:
+        lines.append(
+            "Falling yields and oil prices suggest growth-scare or disinflation pressure."
+        )
+        lines.append(
+            "Defensive assets may outperform unless risk participation broadens."
+        )
+
+    elif dxy_dir > 0 and wti_dir < 0:
+        lines.append(
+            "Dollar strength and falling oil suggest global demand caution."
+        )
+        lines.append(
+            "This is more consistent with defensive risk posture than broad risk expansion."
+        )
+
+    elif dxy_dir < 0 and wti_dir > 0:
+        lines.append(
+            "Dollar weakness and rising oil indicate reflationary risk appetite."
+        )
+        lines.append(
+            "Monitor whether equity leadership broadens beyond narrow growth exposure."
+        )
+
+    elif vix_dir > 0:
+        lines.append(
+            "Volatility is rising, indicating weaker risk appetite."
+        )
+        lines.append(
+            "Avoid chasing rallies until volatility pressure stabilizes."
+        )
+
+    elif vix_dir < 0:
+        lines.append(
+            "Volatility is easing, improving tactical risk conditions."
+        )
+        lines.append(
+            "Confirmation still depends on liquidity, credit, and market breadth."
+        )
+
+    else:
+        lines.append(
+            "Cross-asset signals remain mixed and do not provide a clear directional confirmation."
+        )
+
+    
     lines.append("")
     lines.append("🧠 5. Market Interpretation")
 
@@ -217,6 +364,142 @@ def generate_pm_final_brief(market_data):
         "Maintain defensive discipline, avoid aggressive risk expansion, "
         "and prioritize cash plus resilient sectors."
     )
+
+    lines.append("")
+
+    lines.append("📈 9. Internal Rotation Monitor")
+    rsp = market_data.get("BREADTH_RSP")
+    rsp_prev = market_data.get("BREADTH_RSP_PREV")
+
+    spy = market_data.get("BREADTH_SPY")
+    spy_prev = market_data.get("BREADTH_SPY_PREV")
+
+    rsp_prev2 = market_data.get("BREADTH_RSP_PREV2")
+    spy_prev2 = market_data.get("BREADTH_SPY_PREV2")
+
+    qqqe = market_data.get("BREADTH_QQQE")
+    qqqe_prev = market_data.get("BREADTH_QQQE_PREV")
+
+    qqq = market_data.get("BREADTH_QQQ")
+    qqq_prev = market_data.get("BREADTH_QQQ_PREV")
+
+    qqqe_prev2 = market_data.get("BREADTH_QQQE_PREV2")
+    qqq_prev2 = market_data.get("BREADTH_QQQ_PREV2")
+
+    smh = market_data.get("LEAD_SMH")
+    smh_prev = market_data.get("LEAD_SMH_PREV")
+    smh_prev2 = market_data.get("LEAD_SMH_PREV2")
+
+    iwm = market_data.get("LEAD_IWM")
+    iwm_prev = market_data.get("LEAD_IWM_PREV")
+    iwm_prev2 = market_data.get("LEAD_IWM_PREV2")
+
+
+    rsp_rel = (
+        ((rsp / rsp_prev) - 1)
+        -
+        ((spy / spy_prev) - 1)
+    )
+
+    qqqe_rel = (
+        ((qqqe / qqqe_prev) - 1)
+        -
+        ((qqq / qqq_prev) - 1)
+    )
+
+
+    smh_rel = (
+        ((smh / smh_prev) - 1)
+        -
+        ((spy / spy_prev) - 1)
+    )
+
+    iwm_rel = (
+        ((iwm / iwm_prev) - 1)
+        -
+        ((spy / spy_prev) - 1)
+    )
+    rsp_rel_yesterday = (
+        ((rsp_prev / rsp_prev2) - 1)
+        -
+        ((spy_prev / spy_prev2) - 1)
+    )
+
+    qqqe_rel_yesterday = (
+        ((qqqe_prev / qqqe_prev2) - 1)
+        -
+        ((qqq_prev / qqq_prev2) - 1)
+    )
+
+    smh_rel_yesterday = (
+        ((smh_prev / smh_prev2) - 1)
+        -
+        ((spy_prev / spy_prev2) - 1)
+    )
+
+    iwm_rel_yesterday = (
+        ((iwm_prev / iwm_prev2) - 1)
+        -
+        ((spy_prev / spy_prev2) - 1)
+    )
+
+    def append_rotation_line(label, today, yesterday):
+        change = today - yesterday
+        lines.append(f"{label}")
+        lines.append(f"Yesterday: {yesterday:+.2%}")
+        lines.append(f"Today: {today:+.2%}")
+        lines.append(f"Change: {change:+.2%}")
+        lines.append("")
+
+    append_rotation_line("RSP vs SPY", rsp_rel, rsp_rel_yesterday)
+    append_rotation_line("QQQE vs QQQ", qqqe_rel, qqqe_rel_yesterday)
+    append_rotation_line("SMH vs SPY", smh_rel, smh_rel_yesterday)
+    append_rotation_line("IWM vs SPY", iwm_rel, iwm_rel_yesterday)
+
+   
+    lines.append("")
+    lines.append("Interpretation:")
+
+    # Threshold 변수화 (유지보수 용이성)
+    SMH_STRONG_LEADERSHIP = 3.0
+
+    if rsp_rel > 0 and qqqe_rel > 0 and smh_rel > SMH_STRONG_LEADERSHIP and iwm_rel > 0:
+        lines.append("Participation is broadening across equal-weight, semiconductor, and small-cap segments.")
+        lines.append("This is consistent with healthy risk expansion and improving market breadth.")
+
+    elif rsp_rel > 0 and qqqe_rel > 0 and smh_rel > 0:
+        lines.append("Participation is broadening while semiconductor leadership remains supportive.")
+        lines.append("Market participation appears healthier than a pure mega-cap driven rally.")
+
+    elif rsp_rel > 0 and qqqe_rel > 0 and smh_rel <= 0:
+        lines.append("Breadth improved, but semiconductor leadership remains weak.")
+        lines.append("Rotation is expanding beyond AI leadership.")
+
+    # 💡 6월 8일 같은 'AI 독주/나머지 소외' 장세를 완벽히 포착하는 구간
+    elif rsp_rel <= 0 and qqqe_rel <= 0 and smh_rel > SMH_STRONG_LEADERSHIP:
+        lines.append("Broad participation weakened while semiconductor leadership became dominant.")
+        lines.append("Current strength appears concentrated in AI-linked leadership.")
+        lines.append("Rally quality should be treated cautiously.")
+
+    elif rsp_rel <= 0 and qqqe_rel <= 0 and smh_rel > 0:
+        lines.append("Leadership narrowed back toward mega-cap and semiconductor exposure.")
+        lines.append("Participation remains weak outside leadership groups.")
+
+    elif rsp_rel <= 0 and qqqe_rel <= 0 and smh_rel <= 0:
+        lines.append("Leadership narrowed and participation weakened simultaneously.")
+        lines.append("Market internals remain fragile.")
+
+    elif rsp_rel > 0 and qqqe_rel <= 0:
+        lines.append("S&P participation improved while Nasdaq breadth weakened.")
+        lines.append("Rotation appears uneven across sectors.")
+
+    elif rsp_rel <= 0 and qqqe_rel > 0:
+        lines.append("Nasdaq participation improved while broader market breadth lagged.")
+        lines.append("Leadership remains concentrated in growth-oriented segments.")
+
+    else:
+        lines.append("Internal rotation remains mixed and inconclusive.")
+
     lines.append("")
     lines.append("🏁 10. Final PM View")
     lines.append(
