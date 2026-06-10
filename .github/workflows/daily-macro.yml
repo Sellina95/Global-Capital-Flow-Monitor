@@ -37,6 +37,21 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/rebuild_macro_history.py
+          
+      - name: Debug latest market dates
+        run: |
+          python - <<'PY'
+          import yfinance as yf
+      
+          tickers = ["^TNX", "DX-Y.NYB", "CL=F", "^VIX", "KRW=X", "HYG", "LQD", "SPY"]
+      
+          for t in tickers:
+              df = yf.download(t, period="10d", interval="1d", progress=False, auto_adjust=False)
+              print("\n===", t, "===")
+              print(df.tail(5))
+              if not df.empty:
+                  print("LAST_DATE:", df.index[-1].date())
+          PY
 
       - name: Fetch macro data
         run: |
