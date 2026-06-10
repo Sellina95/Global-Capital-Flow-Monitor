@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-06-09 05:19:47",
-  "flow_state": "🌱 LIGHT TRACE",
-  "flow_score": 2,
+  "timestamp": "2026-06-10 05:31:26",
+  "flow_state": "TRACE_BUILDING",
+  "flow_score": 5,
   "prev_flow_state": "🌱 LIGHT TRACE",
   "prev_flow_score": 2,
-  "flow_delta": 0,
-  "persistence_days": 0,
-  "transition": "🌱 LIGHT TRACE -> 🌱 LIGHT TRACE",
-  "transition_note": "기관성 흐름 상태 유지",
-  "raw_flow_state": "🌱 LIGHT TRACE",
-  "raw_flow_score": 2
+  "flow_delta": 3,
+  "persistence_days": 1,
+  "transition": "🌱 LIGHT TRACE -> TRACE_BUILDING",
+  "transition_note": "기관성 흐름이 전일 대비 강화",
+  "raw_flow_state": "⚡ BUILDING",
+  "raw_flow_score": 5
 }
