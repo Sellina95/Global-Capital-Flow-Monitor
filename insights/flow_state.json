@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-06-10 09:36:06",
+  "timestamp": "2026-06-10 11:36:27",
   "flow_state": "CONFIRMED_FLOW",
   "flow_score": 5,
   "prev_flow_state": "CONFIRMED_FLOW",
   "prev_flow_score": 5,
   "flow_delta": 0,
-  "persistence_days": 3,
+  "persistence_days": 4,
   "transition": "CONFIRMED_FLOW -> CONFIRMED_FLOW",
   "transition_note": "기관성 흐름이 높은 강도로 확인",
   "raw_flow_state": "⚡ BUILDING",
