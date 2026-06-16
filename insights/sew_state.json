@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-06-16 06:48:03",
+  "timestamp": "2026-06-16 10:19:48",
   "status": "DEADMAN",
   "event_type": "NORMAL",
   "spike_count": 2,
@@ -20,9 +20,9 @@
       "pct_change": 0.05
     },
     "VIX": {
-      "zscore": 1.09,
+      "zscore": -0.55,
       "state": "NORMAL",
-      "pct_change": 0.68
+      "pct_change": 0.0
     },
     "DXY": {
       "zscore": 3.01,
