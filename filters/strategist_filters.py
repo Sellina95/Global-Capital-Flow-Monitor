@@ -5429,6 +5429,21 @@ def build_tactical_allocation(
 
     caps = regime_caps.get(macro_profile, {})
 
+
+    # 6.1) Leadership Breadth Cap Relaxation
+    leadership_state = market_quality_context.get("leadership_state", "NARROW")
+    participation_signal = market_quality_context.get("participation_signal", "WEAK")
+
+    if (
+        macro_profile == "GROWTH_SCARE"
+        and leadership_state == "BROAD"
+        and participation_signal in ["PARTIAL", "CONFIRMED"]
+    ):
+        caps = dict(caps)
+        caps["Technology"] = max(caps.get("Technology", 14.0), 18.0)
+        caps["Industrials"] = max(caps.get("Industrials", 8.0), 12.0)
+        caps["Consumer Discretionary"] = max(caps.get("Consumer Discretionary", 8.0), 12.0)
+
     for sector, cap in caps.items():
         if sector in weights and weights[sector] > cap:
             original_weight = weights[sector]
