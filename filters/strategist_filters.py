@@ -5800,7 +5800,9 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # 1) 핵심 변수
     # -------------------------
-    t10y2y = fetch_val("T10Y2Y", 0.0)
+    t10y2y_raw = fetch_val("T10Y2Y", None)
+    t10y2y_missing = t10y2y_raw is None
+    t10y2y = 0.0 if t10y2y_missing else float(t10y2y_raw)
     vix = fetch_val("VIX", 20.0)
     us10y = market_data.get("US10Y", {}) or {}
     dxy_data = market_data.get("DXY", {}) or {}
@@ -5845,7 +5847,9 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # 2) Curve 구간 세분화
     # -------------------------
-    if t10y2y < 0:
+    if t10y2y_missing:
+        curve_segment = "N/A"
+    elif t10y2y < 0:
         curve_segment = "INVERTED"
     elif t10y2y < 0.25:
         curve_segment = "FLAT / FRAGILE"
@@ -5940,23 +5944,26 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # C) CURVE
     # -------------------------
-    if curve_segment == "INVERTED":
-        add_score("Financials", -3, f"수익률 곡선 역전({t10y2y:.2f}) → 은행 수익성 악화", "CURVE")
-        add_score("Utilities", 2, "역전 커브 → 침체 방어주 선호", "CURVE")
-        add_score("Consumer Staples", 1, "역전 커브 → 경기 방어 필요", "CURVE")
+    if not t10y2y_missing:
+        if curve_segment == "INVERTED":
+            add_score("Financials", -3, f"수익률 곡선 역전({t10y2y:.2f}) → 은행 수익성 악화", "CURVE")
+            add_score("Utilities", 2, "역전 커브 → 침체 방어주 선호", "CURVE")
+            add_score("Consumer Staples", 1, "역전 커브 → 경기 방어 필요", "CURVE")
 
-    elif curve_segment == "FLAT / FRAGILE":
-        add_score("Health Care", 1, f"플랫 커브({t10y2y:.2f}) → 방어/퀄리티 선호", "CURVE")
-        add_score("Consumer Staples", 1, f"플랫 커브({t10y2y:.2f}) → 경기 민감도 낮은 섹터 선호", "CURVE")
+        elif curve_segment == "FLAT / FRAGILE":
+            add_score("Health Care", 1, f"플랫 커브({t10y2y:.2f}) → 방어/퀄리티 선호", "CURVE")
+            add_score("Consumer Staples", 1, f"플랫 커브({t10y2y:.2f}) → 경기 민감도 낮은 섹터 선호", "CURVE")
 
-    elif curve_segment == "MODERATE STEEP":
-        add_score("Financials", 2, f"완만한 스티프닝({t10y2y:.2f}) → 예대마진 개선", "CURVE")
-        add_score("Industrials", 1, f"완만한 스티프닝({t10y2y:.2f}) → 성장 기대 반영", "CURVE")
+        elif curve_segment == "MODERATE STEEP":
+            add_score("Financials", 2, f"완만한 스티프닝({t10y2y:.2f}) → 예대마진 개선", "CURVE")
+            add_score("Industrials", 1, f"완만한 스티프닝({t10y2y:.2f}) → 성장 기대 반영", "CURVE")
 
-    elif curve_segment == "STEEP / REFLATION":
-        add_score("Financials", 3, f"가파른 스티프닝({t10y2y:.2f}) → 금융주 우호", "CURVE")
-        add_score("Energy", 1, f"가파른 스티프닝({t10y2y:.2f}) → 리플레이션 민감 섹터", "CURVE")
-        add_score("Materials", 1, f"가파른 스티프닝({t10y2y:.2f}) → 경기재개/실물 민감", "CURVE")
+        elif curve_segment == "STEEP / REFLATION":
+            add_score("Financials", 3, f"가파른 스티프닝({t10y2y:.2f}) → 금융주 우호", "CURVE")
+            add_score("Energy", 1, f"가파른 스티프닝({t10y2y:.2f}) → 리플레이션 민감 섹터", "CURVE")
+            add_score("Materials", 1, f"가파른 스티프닝({t10y2y:.2f}) → 경기재개/실물 민감", "CURVE")
+    else:
+        print("[WARN][18_CURVE_MISSING] T10Y2Y missing → CURVE scores skipped")
 
     # -------------------------
     # D) CREDIT

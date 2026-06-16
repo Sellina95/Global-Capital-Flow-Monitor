@@ -1,4 +1,5 @@
 from __future__ import annotations
+from filters.treasury_fallback import fetch_treasury_yield_fallback
 
 import json
 import os
@@ -1245,40 +1246,63 @@ def attach_sector_momentum_layer(market_data: Dict[str, Any], df: pd.DataFrame, 
 
 def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    세연 님의 원본 로직을 유지하며 8번 필터용 지표들을 추가합니다.
-    FCI, REAL_RATE 외에 T10Y2Y, T10YIE, VIX, DFII10, DXY, DGS2를 동일 구조로 주입합니다.
+    FRED extras layer.
+    - 기본: fred_macro_sctorallo / fred extras CSV 값 사용
+    - FRED 값이 비어 있으면 Treasury fallback 사용
+    - 절대 missing 값을 0.0으로 대체하지 않음
     """
+    from filters.treasury_fallback import fetch_treasury_yield_fallback
+
     if market_data is None:
         market_data = {}
 
-    # CSV 로드 (세연 님 원본 함수명 확인 필요)
-    df = load_fred_extras_df() 
+    df = load_fred_extras_df()
+
+    treasury_fallback = fetch_treasury_yield_fallback() or {}
+
     if df is None or df.empty:
-        market_data["_FCI_ASOF"] = None
-        market_data["_REAL_ASOF"] = None
-        return market_data
+        df = pd.DataFrame(columns=["date", "FCI", "REAL_RATE", "T10Y2Y", "T10YIE", "DFII10", "DGS2"])
 
     df = df.copy()
+
     if "date" not in df.columns:
-        return market_data
+        df["date"] = pd.NaT
 
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
-    # 1. 대상 컬럼 확장 (기존 2개 + 8번 필터용 6개)
     target_cols = ["FCI", "REAL_RATE", "T10Y2Y", "T10YIE", "DFII10", "DGS2"]
-    
+
     for col in target_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
         else:
             df[col] = pd.NA
 
-    # 2. 세연 님 원본 내부 함수 그대로 사용
+    def _attach_from_fallback(key: str, asof_key: str) -> bool:
+        fallback_val = treasury_fallback.get(key)
+
+        if fallback_val is None:
+            market_data[asof_key] = None
+            return False
+
+        val = float(fallback_val)
+
+        market_data[asof_key] = "TREASURY_FALLBACK"
+        market_data[key] = {
+            "today": val,
+            "prev": None,
+            "pct_change": None,
+        }
+
+        print(f"[FALLBACK][TREASURY] {key}={val}")
+        return True
+
     def _attach_one(key: str, asof_key: str):
         valid_df = df.dropna(subset=[key]).copy()
+
         if valid_df.empty:
-            market_data[asof_key] = None
+            _attach_from_fallback(key, asof_key)
             return
 
         today_row = valid_df.iloc[-1]
@@ -1288,30 +1312,43 @@ def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         market_data[asof_key] = asof
 
         today_val = pd.to_numeric(today_row.get(key), errors="coerce")
+
         if pd.isna(today_val):
+            _attach_from_fallback(key, asof_key)
             return
 
         today_val_f = float(today_val)
 
         if prev_row is None:
-            market_data[key] = {"today": today_val_f, "prev": None, "pct_change": None}
+            market_data[key] = {
+                "today": today_val_f,
+                "prev": None,
+                "pct_change": None,
+            }
             return
 
         prev_val = pd.to_numeric(prev_row.get(key), errors="coerce")
+
         if pd.isna(prev_val):
-            market_data[key] = {"today": today_val_f, "prev": None, "pct_change": None}
+            market_data[key] = {
+                "today": today_val_f,
+                "prev": None,
+                "pct_change": None,
+            }
             return
 
         prev_val_f = float(prev_val)
-        # pct_change 계산 로직 (원본 유지)
         pct = 0.0 if prev_val_f == 0 else ((today_val_f - prev_val_f) / prev_val_f) * 100.0
-        market_data[key] = {"today": today_val_f, "prev": prev_val_f, "pct_change": pct}
 
-    # 3. 모든 지표 실행 (ASOF 메타데이터는 기존 핵심 지표 위주로 유지)
+        market_data[key] = {
+            "today": today_val_f,
+            "prev": prev_val_f,
+            "pct_change": pct,
+        }
+
     _attach_one("FCI", "_FCI_ASOF")
     _attach_one("REAL_RATE", "_REAL_ASOF")
-    
-    # 8번 필터용 지표들도 동일한 '세트 메뉴' 구조로 주입
+
     for extra_key in ["T10Y2Y", "T10YIE", "DFII10", "DGS2"]:
         _attach_one(extra_key, f"_{extra_key}_ASOF")
 
