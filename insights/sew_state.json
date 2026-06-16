@@ -1,38 +1,38 @@
 {
-  "timestamp": "2026-06-16 13:11:57",
-  "status": "DEADMAN",
+  "timestamp": "2026-06-16 20:38:52",
+  "status": "STABLE",
   "event_type": "NORMAL",
-  "spike_count": 2,
+  "spike_count": 1,
   "extreme_count": 0,
-  "recommended_exposure": 0,
-  "deadman": true,
-  "summary": "🚨 HARD DEADMAN 발동 (익스포저 0% / 자산 보호 모드)",
-  "deadman_reason": "🚨 HARD DEADMAN: Real-time Cross-Asset Shock (spike=2, extreme=0)",
+  "recommended_exposure": 85,
+  "deadman": false,
+  "summary": "✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)",
+  "deadman_reason": "Normal Operation",
   "assets": {
     "SPY": {
-      "zscore": 2.53,
-      "state": "ALERT",
-      "pct_change": 0.04
+      "zscore": -2.08,
+      "state": "WATCH",
+      "pct_change": -0.01
     },
     "QQQ": {
-      "zscore": 2.08,
-      "state": "WATCH",
-      "pct_change": 0.05
+      "zscore": -2.63,
+      "state": "ALERT",
+      "pct_change": -0.25
     },
     "VIX": {
-      "zscore": -0.31,
+      "zscore": 0.02,
       "state": "NORMAL",
-      "pct_change": -0.31
+      "pct_change": 1.55
     },
     "DXY": {
-      "zscore": 3.01,
-      "state": "ALERT",
-      "pct_change": 0.11
+      "zscore": 1.44,
+      "state": "NORMAL",
+      "pct_change": 0.04
     },
     "WTI": {
-      "zscore": -0.91,
-      "state": "NORMAL",
-      "pct_change": -0.02
+      "zscore": -1.94,
+      "state": "WATCH",
+      "pct_change": -0.2
     }
   }
 }
