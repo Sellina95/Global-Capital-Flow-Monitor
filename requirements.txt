@@ -2,4 +2,5 @@ yfinance
 requests
 beautifulsoup4
 scikit-learn
+lxml>=5.0.0
 
