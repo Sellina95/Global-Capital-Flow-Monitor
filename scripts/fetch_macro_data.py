@@ -176,6 +176,47 @@ def fetch_macro_data() -> Tuple[Dict[str, float], Optional[str]]:
             if value is not None:
                 break
 
+                # ✅ US10Y Yahoo 실패 시 FRED(DGS10) fallback
+                # ✅ US10Y Yahoo 실패/지연 시 FRED(DGS10) fallback
+        if name == "US10Y" and (value is None or asof_date != expected_market_date):
+            try:
+                fred = pd.read_csv(
+                    "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
+                )
+                fred.columns = ["date", "DGS10"]
+                fred["date"] = pd.to_datetime(fred["date"], errors="coerce")
+                fred["DGS10"] = pd.to_numeric(fred["DGS10"], errors="coerce")
+                fred = fred.dropna(subset=["date", "DGS10"]).sort_values("date")
+
+                if not fred.empty:
+                    value = float(fred.iloc[-1]["DGS10"])
+                    asof_date = fred.iloc[-1]["date"].strftime("%Y-%m-%d")
+                    print(f"[FRED FALLBACK] US10Y={value} asof={asof_date}")
+
+            except Exception as e:
+                print(f"[FRED FALLBACK FAILED] US10Y error={e}")
+
+                # ✅ VIX3M / VIX9D Yahoo 실패·지연 시 CBOE CSV fallback
+        if name in ["VIX3M", "VIX9D"] and (value is None or asof_date != expected_market_date):
+            try:
+                cboe_path = DATA_DIR / (
+                    "cboe_vix3m.csv" if name == "VIX3M" else "cboe_vix9d.csv"
+                )
+
+                cboe = pd.read_csv(cboe_path)
+                cboe["date"] = pd.to_datetime(cboe["DATE"], errors="coerce")
+                cboe["CLOSE"] = pd.to_numeric(cboe["CLOSE"], errors="coerce")
+                cboe = cboe.dropna(subset=["date", "CLOSE"]).sort_values("date")
+
+                if not cboe.empty:
+                    latest = cboe.iloc[-1]
+                    value = float(latest["CLOSE"])
+                    asof_date = latest["date"].strftime("%Y-%m-%d")
+                    print(f"[CBOE FALLBACK] {name}={value} asof={asof_date}")
+
+            except Exception as e:
+                print(f"[CBOE FALLBACK FAILED] {name} error={e}")
+
         if value is None:
             results[name] = float("nan")
             continue
