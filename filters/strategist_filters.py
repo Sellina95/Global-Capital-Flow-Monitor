@@ -4002,17 +4002,55 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         budget -= 5
 
     # --------------------------------------------------
+    # --------------------------------------------------
     # 2.5️⃣ Structural v2 Penalty
     # --------------------------------------------------
     struct_v2_kr = "정상"
     struct_alert = ""
     v2_cap = 100
 
-    if "SYSTEMIC" in struct_v2:
+    vix_block = market_data.get("VIX", {}) or {}
+    vix_today = _to_float(vix_block.get("today"))
+    vix_pct = _to_float(vix_block.get("pct_change"))
+
+    credit_stress = credit_calm is False
+
+    liq_stress = (
+        liq_dir_tag == "DOWN"
+        and liq_level_bucket == "LOW"
+    )
+
+    vol_stress = (
+        (vix_today is not None and vix_today >= 25)
+        or (vix_pct is not None and vix_pct >= 25)
+    )
+
+    systemic_confirmed = (
+        "SYSTEMIC" in struct_v2
+        and (
+            credit_stress
+            or liq_stress
+            or vol_stress
+        )
+    )
+
+    systemic_watch = (
+        "SYSTEMIC" in struct_v2
+        and not systemic_confirmed
+    )
+
+    if systemic_confirmed:
         budget -= 20
         struct_v2_kr = "시스템위기"
         struct_alert = "🚨 시스템 불신 감지"
         v2_cap = 30
+
+    elif systemic_watch:
+        budget -= 4
+        struct_v2_kr = "시스템 리스크 관찰"
+        struct_alert = "⚠️ 시스템 리스크 관찰"
+        v2_cap = 70
+
     elif "STAGFLATION" in struct_v2:
         budget -= 15
         struct_v2_kr = "스태그플레이션"
