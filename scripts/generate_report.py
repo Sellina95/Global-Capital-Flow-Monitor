@@ -54,7 +54,44 @@ REPORTS_DIR = BASE_DIR / "reports"
 BACKTEST_DATA_DIR = DATA_DIR / "backtests"
 BACKTEST_REPORTS_DIR = REPORTS_DIR / "backtests"
 
+def infer_expected_as_of_date_from_market_calendar(df: pd.DataFrame) -> str:
+    calendar_cols = ["SPY", "QQQ", "HYG", "LQD", "IWM"]
 
+    existing_cols = [col for col in calendar_cols if col in df.columns]
+
+    if not existing_cols:
+        return pd.to_datetime(df["date"]).max().strftime("%Y-%m-%d")
+
+    tmp = df[["date"] + existing_cols].copy()
+    tmp["date"] = pd.to_datetime(tmp["date"], errors="coerce")
+
+    for col in existing_cols:
+        tmp[col] = pd.to_numeric(tmp[col], errors="coerce")
+
+    last_dates = []
+
+    for col in existing_cols:
+        valid_rows = tmp[tmp[col].notna()]
+        if not valid_rows.empty:
+            last_dates.append(pd.to_datetime(valid_rows["date"]).max())
+
+    if not last_dates:
+        return pd.to_datetime(df["date"]).max().strftime("%Y-%m-%d")
+
+    latest_date = max(last_dates)
+    latest_count = sum(d == latest_date for d in last_dates)
+
+    if latest_count >= 4:
+        return latest_date.strftime("%Y-%m-%d")
+
+    print(
+        f"[WARNING][MARKET CALENDAR] disagreement: "
+        f"latest_date={latest_date.strftime('%Y-%m-%d')}, "
+        f"latest_count={latest_count}/{len(last_dates)}, "
+        f"calendar_cols={existing_cols}"
+    )
+
+    return latest_date.strftime("%Y-%m-%d")
 
 def _latest_value(x, default=0.0):
     if isinstance(x, dict):
@@ -2339,9 +2376,8 @@ def generate_daily_report() -> None:
 
     data_as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
     report_date = pd.Timestamp.now(tz="Asia/Seoul").strftime("%Y-%m-%d")
-    expected_as_of_date = (
-        pd.Timestamp.now(tz="Asia/Seoul") - pd.tseries.offsets.BDay(1)
-    ).strftime("%Y-%m-%d")
+    expected_as_of_date = infer_expected_as_of_date_from_market_calendar(df)
+    print("[DEBUG] expected_as_of_date =", expected_as_of_date)
 
     if data_as_of_date < expected_as_of_date:
         print(
@@ -2715,7 +2751,12 @@ def generate_daily_report() -> None:
     lines = []
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
     lines.append(f"**Date:** {report_date}")
-    lines.append(f"**Data as of:** {data_as_of_date}")
+    market_status_note = ""
+    if data_as_of_date < report_date:
+        market_status_note = " 🔒 MARKET CLOSED"
+    lines.append(
+        f"**Data as of:** {data_as_of_date}{market_status_note}"
+    )
     lines.append("")
     lines.append(pm_brief_block)
     lines.append("")
