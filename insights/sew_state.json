@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-06-19 06:13:53",
+  "timestamp": "2026-06-20 05:09:46",
   "status": "RISK_COMPRESSION",
   "event_type": "NORMAL",
   "spike_count": 1,
@@ -7,7 +7,7 @@
   "recommended_exposure": 55,
   "deadman": false,
   "summary": "⚠️ Risk Compression 발동 (권장 익스포저 55%)",
-  "deadman_reason": "⚠️ CROWDING RISK: POS_Z Extreme (2.26) → Risk Compression (55%)",
+  "deadman_reason": "⚠️ CROWDING RISK: POS_Z Extreme (2.10) → Risk Compression (55%)",
   "assets": {
     "SPY": {
       "zscore": -2.32,
@@ -20,9 +20,9 @@
       "pct_change": -0.08
     },
     "VIX": {
-      "zscore": -0.5,
+      "zscore": 0.15,
       "state": "NORMAL",
-      "pct_change": -0.24
+      "pct_change": 0.3
     },
     "DXY": {
       "zscore": 1.92,
