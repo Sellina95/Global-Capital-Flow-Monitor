@@ -196,26 +196,50 @@ def fetch_macro_data() -> Tuple[Dict[str, float], Optional[str]]:
             except Exception as e:
                 print(f"[FRED FALLBACK FAILED] US10Y error={e}")
 
-                # ✅ VIX3M / VIX9D Yahoo 실패·지연 시 CBOE CSV fallback
-        if name in ["VIX3M", "VIX9D"] and (value is None or asof_date != expected_market_date):
+        # ✅ VIX3M / VIX9D Yahoo 실패·지연 시 CBOE 공식 CSV fallback
+        if name in ["VIX3M", "VIX9D"] and (
+            value is None or asof_date != expected_market_date
+        ):
             try:
-                cboe_path = DATA_DIR / (
-                    "cboe_vix3m.csv" if name == "VIX3M" else "cboe_vix9d.csv"
+                cboe_url = (
+                    f"https://cdn.cboe.com/api/global/us_indices/daily_prices/{name}_History.csv"
                 )
 
-                cboe = pd.read_csv(cboe_path)
-                cboe["date"] = pd.to_datetime(cboe["DATE"], errors="coerce")
-                cboe["CLOSE"] = pd.to_numeric(cboe["CLOSE"], errors="coerce")
-                cboe = cboe.dropna(subset=["date", "CLOSE"]).sort_values("date")
+                cboe = pd.read_csv(cboe_url)
+
+                cboe["date"] = pd.to_datetime(
+                    cboe["DATE"],
+                    errors="coerce"
+                )
+
+                cboe["CLOSE"] = pd.to_numeric(
+                    cboe["CLOSE"],
+                    errors="coerce"
+                )
+
+                cboe = (
+                    cboe
+                    .dropna(subset=["date", "CLOSE"])
+                    .sort_values("date")
+                )
 
                 if not cboe.empty:
                     latest = cboe.iloc[-1]
+
                     value = float(latest["CLOSE"])
                     asof_date = latest["date"].strftime("%Y-%m-%d")
-                    print(f"[CBOE FALLBACK] {name}={value} asof={asof_date}")
+
+                    print(
+                        f"[CBOE FALLBACK] "
+                        f"{name}={value} "
+                        f"asof={asof_date}"
+                    )
 
             except Exception as e:
-                print(f"[CBOE FALLBACK FAILED] {name} error={e}")
+                print(
+                    f"[CBOE FALLBACK FAILED] "
+                    f"{name} error={e}"
+                )
 
         if value is None:
             results[name] = float("nan")
