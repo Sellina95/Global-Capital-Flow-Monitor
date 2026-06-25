@@ -2751,11 +2751,9 @@ def generate_daily_report() -> None:
     lines = []
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
     lines.append(f"**Date:** {report_date}")
-    market_status_note = ""
-    if data_as_of_date < report_date:
-        market_status_note = " 🔒 MARKET CLOSED"
+
     lines.append(
-        f"**Data as of:** {data_as_of_date}{market_status_note}"
+        f"**Data as of:** {data_as_of_date}"
     )
     lines.append("")
     lines.append(pm_brief_block)
