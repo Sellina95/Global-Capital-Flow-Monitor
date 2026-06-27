@@ -330,5 +330,6 @@ if __name__ == "__main__":
 
     if market_date is None:
         print("❌ Skip append_to_csv: previous market close data is not ready.")
+        raise SystemExit(1)
     else:
         append_to_csv(vals, market_date)

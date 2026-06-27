@@ -2751,10 +2751,7 @@ def generate_daily_report() -> None:
     lines = []
     lines.append("# 🌍 Global Capital Flow – Daily Brief")
     lines.append(f"**Date:** {report_date}")
-
-    lines.append(
-        f"**Data as of:** {data_as_of_date}"
-    )
+    lines.append(f"**Data as of:** {data_as_of_date}")
     lines.append("")
     lines.append(pm_brief_block)
     lines.append("")
