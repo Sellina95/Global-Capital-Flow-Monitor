@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-07-07 04:47:10",
-  "flow_state": "FLOW_FADE",
-  "flow_score": 3,
-  "prev_flow_state": "CONFIRMED_FLOW",
-  "prev_flow_score": 5,
-  "flow_delta": -2,
-  "persistence_days": 1,
-  "transition": "CONFIRMED_FLOW -> FLOW_FADE",
-  "transition_note": "기관성 흐름은 남아 있으나 강도 약화",
-  "raw_flow_state": "👀 EARLY TRACE",
-  "raw_flow_score": 3
+  "timestamp": "2026-07-08 04:11:54",
+  "flow_state": "TRACE_BUILDING",
+  "flow_score": 5,
+  "prev_flow_state": "FLOW_FADE",
+  "prev_flow_score": 3,
+  "flow_delta": 2,
+  "persistence_days": 2,
+  "transition": "FLOW_FADE -> TRACE_BUILDING",
+  "transition_note": "기관성 흐름이 전일 대비 강화",
+  "raw_flow_state": "⚡ BUILDING",
+  "raw_flow_score": 5
 }
