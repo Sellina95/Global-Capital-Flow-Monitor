@@ -1,0 +1,15 @@
+﻿signal_date,risk_budget_13,exposure_15,cash_weight,sew_status,deadman_on,transition,deadman_reason,hy_oas_today,vix_today,hy_below_6,vix_below_30,release_conditions_clear
+2008-12-01,60,0,100.0,HARD_DEADMAN,True,DEADMAN_ALREADY_ON,Credit Crisis / HY_OAS 20.20%,20.2,68.51,False,False,False
+2010-01-11,56,36,64.0,NORMAL,False,DEADMAN_RELEASED,,5.99,17.55,True,True,True
+2010-01-12,56,0,100.0,HARD_DEADMAN,True,DEADMAN_ON,Credit Crisis / HY_OAS 6.07%,6.07,18.25,False,True,False
+2010-03-19,56,36,64.0,NORMAL,False,DEADMAN_RELEASED,,5.98,16.97,True,True,True
+2010-03-22,56,0,100.0,HARD_DEADMAN,True,DEADMAN_ON,Credit Crisis / HY_OAS 6.02%,6.02,16.87,False,True,False
+2010-03-24,56,31,69.0,NORMAL,False,DEADMAN_RELEASED,,5.85,17.55,True,True,True
+2010-05-06,60,0,100.0,HARD_DEADMAN,True,DEADMAN_ON,Credit Crisis / HY_OAS 6.26%,6.26,32.8,False,False,False
+2010-10-14,56,36,64.0,NORMAL,False,DEADMAN_RELEASED,,5.97,19.88,True,True,True
+2010-10-18,56,0,100.0,HARD_DEADMAN,True,DEADMAN_ON,Credit Crisis / HY_OAS 6.02%,6.02,19.09,False,True,False
+2010-10-22,56,34,66.1,NORMAL,False,DEADMAN_RELEASED,,5.96,18.78,True,True,True
+2010-11-23,60,0,100.0,HARD_DEADMAN,True,DEADMAN_ON,Credit Crisis / HY_OAS 6.04%,6.04,20.63,False,True,False
+2010-11-24,56,38,62.0,NORMAL,False,DEADMAN_RELEASED,,5.93,19.56,True,True,True
+2010-11-29,60,0,100.0,HARD_DEADMAN,True,DEADMAN_ON,Credit Crisis / HY_OAS 6.03%,6.03,21.53,False,True,False
+2010-12-02,52,31,69.0,RISK_COMPRESSION,False,DEADMAN_RELEASED,POS_Z Extreme (2.07),5.93,19.39,True,True,True

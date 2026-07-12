@@ -1,0 +1,16 @@
+﻿metric,value,share_of_days
+total_days,4414.0,1.0
+average_risk_budget_13,54.13366560942456,
+average_exposure_15,32.55165382872678,
+average_allocated_equity_18,32.08860444041686,
+average_cash,67.91139555958316,
+average_cut_13_to_15,21.58201178069778,
+average_cut_15_to_18,0.46304938830992304,
+hard_deadman_days,1036.0,0.23470774807430902
+risk_compression_days,501.0,0.11350249207068419
+normal_days,2877.0,0.6517897598550068
+zero_exposure_days,1036.0,0.23470774807430902
+full_cash_days,1036.0,0.23470774807430902
+days_15_cut_more_than_10pct,2436.0,0.551880380607159
+days_15_cut_more_than_20pct,1504.0,0.3407340280924332
+days_18_returned_exposure_to_cash,533.0,0.12075215224286362

@@ -1,0 +1,15 @@
+﻿check,value
+rows,4414
+duplicate_signal_dates,0
+missing_signal_dates,0
+missing_execution_dates,0
+non_ok_rows,0
+missing_risk_budget,0
+missing_exposure,0
+missing_allocation,0
+missing_cash,0
+negative_exposure,0
+exposure_over_100,0
+allocation_over_exposure,0
+allocation_total_failures,0
+qa_pass,1

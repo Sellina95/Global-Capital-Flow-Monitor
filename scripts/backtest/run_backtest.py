@@ -29,7 +29,7 @@ RESULT_DIR = DATA_DIR / "results"
 OUT_PATH = RESULT_DIR / "daily_positions.csv"
 
 START_DATE = pd.Timestamp("2008-12-01")
-END_DATE = pd.Timestamp("2008-12-31")
+END_DATE = None
 
 
 def run_engine(
@@ -53,14 +53,30 @@ def run_engine(
         # 수천 줄의 DEBUG 출력은 루프 중 숨긴다.
         with contextlib.redirect_stdout(io.StringIO()):
             sf.narrative_engine_filter(market_data)
-            sf.volatility_controlled_exposure_filter(market_data)
+            exposure_report = sf.volatility_controlled_exposure_filter(market_data)
             sf.sector_allocation_filter(market_data)
 
         allocation = captured.get("allocation")
         if allocation is None:
             raise RuntimeError("18번 allocation 결과를 포착하지 못했습니다.")
 
-        return allocation
+        deadman_reason = ""
+        brake_drivers = ""
+
+        for line in str(exposure_report).splitlines():
+            clean = line.replace("**", "").strip()
+
+            if clean.startswith("- Reason:"):
+                deadman_reason = clean.split(":", 1)[1].strip()
+
+            elif clean.startswith("- Brake Drivers:"):
+                brake_drivers = clean.split(":", 1)[1].strip()
+
+        return {
+            "allocation": allocation,
+            "deadman_reason": deadman_reason,
+            "brake_drivers": brake_drivers,
+        }
 
     finally:
         sf.build_tactical_allocation = original_builder
@@ -73,9 +89,13 @@ def main() -> None:
     )
 
     mask = (
-        panel["signal_date"].between(START_DATE, END_DATE)
+        panel["signal_date"].ge(START_DATE)
         & panel["execution_date"].notna()
+        & pd.to_numeric(panel["SPY"], errors="coerce").notna()
     )
+
+    if END_DATE is not None:
+        mask &= panel["signal_date"].le(END_DATE)
     indices = panel.index[mask].tolist()
 
     if not indices:
@@ -94,11 +114,12 @@ def main() -> None:
         )
 
         try:
-            allocation = run_engine(
+            engine_result = run_engine(
                 market_data=market_data,
                 previous_exposure=previous_exposure,
             )
 
+            allocation = engine_result["allocation"]
             weights = allocation.get("weights", {}) or {}
             risk_budget = market_data.get("RISK_BUDGET")
             exposure = market_data.get("RECOMMENDED_EXPOSURE")
@@ -120,6 +141,21 @@ def main() -> None:
                 "cash_weight": cash_weight,
                 "macro_profile": allocation.get("macro_profile"),
                 "sew_status": market_data.get("SEW_STATUS"),
+                "deadman_reason": engine_result.get("deadman_reason", ""),
+                "brake_drivers": engine_result.get("brake_drivers", ""),
+                "macro_narrative": market_data.get("MACRO_NARRATIVE", ""),
+                "vix_today": (
+                    market_data.get("VIX", {}).get("today")
+                    if isinstance(market_data.get("VIX"), dict)
+                    else market_data.get("VIX")
+                ),
+                "hy_oas_today": (
+                    market_data.get("HY_OAS", {}).get("today")
+                    if isinstance(market_data.get("HY_OAS"), dict)
+                    else market_data.get("HY_OAS")
+                ),
+                "cta_momentum_score": market_data.get("CTA_MOMENTUM_SCORE"),
+                "cta_fetch_ok": market_data.get("CTA_FETCH_OK"),
                 "weights_json": json.dumps(
                     weights,
                     ensure_ascii=False,
