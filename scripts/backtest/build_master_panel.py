@@ -81,8 +81,19 @@ ffill_cols = [
 ]
 panel[ffill_cols] = panel[ffill_cols].ffill()
 
+# 신호일과 실제 다음 미국 주식시장 거래일 매핑
 panel["signal_date"] = panel["date"]
-panel["execution_date"] = panel["date"].shift(-1)
+
+valid_spy_dates = panel.loc[
+    pd.to_numeric(panel["SPY"], errors="coerce").notna(),
+    "date",
+].tolist()
+
+next_valid_date = {}
+for current_date, next_date in zip(valid_spy_dates[:-1], valid_spy_dates[1:]):
+    next_valid_date[current_date] = next_date
+
+panel["execution_date"] = panel["date"].map(next_valid_date)
 
 panel.to_csv(OUT, index=False, encoding="utf-8-sig")
 

@@ -16,9 +16,8 @@
 2008-12-19,2008-12-22,60,0,0.0,100.0,BALANCED,HARD_DEADMAN,"{""Communication Services"": 0.0, ""Consumer Staples"": 0.0, ""Energy"": 0.0, ""Health Care"": 0.0, ""Materials"": 0.0, ""Utilities"": 0.0}",OK,,0.0,0.0,0.0,0.0,0.0,0.0
 2008-12-22,2008-12-23,60,0,0.0,100.0,BALANCED,HARD_DEADMAN,"{""Consumer Staples"": 0.0, ""Energy"": 0.0, ""Health Care"": 0.0, ""Materials"": 0.0, ""Utilities"": 0.0}",OK,,0.0,0.0,0.0,0.0,0.0,
 2008-12-23,2008-12-24,60,0,0.0,100.0,BALANCED,HARD_DEADMAN,"{""Consumer Staples"": 0.0, ""Energy"": 0.0, ""Health Care"": 0.0, ""Materials"": 0.0, ""Utilities"": 0.0}",OK,,0.0,0.0,0.0,0.0,0.0,
-2008-12-24,2008-12-25,60,0,0.0,100.0,BALANCED,HARD_DEADMAN,"{""Consumer Staples"": 0.0, ""Energy"": 0.0, ""Health Care"": 0.0, ""Materials"": 0.0, ""Utilities"": 0.0}",OK,,0.0,0.0,0.0,0.0,0.0,
-2008-12-25,2008-12-26,45,0,0.0,100.0,BALANCED,HARD_DEADMAN,"{""Consumer Staples"": 0.0, ""Energy"": 0.0, ""Health Care"": 0.0, ""Materials"": 0.0, ""Utilities"": 0.0}",OK,,0.0,0.0,0.0,0.0,0.0,
+2008-12-24,2008-12-26,60,0,0.0,100.0,BALANCED,HARD_DEADMAN,"{""Consumer Staples"": 0.0, ""Energy"": 0.0, ""Health Care"": 0.0, ""Materials"": 0.0, ""Utilities"": 0.0}",OK,,0.0,0.0,0.0,0.0,0.0,
 2008-12-26,2008-12-29,60,0,0.0,100.0,BALANCED,HARD_DEADMAN,"{""Consumer Staples"": 0.0, ""Energy"": 0.0, ""Health Care"": 0.0, ""Materials"": 0.0, ""Utilities"": 0.0}",OK,,0.0,0.0,0.0,0.0,0.0,
 2008-12-29,2008-12-30,60,0,0.0,100.0,BALANCED,HARD_DEADMAN,"{""Consumer Staples"": 0.0, ""Energy"": 0.0, ""Health Care"": 0.0, ""Materials"": 0.0, ""Utilities"": 0.0}",OK,,0.0,0.0,0.0,0.0,0.0,
 2008-12-30,2008-12-31,60,0,0.0,100.0,GROWTH_SCARE,HARD_DEADMAN,"{""Communication Services"": 0.0, ""Consumer Staples"": 0.0, ""Energy"": 0.0, ""Health Care"": 0.0, ""Materials"": 0.0, ""Utilities"": 0.0}",OK,,0.0,0.0,0.0,0.0,0.0,0.0
-2008-12-31,2009-01-01,60,0,0.0,100.0,STAGFLATION_STRESS,HARD_DEADMAN,"{""Communication Services"": 0.0, ""Consumer Staples"": 0.0, ""Energy"": 0.0, ""Health Care"": 0.0, ""Materials"": 0.0, ""Utilities"": 0.0}",OK,,0.0,0.0,0.0,0.0,0.0,0.0
+2008-12-31,2009-01-02,60,0,0.0,100.0,STAGFLATION_STRESS,HARD_DEADMAN,"{""Communication Services"": 0.0, ""Consumer Staples"": 0.0, ""Energy"": 0.0, ""Health Care"": 0.0, ""Materials"": 0.0, ""Utilities"": 0.0}",OK,,0.0,0.0,0.0,0.0,0.0,0.0
