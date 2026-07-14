@@ -17,6 +17,59 @@ from typing import Any, Dict, Optional
 
 import pandas as pd
 
+
+def attach_positioning_layer_backtest(
+    market_data,
+    df,
+    idx
+):
+    """
+    Backtest용 historical positioning injection.
+    Production attach_positioning_layer 사용 금지.
+    """
+
+    path = Path("data/backtest/positioning_data.csv")
+
+    if not path.exists():
+        return market_data
+
+    pos_df = pd.read_csv(path)
+
+    pos_df["date"] = pd.to_datetime(
+        pos_df["date"],
+        errors="coerce"
+    )
+
+    current_date = pd.to_datetime(
+        df.iloc[idx]["date"]
+    )
+
+    hist = pos_df[
+        pos_df["date"] <= current_date
+    ].sort_values("date")
+
+    if hist.empty:
+        return market_data
+
+    latest = hist.iloc[-1]
+
+    for col in [
+        "SP500_POS_Z",
+        "US10Y_POS_Z",
+        "DXY_POS_Z",
+        "DEALER_GAMMA_BIAS",
+        "CTA_MOMENTUM_SCORE",
+        "GAMMA_FETCH_OK",
+        "CTA_FETCH_OK",
+    ]:
+        market_data[col] = latest.get(col)
+
+    market_data["_POS_ASOF"] = (
+        latest["date"].strftime("%Y-%m-%d")
+    )
+
+    return market_data
+
 def load_backtest_macro_df():
     path = ROOT / "data" / "backtest" / "macro_data.csv"
 
@@ -66,6 +119,8 @@ from filters.strategist_filters import (
 
 OUTPUT_DIR = Path("data/backtest/results")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+
 
 
 def _to_float(x) -> Optional[float]:
@@ -928,9 +983,7 @@ def main():
                 market_data
             ) or market_data
 
-            market_data = attach_credit_spread_layer(
-                market_data
-            ) or market_data
+      
 
             market_data = attach_fred_extras_layer(
                 market_data
@@ -940,9 +993,11 @@ def main():
                 market_data
             ) or market_data
 
-            market_data = attach_expectation_layer(
-                market_data
-            ) or market_data
+            market_data = attach_positioning_layer_backtest(
+                market_data,
+                df,
+                idx
+            )
 
             market_data = attach_geopolitical_ew_layer(
                 market_data,
@@ -992,9 +1047,7 @@ def main():
                 idx
             ) or market_data
 
-            market_data = attach_positioning_layer(
-                market_data
-            ) or market_data
+          
 
 
             market_regime_filter(
