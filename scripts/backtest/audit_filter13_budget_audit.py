@@ -13,17 +13,51 @@ Filter13 Budget Audit
 """
 import sys
 from pathlib import Path
+from typing import Any, Dict, Optional
+
+import pandas as pd
+
+def load_backtest_macro_df():
+    path = ROOT / "data" / "backtest" / "macro_data.csv"
+
+    print(f"[DEBUG] loading backtest macro -> {path}")
+
+    df = pd.read_csv(path)
+
+    df["date"] = pd.to_datetime(
+        df["date"],
+        errors="coerce"
+    )
+
+    df = df.sort_values("date").reset_index(drop=True)
+
+    return df
 
 ROOT = Path(__file__).resolve().parents[2]
 
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT))
 
-from pathlib import Path
-from typing import Any, Dict, Optional
-import pandas as pd
-
-g
+from scripts.generate_report import (
+    load_macro_df,
+    merge_sovereign_spreads_into_macro_df,
+    build_market_data,
+    attach_liquidity_layer,
+    attach_credit_spread_layer,
+    attach_fred_extras_layer,
+    attach_sovereign_spread_layer,
+    attach_breadth_layer,
+    attach_sentiment_proxy_layer,
+    attach_sector_momentum_layer,
+    attach_drift_data_layer,
+    attach_growth_sustainability_layer,
+    attach_leadership_layer,
+    attach_positioning_layer,
+    attach_expectation_layer,
+    attach_geopolitical_ew_layer,
+    attach_country_risk_layer,
+    attach_geo_similarity_layer,
+)
 
 from filters.strategist_filters import (
     market_regime_filter,
@@ -860,7 +894,7 @@ def audit_filter13_budget(
 
 def main():
 
-    df = load_macro_df()
+    df = load_backtest_macro_df()
 
     df = merge_sovereign_spreads_into_macro_df(df)
 
@@ -868,7 +902,17 @@ def main():
     rows = []
 
 
-    for idx in range(max(0, len(df)-60), len(df)):
+    start_date = pd.Timestamp("2022-01-01")
+    end_date = pd.Timestamp("2022-06-30")
+
+    selected_indices = df.index[
+        (pd.to_datetime(df["date"]) >= start_date)
+        & (pd.to_datetime(df["date"]) <= end_date)
+    ]
+
+    print("DEBUG ROW COUNT:", len(selected_indices))
+
+    for idx in selected_indices:
 
         try:
 
