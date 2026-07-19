@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-07-18 03:52:26",
-  "status": "RISK_COMPRESSION",
+  "timestamp": "2026-07-19 04:19:29",
+  "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
   "extreme_count": 0,
-  "recommended_exposure": 55,
+  "recommended_exposure": 85,
   "deadman": false,
-  "summary": "⚠️ Risk Compression 발동 (권장 익스포저 55%)",
-  "deadman_reason": "⚠️ CROWDING RISK: POS_Z Extreme (2.03) → Risk Compression (55%)",
+  "summary": "✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)",
+  "deadman_reason": "Normal Operation",
   "assets": {
     "SPY": {
       "zscore": -1.62,
