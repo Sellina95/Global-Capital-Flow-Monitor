@@ -1,0 +1,14 @@
+﻿component,avg_effect,total_effect,negative_days,positive_days,zero_days,avg_negative_effect
+phase_cap_effect,-13.19083969465649,-3456,159,0,103,-21.735849056603772
+macro_delta,-10.961832061068701,-2872,162,22,78,-18.54320987654321
+credit_delta,-7.709923664122138,-2020,222,40,0,-10.0
+positioning_delta,-1.9694656488549618,-516,95,0,167,-5.431578947368421
+structural_v2_delta,-0.7022900763358778,-184,10,0,252,-18.4
+event_floor_delta,0.0,0,0,0,262,0.0
+flow_gamma_delta,0.0,0,0,0,262,0.0
+drift_delta,0.0,0,0,0,262,0.0
+final_cap_effect,0.0,0,0,0,262,0.0
+flow_continuity_delta,0.022900763358778626,6,4,18,240,-3.0
+structure_delta,0.7633587786259542,200,49,69,144,-10.0
+flow_regime_delta,0.9618320610687023,252,0,230,32,0.0
+liquidity_delta,1.8702290076335877,490,107,130,25,-7.336448598130841

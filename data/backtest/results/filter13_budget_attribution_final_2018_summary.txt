@@ -1,0 +1,23 @@
+FILTER13 BUDGET ATTRIBUTION FINAL AUDIT
+======================================================================
+
+Rows: 261
+Average Final Budget: 47.57
+Average Base Budget: 55.63
+
+COMPONENT ATTRIBUTION
+----------------------------------------------------------------------
+            component  avg_effect  total_effect  negative_days  positive_days  zero_days  avg_negative_effect
+      liquidity_delta   -8.927203         -2330            171             20         70           -14.210526
+          macro_delta   -2.091954          -546             74             50        137           -11.243243
+    positioning_delta   -1.839080          -480             91              0        170            -5.274725
+     phase_cap_effect   -0.632184          -165             20              0        241            -8.250000
+  structural_v2_delta   -0.091954           -24              2              0        259           -12.000000
+      structure_delta   -0.038314           -10             71             70        120           -10.000000
+     flow_gamma_delta    0.000000             0              0              0        261             0.000000
+          drift_delta    0.000000             0              0              0        261             0.000000
+     final_cap_effect    0.000000             0              0              0        261             0.000000
+    event_floor_delta    0.000000             0              0              0        261             0.000000
+flow_continuity_delta    0.551724           144             11            177         73            -3.000000
+    flow_regime_delta    1.908046           498              0            261          0             0.000000
+         credit_delta    3.103448           810             33            228          0           -10.000000
