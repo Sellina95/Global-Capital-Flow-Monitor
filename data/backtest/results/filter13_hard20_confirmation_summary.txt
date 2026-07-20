@@ -1,0 +1,13 @@
+FILTER13 HARD CAP20 CONFIRMATION AUDIT
+============================================================
+
+HARD CAP20 DAYS: 28
+ONE-DAY HARD: 15
+STRICT CONFIRMED CANDIDATES: 12
+UNCONFIRMED CANDIDATES: 16
+
+IMPORTANT INTERPRETATION
+- strict_confirmation_candidate is an AUDIT hypothesis only.
+- It is NOT a production trading rule.
+- Forward returns are EX-POST evaluation only.
+- Production changes require multi-cycle validation.

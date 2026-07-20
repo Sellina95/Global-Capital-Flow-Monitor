@@ -1,0 +1,80 @@
+FILTER13 INPUT LINEAGE AUDIT
+======================================================================
+Rows: 21
+Range: 2022-01-03 -> 2022-01-31
+
+GATE: REVIEW REQUIRED - NO CONFIRMED FUTURE LEAK
+Future leak count: 0
+
+Overall daily status:
+  REVIEW_REQUIRED: 21
+
+SOURCE SUMMARY
+----------------------------------------------------------------------
+
+[liquidity]
+path: /workspaces/Global-Capital-Flow-Monitor/data/liquidity_data.csv
+coverage: 2002-12-18 00:00:00 -> 2026-07-11 00:00:00
+future_leak_count: 0
+missing_asof_count: 0
+review_count: 0
+avg_lag_days: 2.9047619047619047
+max_lag_days: 6.0
+status: {'PASS': 21}
+
+[hy]
+path: /workspaces/Global-Capital-Flow-Monitor/data/credit_spread_data.csv
+coverage: 1996-12-31 00:00:00 -> 2026-07-11 00:00:00
+future_leak_count: 0
+missing_asof_count: 0
+review_count: 0
+avg_lag_days: 0.0
+max_lag_days: 0.0
+status: {'PASS': 21}
+
+[fred]
+path: /workspaces/Global-Capital-Flow-Monitor/data/fred_macro_extras.csv
+coverage: 1971-01-08 00:00:00 -> 2026-07-11 00:00:00
+future_leak_count: 0
+missing_asof_count: 21
+review_count: 0
+avg_lag_days: nan
+max_lag_days: nan
+status: {'MISSING_ASOF': 21}
+
+[sovereign]
+path: /workspaces/Global-Capital-Flow-Monitor/data/sovereign_spreads.csv
+coverage: 2021-01-19 00:00:00 -> 2026-07-11 00:00:00
+future_leak_count: 0
+missing_asof_count: 0
+review_count: 0
+avg_lag_days: 0.0
+max_lag_days: 0.0
+status: {'PASS': 21}
+
+[sentiment]
+path: /workspaces/Global-Capital-Flow-Monitor/data/sentiment_proxy.csv
+coverage: 2025-12-26 00:00:00 -> 2026-07-10 00:00:00
+future_leak_count: 0
+missing_asof_count: 0
+review_count: 21
+avg_lag_days: 0.0
+max_lag_days: 0.0
+status: {'REVIEW_ASOF_NOT_IN_SOURCE': 21}
+
+[positioning]
+path: /workspaces/Global-Capital-Flow-Monitor/data/positioning_data.csv
+coverage: 2026-04-23 00:00:00 -> 2026-07-11 00:00:00
+future_leak_count: 0
+missing_asof_count: 0
+review_count: 21
+avg_lag_days: 0.0
+max_lag_days: 0.0
+status: {'REVIEW_ASOF_NOT_IN_SOURCE': 21}
+
+INTERPRETATION
+----------------------------------------------------------------------
+PASS means the explicitly recorded ASOF date was not later than the signal date.
+MISSING_ASOF does NOT prove a future leak.
+It means that dependency cannot yet be proven PIT-safe from the attribution output.
+Derived dependencies such as Drift, Gamma, Flow, Structural must be audited separately at their source-input level.

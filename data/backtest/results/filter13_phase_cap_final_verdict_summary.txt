@@ -1,0 +1,43 @@
+FILTER13 PHASE CAP FINAL VERDICT
+============================================================
+
+CAP 20
+- Binding days: 28
+- Total exposure removed: 716.0 %p-days
+- Share of analyzed cap removal: 62.4%
+- T+20 defensive success: 42.3%
+- T+20 total cap effect: -0.777%
+- Verdict: PRIMARY_OVERCONSTRAINT_SUSPECT
+
+CAP 30
+- Binding days: 7
+- Total exposure removed: 199.0 %p-days
+- Share of analyzed cap removal: 17.3%
+- T+20 defensive success: 33.3%
+- T+20 total cap effect: -0.999%
+- Verdict: MIXED_REVIEW
+
+CAP 65
+- Binding days: 18
+- Total exposure removed: 143.0 %p-days
+- Share of analyzed cap removal: 12.5%
+- T+20 defensive success: 50.0%
+- T+20 total cap effect: -0.129%
+- Verdict: SECONDARY_IMPACT
+
+CAP 45
+- Binding days: 12
+- Total exposure removed: 89.0 %p-days
+- Share of analyzed cap removal: 7.8%
+- T+20 defensive success: 100.0%
+- T+20 total cap effect: 5.509%
+- Verdict: DEFENSIVE_VALUE_CONFIRMED
+
+PRIMARY EXPOSURE DESTRUCTION SOURCE
+CAP 20
+It removed 716.0 %p-days of exposure, representing 62.4% of analyzed Phase Cap exposure removal.
+
+IMPORTANT:
+Forward returns are EX-POST evaluation only.
+This audit does NOT justify changing production thresholds by itself.
+Any production change requires out-of-sample validation across 2008 / 2020 / 2022 and full portfolio re-backtest.

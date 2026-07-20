@@ -1,0 +1,4 @@
+trigger,days,avg_phase_cut,avg_final_budget,one_day_candidates
+CREDIT_STRESS,13,-24.46153846153846,20.0,7
+STAGFLATION_OR_INFLATION_SHOCK,8,-17.75,20.0,4
+GROWTH_SCARE_VIX,7,-36.57142857142857,20.0,4

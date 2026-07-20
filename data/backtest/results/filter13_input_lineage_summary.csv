@@ -1,0 +1,7 @@
+﻿source,source_path,source_min_date,source_max_date,rows,future_leak_count,pass_count,missing_asof_count,review_count,avg_lag_days,max_lag_days,status_breakdown
+liquidity,/workspaces/Global-Capital-Flow-Monitor/data/liquidity_data.csv,2002-12-18,2026-07-11,21,0,21,0,0,2.9047619047619047,6.0,{'PASS': 21}
+hy,/workspaces/Global-Capital-Flow-Monitor/data/credit_spread_data.csv,1996-12-31,2026-07-11,21,0,21,0,0,0.0,0.0,{'PASS': 21}
+fred,/workspaces/Global-Capital-Flow-Monitor/data/fred_macro_extras.csv,1971-01-08,2026-07-11,21,0,0,21,0,,,{'MISSING_ASOF': 21}
+sovereign,/workspaces/Global-Capital-Flow-Monitor/data/sovereign_spreads.csv,2021-01-19,2026-07-11,21,0,21,0,0,0.0,0.0,{'PASS': 21}
+sentiment,/workspaces/Global-Capital-Flow-Monitor/data/sentiment_proxy.csv,2025-12-26,2026-07-10,21,0,0,0,21,0.0,0.0,{'REVIEW_ASOF_NOT_IN_SOURCE': 21}
+positioning,/workspaces/Global-Capital-Flow-Monitor/data/positioning_data.csv,2026-04-23,2026-07-11,21,0,0,0,21,0.0,0.0,{'REVIEW_ASOF_NOT_IN_SOURCE': 21}

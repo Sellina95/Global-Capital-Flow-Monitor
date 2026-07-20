@@ -1,0 +1,3 @@
+episode_type,episodes,avg_duration,avg_hy_oas,avg_phase_cut,avg_final_budget,vix_up_rate,dxy_up_rate,us10y_up_rate,wti_up_rate
+ONE_DAY,15,1.0,4.464,-26.333333333333332,20.0,0.9333333333333333,0.7333333333333333,0.5333333333333333,0.4
+PERSISTENT,4,3.25,4.1925,-23.0,20.0,0.25,0.75,0.75,0.5
