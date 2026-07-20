@@ -1170,7 +1170,7 @@ def main() -> None:
             (
                 dates
                 <= pd.Timestamp(
-                    "2022-01-31"
+                    "2022-06-30"
                 )
             )
         ]
