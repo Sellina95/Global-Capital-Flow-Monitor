@@ -4212,40 +4212,78 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         budget = max(budget, 25)
 
     # --------------------------------------------------
-    # 3️⃣ Phase Cap
     # --------------------------------------------------
+    # 3️⃣ Phase Cap v2
+    # --------------------------------------------------
+    # 원칙:
+    # - Phase/Regime 라벨 하나만으로 극단적 cap을 강제하지 않는다.
+    # - 20% cap은 확인된 systemic/shock 또는 심각한 credit stress에 한정한다.
+    # - 일반 HARD RISK-OFF는 방어적으로 유지하되 20% 고정을 피한다.
+    # - 기존 Structural v2 cap은 독립적인 상위 안전장치로 유지한다.
+
     cap = 100
 
+    hy_status = str(
+        cross_asset_tape.get("HY_OAS_STATUS", "UNKNOWN") or "UNKNOWN"
+    ).upper()
+
+    # 1) 방향성 부재 / 관망
     if phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
         cap = 60
 
-    elif phase_upper.startswith("HARD RISK-OFF"):
+    # 2) 확인된 시스템/쇼크 위기
+    elif (
+        phase_upper.startswith("SHOCK RISK-OFF")
+        or "SYSTEMIC" in phase_upper
+        or systemic_confirmed
+        or (
+            phase_upper.startswith("HARD RISK-OFF")
+            and hy_status == "FRACTURE"
+        )
+    ):
         cap = 20
 
+    # 3) 일반 HARD RISK-OFF
+    # HARD 라벨만으로 20%까지 강제하지 않는다.
+    elif phase_upper.startswith("HARD RISK-OFF"):
+        if hy_status == "HOT":
+            cap = 35
+        else:
+            cap = 45
 
+    # 4) SOFT RISK-OFF
     elif phase_upper.startswith("SOFT RISK-OFF"):
         cap = 50 if flow_score >= 3 else 45
 
+    # 5) 기타 RISK-OFF
     elif "RISK-OFF" in phase_upper:
         cap = 35
 
+    # 6) 혼조 / 취약
     elif "MIXED / FRAGILE" in phase_upper:
         cap = 55
 
     elif phase_upper.startswith("TRANSITION") or "MIXED" in phase_upper:
         cap = 65
 
+    # 7) Risk-On
     elif phase_upper.startswith("RISK-ON"):
         cap = 85
 
-    if "SYSTEMIC" in struct_v2 or "STAGFLATION" in struct_v2:
+    # --------------------------------------------------
+    # Structural v2 independent safety cap
+    # --------------------------------------------------
+    # SYSTEMIC은 기존 crisis protection 유지.
+    # STAGFLATION은 이미 Structural v2에서
+    # budget penalty + v2_cap=40이 적용되므로
+    # 여기서 다시 무조건 30 cap을 중복 적용하지 않는다.
+    if "SYSTEMIC" in struct_v2:
         cap = min(cap, 30)
 
     final_cap = min(cap, v2_cap)
     budget = min(int(round(budget)), final_cap)
     budget = _clamp(budget, 0, 100)
     market_data["RISK_BUDGET"] = budget
-
     # --------------------------------------------------
     # 4️⃣ Final Action
     # --------------------------------------------------
