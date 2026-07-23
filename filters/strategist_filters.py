@@ -4243,11 +4243,22 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
     ):
         cap = 20
 
-    # 3) 일반 HARD RISK-OFF
-    # HARD 라벨만으로 20%까지 강제하지 않는다.
     elif phase_upper.startswith("HARD RISK-OFF"):
-        if hy_status == "HOT":
+
+        # Recovery Watch:
+        # 위기 진입 방어는 유지하되,
+        # Liquidity / Flow 개선 확인 시 cap을 단계적으로 해제한다.
+        recovery_watch = (
+            liq_dir_tag == "UP"
+            and flow_score >= 3
+        )
+
+        if recovery_watch and hy_status != "FRACTURE":
+            cap = 65
+
+        elif hy_status == "HOT":
             cap = 35
+
         else:
             cap = 45
 
@@ -4281,8 +4292,14 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         cap = min(cap, 30)
 
     final_cap = min(cap, v2_cap)
+
+    pre_cap_budget = budget
+
     budget = min(int(round(budget)), final_cap)
     budget = _clamp(budget, 0, 100)
+
+    market_data["PRE_CAP_BUDGET"] = pre_cap_budget
+    market_data["PHASE_CAP"] = final_cap
     market_data["RISK_BUDGET"] = budget
     # --------------------------------------------------
     # 4️⃣ Final Action
@@ -7293,7 +7310,7 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
     return market_data
 
 
-from monitor_sew import load_previous_flow_state, classify_flow_transition 
+from scripts.monitor_sew import load_previous_flow_state, classify_flow_transition 
 
 def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
     """
