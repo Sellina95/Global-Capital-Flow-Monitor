@@ -905,73 +905,67 @@ def calculate_filter13_budget_attribution(
 
     cap = 100
 
-    if (
-        phase_upper.startswith(
-            "WAITING"
-        )
-        or
-        "RANGE"
-        in phase_upper
-    ):
+    cross_asset_tape = market_data.get("CROSS_ASSET_TAPE", {})
 
+    hy_status = str(
+        cross_asset_tape.get("HY_OAS_STATUS", "UNKNOWN") or "UNKNOWN"
+    ).upper()
+
+    # 1) 방향성 부재 / 관망
+    if phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
         cap = 60
 
-    elif phase_upper.startswith(
-        "HARD RISK-OFF"
+    # 2) 확인된 시스템/쇼크 위기
+    elif (
+        phase_upper.startswith("SHOCK RISK-OFF")
+        or "SYSTEMIC" in phase_upper
+        or systemic_confirmed
+        or (
+            phase_upper.startswith("HARD RISK-OFF")
+            and hy_status == "FRACTURE"
+        )
     ):
-
         cap = 20
 
-    elif phase_upper.startswith(
-        "SOFT RISK-OFF"
-    ):
+    # 3) 일반 HARD RISK-OFF
+    elif phase_upper.startswith("HARD RISK-OFF"):
 
-        cap = (
-            50
-            if flow_score >= 3
-            else 45
+        recovery_watch = (
+            liq_dir_tag == "UP"
+            and flow_score >= 3
         )
 
-    elif "RISK-OFF" in phase_upper:
+        if recovery_watch and hy_status != "FRACTURE":
+            cap = 65
 
+        elif hy_status == "HOT":
+            cap = 35
+
+        else:
+            cap = 45
+
+    # 4) SOFT RISK-OFF
+    elif phase_upper.startswith("SOFT RISK-OFF"):
+        cap = 50 if flow_score >= 3 else 45
+
+    # 5) 기타 RISK-OFF
+    elif "RISK-OFF" in phase_upper:
         cap = 35
 
-    elif (
-        "MIXED / FRAGILE"
-        in phase_upper
-    ):
-
+    # 6) 혼조
+    elif "MIXED / FRAGILE" in phase_upper:
         cap = 55
 
-    elif (
-        phase_upper.startswith(
-            "TRANSITION"
-        )
-        or
-        "MIXED"
-        in phase_upper
-    ):
-
+    elif phase_upper.startswith("TRANSITION") or "MIXED" in phase_upper:
         cap = 65
 
-    elif phase_upper.startswith(
-        "RISK-ON"
-    ):
-
+    # 7) Risk-On
+    elif phase_upper.startswith("RISK-ON"):
         cap = 85
 
-    if (
-        "SYSTEMIC"
-        in struct_v2
-        or
-        "STAGFLATION"
-        in struct_v2
-    ):
-
-        cap = min(
-            cap,
-            30,
-        )
+    # Structural v2 independent safety cap
+    if "SYSTEMIC" in struct_v2:
+        cap = min(cap, 30)
 
     # Phase cap의 실제 효과를 별도 계산
     phase_cap_effect = (
@@ -1163,14 +1157,14 @@ def main() -> None:
             (
                 dates
                 >= pd.Timestamp(
-                    "2022-01-01"
+                    "2008-12-02"
                 )
             )
             &
             (
                 dates
                 <= pd.Timestamp(
-                    "2022-06-30"
+                    "2026-06-22"
                 )
             )
         ]
@@ -1183,7 +1177,7 @@ def main() -> None:
     # --------------------------------------------------------
 
     selected_indices = list(selected_indices)
-
+   
     print(
         "[FINAL AUDIT] rows:",
         len(selected_indices),

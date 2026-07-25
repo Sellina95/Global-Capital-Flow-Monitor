@@ -1,23 +1,23 @@
 FILTER13 BUDGET ATTRIBUTION FINAL AUDIT
 ======================================================================
 
-Rows: 129
-Average Final Budget: 48.31
-Average Base Budget: 61.63
+Rows: 4576
+Average Final Budget: 48.40
+Average Base Budget: 60.47
 
 COMPONENT ATTRIBUTION
 ----------------------------------------------------------------------
             component  avg_effect  total_effect  negative_days  positive_days  zero_days  avg_negative_effect
-     phase_cap_effect   -8.953488         -1155             69              0         60           -16.739130
-          macro_delta   -4.705426          -607             54             15         60           -12.888889
-      structure_delta   -1.705426          -220             46             24         59           -10.000000
-  structural_v2_delta   -1.302326          -168             10              0        119           -16.800000
-         credit_delta   -0.697674           -90             49             80          0           -10.000000
-    positioning_delta   -0.093023           -12              3              0        126            -4.000000
-flow_continuity_delta    0.000000             0              0              0        129             0.000000
-          drift_delta    0.000000             0              0              0        129             0.000000
-     final_cap_effect    0.000000             0              0              0        129             0.000000
-    event_floor_delta    0.000000             0              0              0        129             0.000000
-     flow_gamma_delta    0.000000             0              0              0        129             0.000000
-    flow_regime_delta    1.000000           129              0            129          0             0.000000
-      liquidity_delta    3.139535           405             59             70          0            -5.000000
+     phase_cap_effect   -8.536058        -39061           1902              0       2674           -20.536803
+          macro_delta   -6.265516        -28671           2111            626       1839           -15.282804
+         credit_delta   -4.037369        -18475           2757           1819          0           -10.000000
+    positioning_delta   -2.121503         -9708           1947              0       2629            -4.986133
+  structural_v2_delta   -0.521635         -2387            152              0       4424           -15.703947
+     final_cap_effect   -0.003278           -15              1              0       4575           -15.000000
+    event_floor_delta    0.002185            10              0              2       4574             0.000000
+      structure_delta    0.004371            20           1225           1227       2124           -10.000000
+          drift_delta    1.000000          4576              0           4576          0             0.000000
+flow_continuity_delta    1.025568          4693              0           4575          1             0.000000
+     flow_gamma_delta    1.352710          6190              0           3095       1481             0.000000
+      liquidity_delta    2.716346         12430           1573           2733        270            -8.413859
+    flow_regime_delta    3.317308         15180              0           4576          0             0.000000
