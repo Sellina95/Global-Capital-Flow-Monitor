@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-07-28 03:57:25",
+  "timestamp": "2026-07-29 04:09:18",
   "status": "STABLE",
   "event_type": "NORMAL",
-  "spike_count": 1,
+  "spike_count": 0,
   "extreme_count": 0,
   "recommended_exposure": 85,
   "deadman": false,
@@ -10,29 +10,29 @@
   "deadman_reason": "Normal Operation",
   "assets": {
     "SPY": {
-      "zscore": 0.35,
-      "state": "NORMAL",
-      "pct_change": 0.0
+      "zscore": -2.45,
+      "state": "WATCH",
+      "pct_change": -0.03
     },
     "QQQ": {
-      "zscore": 0.28,
-      "state": "NORMAL",
-      "pct_change": 0.03
+      "zscore": -2.4,
+      "state": "WATCH",
+      "pct_change": -0.11
     },
     "VIX": {
-      "zscore": 0.06,
-      "state": "NORMAL",
-      "pct_change": -0.95
+      "zscore": -1.98,
+      "state": "WATCH",
+      "pct_change": 0.28
     },
     "DXY": {
-      "zscore": 2.79,
-      "state": "ALERT",
-      "pct_change": 0.03
+      "zscore": -0.24,
+      "state": "NORMAL",
+      "pct_change": 0.02
     },
     "WTI": {
-      "zscore": -0.7,
+      "zscore": 0.49,
       "state": "NORMAL",
-      "pct_change": -0.58
+      "pct_change": 0.16
     }
   }
 }
