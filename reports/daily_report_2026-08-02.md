@@ -108,7 +108,7 @@ Key focus: monitor liquidity, participation quality, and positioning risk.
 > **판단 요약: 데드맨 스위치 발동 / 자산 보호 모드 강제 전환**
 
 ### 🕓 Intraday Historical Trigger Log
-- [2026-08-02 04:22:16] ALERT | SEW=DEADMAN | EVENT=NORMAL | credit=CREDIT_CALM(2.84%) | flow=CONFIRMED_FLOW -> CONFIRMED_FLOW | flow_delta=0 | persistence=5 | flow_alert=CONFIRMED_FLOW | Exp=0% | 🚨 HARD DEADMAN: Real-time Cross-Asset Shock (spike=2, extreme=0) | spike=2 extreme=0 | corr_break=NO | email=YES | z={'SPY': -3.2738035347697645, 'QQQ': -3.432781890760108, 'VIX': 0.21885040586048746, 'DXY': 1.53386687862278, 'WTI': 0.07680321668558458}
+- [2026-08-02 10:16:02] ALERT | SEW=DEADMAN | EVENT=NORMAL | credit=CREDIT_CALM(2.84%) | flow=CONFIRMED_FLOW -> FLOW_FADE | flow_delta=-1 | persistence=4 | flow_alert=FLOW_FADE | Exp=0% | 🚨 HARD DEADMAN: Real-time Cross-Asset Shock (spike=2, extreme=0) | spike=2 extreme=0 | corr_break=NO | email=YES | z={'SPY': -3.2738035347697645, 'QQQ': -3.432781890760108, 'VIX': 0.21885040586048746, 'DXY': 1.53386687862278, 'WTI': 0.07680321668558458}
 👉 해석: 오늘 장중 HARD DEADMAN 이벤트가 발생했으며, 현재도 자산 보호 모드가 유지 중입니다.
 
 ### 🎯 Exposure Framework
@@ -345,10 +345,10 @@ No significant sector-level correlation break detected.
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
 - **Raw Flow State:** **⚡ BUILDING**
-- **Transition State:** **FLOW_FADE**
-- **Flow Delta:** -1 (prev=6 → current=5)
-- **Persistence Days:** 4
-- **Transition Note:** 기관성 흐름은 남아 있으나 강도 약화
+- **Transition State:** **CONFIRMED_FLOW**
+- **Flow Delta:** +0 (prev=5 → current=5)
+- **Persistence Days:** 5
+- **Transition Note:** 기관성 흐름이 높은 강도로 확인
 - **Confidence:** **MEDIUM-HIGH**
 - **Action Bias:** **WATCHLIST**
 
@@ -471,7 +471,7 @@ No significant sector-level correlation break detected.
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: MIXED (혼조) (WEAK, score=-0.5) | REAL_RATEΔ +0.000 / FCI value=-0.554 (low-frequency) / DXYΔ -0.210 / US10YΔ +0.082 (정상)
-- **Sentiment (Fear&Greed):** 71.86577273427042 (GREED)
+- **Sentiment (Fear&Greed):** 71.72947278260249 (GREED)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** DOWN (MID)
 - **Structural Regime:** REFLATION
@@ -480,7 +480,7 @@ No significant sector-level correlation break detected.
 - **Drift:** ⚡ STRUCTURAL DRIFT / NEUTRAL / NONE
 - **Drift Score:** 5
 - **Flow Score:** 5
-- **Flow Continuity:** CONFIRMED_FLOW → ⚡ BUILDING (FLOW_PERSISTENCE, tilt=+1)
+- **Flow Continuity:** FLOW_FADE → ⚡ BUILDING (FLOW_PERSISTENCE, tilt=+1)
 - **Flow Regime Tilt:** +3 / Flow-Gamma Tilt: +2
 
 - **🎯 Final Risk Action:** **HOLD**
@@ -660,8 +660,8 @@ No significant sector-level correlation break detected.
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -1.0045879975634908
-- **Z-Score (5d):** -0.15113212322812916
+- **Z-Score (1d):** -1.0045812570375143
+- **Z-Score (5d):** -0.15113251979526238
 
 ### EEM
 - **Crash?** False
@@ -678,8 +678,8 @@ No significant sector-level correlation break detected.
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.3769429622086601
-- **Z-Score (5d):** -0.010412712903900811
+- **Z-Score (1d):** -0.37694333021676707
+- **Z-Score (5d):** -0.010413062058978812
 
 ### EWJ
 - **Crash?** False
