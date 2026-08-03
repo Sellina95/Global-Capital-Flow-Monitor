@@ -197,9 +197,14 @@ def audit_filter13_budget(
         {}
     ) or {}
 
-    fear = _to_float(
-        sentiment.get("fear_greed")
+    fear_raw = _to_float(
+    sentiment.get("fear_greed")
     )
+
+    if fear_raw is not None:
+        fear = 100 - fear_raw
+    else:
+        fear = None
 
     sent_state = _sentiment_state(fear)
 
@@ -957,8 +962,8 @@ def main():
     rows = []
 
 
-    start_date = pd.Timestamp("2008-01-01")
-    end_date = pd.Timestamp("2026-06-30")
+    start_date = pd.Timestamp("2022-01-01")
+    end_date = pd.Timestamp("2022-06-30")
 
     selected_indices = df.index[
         (pd.to_datetime(df["date"]) >= start_date)
