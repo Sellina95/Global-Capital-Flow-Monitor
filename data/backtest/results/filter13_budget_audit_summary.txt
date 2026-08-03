@@ -1,0 +1,44 @@
+Filter13 Budget Audit Summary
+========================================
+
+cap_reduction             -30167.000000
+positioning_delta          -9740.000000
+macro_delta                -3596.000000
+structure_delta                0.000000
+flow_gamma_delta               0.000000
+drift_score                    0.000000
+drift_delta                    0.000000
+credit_delta                   0.000000
+flow_regime_delta              0.000000
+flow_continuity_delta          0.000000
+event_floor_delta              0.000000
+structural_v2_delta            0.000000
+pos_z                       4255.539142
+liquidity_delta            24085.000000
+final_budget              317772.000000
+credit_after              337190.000000
+credit_before             337190.000000
+structure_after           337190.000000
+structure_before          337190.000000
+base_budget               337190.000000
+liquidity_before          337190.000000
+positioning_after         347939.000000
+event_floor_before        347939.000000
+event_floor_after         347939.000000
+macro_after               357679.000000
+positioning_before        357679.000000
+drift_after               361275.000000
+flow_regime_before        361275.000000
+liquidity_after           361275.000000
+drift_before              361275.000000
+structural_v2_after       361275.000000
+structural_v2_before      361275.000000
+flow_regime_after         361275.000000
+macro_before              361275.000000
+flow_continuity_after     361275.000000
+flow_gamma_before         361275.000000
+flow_gamma_after          361275.000000
+flow_continuity_before    361275.000000
+final_cap                 367145.000000
+phase_cap                 367145.000000
+v2_cap                    481700.000000

@@ -1,0 +1,3427 @@
+from __future__ import annotations
+
+import sys
+import json
+import os
+from pathlib import Path
+from typing import Any, Dict
+
+
+import pandas as pd
+
+
+ROOT = Path(__file__).resolve().parents[2]
+
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+if str(ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(ROOT / "scripts"))
+
+
+from filters.treasury_fallback import (
+    fetch_treasury_yield_fallback,
+)
+
+from filters.decision_layer import (
+    decision_layer_filter,
+    war_room_final_decision_filter,
+)
+
+from filters.executive_layer import (
+    executive_summary_filter,
+)
+
+from filters.scenario_layer import (
+    scenario_generator_filter,
+)
+
+from filters.transmission_layer import (
+    transmission_layer_filter,
+)
+
+
+# strategist_filters
+from filters.strategist_filters import (
+    attach_country_risk_layer,
+    attach_geo_similarity_layer,
+    attach_geopolitical_ew_layer,
+
+    apply_geo_overlay_to_final_state,
+
+    market_regime_filter,
+    narrative_engine_filter,
+)
+
+
+# generate_report
+from scripts.generate_report import (
+    attach_liquidity_layer,
+    attach_credit_spread_layer,
+    attach_fred_extras_layer,
+    attach_sovereign_spread_layer,
+    attach_expectation_layer,
+
+    attach_sector_momentum_layer,
+    attach_sentiment_proxy_layer,
+    attach_drift_data_layer,
+    attach_growth_sustainability_layer,
+    attach_breadth_layer,
+    attach_leadership_layer,
+    attach_volatility_structure_layer,
+    attach_positioning_layer,
+)
+
+
+from scripts.data_processing import (
+    download_all_etfs_and_save,
+    load_etf_data_from_csv,
+)
+from scripts.backtest.market_data_builder import build_market_data
+
+from scripts.fetch_expectation_data import (
+    fetch_expectation_data,
+)
+
+from scripts.fetch_sentiment import (
+    fetch_cnn_fear_greed,
+)
+
+from scripts.risk_alerts import (
+    check_regime_change_and_alert,
+)
+
+from scripts.fetch_positioning_data import (
+    get_recent_pos_slope,
+)
+
+from scripts.pm_final_brief import (
+    generate_pm_final_brief,
+)
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+DATA_DIR = BASE_DIR / "data"
+REPORTS_DIR = BASE_DIR / "reports"
+BACKTEST_DATA_DIR = DATA_DIR / "backtests"
+BACKTEST_REPORTS_DIR = REPORTS_DIR / "backtests"
+
+def infer_expected_as_of_date_from_market_calendar(df: pd.DataFrame) -> str:
+    calendar_cols = ["SPY", "QQQ", "HYG", "LQD", "IWM"]
+
+    existing_cols = [col for col in calendar_cols if col in df.columns]
+
+    if not existing_cols:
+        return pd.to_datetime(df["date"]).max().strftime("%Y-%m-%d")
+
+    tmp = df[["date"] + existing_cols].copy()
+    tmp["date"] = pd.to_datetime(tmp["date"], errors="coerce")
+
+    for col in existing_cols:
+        tmp[col] = pd.to_numeric(tmp[col], errors="coerce")
+
+    last_dates = []
+
+    for col in existing_cols:
+        valid_rows = tmp[tmp[col].notna()]
+        if not valid_rows.empty:
+            last_dates.append(pd.to_datetime(valid_rows["date"]).max())
+
+    if not last_dates:
+        return pd.to_datetime(df["date"]).max().strftime("%Y-%m-%d")
+
+    latest_date = max(last_dates)
+    latest_count = sum(d == latest_date for d in last_dates)
+
+    if latest_count >= 4:
+        return latest_date.strftime("%Y-%m-%d")
+
+    print(
+        f"[WARNING][MARKET CALENDAR] disagreement: "
+        f"latest_date={latest_date.strftime('%Y-%m-%d')}, "
+        f"latest_count={latest_count}/{len(last_dates)}, "
+        f"calendar_cols={existing_cols}"
+    )
+
+    return latest_date.strftime("%Y-%m-%d")
+
+def _latest_value(x, default=0.0):
+    if isinstance(x, dict):
+        return x.get("today", x.get("value", default))
+    try:
+        return float(x)
+    except Exception:
+        return default
+
+# generate_report.py (또는 market_data 완성 직후 한 번만 넣기)
+# 목적:
+# 기존 market_data["VIX"].get("today") 구조를 유지하면서
+# float 구조도 자동 호환되게 표준화
+# => 프로젝트 전체 .get("today") 대량 수정 방지
+
+
+
+def normalize_market_data_structure(market_data):
+    """
+    float / int / None 값을
+    {"today": value} 구조로 자동 변환
+    기존 dict 구조는 유지
+    """
+
+    if market_data is None:
+        return {}
+
+    normalized = {}
+
+    for key, value in market_data.items():
+
+        # 이미 dict면 그대로 유지
+        if isinstance(value, dict):
+            normalized[key] = value
+
+        # 숫자형이면 dict 래핑
+        elif isinstance(value, (int, float)):
+            normalized[key] = {"today": float(value)}
+
+        # None 처리
+        elif value is None:
+            normalized[key] = {"today": 0.0}
+
+        # 기타 예외
+        else:
+            try:
+                normalized[key] = {"today": float(value)}
+            except Exception:
+                normalized[key] = value
+
+    return normalized
+    
+# macro_data.csv에 들어있는 키들 (여기서 추가된 지표는 자동으로 읽히지만,
+# 필수 daily macro 라인은 이 KEYS를 기준으로 출력)
+KEYS = ["US10Y", "DXY", "WTI", "VIX", "USDKRW"]
+
+# 리포트 상단에 따로 Liquidity Snapshot 블럭을 띄울지 (Fed Plumbing Filter가 있으니 보통 False 추천)
+SHOW_LIQUIDITY_SNAPSHOT = False
+
+# =========================================================
+# Structural Interpretation Layer (12.5~12.8)
+# =========================================================
+
+def evaluate_growth_sustainability(
+    liquidity_dir=None,
+    hy_oas=None,
+    real_rate=None,
+    dxy=None,
+    breadth_ratio=None,
+):
+
+    if isinstance(hy_oas, dict):
+        hy_oas = hy_oas.get("today")
+    
+    if isinstance(real_rate, dict):
+        real_rate = real_rate.get("today")
+    
+    if isinstance(dxy, dict):
+        dxy = dxy.get("today")
+
+    score = 0
+    reasons = []
+
+    if liquidity_dir == "UP":
+        score += 1
+        reasons.append("liquidity improving")
+
+    if hy_oas is not None and hy_oas < 4.5:
+        score += 1
+        reasons.append("credit stress contained")
+
+    if real_rate is not None and real_rate < 2.0:
+        score += 1
+        reasons.append("real yields manageable")
+
+    if dxy is not None and dxy < 105:
+        score += 1
+        reasons.append("USD funding pressure moderate")
+
+    if breadth_ratio is not None and breadth_ratio > 0.995:
+        score += 1
+        reasons.append("broad participation confirmed")
+
+    if score >= 4:
+        state = "STRONG"
+    elif score >= 2:
+        state = "MODERATE"
+    else:
+        state = "FRAGILE"
+
+    return {
+        "state": state,
+        "score": score,
+        "reason": ", ".join(reasons) if reasons else "limited confirmation",
+    }
+
+
+def evaluate_short_covering_risk(
+    vix_change=None,
+    breadth_ratio=None,
+    credit_confirmed=True,
+):
+
+    if isinstance(vix_change, dict):
+        vix_change = vix_change.get("pct_change")
+  
+    
+    score = 0
+    reasons = []
+
+    if vix_change is not None and vix_change < -5:
+        score += 1
+        reasons.append("aggressive volatility compression")
+
+    if breadth_ratio is not None and breadth_ratio < 0.99:
+        score += 1
+        reasons.append("narrow participation")
+
+    if not credit_confirmed:
+        score += 1
+        reasons.append("credit confirmation weak")
+
+    if score >= 2:
+        state = "ELEVATED"
+    elif score == 1:
+        state = "WATCH"
+    else:
+        state = "LOW"
+
+    return {
+        "state": state,
+        "score": score,
+        "reason": ", ".join(reasons) if reasons else "broad demand participation",
+    }
+
+
+def evaluate_breadth_quality(
+    rsp_vs_spy=None,
+    cyclical_confirm=False,
+):
+    score = 0
+    reasons = []
+
+    if rsp_vs_spy is not None and rsp_vs_spy > 0.995:
+        score += 1
+        reasons.append("equal-weight participation improving")
+
+    if cyclical_confirm:
+        score += 1
+        reasons.append("cyclical sectors participating")
+
+    if score == 2:
+        state = "HEALTHY"
+    elif score == 1:
+        state = "MIXED"
+    else:
+        state = "NARROW"
+
+    return {
+        "state": state,
+        "score": score,
+        "reason": ", ".join(reasons) if reasons else "leadership concentrated",
+    }
+
+
+def evaluate_financing_condition(
+    us10y=None,
+    real_rate=None,
+    hy_oas=None,
+):
+
+    if isinstance(us10y, dict):
+        us10y = us10y.get("today")
+    
+    if isinstance(real_rate, dict):
+        real_rate = real_rate.get("today")
+    
+    if isinstance(hy_oas, dict):
+        hy_oas = hy_oas.get("today")
+        
+    score = 0
+    reasons = []
+
+    if us10y is not None and us10y < 5:
+        score += 1
+        reasons.append("long-end yields stable")
+
+    if real_rate is not None and real_rate < 2.2:
+        score += 1
+        reasons.append("real financing pressure manageable")
+
+    if hy_oas is not None and hy_oas < 5:
+        score += 1
+        reasons.append("credit financing conditions stable")
+
+    if score == 3:
+        state = "SUPPORTIVE"
+    elif score == 2:
+        state = "NEUTRAL"
+    else:
+        state = "TIGHTENING"
+
+    return {
+        "state": state,
+        "score": score,
+        "reason": ", ".join(reasons) if reasons else "financing stress rising",
+    }
+
+
+def build_strategic_interpretation(
+    market_data: Dict[str, Any],
+    final_state: Dict[str, Any],
+    final_action_result: Dict[str, Any],
+) -> list[str]:
+    """
+    상단 Strategy Note
+    - Structure → Liquidity → Participation → Risk → Allocation 흐름
+    - 기존 Interpretation의 중복 Flow 문장 제거
+    - 리포트 상단에서 PM Summary 역할
+    """
+
+    lines = []
+
+    phase = str(final_state.get("phase", "N/A") or "N/A")
+
+    final_action = str(
+        final_action_result.get(
+            "action",
+            final_state.get("risk_action", "HOLD")
+        ) or "HOLD"
+    ).upper()
+
+    # Core macro inputs
+    us10y = market_data.get("US10Y", {})
+    dxy = market_data.get("DXY", {})
+    wti = market_data.get("WTI", {})
+    vix = market_data.get("VIX", {})
+
+    def pct_from(x):
+        if isinstance(x, dict):
+            return x.get("pct_change")
+        return None
+
+    us10y_pct = pct_from(us10y)
+    dxy_pct = pct_from(dxy)
+    wti_pct = pct_from(wti)
+    vix_pct = pct_from(vix)
+
+    liquidity_dir = (
+        final_state.get("liquidity_dir")
+        or market_data.get("liquidity_dir")
+        or market_data.get("NET_LIQ_DIR")
+        or "UNKNOWN"
+    )
+
+    credit_calm = final_state.get(
+        "credit_calm",
+        market_data.get("credit_calm")
+    )
+
+    pos_z = final_state.get("pos_z", "N/A")
+
+    flow_state = final_state.get("flow_state", "N/A")
+    flow_score = final_state.get("flow_score", "N/A")
+
+    drift_state = final_state.get("drift_state", "N/A")
+    drift_label = final_state.get("drift_label", "N/A")
+    drift_score = final_state.get("drift_score", "N/A")
+
+    final_exposure = (
+        final_action_result.get("exposure")
+        or final_action_result.get("final_exposure")
+        or "N/A"
+    )
+    
+    # ---------------------------------------------------
+    # 1) Header
+    # ---------------------------------------------------
+
+    lines.append(
+        f"- 금일 시장은 **{phase} 환경**입니다."
+    )
+
+    # ---------------------------------------------------
+    # 2) Structure
+    # ---------------------------------------------------
+
+    structure_parts = []
+
+    if us10y_pct is not None and us10y_pct > 0:
+        structure_parts.append("장기금리 상승")
+
+    if dxy_pct is not None and dxy_pct > 0:
+        structure_parts.append("달러 강세")
+
+    if wti_pct is not None and wti_pct > 0:
+        structure_parts.append("에너지 가격 부담")
+
+    if vix_pct is not None and vix_pct > 0:
+        structure_parts.append("변동성 확대")
+
+    if structure_parts:
+        lines.append(
+            "- **Structure:** "
+            + "·".join(structure_parts)
+            + "가 동반되며 금융환경의 tightening pressure가 강화되는 구간입니다."
+        )
+    else:
+        lines.append(
+            "- **Structure:** 금리·달러·유가·변동성 압력이 "
+            "한 방향으로 강하게 정렬되지는 않아 구조 판단은 중립적으로 유지합니다."
+        )
+
+    # ---------------------------------------------------
+    # 3) Liquidity
+    # ---------------------------------------------------
+
+    if str(liquidity_dir).upper() == "UP":
+        lines.append(
+            "- **Liquidity:** 가격 환경은 긴축적으로 움직였지만, "
+            "Net Liquidity는 증가 방향을 보이며 단기 달러 체력은 일부 유지되고 있습니다."
+        )
+
+    elif str(liquidity_dir).upper() == "DOWN":
+        lines.append(
+            "- **Liquidity:** 가격 환경과 실제 유동성 흐름이 모두 부담을 주고 있어, "
+            "리스크 자산의 방어력이 약해질 수 있습니다."
+        )
+
+    else:
+        lines.append(
+            "- **Liquidity:** 유동성 방향은 명확하지 않아, "
+            "가격 신호와 크레딧·수급 확인을 함께 봐야 합니다."
+        )
+
+    # ---------------------------------------------------
+    # 4) Participation
+    # ---------------------------------------------------
+
+    lines.append(
+        f"- **Participation:** 기관성 흐름은 "
+        f"**{flow_state}**(score={flow_score}) 상태이며, "
+        f"Drift는 **{drift_state} / {drift_label}**"
+        f"(score={drift_score})로 관찰됩니다. "
+        "다만 breadth와 리더십 확산 여부는 추가 확인이 필요합니다."
+    )
+
+    # ---------------------------------------------------
+    # 5) Risk
+    # ---------------------------------------------------
+
+    risk_parts = []
+
+    try:
+        if float(pos_z) >= 2:
+            risk_parts.append(f"포지셔닝 과열(POS_Z={pos_z})")
+    except Exception:
+        pass
+
+    if credit_calm is True:
+        credit_text = "크레딧은 안정적"
+
+    elif credit_calm is False:
+        credit_text = "크레딧 스트레스가 관찰"
+
+    else:
+        credit_text = "크레딧 신호는 중립/확인 필요"
+
+    if risk_parts:
+        lines.append(
+            f"- **Risk:** {', '.join(risk_parts)}이 관찰되며, "
+            f"{credit_text}입니다. "
+            "따라서 신규 추격보다는 sizing control과 "
+            "exposure discipline이 중요합니다."
+        )
+
+    else:
+        lines.append(
+            f"- **Risk:** {credit_text}이며, "
+            "현재 구간에서는 단일 지표보다 "
+            "포지셔닝·변동성·수급의 조합을 확인하는 것이 중요합니다."
+        )
+
+    # ---------------------------------------------------
+    # 6) Allocation
+    # ---------------------------------------------------
+
+    if final_action in ["REDUCE", "STRONG REDUCE", "EXIT"]:
+
+        lines.append(
+            f"- **Allocation:** 이에 따라 전체 베타 노출은 낮게 유지하며, "
+            "현금을 전략 자산으로 보유하는 접근이 적절합니다. "
+            f"현재 실행 기준 노출은 약 **{final_exposure}%**입니다."
+        )
+
+    elif final_action in ["ADD", "EARLY BUY", "INCREASE"]:
+
+        lines.append(
+            f"- **Allocation:** 조건부 리스크 확대가 가능하지만, "
+            "리더 섹터 중심의 단계적 진입이 적절합니다. "
+            f"현재 실행 기준 노출은 약 **{final_exposure}%**입니다."
+        )
+
+    else:
+
+        lines.append(
+            "- **Allocation:** 현 수준에서는 포지션 유지와 관망이 적절하며, "
+            "추가 확대는 breadth와 flow confirmation 이후가 더 안전합니다. "
+            f"현재 실행 기준 노출은 약 **{final_exposure}%**입니다."
+        )
+        
+    # ---------------------------------------------------
+    # 7) Structural Interpretation Layer
+    # ---------------------------------------------------
+
+    breadth_ratio = None
+
+    try:
+        rsp = market_data.get("RSP")
+        spy = market_data.get("SPY")
+
+        if rsp and spy:
+            breadth_ratio = rsp / spy
+
+    except Exception:
+        breadth_ratio = None
+
+
+    growth_eval = evaluate_growth_sustainability(
+        liquidity_dir=market_data.get("NET_LIQ_DIR"),
+        hy_oas=market_data.get("HY_OAS"),
+        real_rate=market_data.get("REAL_RATE"),
+        dxy=market_data.get("DXY"),
+        breadth_ratio=breadth_ratio,
+    )
+
+    short_eval = evaluate_short_covering_risk(
+        vix_change=market_data.get("VIX_pct"),
+        breadth_ratio=breadth_ratio,
+        credit_confirmed=market_data.get("CREDIT_CALM", True),
+    )
+
+    breadth_eval = evaluate_breadth_quality(
+        rsp_vs_spy=breadth_ratio,
+        cyclical_confirm=market_data.get("FLOW_SCORE", 0) >= 4,
+    )
+        # 12.7 / 12.8 Leadership & Positioning override
+    leadership_state = (
+        market_data.get("leadership_state")
+        or market_data.get("LEADERSHIP_STATE")
+        or market_data.get("leadership_18_state")
+    )
+
+    participation_signal = (
+        market_data.get("participation_signal")
+        or market_data.get("PARTICIPATION_SIGNAL")
+        or market_data.get("leadership_participation_signal")
+    ) 
+
+    positioning_state = (
+        market_data.get("positioning_state")
+        or market_data.get("POSITIONING_STATE")
+        or market_data.get("positioning_18_state")
+    )
+
+    if participation_signal == "FAILED":
+        breadth_eval = {
+            "state": "FAILED",
+            "reason": "participation failed despite index-level movement",
+        }
+
+    elif leadership_state == "BROAD" and participation_signal == "CONFIRMED":
+        if positioning_state in ["SQUEEZE_RISK", "STRESSED"]:
+            breadth_eval = {
+                "state": "BROAD_BUT_FRAGILE",
+                "reason": "leadership is broadening, but positioning stress keeps participation quality fragile",
+            }
+        else:
+            breadth_eval = {
+                "state": "BROAD",
+                "reason": "leadership broadening confirmed",
+            }
+
+    elif leadership_state in ["NARROW", "MEGACAP_ONLY"]:
+        breadth_eval = {
+            "state": "NARROW",
+            "reason": "leadership remains concentrated",
+        }
+
+    financing_eval = evaluate_financing_condition(
+        us10y=market_data.get("US10Y"),
+        real_rate=market_data.get("REAL_RATE"),
+        hy_oas=market_data.get("HY_OAS"),
+    )
+
+    lines.append("")
+    lines.append("- **Structural Layer:**")
+
+    lines.append(
+        f"  - Growth Sustainability → "
+        f"**{market_data.get('GROWTH_SUSTAINABILITY_LABEL','N/A')}** "
+        f"({market_data.get('GROWTH_SUSTAINABILITY_INTERPRETATION','N/A')})"
+    )
+
+    lines.append(
+        f"  - Flow Authenticity → "
+        f"**{market_data.get('FLOW_AUTHENTICITY_LABEL','N/A')}** "
+        f"({market_data.get('FLOW_AUTHENTICITY_INTERPRETATION','N/A')})"
+    )
+
+    lines.append(
+        f"  - Leadership Breadth → "
+        f"**{market_data.get('LEADERSHIP_BREADTH_LABEL','N/A')}** "
+        f"({market_data.get('LEADERSHIP_INTERPRETATION','N/A')})"
+    )
+
+    lines.append(
+        f"  - Positioning Stress → "
+        f"**{market_data.get('POSITIONING_LABEL','N/A')}** "
+        f"({market_data.get('POSITIONING_INTERPRETATION','N/A')})"
+    )
+
+    return lines
+
+
+def interpret_sew_event(event_type: str) -> str:
+    """
+    SEW Event Type → 전략적 해석
+    """
+
+    mapping = {
+        "NORMAL": "정상 상태 / 구조적 리스크 없음",
+        
+        "RISK_OFF_SHOCK": "전면 리스크오프 충격 / 시장 전반 디레버리징",
+        
+        "LIQUIDATION_SHOCK": "강제 청산 발생 / 포지션 붕괴 / 급락 리스크",
+        
+        "TECH_DELEVERAGING": "기술주 중심 디레버리징 / 성장주 압력",
+        
+        "TECH_STRESS": "기술 섹터 약세 / 초기 균열 신호",
+        
+        "MACRO_FLOW_DISLOCATION": "매크로 흐름 왜곡 / 오일·달러 비정상 움직임",
+        
+        "MACRO_UNWIND": "글로벌 자금 언와인딩 / 레버리지 축소 진행",
+        
+        "RISK_ON_SQUEEZE": "리스크온 숏스퀴즈 / 상승 압력 확대",
+        
+        "VOL_CRUSH_SQUEEZE": "변동성 압축 기반 상승 / 감마 구조 영향",
+        
+        "POSITION_UNWIND_RISK": "포지션 과열 상태 / 향후 급격한 언와인딩 위험",
+    }
+
+    return mapping.get(event_type, "해석 불가")
+
+
+
+# 🔥 기존 get_today_deadman_log 전체 교체
+# 위치: generate_report.py 또는 해당 함수 정의 파일
+
+def get_today_deadman_log(log_path="insights/alerts.log"):
+    """
+    현재 리포트 시점 기준:
+    지난 24시간(KST 기준) 내 가장 최근 DEADMAN 이벤트 반환
+
+    목적:
+    - '오늘 날짜 문자열 포함' 방식 제거
+    - UTC/KST 꼬임 방지
+    - 전날 밤 CPI/FOMC/장중 shock도 다음날 리포트에 반영
+    """
+
+    import os
+    from datetime import datetime, timedelta
+    import pandas as pd
+
+    if not os.path.exists(log_path):
+        return None
+
+    # KST 기준 현재
+    now_kst = pd.Timestamp.now(tz="Asia/Seoul")
+
+    # 최근 24시간 window
+    cutoff_kst = now_kst - pd.Timedelta(hours=24)
+
+    with open(log_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    # 최신순 역순 탐색
+    for line in reversed(lines):
+        try:
+            # 로그 시작부 예:
+            # [2026-05-12 13:33:46]
+            if not line.startswith("["):
+                continue
+
+            ts_str = line.split("]")[0].replace("[", "").strip()
+
+            # 현재 alerts.log는 UTC처럼 기록되는 구조 가능성 높음
+            # → UTC로 가정 후 KST 변환
+            ts_utc = pd.Timestamp(ts_str, tz="UTC")
+            ts_kst = ts_utc.tz_convert("Asia/Seoul")
+
+            if ts_kst >= cutoff_kst and "SEW=DEADMAN" in line:
+                return line.strip()
+
+        except Exception:
+            continue
+
+    return None
+
+def get_flow_state(filepath: str = "insights/flow_state.json") -> dict:
+    import os
+    import json
+
+    default_state = {
+        "flow_state": "N/A",
+        "flow_score": 0,
+        "timestamp": None,
+    }
+
+    try:
+        if not os.path.exists(filepath):
+            return default_state
+
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        return {
+            "flow_state": data.get("flow_state", "N/A"),
+            "flow_score": data.get("flow_score", 0),
+            "timestamp": data.get("timestamp"),
+        }
+
+    except Exception:
+        return default_state
+
+
+def get_sew_state(filepath: str = "insights/sew_state.json") -> dict:
+    default = {
+        "timestamp": None,
+        "status": "N/A",
+        "summary": "⚪ SEW 상태 파일 없음",
+        "event_type": "N/A",
+        "recommended_exposure": None,
+        "deadman": False,
+        "deadman_reason": "",
+        "spike_count": 0,
+        "extreme_count": 0,
+        "assets": {},
+    }
+
+    if not os.path.exists(filepath):
+        return default
+
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        return {
+            "timestamp": data.get("timestamp"),
+            "status": data.get("status", "N/A"),
+            "summary": data.get("summary", "⚪ SEW 요약 없음"),
+            "event_type": data.get("event_type", "N/A"),
+            "recommended_exposure": data.get("recommended_exposure"),
+            "deadman": data.get("deadman", False),
+            "deadman_reason": data.get("deadman_reason", ""),
+            "spike_count": data.get("spike_count", 0),
+            "extreme_count": data.get("extreme_count", 0),
+            "assets": data.get("assets", {}),
+        }
+    except Exception:
+        return default
+
+# -------------------------
+# Loaders
+# -------------------------
+def load_macro_df() -> pd.DataFrame:
+    """
+    Supports:
+      - data/macro_data.xlsx
+      - data/macro_data.csv
+
+    Robust to:
+      - duplicated columns
+      - mixed 'date'/'datetime'
+      - schema changes causing bad/epoch rows
+      - occasional malformed rows (skip bad lines)
+      - occasional single-row CSV (won't crash report pipeline)
+
+    Output:
+      - Always returns a DataFrame with a valid 'date' (datetime64)
+      - Sorted by date ascending
+    """
+    xlsx_path = DATA_DIR / "macro_data.xlsx"
+    csv_path = DATA_DIR / "macro_data.csv"
+
+    if xlsx_path.exists():
+        print(f"[DEBUG] load_macro_df: loading XLSX -> {xlsx_path}")
+        df = pd.read_excel(xlsx_path)
+    elif csv_path.exists():
+        print(f"[DEBUG] load_macro_df: loading CSV -> {csv_path}")
+        try:
+            df = pd.read_csv(csv_path)
+        except Exception:
+            df = pd.read_csv(csv_path, on_bad_lines="skip")
+    else:
+        raise FileNotFoundError(
+            f"data 폴더에 macro_data.xlsx 또는 macro_data.csv 가 없습니다: {DATA_DIR}"
+        )
+
+    if df is None or df.empty:
+        raise ValueError("macro_data가 비어있습니다.")
+
+    # ✅ drop duplicated column names (keep first)
+    df = df.loc[:, ~df.columns.duplicated()].copy()
+
+    # ✅ remove pandas auto columns if exist
+    # (가끔 저장/복구 과정에서 "Unnamed: 0" 같은 게 생김)
+    df = df.loc[:, [c for c in df.columns if not str(c).startswith("Unnamed:")]]
+
+    cols = list(df.columns)
+
+    # --------------------------------------------------
+    # ✅ 핵심 FIX:
+    # - 절대 df["date"]를 datetime으로 통째로 덮어쓰지 말 것
+    # - date가 비었거나(=NaT) epoch(1970~)처럼 깨진 경우만 datetime으로 보정
+    # --------------------------------------------------
+    if "datetime" in df.columns:
+        dt = pd.to_datetime(df["datetime"], errors="coerce")
+
+        if "date" not in df.columns:
+            # date가 없으면 새로 생성
+            df["date"] = dt
+        else:
+            d = pd.to_datetime(df["date"], errors="coerce")
+
+            # 1) date가 NaT인 곳만 datetime으로 채움
+            d = d.where(d.notna(), dt)
+
+            # 2) epoch(1970~)처럼 깨진 date는 datetime으로 교체 (datetime이 유효한 경우만)
+            bad_epoch = d.notna() & (d.dt.year <= 1971) & dt.notna()
+            d = d.where(~bad_epoch, dt)
+
+            df["date"] = d
+
+    # --------------------------------------------------
+    # ✅ choose the best datetime column and normalize to "date"
+    # --------------------------------------------------
+    if "date" in df.columns:
+        dt_col = "date"
+    elif "datetime" in df.columns:
+        dt_col = "datetime"
+    else:
+        # fallback: first column is usually datetime-like
+        dt_col = cols[0]
+        df = df.rename(columns={dt_col: "date"})
+        dt_col = "date"
+
+    if dt_col != "date":
+        df = df.rename(columns={dt_col: "date"})
+
+    # parse + clean
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+    # --------------------------------------------------
+    # ✅ SAFETY: allow >=1 row
+    # --------------------------------------------------
+    if len(df) < 1:
+        raise ValueError("macro_data에 유효한 date row가 없습니다.")
+
+    return df
+    
+def load_fred_extras_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "fred_macro_sctorallo.csv"
+    expected_cols = [
+        "date", "FCI", "REAL_RATE",
+        "T10Y2Y", "T10YIE", "VIX", "DFII10", "DGS2"
+    ]
+
+    if not csv_path.exists():
+        return pd.DataFrame(columns=expected_cols)
+
+    df = pd.read_csv(csv_path)
+    if df.empty:
+        return pd.DataFrame(columns=expected_cols)
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
+def load_sovereign_spreads_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "sovereign_spreads.csv"
+    if not csv_path.exists() or csv_path.stat().st_size == 0:
+        return pd.DataFrame(columns=["date"])
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return pd.DataFrame(columns=["date"])
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame(columns=["date"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+    # drop duplicates
+    df = df.loc[:, ~df.columns.duplicated()].copy()
+    return df
+
+
+def merge_sovereign_spreads_into_macro_df(df_macro: pd.DataFrame) -> pd.DataFrame:
+    """
+    A안 핵심:
+    macro_data(df)에 sovereign_spreads(df)를 date 기준으로 merge해서
+    df.columns에 KR10Y_SPREAD/IL10Y_SPREAD/...이 생기도록 만든다.
+    """
+    if df_macro is None or df_macro.empty:
+        return df_macro
+
+    s = load_sovereign_spreads_df()
+    if s.empty:
+        return df_macro
+
+    # ensure datetime
+    dfm = df_macro.copy()
+    dfm["date"] = pd.to_datetime(dfm["date"], errors="coerce")
+
+    # pick spread columns only (and optional *_Y if you want)
+    keep_cols = [c for c in s.columns if c == "date" or c.endswith("_SPREAD")]
+    s2 = s[keep_cols].copy()
+
+    out = pd.merge(dfm, s2, on="date", how="left")
+
+    # optional: ffill spreads (last available) – 권장
+    spread_cols = [c for c in out.columns if c.endswith("_SPREAD")]
+    for c in spread_cols:
+        out[c] = pd.to_numeric(out[c], errors="coerce").ffill()
+
+    # remove duplicates if any
+    out = out.loc[:, ~out.columns.duplicated()].copy()
+    return out
+    
+   
+def attach_breadth_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int
+) -> Dict[str, Any]:
+    """
+    market_data에 breadth/equal-weight 데이터를 주입합니다.
+    12.6 Flow Authenticity Shadow 전용
+    - 기준일(today_idx) 값
+    - 전일(today_idx - 1) 값
+    둘 다 주입해서 return spread 계산 가능하게 함
+    """
+
+    if market_data is None:
+        market_data = {}
+
+    if df is None or df.empty or today_idx is None:
+        return market_data
+
+    if today_idx < 0 or today_idx >= len(df):
+        return market_data
+
+    row = df.iloc[today_idx]
+    prev_row = df.iloc[today_idx - 1] if today_idx > 0 else None
+
+    try:
+        market_data["_BREADTH_ASOF"] = pd.to_datetime(row["date"]).strftime("%Y-%m-%d")
+    except Exception:
+        market_data["_BREADTH_ASOF"] = None
+
+    mapping = {
+        "SPY": "BREADTH_SPY",
+        "RSP": "BREADTH_RSP",
+        "QQQ": "BREADTH_QQQ",
+        "QQQE": "BREADTH_QQQE",
+    }
+
+    for src_col, target_key in mapping.items():
+        # today value
+        try:
+            val = row.get(src_col) if src_col in df.columns else None
+            market_data[target_key] = float(val) if pd.notna(val) else 0.0
+        except Exception:
+            market_data[target_key] = 0.0
+
+        # prev value
+        prev_key = f"{target_key}_PREV"
+        try:
+            prev_val = prev_row.get(src_col) if prev_row is not None and src_col in df.columns else None
+            market_data[prev_key] = float(prev_val) if pd.notna(prev_val) else 0.0
+        except Exception:
+            market_data[prev_key] = 0.0
+
+        # prev2 value
+        prev2_key = f"{target_key}_PREV2"
+        try:
+            prev2_row = df.iloc[today_idx - 2] if today_idx >= 2 else None
+            prev2_val = prev2_row.get(src_col) if prev2_row is not None and src_col in df.columns else None
+            market_data[prev2_key] = float(prev2_val) if pd.notna(prev2_val) else 0.0
+        except Exception:
+            market_data[prev2_key] = 0.0
+
+
+    print("[DEBUG][BREADTH ATTACHED]", {
+        "asof": market_data.get("_BREADTH_ASOF"),
+        "BREADTH_SPY": market_data.get("BREADTH_SPY"),
+        "BREADTH_SPY_PREV": market_data.get("BREADTH_SPY_PREV"),
+        "BREADTH_RSP": market_data.get("BREADTH_RSP"),
+        "BREADTH_RSP_PREV": market_data.get("BREADTH_RSP_PREV"),
+        "BREADTH_QQQ": market_data.get("BREADTH_QQQ"),
+        "BREADTH_QQQ_PREV": market_data.get("BREADTH_QQQ_PREV"),
+        "BREADTH_QQQE": market_data.get("BREADTH_QQQE"),
+        "BREADTH_QQQE_PREV": market_data.get("BREADTH_QQQE_PREV"),
+    })
+
+    return market_data
+
+def attach_leadership_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int
+) -> Dict[str, Any]:
+    """
+    12.7 Leadership Breadth Shadow 전용
+    - Mega-cap / AI / Semiconductor / Small-cap participation 확인
+    - 기준일 + 전일 값 주입
+    """
+
+    if market_data is None:
+        market_data = {}
+
+    if df is None or df.empty or today_idx is None:
+        return market_data
+
+    if today_idx < 0 or today_idx >= len(df):
+        return market_data
+
+    row = df.iloc[today_idx]
+    prev_row = df.iloc[today_idx - 1] if today_idx > 0 else None
+
+    try:
+        market_data["_LEADERSHIP_ASOF"] = pd.to_datetime(row["date"]).strftime("%Y-%m-%d")
+    except Exception:
+        market_data["_LEADERSHIP_ASOF"] = None
+
+    mapping = {
+        "QQQ": "LEAD_QQQ",
+        "SPY": "LEAD_SPY",
+        "SMH": "LEAD_SMH",
+        "SOXX": "LEAD_SOXX",
+        "IWM": "LEAD_IWM",
+        "XLK": "LEAD_XLK",
+        "XLF": "LEAD_XLF",
+        "XLI": "LEAD_XLI",
+        "XLY": "LEAD_XLY",
+    }
+
+    for src_col, target_key in mapping.items():
+        try:
+            val = row.get(src_col) if src_col in df.columns else None
+            market_data[target_key] = float(val) if pd.notna(val) else 0.0
+        except Exception:
+            market_data[target_key] = 0.0
+
+        prev_key = f"{target_key}_PREV"
+        try:
+            prev_val = prev_row.get(src_col) if prev_row is not None and src_col in df.columns else None
+            market_data[prev_key] = float(prev_val) if pd.notna(prev_val) else 0.0
+        except Exception:
+            market_data[prev_key] = 0.0
+
+        # prev2 value
+        prev2_key = f"{target_key}_PREV2"
+        try:
+            prev2_row = df.iloc[today_idx - 2] if today_idx >= 2 else None
+            prev2_val = prev2_row.get(src_col) if prev2_row is not None and src_col in df.columns else None
+            market_data[prev2_key] = float(prev2_val) if pd.notna(prev2_val) else 0.0
+        except Exception:
+            market_data[prev2_key] = 0.0
+
+    print("[DEBUG][LEADERSHIP ATTACHED]", {
+        "asof": market_data.get("_LEADERSHIP_ASOF"),
+        "LEAD_QQQ": market_data.get("LEAD_QQQ"),
+        "LEAD_QQQ_PREV": market_data.get("LEAD_QQQ_PREV"),
+        "LEAD_SMH": market_data.get("LEAD_SMH"),
+        "LEAD_SMH_PREV": market_data.get("LEAD_SMH_PREV"),
+        "LEAD_SOXX": market_data.get("LEAD_SOXX"),
+        "LEAD_SOXX_PREV": market_data.get("LEAD_SOXX_PREV"),
+        "LEAD_IWM": market_data.get("LEAD_IWM"),
+        "LEAD_IWM_PREV": market_data.get("LEAD_IWM_PREV"),
+        "LEAD_XLF": market_data.get("LEAD_XLF"),
+        "LEAD_XLF_PREV": market_data.get("LEAD_XLF_PREV"),
+        "LEAD_XLI": market_data.get("LEAD_XLI"),
+        "LEAD_XLI_PREV": market_data.get("LEAD_XLI_PREV"),
+        "LEAD_XLY": market_data.get("LEAD_XLY"),
+        "LEAD_XLY_PREV": market_data.get("LEAD_XLY_PREV"),
+        "HAS_XLI_COL": "XLI" in df.columns,
+        "HAS_XLY_COL": "XLY" in df.columns,
+        "BREADTH_RSP_PREV2": market_data.get("BREADTH_RSP_PREV2"),
+        "BREADTH_QQQE_PREV2": market_data.get("BREADTH_QQQE_PREV2"),
+})
+
+    return market_data
+    
+def attach_growth_sustainability_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int
+) -> Dict[str, Any]:
+    """
+    12.5 Growth Sustainability Shadow 전용
+    기존 market_data 키는 절대 덮어쓰지 않고 GROWTH_* 키만 주입
+    """
+
+    if market_data is None:
+        market_data = {}
+
+    if df is None or df.empty or today_idx is None:
+        return market_data
+
+    if today_idx < 0 or today_idx >= len(df):
+        return market_data
+
+    row = df.iloc[today_idx]
+
+    try:
+        market_data["_GROWTH_ASOF"] = pd.to_datetime(row["date"]).strftime("%Y-%m-%d")
+    except Exception:
+        market_data["_GROWTH_ASOF"] = None
+
+    mapping = {
+        "US10Y": "GROWTH_US10Y",
+        "DXY": "GROWTH_DXY",
+        "WTI": "GROWTH_WTI",
+        "T10Y2Y": "GROWTH_T10Y2Y",
+        "DFII10": "GROWTH_DFII10",
+        "REAL_RATE": "GROWTH_REAL_RATE",
+    }
+
+    for src_col, target_key in mapping.items():
+        try:
+            val = row.get(src_col) if src_col in df.columns else None
+            if pd.notna(val):
+                market_data[target_key] = float(val)
+        except Exception:
+            pass
+
+    print("[DEBUG][GROWTH ATTACHED]", {
+        "asof": market_data.get("_GROWTH_ASOF"),
+        "GROWTH_US10Y": market_data.get("GROWTH_US10Y"),
+        "GROWTH_DXY": market_data.get("GROWTH_DXY"),
+        "GROWTH_WTI": market_data.get("GROWTH_WTI"),
+        "GROWTH_T10Y2Y": market_data.get("GROWTH_T10Y2Y"),
+        "GROWTH_DFII10": market_data.get("GROWTH_DFII10"),
+        "GROWTH_REAL_RATE": market_data.get("GROWTH_REAL_RATE"),
+    })
+
+    return market_data
+
+def attach_volatility_structure_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int
+) -> Dict[str, Any]:
+
+    if market_data is None:
+        market_data = {}
+
+    if df is None or df.empty or today_idx is None:
+        return market_data
+
+    if today_idx < 0 or today_idx >= len(df):
+        return market_data
+
+    row = df.iloc[today_idx]
+
+    # VIX는 build_market_data에서 이미 today/prev/pct_change dict로 들어옴.
+    # 여기서 덮어쓰지 않는다.
+    
+    for col in ["VIX3M", "VIX9D"]:
+        try:
+            val = row.get(col) if col in df.columns else None
+            market_data[col] = float(val) if pd.notna(val) else 0.0
+        except Exception:
+            market_data[col] = 0.0
+
+    print("[DEBUG][VOL STRUCTURE ATTACHED]", {
+        "VIX": market_data.get("VIX"),
+        "VIX3M": market_data.get("VIX3M"),
+        "VIX9D": market_data.get("VIX9D"),
+    })
+
+    return market_data
+
+    
+def attach_sector_momentum_layer(market_data: Dict[str, Any], df: pd.DataFrame, today_idx: int) -> Dict[str, Any]:
+    """
+    Sector Momentum & Relative Strength Layer (v1)
+    - 각 섹터 ETF의 4주/12주 수익률을 SPY와 비교
+    - 결과를 MOMENTUM_SCORES에 저장
+    """
+
+    if market_data is None:
+        market_data = {}
+
+    sector_tickers = ["XLK", "XLF", "XLE", "XLI", "XLB", "XLY", "XLP", "XLV", "XLU", "XLRE", "XLC"]
+    benchmark = "SPY"
+
+    # 반드시 초기화
+    market_data["MOMENTUM_SCORES"] = {}
+
+    if benchmark not in df.columns:
+        for t in sector_tickers:
+            market_data["MOMENTUM_SCORES"][t] = 0
+        return market_data
+
+    def get_return(series: pd.Series, idx: int, lookback: int):
+        if idx - lookback < 0:
+            return None
+        try:
+            today_val = pd.to_numeric(series.iloc[idx], errors="coerce")
+            prev_val = pd.to_numeric(series.iloc[idx - lookback], errors="coerce")
+            if pd.isna(today_val) or pd.isna(prev_val) or prev_val == 0:
+                return None
+            return float((today_val / prev_val) - 1.0)
+        except Exception:
+            return None
+
+    spy_series = df[benchmark]
+    spy_4w = get_return(spy_series, today_idx, 20)
+    spy_12w = get_return(spy_series, today_idx, 60)
+
+    for ticker in sector_tickers:
+        if ticker not in df.columns:
+            market_data["MOMENTUM_SCORES"][ticker] = 0
+            continue
+
+        s = df[ticker]
+        r_4w = get_return(s, today_idx, 20)
+        r_12w = get_return(s, today_idx, 60)
+
+        if r_4w is None or r_12w is None or spy_4w is None or spy_12w is None:
+            market_data["MOMENTUM_SCORES"][ticker] = 0
+            continue
+
+        rs_4w = r_4w - spy_4w
+        rs_12w = r_12w - spy_12w
+        composite_rs = (rs_4w * 0.6) + (rs_12w * 0.4)
+
+        if composite_rs >= 0.05:
+            score = 2
+        elif composite_rs >= 0.01:
+            score = 1
+        elif composite_rs <= -0.05:
+            score = -2
+        elif composite_rs <= -0.01:
+            score = -1
+        else:
+            score = 0
+
+        # 여기서 실제 저장
+        market_data["MOMENTUM_SCORES"][ticker] = score
+
+    print("[DEBUG] MOMENTUM_SCORES:", market_data["MOMENTUM_SCORES"])
+    return market_data
+
+def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    FRED extras layer.
+    - 기본: fred_macro_sctorallo / fred extras CSV 값 사용
+    - FRED 값이 비어 있으면 Treasury fallback 사용
+    - 절대 missing 값을 0.0으로 대체하지 않음
+    """
+    from filters.treasury_fallback import fetch_treasury_yield_fallback
+
+    if market_data is None:
+        market_data = {}
+
+    df = load_fred_extras_df()
+
+    treasury_fallback = fetch_treasury_yield_fallback() or {}
+
+    if df is None or df.empty:
+        df = pd.DataFrame(columns=["date", "FCI", "REAL_RATE", "T10Y2Y", "T10YIE", "DFII10", "DGS2"])
+
+    df = df.copy()
+
+    if "date" not in df.columns:
+        df["date"] = pd.NaT
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+    target_cols = ["FCI", "REAL_RATE", "T10Y2Y", "T10YIE", "DFII10", "DGS2"]
+
+    for col in target_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        else:
+            df[col] = pd.NA
+
+    def _attach_from_fallback(key: str, asof_key: str) -> bool:
+        fallback_val = treasury_fallback.get(key)
+
+        if fallback_val is None:
+            market_data[asof_key] = None
+            return False
+
+        val = float(fallback_val)
+
+        market_data[asof_key] = "TREASURY_FALLBACK"
+        market_data[key] = {
+            "today": val,
+            "prev": None,
+            "pct_change": None,
+        }
+
+        print(f"[FALLBACK][TREASURY] {key}={val}")
+        return True
+
+    def _attach_one(key: str, asof_key: str):
+        valid_df = df.dropna(subset=[key]).copy()
+
+        if valid_df.empty:
+            _attach_from_fallback(key, asof_key)
+            return
+
+        today_row = valid_df.iloc[-1]
+        prev_row = valid_df.iloc[-2] if len(valid_df) >= 2 else None
+
+        asof = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
+        market_data[asof_key] = asof
+
+        today_val = pd.to_numeric(today_row.get(key), errors="coerce")
+
+        if pd.isna(today_val):
+            _attach_from_fallback(key, asof_key)
+            return
+
+        today_val_f = float(today_val)
+
+        if prev_row is None:
+            market_data[key] = {
+                "today": today_val_f,
+                "prev": None,
+                "pct_change": None,
+            }
+            return
+
+        prev_val = pd.to_numeric(prev_row.get(key), errors="coerce")
+
+        if pd.isna(prev_val):
+            market_data[key] = {
+                "today": today_val_f,
+                "prev": None,
+                "pct_change": None,
+            }
+            return
+
+        prev_val_f = float(prev_val)
+        pct = 0.0 if prev_val_f == 0 else ((today_val_f - prev_val_f) / prev_val_f) * 100.0
+
+        market_data[key] = {
+            "today": today_val_f,
+            "prev": prev_val_f,
+            "pct_change": pct,
+        }
+
+    _attach_one("FCI", "_FCI_ASOF")
+    _attach_one("REAL_RATE", "_REAL_ASOF")
+
+    for extra_key in ["T10Y2Y", "T10YIE", "DFII10", "DGS2"]:
+        _attach_one(extra_key, f"_{extra_key}_ASOF")
+
+    return market_data
+    
+def load_liquidity_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "liquidity_data.csv"
+    if not csv_path.exists():
+        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+
+    try:
+        if csv_path.stat().st_size == 0:
+            return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame(columns=["date", "TGA", "RRP", "WALCL", "NET_LIQ"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
+
+def load_credit_spread_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "credit_spread_data.csv"
+    if not csv_path.exists():
+        return pd.DataFrame(columns=["date", "HY_OAS"])
+
+    try:
+        if csv_path.stat().st_size == 0:
+            return pd.DataFrame(columns=["date", "HY_OAS"])
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return pd.DataFrame(columns=["date", "HY_OAS"])
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame(columns=["date", "HY_OAS"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
+def load_fred_data_from_csv() -> pd.DataFrame:
+    csv_path = "data/fred_macro_sctorallo.csv"
+    
+  
+    target_cols = ["T10Y2Y", "T10YIE", "DFII10", "DGS2"]
+    all_cols = ["date"] + target_cols
+
+    if not os.path.exists(csv_path):
+        return pd.DataFrame(columns=all_cols)
+
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception as e:
+        print(f"[ERROR] load_fred_data_from_csv: {e}")
+        return pd.DataFrame(columns=all_cols)
+
+    df.columns = [str(c).strip() for c in df.columns]
+
+    # 날짜 처리
+    date_col = "date" if "date" in df.columns else "Date" if "Date" in df.columns else None
+    if date_col:
+        df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+        df = df.dropna(subset=[date_col]).sort_values(date_col).reset_index(drop=True)
+        df = df.rename(columns={date_col: "date"})
+
+    # 🚨 존재하는 컬럼만 읽어오고, 나머지는 빈 칸 처리
+    for col in target_cols:
+        if col not in df.columns:
+            df[col] = pd.NA
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    return df[["date"] + target_cols].ffill()
+
+def load_positioning_df() -> pd.DataFrame:
+    """
+    Positioning Data (CFTC, Gamma, CTA) CSV를 로드합니다.
+    """
+    csv_path = DATA_DIR / "positioning_data.csv"
+    cols = [
+        "date",
+        "SP500_POS_Z",
+        "US10Y_POS_Z",
+        "DXY_POS_Z",
+        "DEALER_GAMMA_BIAS",
+        "CTA_MOMENTUM_SCORE",
+        "GAMMA_FETCH_OK",
+        "CTA_FETCH_OK",
+    ]
+
+    if not csv_path.exists():
+        return pd.DataFrame(columns=cols)
+
+    try:
+        if csv_path.stat().st_size == 0:
+            return pd.DataFrame(columns=cols)
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return pd.DataFrame(columns=cols)
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame(columns=cols)
+
+    for col in cols:
+        if col not in df.columns:
+            df[col] = pd.NA
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df[cols]
+
+
+# -------------------------
+# Builders
+# -------------------------
+"""def build_market_data(df: pd.DataFrame, today_idx: int) -> Dict[str, Any]:
+    
+    Builds market_data dict using:
+      - today value = df.iloc[today_idx][col]
+      - prev value  = last available non-null value BEFORE today_idx
+    This fixes "newly added columns" (XLK/XLF/XLE/XLRE) missing-prev issue.
+    
+    market_data: Dict[str, Any] = {}
+
+    def _to_num(x):
+        v = pd.to_numeric(x, errors="coerce")
+        return None if pd.isna(v) else float(v)
+
+    def _find_prev_value(col: str) -> float | None:
+        # scan backwards for last non-null
+        for j in range(today_idx - 1, -1, -1):
+            v = _to_num(df.iloc[j].get(col))
+            if v is not None:
+                return v
+        return None
+
+    today_row = df.iloc[today_idx]
+
+    for col in df.columns:
+        if col == "date" or col == "datetime":
+            continue
+
+        today_v = _to_num(today_row.get(col))
+        if today_v is None:
+            continue
+
+        prev_v = _find_prev_value(col)
+        if prev_v is None:
+            # still store today (but pct_change is None)
+            market_data[col] = {"today": today_v, "prev": None, "pct_change": None}
+            continue
+
+        pct = 0.0 if prev_v == 0 else ((today_v - prev_v) / prev_v) * 100.0
+        market_data[col] = {"today": today_v, "prev": prev_v, "pct_change": pct}
+
+    return market_data"""
+
+
+
+def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Attach TGA/RRP/NET_LIQ into market_data using FRED 'last available valid' values.
+    Adds meta: _LIQ_ASOF = 'YYYY-MM-DD'
+
+    Also computes:
+      - NET_LIQ dir: UP/DOWN/FLAT
+      - NET_LIQ level_bucket: LOW/MID/HIGH
+      - TGA/RRP/NET_LIQ slope (recent momentum)
+      - slope_label: ACCEL_UP / UP / FLAT / DOWN / ACCEL_DOWN
+    """
+    if market_data is None:
+        market_data = {}
+
+    liq_df = load_liquidity_df()
+    if liq_df is None or liq_df.empty:
+        market_data["_LIQ_ASOF"] = None
+        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
+        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
+        market_data["NET_LIQ"] = {
+            "today": None,
+            "prev": None,
+            "pct_change": None,
+            "dir": "N/A",
+            "level_bucket": "N/A",
+            "slope": None,
+            "slope_label": "N/A",
+        }
+        market_data["LIQUIDITY_MOMENTUM"] = {
+            "TGA": "N/A",
+            "RRP": "N/A",
+            "NET_LIQ": "N/A",
+        }
+        return market_data
+
+    if "date" not in liq_df.columns:
+        market_data["_LIQ_ASOF"] = None
+        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
+        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
+        market_data["NET_LIQ"] = {
+            "today": None,
+            "prev": None,
+            "pct_change": None,
+            "dir": "N/A",
+            "level_bucket": "N/A",
+            "slope": None,
+            "slope_label": "N/A",
+        }
+        market_data["LIQUIDITY_MOMENTUM"] = {
+            "TGA": "N/A",
+            "RRP": "N/A",
+            "NET_LIQ": "N/A",
+        }
+        return market_data
+
+    liq_df = liq_df.copy()
+    liq_df["date"] = pd.to_datetime(liq_df["date"], errors="coerce")
+
+    for col in ["TGA", "RRP", "WALCL", "NET_LIQ"]:
+        if col in liq_df.columns:
+            liq_df[col] = pd.to_numeric(liq_df[col], errors="coerce")
+        else:
+            liq_df[col] = pd.NA
+
+    liq_df = liq_df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+    # 마지막 유효 NET_LIQ row 사용
+    valid_liq_df = liq_df.dropna(subset=["NET_LIQ"]).copy()
+
+    if valid_liq_df.empty:
+        market_data["_LIQ_ASOF"] = None
+        market_data["TGA"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
+        market_data["RRP"] = {"today": None, "prev": None, "pct_change": None, "slope": None, "slope_label": "N/A"}
+        market_data["NET_LIQ"] = {
+            "today": None,
+            "prev": None,
+            "pct_change": None,
+            "dir": "N/A",
+            "level_bucket": "N/A",
+            "slope": None,
+            "slope_label": "N/A",
+        }
+        market_data["LIQUIDITY_MOMENTUM"] = {
+            "TGA": "N/A",
+            "RRP": "N/A",
+            "NET_LIQ": "N/A",
+        }
+        return market_data
+
+    liq_today = valid_liq_df.iloc[-1]
+    liq_prev = valid_liq_df.iloc[-2] if len(valid_liq_df) >= 2 else None
+
+    liq_asof = pd.to_datetime(liq_today["date"]).strftime("%Y-%m-%d")
+    market_data["_LIQ_ASOF"] = liq_asof
+
+    def _to_float(x) -> Optional[float]:
+        if x is None:
+            return None
+        try:
+            if pd.isna(x):
+                return None
+            return float(x)
+        except Exception:
+            try:
+                x2 = str(x).replace(",", "").replace("%", "").strip()
+                if x2 == "":
+                    return None
+                return float(x2)
+            except Exception:
+                return None
+
+    def _calc_recent_slope(df: pd.DataFrame, col: str, lookback: int = 3) -> Optional[float]:
+        """
+        최근 유효값 기준 slope 계산.
+        lookback=3이면 마지막 3개 유효값의 1-step 평균 변화량.
+        """
+        if col not in df.columns:
+            return None
+
+        series = pd.to_numeric(df[col], errors="coerce").dropna()
+        if len(series) < 2:
+            return None
+
+        recent = series.tail(lookback)
+        if len(recent) < 2:
+            return None
+
+        diffs = recent.diff().dropna()
+        if diffs.empty:
+            return None
+
+        try:
+            return float(diffs.mean())
+        except Exception:
+            return None
+
+    def _classify_slope(slope: Optional[float], ref_level: Optional[float]) -> str:
+        """
+        slope를 절대값이 아니라 최근 레벨 대비 상대적으로 라벨링.
+        """
+        if slope is None or ref_level is None:
+            return "N/A"
+
+        base = max(abs(ref_level), 1.0)
+        rel = slope / base
+
+        # 너무 촘촘하면 노이즈가 많아져서 threshold는 느슨하게 둠
+        if rel >= 0.02:
+            return "ACCEL_UP"
+        elif rel >= 0.003:
+            return "UP"
+        elif rel <= -0.02:
+            return "ACCEL_DOWN"
+        elif rel <= -0.003:
+            return "DOWN"
+        else:
+            return "FLAT"
+
+    def add_liq_key(key: str, today_val, prev_val, slope_val=None, slope_label="N/A"):
+        t = _to_float(today_val)
+        p = _to_float(prev_val)
+
+        if t is None:
+            market_data[key] = {
+                "today": None,
+                "prev": None if p is None else p,
+                "pct_change": None,
+                "slope": slope_val,
+                "slope_label": slope_label,
+            }
+            return
+
+        if p is None:
+            market_data[key] = {
+                "today": t,
+                "prev": None,
+                "pct_change": None,
+                "slope": slope_val,
+                "slope_label": slope_label,
+            }
+            return
+
+        pct = 0.0 if p == 0 else ((t - p) / p) * 100.0
+        market_data[key] = {
+            "today": t,
+            "prev": p,
+            "pct_change": pct,
+            "slope": slope_val,
+            "slope_label": slope_label,
+        }
+
+    # 개별 series는 해당 컬럼 유효값 기준으로 slope 계산
+    tga_slope = _calc_recent_slope(liq_df, "TGA", lookback=3)
+    rrp_slope = _calc_recent_slope(liq_df, "RRP", lookback=3)
+    net_slope = _calc_recent_slope(valid_liq_df, "NET_LIQ", lookback=3)
+
+    tga_today = _to_float(liq_today.get("TGA"))
+    rrp_today = _to_float(liq_today.get("RRP"))
+    net_today_raw = _to_float(liq_today.get("NET_LIQ"))
+
+    tga_slope_label = _classify_slope(tga_slope, tga_today)
+    rrp_slope_label = _classify_slope(rrp_slope, rrp_today)
+    net_slope_label = _classify_slope(net_slope, net_today_raw)
+
+    add_liq_key(
+        "TGA",
+        liq_today.get("TGA"),
+        None if liq_prev is None else liq_prev.get("TGA"),
+        slope_val=tga_slope,
+        slope_label=tga_slope_label,
+    )
+    add_liq_key(
+        "RRP",
+        liq_today.get("RRP"),
+        None if liq_prev is None else liq_prev.get("RRP"),
+        slope_val=rrp_slope,
+        slope_label=rrp_slope_label,
+    )
+    add_liq_key(
+        "NET_LIQ",
+        liq_today.get("NET_LIQ"),
+        None if liq_prev is None else liq_prev.get("NET_LIQ"),
+        slope_val=net_slope,
+        slope_label=net_slope_label,
+    )
+
+    net = market_data.get("NET_LIQ") or {
+        "today": None,
+        "prev": None,
+        "pct_change": None,
+        "slope": None,
+        "slope_label": "N/A",
+    }
+    net_today = _to_float(net.get("today"))
+    net_prev = _to_float(net.get("prev"))
+
+    if net_today is None or net_prev is None:
+        net_dir = "N/A"
+    else:
+        if net_today > net_prev:
+            net_dir = "UP"
+        elif net_today < net_prev:
+            net_dir = "DOWN"
+        else:
+            net_dir = "FLAT"
+
+    level_bucket = "N/A"
+    if net_today is not None and "NET_LIQ" in valid_liq_df.columns:
+        series = pd.to_numeric(valid_liq_df["NET_LIQ"], errors="coerce").dropna()
+
+        if len(series) >= 20:
+            pct_rank = (series <= net_today).mean()
+        else:
+            vmin, vmax = float(series.min()), float(series.max())
+            if vmax == vmin:
+                pct_rank = 0.5
+            else:
+                pct_rank = (net_today - vmin) / (vmax - vmin)
+
+        if pct_rank < 0.33:
+            level_bucket = "LOW"
+        elif pct_rank < 0.66:
+            level_bucket = "MID"
+        else:
+            level_bucket = "HIGH"
+
+    net["dir"] = net_dir
+    net["level_bucket"] = level_bucket
+    market_data["NET_LIQ"] = net
+
+    market_data["NET_LIQ_DIR"] = net_dir
+    market_data["NET_LIQ_LEVEL_BUCKET"] = level_bucket
+
+    # 보조 해석용 momentum block
+    market_data["LIQUIDITY_MOMENTUM"] = {
+        "TGA": tga_slope_label,
+        "RRP": rrp_slope_label,
+        "NET_LIQ": net_slope_label,
+    }
+
+    return market_data
+    
+
+def attach_credit_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Attach HY_OAS (FRED last available valid) into market_data.
+    Adds:
+      - HY_OAS = {today, prev, pct_change}
+      - _HY_ASOF = 'YYYY-MM-DD'
+    """
+    if market_data is None:
+        market_data = {}
+
+    df = load_credit_spread_df()
+    if df is None or df.empty:
+        market_data["_HY_ASOF"] = None
+        return market_data
+
+    df = df.copy()
+
+    if "date" not in df.columns or "HY_OAS" not in df.columns:
+        market_data["_HY_ASOF"] = None
+        return market_data
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df["HY_OAS"] = pd.to_numeric(df["HY_OAS"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+    # ✅ 마지막 row가 아니라 마지막 유효 HY_OAS row 사용
+    valid_df = df.dropna(subset=["HY_OAS"]).copy()
+    if valid_df.empty:
+        market_data["_HY_ASOF"] = None
+        return market_data
+
+    today_row = valid_df.iloc[-1]
+    prev_row = valid_df.iloc[-2] if len(valid_df) >= 2 else None
+
+    asof = pd.to_datetime(today_row["date"]).strftime("%Y-%m-%d")
+    market_data["_HY_ASOF"] = asof
+
+    today_val_f = float(today_row["HY_OAS"])
+
+    if prev_row is None or pd.isna(prev_row.get("HY_OAS")):
+        market_data["HY_OAS"] = {"today": today_val_f, "prev": None, "pct_change": None}
+        return market_data
+
+    prev_val_f = float(prev_row["HY_OAS"])
+    pct = 0.0 if prev_val_f == 0 else ((today_val_f - prev_val_f) / prev_val_f) * 100.0
+    market_data["HY_OAS"] = {"today": today_val_f, "prev": prev_val_f, "pct_change": pct}
+    return market_data
+
+
+def attach_expectation_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Attach external expectation data into market_data safely.
+    We don't assume any specific schema from fetch_expectation_data().
+    Supported return types:
+      - dict
+      - list[dict]
+      - pandas.DataFrame
+    We store it under:
+      - market_data["_EXP_ASOF"] (optional)
+      - market_data["EXPECTATIONS"] (raw, lightweight)
+    So it won't break existing filters until you explicitly use it.
+    """
+    if market_data is None:
+        market_data = {}
+
+    try:
+        exp = fetch_expectation_data()
+        # ✅ DEBUG: 액션 로그에서 확인 가능
+        print("[DEBUG] fetch_expectation_data() type:", type(exp))
+        if isinstance(exp, list):
+            print("[DEBUG] expectations list len:", len(exp))
+            print("[DEBUG] first item:", exp[0] if len(exp) > 0 else None)
+        elif isinstance(exp, dict):
+            print("[DEBUG] expectations dict keys:", list(exp.keys())[:30])
+        else:
+            print("[DEBUG] expectations repr:", repr(exp)[:500])
+    except Exception as e:
+        # ✅ DEBUG: 왜 실패했는지 액션 로그에 찍힘
+        print("[DEBUG] fetch_expectation_data() ERROR:", type(e).__name__, str(e))
+        market_data["_EXP_ERROR"] = f"{type(e).__name__}: {e}"
+        return market_data
+
+    # normalize "as of" if provided
+    asof = None
+
+    # DataFrame
+    if isinstance(exp, pd.DataFrame):
+        if not exp.empty:
+            # if it has date column
+            for c in ("date", "as_of", "asof", "updated_at"):
+                if c in exp.columns:
+                    try:
+                        asof = pd.to_datetime(exp.iloc[-1][c]).strftime("%Y-%m-%d")
+                    except Exception:
+                        pass
+                    break
+            market_data["EXPECTATIONS"] = exp.tail(30).to_dict(orient="records")
+        else:
+            market_data["EXPECTATIONS"] = []
+        market_data["_EXP_ASOF"] = asof
+        return market_data
+
+    # dict
+    if isinstance(exp, dict):
+        # common patterns: {"as_of": "...", "items": [...]}
+        for c in ("as_of", "asof", "date", "updated_at"):
+            v = exp.get(c)
+            if isinstance(v, str) and v.strip():
+                asof = v.strip()
+                break
+        items = exp.get("items", exp)
+        market_data["EXPECTATIONS"] = items
+        market_data["_EXP_ASOF"] = asof
+        return market_data
+
+    # list
+    if isinstance(exp, list):
+        market_data["EXPECTATIONS"] = exp
+        market_data["_EXP_ASOF"] = None
+        return market_data
+
+    # fallback
+    market_data["EXPECTATIONS"] = {"raw": str(exp)}
+    market_data["_EXP_ASOF"] = None
+    return market_data
+
+def attach_positioning_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    market_data에 포지셔닝 데이터를 주입합니다.
+    """
+    if market_data is None:
+        market_data = {}
+
+    pos_df = load_positioning_df()
+
+    defaults = {
+    "SP500_POS_Z": 0.0,
+    "US10Y_POS_Z": 0.0,
+    "DXY_POS_Z": 0.0,
+    "DEALER_GAMMA_BIAS": 1.0,
+    "DEALER_GAMMA_LABEL": "NEUTRAL_OPTION_POSITIONING",
+    "CTA_MOMENTUM_SCORE": 0.0,
+    "GAMMA_FETCH_OK": 0,
+    "CTA_FETCH_OK": 0,
+    "_POS_ASOF": None,
+    }
+
+    if pos_df.empty:
+        market_data.update(defaults)
+        return market_data
+
+    latest = pos_df.iloc[-1]
+    market_data["_POS_ASOF"] = pd.to_datetime(latest["date"]).strftime("%Y-%m-%d")
+
+    for col in [
+        "SP500_POS_Z",
+        "US10Y_POS_Z",
+        "DXY_POS_Z",
+        "DEALER_GAMMA_BIAS",
+        "DEALER_GAMMA_LABEL",
+        "CTA_MOMENTUM_SCORE",
+    ]:
+        val = latest.get(col)
+        try:
+            market_data[col] = float(val) if pd.notna(val) else defaults[col]
+        except Exception:
+            market_data[col] = defaults[col]
+
+    return market_data
+
+# -------------------------
+# Sentiment Proxy Layer (NO CNN)
+# -------------------------
+def attach_sentiment_proxy_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Attach SENTIMENT from our own sentiment_proxy.csv (Wall-Street style proxy).
+    - No CNN Fear&Greed.
+    - Never overwrites existing SENTIMENT unless proxy data is available.
+    """
+    if market_data is None:
+        market_data = {}
+
+    csv_path = DATA_DIR / "sentiment_proxy.csv"
+    if (not csv_path.exists()) or csv_path.stat().st_size == 0:
+        # No proxy file -> keep existing market_data as-is
+        return market_data
+
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return market_data
+
+    if df.empty or "date" not in df.columns or "sentiment_proxy" not in df.columns:
+        return market_data
+
+    last = df.iloc[-1]
+    try:
+        val = float(last["sentiment_proxy"])
+    except Exception:
+        return market_data
+
+    market_data["SENTIMENT"] = {
+        "fear_greed": val,                 # keep key name for compatibility with Narrative Engine
+        "source": str(last.get("used", "proxy")),
+        "as_of": str(last.get("date", "")),
+    }
+    return market_data
+
+def load_sovereign_yields_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "sovereign_yields.csv"
+    if not csv_path.exists() or csv_path.stat().st_size == 0:
+        return pd.DataFrame(columns=["date"])
+
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return pd.DataFrame(columns=["date"])
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame(columns=["date"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
+def load_sovereign_spreads_df() -> pd.DataFrame:
+    csv_path = DATA_DIR / "sovereign_spreads.csv"
+    if not csv_path.exists():
+        return pd.DataFrame(columns=["date"])
+
+    try:
+        if csv_path.stat().st_size == 0:
+            return pd.DataFrame(columns=["date"])
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return pd.DataFrame(columns=["date"])
+
+    if df.empty or "date" not in df.columns:
+        return pd.DataFrame(columns=["date"])
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    return df
+
+
+def attach_sovereign_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Attach sovereign yields/spreads from data/sovereign_spreads.csv using
+    last available valid values (not just the last row).
+
+    Adds meta:
+      - _SOV_ASOF
+
+    Adds keys (if exist):
+      - KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD ...
+      - KR10Y_Y, JP10Y_Y, DE10Y_Y, IL10Y_Y ...
+      as {today, prev, pct_change}
+    """
+    if market_data is None:
+        market_data = {}
+
+    df = load_sovereign_spreads_df()
+    if df is None or df.empty:
+        market_data["_SOV_ASOF"] = None
+        return market_data
+
+    if "date" not in df.columns:
+        market_data["_SOV_ASOF"] = None
+        return market_data
+
+    df = df.copy()
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+    # 숫자 컬럼 정리
+    value_cols = [c for c in df.columns if c != "date"]
+    for c in value_cols:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
+    spread_cols = [c for c in df.columns if c.endswith("_SPREAD")]
+    yield_cols = [c for c in df.columns if c.endswith("_Y")]
+    target_cols = spread_cols + yield_cols
+
+    # ✅ "하나라도 값이 있는 마지막 날짜"를 asof로 사용
+    valid_any_df = df.dropna(subset=target_cols, how="all").copy() if target_cols else pd.DataFrame()
+    if valid_any_df.empty:
+        market_data["_SOV_ASOF"] = None
+        return market_data
+
+    latest_any_row = valid_any_df.iloc[-1]
+    market_data["_SOV_ASOF"] = pd.to_datetime(latest_any_row["date"]).strftime("%Y-%m-%d")
+
+    def _attach_one(col: str):
+        if col not in df.columns:
+            return
+
+        valid_df = df.dropna(subset=[col]).copy()
+        if valid_df.empty:
+            return
+
+        today_row = valid_df.iloc[-1]
+        prev_row = valid_df.iloc[-2] if len(valid_df) >= 2 else None
+
+        t = pd.to_numeric(today_row.get(col), errors="coerce")
+        if pd.isna(t):
+            return
+        t = float(t)
+
+        if prev_row is None:
+            market_data[col] = {"today": t, "prev": None, "pct_change": None}
+            return
+
+        p = pd.to_numeric(prev_row.get(col), errors="coerce")
+        if pd.isna(p):
+            market_data[col] = {"today": t, "prev": None, "pct_change": None}
+            return
+
+        p = float(p)
+        pct = 0.0 if p == 0 else ((t - p) / p) * 100.0
+        market_data[col] = {"today": t, "prev": p, "pct_change": pct}
+
+    for c in spread_cols:
+        _attach_one(c)
+
+    for c in yield_cols:
+        _attach_one(c)
+
+    return market_data
+
+def _find_effective_market_idx(
+    df: pd.DataFrame,
+    core_cols: Optional[List[str]] = None,
+    min_valid_count: int = 4,
+) -> int:
+    """
+    마지막 행이 비어 있을 수 있으므로,
+    핵심 지표가 충분히 채워진 마지막 유효 row index를 찾는다.
+    기본은 core 5개 중 4개 이상 값이 있는 마지막 행.
+    """
+    if core_cols is None:
+        core_cols = ["US10Y", "DXY", "WTI", "VIX", "USDKRW"]
+
+    existing = [c for c in core_cols if c in df.columns]
+    if not existing:
+        return len(df) - 1
+
+    tmp = df.copy()
+    for c in existing:
+        tmp[c] = pd.to_numeric(tmp[c], errors="coerce")
+
+    valid_count = tmp[existing].notna().sum(axis=1)
+    candidates = tmp.index[valid_count >= min_valid_count].tolist()
+
+    if candidates:
+        return int(candidates[-1])
+
+    # fallback: 핵심지표 중 하나라도 있는 마지막 행
+    candidates_any = tmp.index[tmp[existing].notna().any(axis=1)].tolist()
+    if candidates_any:
+        return int(candidates_any[-1])
+
+    return len(df) - 1
+
+
+def generate_war_room_history(institutional_flow: dict | None = None):
+    import os
+    import pandas as pd
+
+    print("🚀 전략 상황실용 통합 데이터팩 최종 보정 및 생성을 시작합니다...")
+
+    try:
+        pos_path = "data/positioning_data.csv"
+        macro_path = "data/macro_data.csv"
+        yield_path = "data/sovereign_yields.csv"
+        spread_path = "data/sovereign_spreads.csv"
+        output_path = "data/market_data_history.csv"
+
+        def get_clean_df(path):
+            if not os.path.exists(path):
+                return pd.DataFrame()
+
+            df = pd.read_csv(path)
+
+            if "date" in df.columns:
+                df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%Y-%m-%d")
+                df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+            return df
+
+        def cleanup_duplicate_columns(df: pd.DataFrame) -> pd.DataFrame:
+            """
+            merge 과정에서 생긴 *_x / *_y / *_Y 중복 컬럼 정리.
+            원본 컬럼이 있으면 원본을 우선하고,
+            원본이 비어 있으면 suffix 컬럼 값으로 보완한 뒤 suffix 컬럼 삭제.
+            """
+            suffixes = ["_x", "_y", "_Y"]
+
+            for col in list(df.columns):
+                for suffix in suffixes:
+                    if col.endswith(suffix):
+                        base_col = col[: -len(suffix)]
+
+                        if base_col not in df.columns:
+                            df[base_col] = df[col]
+                        else:
+                            df[base_col] = df[base_col].combine_first(df[col])
+
+                        df = df.drop(columns=[col])
+                        break
+
+            return df
+
+        pos_df = get_clean_df(pos_path)
+        macro_df = get_clean_df(macro_path)
+        yield_df = get_clean_df(yield_path)
+        spread_df = get_clean_df(spread_path)
+
+        if macro_df.empty:
+            print("❌ macro_data.csv가 비어 있어 데이터팩 생성 불가")
+            return
+
+        # ✅ anchor date는 반드시 macro_data의 마지막 시장 기준 날짜
+        anchor_date = str(macro_df["date"].max())
+        print(f"[DEBUG] war room anchor_date = {anchor_date}")
+
+        merged = pd.merge(pos_df, macro_df, on="date", how="outer")
+        merged = pd.merge(merged, yield_df, on="date", how="outer")
+        merged = pd.merge(merged, spread_df, on="date", how="outer")
+
+        # ✅ merge 후 중복 컬럼 정리
+        merged = cleanup_duplicate_columns(merged)
+
+        merged = merged.sort_values("date").reset_index(drop=True)
+        merged = merged[merged["date"] <= anchor_date]
+
+        # ✅ 미래 데이터 누수 방지: bfill 금지
+        merged = merged.ffill()
+
+        # ✅ anchor_date 기준 row만 사용
+        today_data = merged[merged["date"].astype(str) == anchor_date].tail(1)
+
+        if today_data.empty:
+            print(f"❌ anchor_date={anchor_date}에 해당하는 데이터가 없습니다.")
+            return
+
+        today_data = today_data.copy()
+
+        # ✅ Institutional Flow 결과 저장
+        # daily report에서 flow dict를 넘겨주면 그 값을 저장
+        # 없으면 기본값 저장
+        flow = institutional_flow or {}
+
+        today_data["FLOW_STATE"] = flow.get("state", "NO CLEAR FLOW")
+        today_data["FLOW_SCORE"] = flow.get("score", 0)
+        today_data["FLOW_CONFIDENCE"] = flow.get("confidence", "N/A")
+        today_data["FLOW_ACTION_BIAS"] = flow.get("action_bias", "N/A")
+        today_data["FLOW_DRIFT_LABEL"] = flow.get("drift_label", "N/A")
+        today_data["FLOW_GAMMA_STATE"] = flow.get("gamma_state", "N/A")
+
+        # ✅ 기존 파일 처리
+        if not os.path.exists(output_path):
+            today_data.to_csv(output_path, index=False)
+            print(f"✅ {output_path} 신규 생성 완료.")
+        else:
+            existing_df = pd.read_csv(output_path)
+
+            if "date" in existing_df.columns:
+                existing_df["date"] = pd.to_datetime(
+                    existing_df["date"], errors="coerce"
+                ).dt.strftime("%Y-%m-%d")
+                existing_df = existing_df.dropna(subset=["date"])
+
+            # ✅ 기존 파일 안의 중복 컬럼도 정리
+            existing_df = cleanup_duplicate_columns(existing_df)
+
+            # ✅ anchor_date 이전까지만 남기고, anchor_date는 새 today_data로 교체
+            existing_df = existing_df[existing_df["date"] < anchor_date]
+
+            final_df = pd.concat([existing_df, today_data], ignore_index=True)
+
+            # ✅ concat 후에도 한 번 더 중복 컬럼 정리
+            final_df = cleanup_duplicate_columns(final_df)
+
+            final_df = final_df.sort_values("date").reset_index(drop=True)
+            final_df.to_csv(output_path, index=False)
+
+            print(f"✅ {output_path}에 오늘자({anchor_date}) 보정 데이터 반영 완료.")
+
+    except Exception as e:
+        print(f"❌ 데이터팩 생성 중 에러: {e}")
+    
+    
+def generate_daily_report() -> None:
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # -----------------------------
+    # 0) ETF 통합 파일 확인 / 없을 때만 생성
+    # -----------------------------
+    etf_file_path = "data/country_etf_data_combined.csv"
+
+    if not os.path.exists(etf_file_path):
+        print("[INFO] country_etf_data_combined.csv not found. Running combined ETF download...")
+        download_all_etfs_and_save()
+
+    etf_check_df = load_etf_data_from_csv(etf_file_path)
+    if etf_check_df.empty:
+        print("[ERROR] No data available in country_etf_data_combined.csv")
+        return
+
+    print("[DEBUG] ETF combined shape:", etf_check_df.shape)
+    print("[DEBUG] ETF combined columns:", list(etf_check_df.columns))
+
+    # -----------------------------
+    # 1) 기존 매크로 데이터 로드
+    # -----------------------------
+    df = load_macro_df()
+
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+    df = merge_sovereign_spreads_into_macro_df(df)
+
+    # 🔥 MERGE 후 재정렬
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+
+    today_idx = _find_effective_market_idx(
+        df,
+        core_cols=["US10Y", "DXY", "WTI", "VIX", "USDKRW"],
+        min_valid_count=4,
+    )
+
+    # 🔥 DATE GUARD: KST 기준 오늘 날짜 row는 리포트 기준 데이터로 사용 금지
+    kst_today = pd.Timestamp.now(tz="Asia/Seoul").date()
+    selected_date = pd.to_datetime(df.iloc[today_idx]["date"]).date()
+
+    if selected_date >= kst_today and today_idx > 0:
+        print(
+            f"[DEBUG][DATE GUARD] selected_date={selected_date} "
+            f">= kst_today={kst_today}. Shift to previous row."
+        )
+        today_idx -= 1
+
+    data_as_of_date = pd.to_datetime(df.iloc[today_idx]["date"]).strftime("%Y-%m-%d")
+    report_date = pd.Timestamp.now(tz="Asia/Seoul").strftime("%Y-%m-%d")
+    expected_as_of_date = infer_expected_as_of_date_from_market_calendar(df)
+    print("[DEBUG] expected_as_of_date =", expected_as_of_date)
+
+    if data_as_of_date < expected_as_of_date:
+        print(
+            f"[ERROR][STALE DATA GUARD] data_as_of_date={data_as_of_date} "
+            f"< expected_as_of_date={expected_as_of_date}. "
+            f"Previous market data is not ready yet. Stop report generation."
+        )
+        return
+        
+    print("[DEBUG] effective today_idx =", today_idx)
+    print("[DEBUG] report_date (KST) =", report_date)
+    print("[DEBUG] data_as_of_date =", data_as_of_date)
+    print(
+        df[["date", "US10Y", "DXY", "WTI", "VIX", "USDKRW"]]
+        .tail(10)
+        .to_string(index=False)
+    )
+
+
+    market_data = build_market_data(df, today_idx)
+ 
+    
+
+    # -----------------------------
+    # 2) Detect stale / market closed
+    # -----------------------------
+    stale = False
+    try:
+        last_date = pd.to_datetime(df.iloc[today_idx]["date"]).date()
+        now_utc = pd.Timestamp.now("UTC")
+        today_utc = now_utc.date()
+
+        if now_utc.weekday() >= 5:  # 5=Sat, 6=Sun
+            stale = True
+        elif (today_utc - last_date).days >= 2:
+            stale = True
+    except Exception:
+        stale = False
+
+    market_data["_STALE"] = stale
+
+    # -----------------------------
+    # 3) Attach layers
+    # -----------------------------
+    market_data = attach_liquidity_layer(market_data) or market_data
+
+    
+    # ✅ POS_SLOPE 주입: 15번 실행 전에 반드시 들어가야 함
+    market_data["POS_SLOPE"] = get_recent_pos_slope("data/positioning_data.csv")
+    print("[DEBUG][POS_SLOPE ATTACHED]")
+    print("POS_SLOPE =", market_data.get("POS_SLOPE"))
+    
+    
+  
+    market_data = attach_credit_spread_layer(market_data) or market_data
+    market_data = attach_fred_extras_layer(market_data) or market_data
+    market_data = attach_sovereign_spread_layer(market_data) or market_data
+    market_data = attach_expectation_layer(market_data) or market_data
+    market_data = attach_geopolitical_ew_layer(market_data, df, today_idx) or market_data
+
+    # 국가 ETF 리스크 레이어
+    market_data = attach_country_risk_layer(market_data, df, today_idx) or market_data
+    market_data = attach_sector_momentum_layer(market_data, df, today_idx) or market_data
+    # Cosine Similarity는 country risk 이후
+    market_data = attach_geo_similarity_layer(market_data) or market_data
+
+    market_data = attach_sentiment_proxy_layer(market_data) or market_data
+    market_data = attach_drift_data_layer(market_data) or market_data
+    market_data = attach_growth_sustainability_layer(market_data, df, today_idx)
+    market_data = attach_breadth_layer(market_data, df, today_idx) or market_data
+    market_data = attach_leadership_layer(market_data, df, today_idx) or market_data
+    market_data = attach_volatility_structure_layer(market_data, df, today_idx) or market_data
+    market_data = attach_positioning_layer(market_data) or market_data
+
+
+    print("[DEBUG][POSITIONING AFTER REAL ATTACH]")
+    print("SP500_POS_Z =", market_data.get("SP500_POS_Z"))
+    print("US10Y_POS_Z =", market_data.get("US10Y_POS_Z"))
+    print("DXY_POS_Z =", market_data.get("DXY_POS_Z"))
+    print("DEALER_GAMMA_BIAS =", market_data.get("DEALER_GAMMA_BIAS"))
+    print("CTA_MOMENTUM_SCORE =", market_data.get("CTA_MOMENTUM_SCORE"))
+    print("_POS_ASOF =", market_data.get("_POS_ASOF"))
+    
+    # generate_report.py
+    # attach layer 전부 끝난 뒤 / FINAL_STATE 전에 딱 1번 추가
+    
+    #market_data = normalize_market_data_structure(market_data)
+    # Regime change monitor
+    regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
+
+    # -------------------------
+    # 4) FINAL_STATE 이후 overlay / RAROC 먼저 반영
+    # -------------------------
+    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
+
+    # -------------------------
+    # 4.5) Inject FRED sector-allocation extras
+    # -------------------------
+    df_fred_extra = load_fred_data_from_csv()
+
+    if not df_fred_extra.empty:
+        latest_fred = df_fred_extra.iloc[-1]
+    
+        market_data["_FRED_EXTRA"] = {
+            "T10Y2Y": float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0,
+            "T10YIE": float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0,
+            "DFII10": float(latest_fred["DFII10"]) if pd.notna(latest_fred.get("DFII10")) else 0.0,
+            "VIX": _latest_value(market_data.get("VIX"), 20.0),
+            "DXY": _latest_value(market_data.get("DXY"), 100.0),
+        }
+    
+        print("[DEBUG] Fred Extra Saved:", market_data["_FRED_EXTRA"])
+        print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
+    else:
+        print("[DEBUG] Fred Extra Saved: skipped (empty fred df)")
+    
+    print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
+
+   
+    # -------------------------
+    # 5) SEW 먼저 로드
+    # -------------------------
+    sew_state = get_sew_state()
+    sew_summary = sew_state["summary"]
+    sew_status = sew_state["status"]
+    sew_event_type = sew_state["event_type"]
+    sew_deadman = sew_state["deadman"]
+    sew_spike_count = sew_state["spike_count"]
+    sew_extreme_count = sew_state["extreme_count"]
+    sew_deadman_reason = sew_state.get("deadman_reason", "")
+    sew_event_interp = interpret_sew_event(sew_event_type)
+
+    market_data["SEW_STATE"] = {
+        "status": sew_status,
+        "summary": sew_summary,
+        "event_type": sew_event_type,
+        "deadman": sew_deadman,
+        "deadman_reason": sew_deadman_reason,
+    }
+
+    # flat key (Gamma / IFE / Action Engine용)
+    market_data["SEW_STATUS"] = sew_status
+    market_data["SEW_EVENT_TYPE"] = sew_event_type
+
+
+    # -------------------------
+    # 5.5) Flow State 먼저 로드
+    # -------------------------
+    flow_state = get_flow_state()
+
+    market_data["FLOW_STATE"] = flow_state
+    market_data["PREV_FLOW_STATE"] = flow_state.get("flow_state", "N/A")
+    market_data["PREV_FLOW_SCORE"] = flow_state.get("flow_score", 0)
+    market_data["PREV_FLOW_TIMESTAMP"] = flow_state.get("timestamp")
+
+    # -------------------------
+    # 6) Commentary block 생성
+    # -------------------------
+    commentary_block = build_strategist_commentary(market_data)
+
+    flow_for_history = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+
+    print("[DEBUG][FLOW FOR HISTORY]", flow_for_history)
+
+    generate_war_room_history(
+
+    institutional_flow=flow_for_history
+
+    )
+    # -------------------------
+    # 7) Country ETF risk block
+    # -------------------------
+    country_risk_keys = sorted([k for k in market_data.keys() if k.startswith("COUNTRY_RISK_")])
+
+    country_risk_lines = []
+    if country_risk_keys:
+        country_risk_lines.append("## 🌐 Country ETF Risk Monitor")
+        country_risk_lines.append("")
+        for key in country_risk_keys:
+            country_risk = market_data[key]
+            country_risk_lines.append(f"### {country_risk['country_etf']}")
+            country_risk_lines.append(f"- **Crash?** {country_risk['crash']}")
+            country_risk_lines.append(f"- **Risk Level:** {country_risk['risk_level']}")
+            country_risk_lines.append(f"- **Z-Score (1d):** {country_risk['z_1d']}")
+            country_risk_lines.append(f"- **Z-Score (5d):** {country_risk['z_5d']}")
+            country_risk_lines.append("")
+    else:
+        country_risk_lines.append("## 🌐 Country ETF Risk Monitor")
+        country_risk_lines.append("")
+        country_risk_lines.append("- No country ETF risk data available.")
+        country_risk_lines.append("")
+
+    # -------------------------
+    # 8) Strategic War Room inputs
+    # -------------------------
+    # -------------------------
+    # 8) Strategic War Room inputs
+    # -------------------------
+    div_full_text = divergence_monitor_filter(market_data)
+    div_status = "N/A"
+    div_action = "N/A"
+    
+    for line in div_full_text.split("\n"):
+        if "**Status:**" in line:
+            div_status = line.split("**Status:**")[-1].strip()
+        if "**Action Signal:**" in line:
+            div_action = line.split("**Action Signal:**")[-1].strip()
+    
+    recommended_exposure = 100
+    is_deadman_activated = False
+    
+    for line in commentary_block.split("\n"):
+        if "Recommended Exposure:" in line:
+            try:
+                recommended_exposure = int("".join(filter(str.isdigit, line)))
+            except Exception:
+                pass
+        if "DEAD MAN'S SWITCH ACTIVATED" in line:
+            is_deadman_activated = True
+    
+    # -------------------------
+    # 8.5) FINAL_STATE 보정
+    # -------------------------
+    if "FINAL_STATE" not in market_data or not isinstance(market_data.get("FINAL_STATE"), dict):
+        market_data["FINAL_STATE"] = {}
+    
+    if not market_data["FINAL_STATE"].get("phase") or market_data["FINAL_STATE"].get("phase") == "N/A":
+        fallback_phase = (
+            market_data.get("MARKET_REGIME")
+            or regime_result.get("current_regime")
+            or "N/A"
+        )
+        market_data["FINAL_STATE"]["phase"] = fallback_phase
+    
+    if not market_data["FINAL_STATE"].get("risk_budget") or market_data["FINAL_STATE"].get("risk_budget") == "N/A":
+        market_data["FINAL_STATE"]["risk_budget"] = recommended_exposure
+    
+    print("[DEBUG][FINAL_STATE FIXED] FINAL_STATE =", market_data["FINAL_STATE"])
+    
+    # -------------------------
+    # 9) Divergence state 정제
+    # -------------------------
+    clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
+    
+    if "ALIGNED" in clean_div_status.upper():
+        clean_div_status = "ALIGNED"
+    elif "DISALIGNED" in clean_div_status.upper():
+        clean_div_status = "DISALIGNED"
+    else:
+        clean_div_status = "N/A"
+    
+    clean_div_action = div_action.replace("🚨", "").replace("✅", "").strip()
+    
+    market_data["DIVERGENCE_STATE"] = {
+        "status": clean_div_status,
+        "action": clean_div_action,
+    }
+    
+    market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
+    
+    # -------------------------
+    # 10) 6.5 / 6.6 결과 생성
+    # -------------------------
+    correlation_break_text = correlation_break_filter(market_data)
+    sector_corr_break_text = sector_correlation_break_filter(market_data)
+    
+    corr65_state = correlation_break_state(market_data)
+    corr66_state = sector_correlation_break_state(market_data)
+    
+    # -------------------------
+    # 11) Warning signals
+    # -------------------------
+    geo_state = market_data.get("GEO_EW", {}) or {}
+    geo_level = str(geo_state.get("level", "NORMAL")).upper()
+    
+    market_data["WARNING_SIGNALS"] = {
+        "corr65_break": corr65_state["break"],
+        "corr66_break": corr66_state["break"],
+        "corr65_score": corr65_state["score"],
+        "corr66_score": corr66_state["score"],
+        "geo_level": geo_level,
+    }
+    
+    # -------------------------
+    # -------------------------
+    # 12) Final Action Engine 먼저 계산
+    # -------------------------
+    action_result = final_action_engine(market_data)
+    market_data["FINAL_ACTION"] = action_result
+
+    print("[DEBUG] FINAL_ACTION:", action_result)
+
+    final_action_name = action_result.get("action", "N/A")
+    final_action_size = action_result.get("size", "N/A")
+    final_action_confidence = action_result.get("confidence", "N/A")
+    final_action_reasons = action_result.get("reason", [])
+
+    print("[DEBUG][SEW FINAL CHECK]")
+    print("SEW_STATUS =", market_data.get("SEW_STATUS"))
+    print("SEW_EVENT_TYPE =", market_data.get("SEW_EVENT_TYPE"))
+
+    # -------------------------
+    # 12.5) Final Decision 계산
+    # -------------------------
+    final_decision_text = war_room_final_decision_filter(market_data)
+    final_decision_state = market_data.get("FINAL_DECISION", {}) or {}
+
+    print("[DEBUG] FINAL_DECISION:", final_decision_state)
+
+    try:
+        base_exposure_display = int(final_decision_state.get("base_exposure", recommended_exposure))
+    except Exception:
+        base_exposure_display = int(recommended_exposure)
+
+    try:
+        final_exposure_display = int(final_decision_state.get("exposure", recommended_exposure))
+    except Exception:
+        final_exposure_display = int(recommended_exposure)
+
+    final_action_display = str(final_decision_state.get("action", "HOLD")).upper()
+
+    # -------------------------
+    # 13) 기타 블록
+    # -------------------------
+    exec_block = executive_summary_filter(market_data)
+    decision_block = decision_layer_filter(market_data)
+    # -------------------------
+    # 13.5) PM Final Brief
+    # -------------------------
+    pm_brief_block = generate_pm_final_brief(market_data)
+    
+
+    
+    # -------------------------
+    # 14) 워룸 상태
+    # -------------------------
+    is_war_room_alert = (
+        is_deadman_activated
+        or sew_deadman
+        or (clean_div_status != "ALIGNED")
+        or (sew_status in ["WATCH", "ALERT", "DEADMAN"])
+    )
+    
+    war_room_emoji = "🚨" if is_war_room_alert else "✅"
+    war_room_state = "ALERT" if is_war_room_alert else "STABLE"
+    
+    if is_deadman_activated or sew_deadman:
+        war_room_summary = "데드맨 스위치 발동 / 자산 보호 모드 강제 전환"
+    
+    elif clean_div_status == "ALIGNED" and sew_status == "STABLE":
+        war_room_summary = "구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상"
+    
+    elif sew_status == "RISK_COMPRESSION":
+        war_room_summary = "포지셔닝 과열 감지 / Hard Deadman은 아니나 추격보다 리스크 축소 우선"
+    
+    elif clean_div_status != "ALIGNED":
+        war_room_summary = "구조·수급 괴리 및 추세 피로 감지 / 반전 가능성 모니터링 필요"
+    
+    elif sew_status == "WATCH":
+        war_room_summary = "구조는 유지되나 실시간 수급 이상반응 초기 감지 / 모니터링 필요"
+    
+    elif sew_status == "ALERT":
+        war_room_summary = "실시간 발작 감지 / 구조 또는 수급 레벨에서 즉시 점검 필요"
+    
+    else:
+        war_room_summary = "구조 또는 실시간 수급에 경미한 이상징후 존재 / 모니터링 필요"
+    
+    # -------------------------
+    # 15) Report assembly
+    # -------------------------
+    lines = []
+    lines.append("# 🌍 Global Capital Flow – Daily Brief")
+    lines.append(f"**Date:** {report_date}")
+    lines.append(f"**Data as of:** {data_as_of_date}")
+    lines.append("")
+    lines.append(pm_brief_block)
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("# 🔬 ENGINE DIAGNOSTICS")
+    lines.append("")
+    
+    lines.append("## ⚡ Strategic War Room (통합 대응)")
+    lines.append(f"> **시스템 상태: {war_room_emoji} {war_room_state}**")
+    lines.append(f"> **판단 요약: {war_room_summary}**")
+
+    # 🔥 generate_report.py
+    # 아래 한 줄:
+    # deadman_log = get_recent_deadman_log(hours=24)
+    
+    # ❌ 이거 지우고
+    
+    deadman_log = get_today_deadman_log()    
+
+    if deadman_log:
+        lines.append("")
+        lines.append("### 🕓 Intraday Historical Trigger Log")
+        lines.append(f"- {deadman_log}")
+
+        if sew_deadman:
+            lines.append("👉 해석: 오늘 장중 HARD DEADMAN 이벤트가 발생했으며, 현재도 자산 보호 모드가 유지 중입니다.")
+        elif "DEAD MAN" in deadman_log or "DEADMAN" in deadman_log:
+            lines.append("👉 해석: 오늘 장중 데드맨/리스크 이벤트 이력이 있었으나, 현재 상태는 아래 SEW 현재값을 기준으로 별도 판단합니다.")
+        elif "CROWDING RISK" in deadman_log or "RISK_COMPRESSION" in deadman_log:
+            lines.append("👉 해석: 오늘 장중 포지셔닝 과열로 Risk Compression 신호가 발생했습니다.")
+        else:
+            lines.append("👉 해석: 오늘 장중 리스크 이벤트 이력이 있어 사후 복기용으로 기록합니다.")
+
+        lines.append("")
+    
+    lines.append("### 🎯 Exposure Framework")
+    lines.append(f"- **Base Exposure (전략 기준): {base_exposure_display}%**")
+    lines.append(f"- **Final Exposure (실행 기준): {final_exposure_display}%**")
+    lines.append("")
+    lines.append(f"- **Portfolio Stance:** {final_action_display} / {final_exposure_display}%")
+    lines.append("")
+    
+    lines.append(f"- **[14번 구조·수급 괴리]:** {war_room_emoji} {div_status}")
+    lines.append("### 🟢 Current SEW Status")
+    lines.append(f"- **SEW:** {sew_status} | {sew_summary}")
+    lines.append(f"- **Event Type:** {sew_event_type} → {sew_event_interp}")
+    lines.append(f"- **Spike Monitor:** Spike {sew_spike_count} / Extreme {sew_extreme_count}")
+    if sew_deadman_reason and sew_deadman_reason != "Normal Operation":
+        lines.append(f"- **Current Reason:** {sew_deadman_reason}")
+    lines.append("")
+    
+    
+    if is_deadman_activated or sew_deadman:
+        lines.append("- **[15번 데드맨]:** 🚨 ACTIVATED")
+    else:
+        lines.append("- **[15번 Hard Deadman]:** ✅ PASS")
+   
+    
+    lines.append(f"- **[14번 수급 시그널]:** {div_action}")
+    lines.append("")
+    
+    # ✅ Interpretation
+    # ✅ Strategic Interpretation / PM Summary
+    final_state = market_data.get("FINAL_STATE", {}) or {}
+
+    print("\n[DEBUG][MARKET_DATA_KEYS]")
+    for k in sorted(market_data.keys()):
+        if any(x in k for x in [
+            "GROWTH",
+            "FLOW",
+            "LEAD",
+            "POSITION",
+            "BREADTH",
+            "PARTICIPATION"
+        ]):
+            print(k, "=", market_data.get(k))
+    
+    exposure_interp_lines = build_strategic_interpretation(
+        market_data,
+        final_state,
+        final_decision_state,
+    )
+    structural_lines = []
+    capture = False
+
+    for line in exposure_interp_lines:
+        if "Structural Layer" in line:
+            capture = True
+
+        if capture:
+            structural_lines.append(line)
+
+    if structural_lines:
+        lines.append("### 🔬 Structural Layer (12.5~12.8)")
+        lines.extend(structural_lines)
+        lines.append("")
+    
+    #lines.append("### 🧠 Strategic Interpretation (PM Summary)")
+    #lines.extend(exposure_interp_lines)
+    #lines.append("")
+    
+    
+    # ✅ Final Action Engine
+    #lines.append("### 🎯 Final Action Engine(Raw Signal)")
+    #lines.append(f"- **Action:** {final_action_name}")
+    #lines.append(f"- **Size:** {final_action_size}")
+    #lines.append(f"- **Confidence:** {final_action_confidence}")
+    #if final_action_reasons:
+        #lines.append("- **Reason:**")
+        #for r in final_action_reasons:
+            #lines.append(f"  - {r}")
+    #lines.append("")
+    
+    # ✅ War Room Final Decision (🔥 핵심)
+    lines.append(final_decision_text)
+    lines.append("")
+
+ 
+    
+    # -------------------------
+    # 🚩 Market Regime Status (여기 넣기)
+    # -------------------------
+    lines.append("### 🚩 Market Regime Status")
+
+    current_operational = market_data.get("MARKET_REGIME", "N/A")
+    current_structural = market_data.get("MACRO_NARRATIVE", "N/A")
+    
+    if regime_result.get("status") == "DETECTED":
+        lines.append(
+            f"- **국면 전환 감지:** 🚨 **{regime_result.get('prev_regime')}** → **{current_operational}**"
+        )
+    else:
+        lines.append(f"- **Operational Phase:** ✅ **{current_operational}**")
+    
+    lines.append(f"- **Structural Regime:** **{current_structural}**")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    
+    # -------------------------
+    # 📊 Daily Macro Signals (여기 넣기)
+    # -------------------------
+    lines.append("## 📊 Daily Macro Signals")
+    lines.append("")
+    
+        # -------------------------
+    
+    
+    # daily core signals
+    if "US10Y" in market_data and market_data["US10Y"].get("today") is not None:
+        prev = market_data["US10Y"].get("prev")
+        pct = market_data["US10Y"].get("pct_change")
+        lines.append(
+            f"- **미국 10년물 금리**: {market_data['US10Y']['today']:.3f}  "
+            f"({pct:+.2f}% vs {prev:.3f})" if (prev is not None and pct is not None) else
+            f"- **미국 10년물 금리**: {market_data['US10Y']['today']:.3f}"
+        )
+
+    if "DXY" in market_data and market_data["DXY"].get("today") is not None:
+        print(f"DEBUG_CHECK: DXY TODAY VALUE IS {market_data['DXY']['today']}")
+        prev = market_data["DXY"].get("prev")
+        pct = market_data["DXY"].get("pct_change")
+        lines.append(
+            f"- **달러 인덱스**: {market_data['DXY']['today']:.3f}  "
+            f"({pct:+.2f}% vs {prev:.3f})" if (prev is not None and pct is not None) else
+            f"- **달러 인덱스**: {market_data['DXY']['today']:.3f}"
+        )
+
+    if "WTI" in market_data and market_data["WTI"].get("today") is not None:
+        prev = market_data["WTI"].get("prev")
+        pct = market_data["WTI"].get("pct_change")
+        lines.append(
+            f"- **WTI 유가**: {market_data['WTI']['today']:.3f}  "
+            f"({pct:+.2f}% vs {prev:.3f})" if (prev is not None and pct is not None) else
+            f"- **WTI 유가**: {market_data['WTI']['today']:.3f}"
+        )
+
+    # 문제 원인:
+    # VIX dict key가 prev가 아니라 yesterday / previous / 혹은 normalize 후 다른 이름일 가능성 높음
+    # 그래서 prev=None → fallback → 현재값만 출력
+    
+    # =========================================
+    # 가장 안전한 수정 (키 호환성 확장)
+    # 기존 VIX 블록 통째로 교체
+    # =========================================
+    
+    if "VIX" in market_data and market_data["VIX"].get("today") is not None:
+        vix_data = market_data["VIX"]
+    
+        prev = (
+            vix_data.get("prev")
+            or vix_data.get("yesterday")
+            or vix_data.get("previous")
+        )
+    
+        pct = vix_data.get("pct_change")
+    
+        if prev is not None and pct is not None:
+            lines.append(
+                f"- **변동성 지수 (VIX)**: {vix_data['today']:.3f} "
+                f"({pct:+.2f}% vs {prev:.3f})"
+            )
+        else:
+            lines.append(
+                f"- **변동성 지수 (VIX)**: {vix_data['today']:.3f}"
+            )
+    
+    
+# =========================================
+# 추가 디버그 (하루만 확인 후 삭제 추천)
+# =========================================
+    print("[DEBUG][VIX DAILY BLOCK]", market_data.get("VIX"))
+
+
+# =========================================
+# 기대 결과:
+# - **변동성 지수 (VIX)**: 17.990 (-2.12% vs 18.380)
+# =========================================  
+	
+    
+    if "USDKRW" in market_data and market_data["USDKRW"].get("today") is not None:
+        prev = market_data["USDKRW"].get("prev")
+        pct = market_data["USDKRW"].get("pct_change")
+        lines.append(
+            f"- **원/달러 환율**: {market_data['USDKRW']['today']:.3f}  "
+            f"({pct:+.2f}% vs {prev:.3f})" if (prev is not None and pct is not None) else
+            f"- **원/달러 환율**: {market_data['USDKRW']['today']:.3f}"
+        )
+
+    # Optional: Liquidity Snapshot block
+    if SHOW_LIQUIDITY_SNAPSHOT:
+        liq_asof = market_data.get("_LIQ_ASOF")
+        tga = market_data.get("TGA", {}).get("today")
+        rrp = market_data.get("RRP", {}).get("today")
+        net = market_data.get("NET_LIQ", {}).get("today")
+
+        if liq_asof and (tga is not None or rrp is not None or net is not None):
+            lines.append("")
+            lines.append("## 💧 Liquidity Snapshot (FRED last available)")
+            lines.append(f"- **Liquidity as of**: **{liq_asof}** *(FRED latest)*")
+            if tga is not None:
+                lines.append(f"- **TGA**: {float(tga):.1f}")
+            if rrp is not None:
+                lines.append(f"- **RRP**: {float(rrp):.3f}")
+            if net is not None:
+                lines.append(f"- **NET_LIQ**: {float(net):.1f}")
+
+    # -------------------------
+    # Summary / Decision layers first
+    # -------------------------
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append(commentary_block)
+    lines.append("")
+    lines.append(exec_block)
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+
+    # Optional country block append
+    if country_risk_lines:
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+        lines.extend(country_risk_lines)
+
+    report_path = REPORTS_DIR / f"daily_report_{report_date}.md"
+    report_path.write_text("\n".join(lines), encoding="utf-8")
+    print(f"[OK] Report written: {report_path}")
+    return market_data
+
+    
+    
+def generate_final_state_history():
+    BACKTEST_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    df = pd.read_csv(
+        DATA_DIR / "backtest" / "master_panel.csv",
+        parse_dates=["date", "signal_date", "execution_date"],
+    )
+
+    df = df.sort_values("date").reset_index(drop=True)
+
+    rows = []
+
+    TARGET_DATE = pd.Timestamp("2026-06-18")
+
+    matches = df.index[df["date"] == TARGET_DATE]
+
+    if len(matches) == 0:
+        raise ValueError(f"{TARGET_DATE} not found in master_panel.csv")
+
+    idx = matches[0]
+
+    for idx in [idx]:
+
+        if idx % 5 == 0:
+            print(f"[BACKTEST] processing {idx}/{len(df)}")
+
+        try:
+            market_data = build_market_data(
+                panel=df,
+                row_index=idx,
+                previous_exposure=None,
+            )
+            market_data["_STALE"] = False
+            print("===== MARKET DATA DEBUG =====")
+            print("DATE:", df.iloc[idx]["date"])
+            print("SPY:", market_data.get("SPY"))
+            print("QQQ:", market_data.get("QQQ"))
+            print("SMH:", market_data.get("SMH"))
+            print("SOXX:", market_data.get("SOXX"))
+            print("IWM:", market_data.get("IWM"))
+            print("VIX:", market_data.get("VIX"))
+            print("=============================")
+            # ============================
+            # Production Attach Pipeline
+            # ============================
+
+            market_data = attach_liquidity_layer(
+                market_data
+            ) or market_data
+
+            market_data = attach_credit_spread_layer(
+                market_data
+            ) or market_data
+
+            market_data = attach_fred_extras_layer(
+                market_data
+            ) or market_data
+
+            market_data = attach_sovereign_spread_layer(
+                market_data
+            ) or market_data
+
+            market_data = attach_expectation_layer(
+                market_data
+            ) or market_data
+
+            market_data = attach_geopolitical_ew_layer(
+                market_data,
+                df,
+                idx,
+            ) or market_data
+
+            market_data = attach_country_risk_layer(
+                market_data,
+                df,
+                idx,
+            ) or market_data
+
+            market_data = attach_sector_momentum_layer(
+                market_data,
+                df,
+                idx,
+            ) or market_data
+
+            market_data = attach_geo_similarity_layer(
+                market_data
+            ) or market_data
+
+            market_data = attach_sentiment_proxy_layer(
+                market_data
+            ) or market_data
+
+            market_data = attach_drift_data_layer(
+                market_data
+            ) or market_data
+
+            market_data = attach_growth_sustainability_layer(
+                market_data,
+                df,
+                idx,
+            ) or market_data
+
+            market_data = attach_breadth_layer(
+                market_data,
+                df,
+                idx,
+            ) or market_data
+
+            market_data = attach_leadership_layer(
+                market_data,
+                df,
+                idx,
+            ) or market_data
+
+            market_data = attach_volatility_structure_layer(
+                market_data,
+                df,
+                idx,
+            ) or market_data
+
+            market_data = attach_positioning_layer(
+                market_data
+            ) or market_data
+
+
+            # ============================
+            # Filters
+            # ============================
+
+            market_regime_filter(market_data)
+
+            narrative_engine_filter(market_data)
+
+            final_state = market_data.get(
+                "FINAL_STATE",
+                {}
+            ) or {}
+
+
+            rows.append({
+                "date": pd.to_datetime(
+                    df.iloc[idx]["date"]
+                ).strftime("%Y-%m-%d"),
+
+                "market_regime": market_data.get(
+                    "MARKET_REGIME"
+                ),
+
+                "phase": final_state.get(
+                    "phase"
+                ),
+
+                "phase_cap": final_state.get(
+                    "phase_cap"
+                ),
+
+                "risk_action": final_state.get(
+                    "risk_action"
+                ),
+
+                "risk_budget": final_state.get(
+                    "risk_budget"
+                ),
+
+                "structure_tag": final_state.get(
+                    "structure_tag"
+                ),
+
+                "sentiment_state": final_state.get(
+                    "sentiment_state"
+                ),
+
+                "narrative_line": final_state.get(
+                    "narrative_line"
+                ),
+            })
+
+
+        except Exception as e:
+
+            rows.append({
+                "date": pd.to_datetime(
+                    df.iloc[idx]["date"]
+                ).strftime("%Y-%m-%d"),
+
+                "risk_budget": None,
+
+                "narrative_line": (
+                    f"ERROR: {type(e).__name__}: {e}"
+                ),
+            })
+
+
+    out_df = pd.DataFrame(rows)
+
+    output_path = (
+        BACKTEST_DATA_DIR /
+        "final_state_history.csv"
+    )
+
+    out_df.to_csv(
+        output_path,
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    print(
+        f"[OK] Final state history written: {output_path}"
+    )
+
+    print(
+        out_df.to_string(index=False)
+    )
+    print("=" * 80)
+    print("PARITY CHECK")
+    print("DATE:", market_data.get("DATE"))
+    print("MARKET_REGIME:", market_data.get("MARKET_REGIME"))
+    print("PHASE:", market_data.get("FINAL_STATE", {}).get("phase"))
+    print("PHASE_CAP:", market_data.get("FINAL_STATE", {}).get("phase_cap"))
+    print("RISK_ACTION:", market_data.get("FINAL_STATE", {}).get("risk_action"))
+    print("RISK_BUDGET:", market_data.get("FINAL_STATE", {}).get("risk_budget"))
+    print("NARRATIVE:", market_data.get("FINAL_STATE", {}).get("narrative_line"))
+    print("=" * 80)
+
+    return out_df
+        
+            
+          
+#if __name__ == "__main__":
+    # =========================
+    # 🔥 ETF 백테스트 실행 (원본 + CSV 저장)
+    # =========================
+
+    # 기존 리포트 실행
+    #real_market_data = generate_daily_report()
+    #generate_final_state_history()
+    #generate_war_room_history()
+
+   
+if __name__ == "__main__":
+    #백테스트
+    
+    generate_final_state_history()
+    # 기존 리포트 실행
+    #real_market_data = generate_daily_report()
+    #generate_war_room_history()
+    # =========================
+    # 🔥 ETF BACKTEST DEBUG BLOCK
+    # =========================
+    """print("\n" + "=" * 60)
+    print("🚀 ETF BACKTEST DEBUG START")
+   
+
+    try:
+        from etf_returns import (
+            build_regime_portfolio,
+            build_portfolio_returns,
+            calculate_returns,
+            compare_portfolios,
+            compare_against_benchmark,
+            build_single_benchmark_returns,
+            build_6040_benchmark_returns,
+            base_weights,
+        )
+
+        # ETF 데이터 로드
+        combined_df = calculate_returns(base_weights)
+
+        if combined_df is not None:
+            combined_df = combined_df.sort_index()
+
+            # Base 포트폴리오
+            base_returns = build_portfolio_returns(
+                combined_df,
+                base_weights,
+                "Base"
+            )
+
+            market_data = real_market_data or {}
+
+            market_data.setdefault("SECTOR_OW", ["Consumer Staples", "Utilities", "Health Care"])
+            market_data.setdefault("SECTOR_UW", ["Technology", "Consumer Discretionary", "Real Estate"])
+
+            # Regime 포트폴리오
+            filtered_weights, scores, regime, style_tags = build_regime_portfolio(market_data)
+
+            print("\n📊 Regime")
+            print(regime)
+
+            print("\n📊 Style Tags")
+            print(style_tags)
+
+            print("\n📊 ETF Scores")
+            print(scores)
+
+            print("\n📊 Auto Generated ETF Weights")
+            print(filtered_weights)
+
+            filtered_returns = build_portfolio_returns(
+                combined_df,
+                filtered_weights,
+                "Filtered"
+            )
+
+            comparison = compare_portfolios(base_returns, filtered_returns)
+
+            print("\n📊 Base vs Filtered Portfolio Comparison")
+            print(comparison.round(4))
+
+            # SPY benchmark 비교
+            spy_returns = build_single_benchmark_returns(
+                combined_df,
+                symbol="SPY",
+                benchmark_name="SPY_Return"
+            )
+
+            spy_comparison = compare_against_benchmark(
+                filtered_returns,
+                spy_returns,
+                benchmark_label="SPY"
+            )
+
+            print("\n📊 Filtered Portfolio vs SPY")
+            print(spy_comparison.round(4))
+
+            # 60/40 benchmark 비교
+            benchmark_6040_returns = build_6040_benchmark_returns(combined_df)
+
+            benchmark_6040_comparison = compare_against_benchmark(
+                filtered_returns,
+                benchmark_6040_returns,
+                benchmark_label="60_40"
+            )
+
+            print("\n📊 Filtered Portfolio vs 60/40")
+            print(benchmark_6040_comparison.round(4))
+
+        else:
+            print("❌ ETF 데이터 없음")
+
+    except Exception as e:
+        print(f"❌ ETF BACKTEST ERROR: {e}")
+
+    print("🚀 ETF BACKTEST DEBUG END")
+    print("=" * 60)"""
+
+    
