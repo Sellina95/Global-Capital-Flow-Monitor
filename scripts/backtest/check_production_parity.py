@@ -772,6 +772,34 @@ def get_today_deadman_log(log_path="insights/alerts.log"):
 
     return None
 
+
+def _normalize_geo_spread_scalars_for_parity(market_data):
+    """
+    Parity checker only.
+
+    attach_sovereign_spread_layer() stores sovereign spreads as
+    {today, prev, pct_change} snapshots, while attach_geopolitical_ew_layer()
+    expects scalar level values for *_SPREAD factors.
+
+    Production strategy code is NOT modified here.
+    """
+    for key in [
+        "KR10Y_SPREAD",
+        "JP10Y_SPREAD",
+        "DE10Y_SPREAD",
+        "CN10Y_SPREAD",
+        "IL10Y_SPREAD",
+        "TR10Y_SPREAD",
+        "GB10Y_SPREAD",
+        "MX10Y_SPREAD",
+    ]:
+        value = market_data.get(key)
+        if isinstance(value, dict):
+            market_data[key] = value.get("today")
+
+    return market_data
+
+
 def get_flow_state(filepath: str = "insights/flow_state.json") -> dict:
     import os
     import json
@@ -2487,6 +2515,7 @@ def generate_daily_report() -> None:
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_sovereign_spread_layer(market_data) or market_data
     market_data = attach_expectation_layer(market_data) or market_data
+    market_data = _normalize_geo_spread_scalars_for_parity(market_data)
     market_data = attach_geopolitical_ew_layer(market_data, df, today_idx) or market_data
 
     # 국가 ETF 리스크 레이어
@@ -3144,6 +3173,9 @@ def generate_final_state_history():
                 market_data
             ) or market_data
 
+            market_data = _normalize_geo_spread_scalars_for_parity(
+                market_data
+            )
             market_data = attach_geopolitical_ew_layer(
                 market_data,
                 df,

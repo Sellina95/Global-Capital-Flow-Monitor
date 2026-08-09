@@ -22,14 +22,17 @@ from scripts.backtest.institutional_backtest import (
     disable_live_side_effects,
     neutralize_all_side_effects,
 )
+from scripts.backtest.filter13_execution_chain import (
+    prepare_filter13_execution_state,
+)
 
 DATA_DIR = ROOT / "data" / "backtest"
 PANEL_PATH = DATA_DIR / "master_panel.csv"
 RESULT_DIR = DATA_DIR / "results"
 OUT_PATH = RESULT_DIR / "daily_positions.csv"
 
-START_DATE = pd.Timestamp("2008-12-01")
-END_DATE = None
+START_DATE = pd.Timestamp("2026-06-08")
+END_DATE = pd.Timestamp("2026-06-19")
 
 
 def run_engine(
@@ -105,12 +108,21 @@ def main() -> None:
 
     rows: list[dict[str, Any]] = []
     previous_exposure = 50.0
+    flow_memory: dict[str, Any] = {
+    "flow_state": "N/A",
+    "flow_score": 0,
+    "persistence_days": 0,
+    }
 
     for count, idx in enumerate(indices, start=1):
         market_data = build_market_data(
             panel=panel,
             row_index=idx,
             previous_exposure=previous_exposure,
+        )
+        flow_memory = prepare_filter13_execution_state(
+            market_data=market_data,
+            previous_flow_memory=flow_memory,
         )
 
         try:
