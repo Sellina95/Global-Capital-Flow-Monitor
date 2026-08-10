@@ -54,8 +54,10 @@ def main() -> None:
         prev_memory_snapshot = dict(flow_memory)
 
         flow_memory = prepare_filter13_execution_state(
-            market_data=market_data,
-            previous_flow_memory=flow_memory,
+        market_data=market_data,
+        panel=panel,
+        row_index=idx,
+        previous_flow_memory=flow_memory,
         )
 
         institutional_flow = (

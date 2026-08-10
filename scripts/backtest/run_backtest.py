@@ -122,6 +122,8 @@ def main() -> None:
         )
         flow_memory = prepare_filter13_execution_state(
             market_data=market_data,
+            panel=panel,
+            row_index=idx,
             previous_flow_memory=flow_memory,
         )
 
