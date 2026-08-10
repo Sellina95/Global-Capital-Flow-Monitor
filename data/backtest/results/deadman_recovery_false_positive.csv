@@ -1,0 +1,3 @@
+﻿episode_id,start_date,end_date,duration_days,start_hy_oas,end_hy_oas,min_hy_oas,avg_hy_oas,start_vix,avg_vix,spy_return_20d_avg,spy_return_60d_avg,end_reason
+3,2010-03-24,2010-05-05,30,5.85,5.91,5.42,5.648666666666666,17.55,18.029333333333334,-4.071312597834132,-8.81355946947918,RECOVERY_END
+2,2010-03-19,2010-03-19,1,5.98,5.98,5.98,5.98,16.97,16.97,3.311189209005972,-3.423296911059704,RECOVERY_END
