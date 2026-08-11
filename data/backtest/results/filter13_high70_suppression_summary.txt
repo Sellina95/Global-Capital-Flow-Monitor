@@ -1,0 +1,91 @@
+==================================================================================
+FILTER13 HIGH-70 SUPPRESSION AUDIT
+==================================================================================
+Period               : 2008-12-02 ~ 2025-04-21
+Base=70 Days         : 1,668
+Valid 60D Outcomes   : 1,611
+
+Average Base Budget  : 70.00
+Average Final Budget : 37.35
+Average Suppression  : 32.65%p
+
+Forward Outcome Distribution
+----------------------------
+GOOD_FORWARD >= +5% : 844 (52.4%)
+BAD_FORWARD <= -5%  : 162 (10.1%)
+OTHER_FORWARD       : 605 (37.6%)
+
+Average SPY 60D — ALL : +4.75%
+Average SPY 60D — GOOD: +10.19%
+Average SPY 60D — BAD : -9.41%
+
+Suppression Diagnostics
+-----------------------
+GOOD market + Final Budget < 50 : 627
+Good-Market Suppression Rate     : 74.3%
+SPY >= +10% + Final Budget < 50  : 285
+BAD market + Final Budget < 50   : 69
+Bad-Market Protection Rate       : 42.6%
+
+==================================================================================
+TOP SUPPRESSORS — ALL HIGH70
+==================================================================================
+          component  mean_delta  negative_days  negative_day_rate
+   phase_cap_effect  -19.825574           1224           0.759777
+        macro_delta  -13.276847           1182           0.733706
+       credit_delta   -9.785847           1588           0.985723
+  positioning_delta   -1.040348            343           0.212911
+structural_v2_delta   -0.955928             77           0.047796
+  event_floor_delta    0.000000              0           0.000000
+   final_cap_effect    0.000000              0           0.000000
+    structure_delta    0.211049            366           0.227188
+   flow_gamma_delta    0.777157              0           0.000000
+        drift_delta    1.000000              0           0.000000
+
+==================================================================================
+TOP SUPPRESSORS — GOOD FORWARD
+==================================================================================
+          component  mean_delta  negative_days  negative_day_rate
+   phase_cap_effect  -23.174171            690           0.817536
+        macro_delta  -15.420616            688           0.815166
+       credit_delta   -9.911137            839           0.994076
+structural_v2_delta   -0.947867             40           0.047393
+  positioning_delta   -0.582938             92           0.109005
+  event_floor_delta    0.000000              0           0.000000
+   final_cap_effect    0.000000              0           0.000000
+   flow_gamma_delta    0.412322              0           0.000000
+    structure_delta    0.438389            169           0.200237
+        drift_delta    1.000000              0           0.000000
+
+==================================================================================
+TOP SUPPRESSORS — BAD FORWARD
+==================================================================================
+            component  mean_delta  negative_days  negative_day_rate
+     phase_cap_effect  -16.283951            117           0.722222
+         credit_delta   -9.259259            154           0.950617
+          macro_delta   -8.858025             91           0.561728
+  structural_v2_delta   -1.358025             11           0.067901
+    positioning_delta   -1.061728             38           0.234568
+      structure_delta   -0.123457             41           0.253086
+    event_floor_delta    0.000000              0           0.000000
+     final_cap_effect    0.000000              0           0.000000
+          drift_delta    1.000000              0           0.000000
+flow_continuity_delta    1.030864              0           0.000000
+
+==================================================================================
+GOOD vs BAD DELTA COMPARISON
+==================================================================================
+            component  good_forward_mean_delta  bad_forward_mean_delta  good_minus_bad_delta
+     phase_cap_effect               -23.174171              -16.283951             -6.890220
+          macro_delta               -15.420616               -8.858025             -6.562591
+         credit_delta                -9.911137               -9.259259             -0.651878
+  structural_v2_delta                -0.947867               -1.358025              0.410157
+    positioning_delta                -0.582938               -1.061728              0.478790
+    event_floor_delta                 0.000000                0.000000              0.000000
+     final_cap_effect                 0.000000                0.000000              0.000000
+     flow_gamma_delta                 0.412322                1.308642             -0.896320
+      structure_delta                 0.438389               -0.123457              0.561845
+          drift_delta                 1.000000                1.000000              0.000000
+flow_continuity_delta                 1.007109                1.030864             -0.023755
+    flow_regime_delta                 3.050948                3.191358             -0.140410
+      liquidity_delta                 6.937204                7.469136             -0.531932

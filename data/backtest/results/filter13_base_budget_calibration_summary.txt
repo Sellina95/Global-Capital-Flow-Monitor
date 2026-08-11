@@ -1,0 +1,33 @@
+==============================================================================
+FILTER13 BASE BUDGET CALIBRATION AUDIT
+==============================================================================
+Source : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/filter13_budget_attribution_final_daily.csv
+Period : 2008-12-02 ~ 2026-06-22
+Rows   : 4,576
+
+Average Base Budget : 60.47
+Average Final Budget: 48.40
+
+Production Base Contract:
+FEAR=35 / OTHER=50 / NEUTRAL=55 / GREED=70
+
+Unexpected Base Values: 0
+
+Base Budget Outcome Summary:
+base_group  days  share_of_days  avg_base_budget  avg_final_budget  avg_base_to_final_change  avg_spy_20d  median_spy_20d  positive_20d_rate  negative_20d_rate  above_5pct_20d_rate  avg_spy_60d  median_spy_60d  positive_60d_rate  negative_60d_rate  above_5pct_60d_rate  above_10pct_60d_rate  below_minus_5pct_60d_rate  worst_60d  best_60d
+    MID_55  2908        0.63549             55.0         54.742091                 -0.257909     0.867471        1.420670           0.687026           0.312595             0.068285     2.751284        3.687697           0.779321           0.220679             0.366512              0.060957                   0.103395 -30.154157 18.345993
+   HIGH_70  1668        0.36451             70.0         37.345324                -32.654676     1.699232        2.399187           0.696273           0.303106             0.214286     4.754336        5.299024           0.761018           0.238982             0.523898              0.214773                   0.100559 -21.924404 40.138507
+
+False Conservative Diagnostics
+--------------------------------
+Low Base days (<=50): 0
+Low Base + SPY 60D >= +5% : 0
+Low Base + SPY 60D >= +10%: 0
+
+False Aggressive Diagnostics
+-----------------------------
+High Base days (>=70): 1,611
+High Base + SPY 60D < 0% : 385
+High Base + SPY 60D <= -5%: 162
+False Aggressive Rate: 23.9%
+Severe False Aggressive Rate: 10.1%

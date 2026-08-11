@@ -1,0 +1,39 @@
+========================================================================================
+FILTER13 CANONICAL MACRO–PHASE MECHANICAL REPLAY
+========================================================================================
+
+BASELINE CANONICAL PARITY: PASS
+Parity Fail Days       : 0
+Max Abs Error          : 0.00000000
+Mean Abs Error         : 0.00000000
+
+Combined Cut Limit     : 20.0%p
+BOTH_CUT Candidate Days: 1,076
+Actually Changed Days  : 974
+Invalid Decrease Days  : 0
+Budget >100 Days       : 0
+Budget <0 Days         : 0
+
+Portfolio Proxy Summary
+-----------------------
+           scenario  avg_budget  changed_days  total_return     cagr        mdd  volatility   sharpe
+ BASELINE_CANONICAL   48.400787             0    190.234116 6.518577 -14.446524    8.136347 0.816997
+LIMITED_COMBINED_20   54.939685           974    322.417777 8.914419 -16.500494    9.967779 0.906694
+
+Changed-Day Diagnostics
+-----------------------
+Changed Days           : 974
+Avg Budget Increase    : +30.72%p
+Avg SPY 20D            : +2.27%
+Avg SPY 60D            : +6.41%
+SPY 60D >= +5% Rate    : 62.7%
+SPY 60D <= -5% Rate    : 6.4%
+Worst SPY 60D          : -21.92%
+
+FINAL FILTER13 RESEARCH RULE
+----------------------------
+1. Canonical parity must PASS.
+2. Candidate Changed Days must be > 0.
+3. Candidate should improve CAGR/Sharpe.
+4. MDD deterioration must remain acceptable.
+5. Changed-day good/bad asymmetry must remain favorable.

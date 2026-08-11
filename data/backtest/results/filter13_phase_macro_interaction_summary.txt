@@ -1,0 +1,60 @@
+====================================================================================
+FILTER13 PHASE ↔ MACRO INTERACTION AUDIT
+====================================================================================
+Period               : 2008-12-02 ~ 2025-04-21
+Base=70 Days         : 1,668
+Valid 60D Outcomes   : 1,611
+
+Interaction Distribution
+------------------------
+BOTH_CUT    : 1,076 (64.5%)
+MACRO_ONLY  : 148 (8.9%)
+PHASE_ONLY  : 192 (11.5%)
+NEITHER     : 252 (15.1%)
+
+Interaction Summary
+-------------------
+interaction_group  days  avg_final_budget  avg_total_suppression  avg_macro_delta  avg_phase_cap_effect  avg_macro_plus_phase  avg_spy_60d  good_forward_rate  bad_forward_rate
+         BOTH_CUT  1076         23.131970              46.868030       -19.007435            -28.510223            -47.517658     5.920247           0.598653          0.077960
+       MACRO_ONLY   148         47.581081              22.418919       -16.486486              0.000000            -16.486486     4.598926           0.461538          0.069930
+       PHASE_ONLY   192         61.510417               8.489583         0.432292            -12.828125            -12.395833     1.592830           0.367568          0.194595
+          NEITHER   252         73.611111              -3.611111         2.492063              0.000000              2.492063     2.277782           0.360656          0.143443
+
+Outcome Summary
+---------------
+interaction_group  valid_days  good_days  bad_days  good_rate  bad_rate  avg_spy_60d  avg_final_budget  avg_macro_delta  avg_phase_cap_effect
+         BOTH_CUT        1039        622        81   0.598653  0.077960     5.920247         23.171319       -18.999038            -28.470645
+       MACRO_ONLY         143         66        10   0.461538  0.069930     4.598926         47.517483       -16.419580              0.000000
+       PHASE_ONLY         185         68        36   0.367568  0.194595     1.592830         61.621622         0.448649            -12.745946
+          NEITHER         244         88        35   0.360656  0.143443     2.277782         73.549180         2.524590              0.000000
+
+Good Forward Distribution
+-------------------------
+BOTH_CUT    : 622 (73.7%)
+MACRO_ONLY  : 66 (7.8%)
+PHASE_ONLY  : 68 (8.1%)
+NEITHER     : 88 (10.4%)
+
+Bad Forward Distribution
+------------------------
+BOTH_CUT    : 81 (50.0%)
+MACRO_ONLY  : 10 (6.2%)
+PHASE_ONLY  : 36 (22.2%)
+NEITHER     : 35 (21.6%)
+
+====================================================================================
+DOUBLE-PENALTY DIAGNOSTICS
+====================================================================================
+BOTH_CUT Days                    : 1,076
+BOTH_CUT + GOOD_FORWARD          : 622
+BOTH_CUT + BAD_FORWARD           : 81
+Share of GOOD_FORWARD in BOTH    : 73.7%
+Share of BAD_FORWARD in BOTH     : 50.0%
+GOOD_FORWARD Final<50            : 627
+GOOD + BOTH_CUT + Final<50       : 596
+Share of suppressed GOOD due BOTH: 95.1%
+
+Interpretation Rule:
+- BOTH_CUT dominates GOOD_FORWARD suppression → possible Macro/Phase double penalty.
+- BOTH_CUT dominates BAD_FORWARD but not GOOD → interaction may be valid risk protection.
+- PHASE_ONLY or MACRO_ONLY independently show poor forward outcomes → single layer may be informative.
