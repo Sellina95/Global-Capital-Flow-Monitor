@@ -1,0 +1,47 @@
+=============================================================================================================================
+FILTER18 ROTATION RULE ATTRIBUTION
+=============================================================================================================================
+
+Rows                         : 4,645
+Executed annualized turnover : 49.26x
+
+CONTINUOUS DRIVERS
+------------------
+Corr turnover vs score-vector change : 0.485
+Corr turnover vs cap count           : 0.317
+Corr turnover vs positive-sector cnt : -0.044
+
+STATE-CHANGE ATTRIBUTION
+------------------------
+                     event  event_days  event_day_rate  avg_turnover_event  avg_turnover_no_event  turnover_ratio_event_vs_no_event  turnover_on_event_days  share_of_total_turnover_on_event_days
+              RANK_CHANGED        3839        0.826480            0.229972               0.031279                          7.352240                 882.862                               0.972237
+     MACRO_PROFILE_CHANGED        3098        0.666954            0.246804               0.092743                          2.661172                 764.600                               0.842003
+     CAP_SIGNATURE_CHANGED         976        0.210118            0.366218               0.150080                          2.440151                 357.429                               0.393613
+     DELEVERAGING_REQUIRED        1605        0.345533            0.276140               0.152917                          1.805816                 443.205                               0.488072
+PARTICIPATION_MODE_CHANGED           0        0.000000                 NaN               0.195495                               NaN                   0.000                               0.000000
+   RESIDUAL_ACTION_CHANGED           0        0.000000                 NaN               0.195495                               NaN                   0.000                               0.000000
+
+MACRO PROFILE
+-------------
+             macro_profile  days  avg_turnover  total_turnover  avg_rebalance_count  avg_small_adjust_count  turnover_share
+                  BALANCED  1204      0.244110         293.909             1.154485                1.400332        0.323662
+      DISINFLATION_RISK_ON   826      0.283483         234.157             1.116223                1.291768        0.257861
+SOFT_RISK_OFF_DISINFLATION  1493      0.113421         169.337             0.632954                0.636973        0.186480
+              GROWTH_SCARE   620      0.139197          86.302             0.779032                0.477419        0.095039
+        STAGFLATION_STRESS   275      0.211400          58.135             0.821818                0.592727        0.064020
+          EVENT_TRANSITION   127      0.340685          43.267             1.566929                0.755906        0.047647
+   DOLLAR_LIQUIDITY_STRESS    63      0.182603          11.504             0.777778                0.873016        0.012669
+         REFLATION_RISK_ON    37      0.309784          11.462             1.702703                0.540541        0.012622
+
+PARTICIPATION MODE
+------------------
+participation_mode  days  avg_turnover  total_turnover  avg_rebalance_count  turnover_share
+    SELECTIVE_ONLY  4645      0.195495         908.073             0.920775             1.0
+
+Interpretation:
+- High score-distance correlation / rank-change turnover → ranking/score instability.
+- High macro-profile change turnover ratio → regime switching.
+- High participation-mode change turnover ratio → participation policy switching.
+- High cap-signature change turnover ratio → cap switching.
+- High residual-action change turnover ratio → residual redistribution instability.
+- This is provenance/event attribution, not yet a causal counterfactual. Production remains unchanged.

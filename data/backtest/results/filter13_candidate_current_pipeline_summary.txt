@@ -1,0 +1,29 @@
+=========================================================================================================
+FILTER13 CANDIDATE — CURRENT CODE FULL PIPELINE COUNTERFACTUAL
+=========================================================================================================
+
+BASELINE SOURCE:
+Current branch + current master_panel + current 13→15→18 execution chain
+
+Legacy daily_positions.csv parity:
+NOT USED — historical version mismatch already identified.
+
+Baseline rows              : 4,645
+Baseline Filter13 injection: 0 failures
+
+FULL PIPELINE SUMMARY
+---------------------------------------------------------------------------------------------------------
+        scenario  avg_risk_budget_13  avg_exposure_15  avg_allocated_equity_18  cagr  mdd  volatility  sharpe  restored_budget_13  restored_exposure_15  restored_allocated_18  restoration_survival_13_to_15  restoration_survival_15_to_18
+BASELINE_CURRENT           44.657481        31.273197                30.699849   NaN  NaN         NaN     NaN            0.000000              0.000000               0.000000                            NaN                            NaN
+        LIMIT_15           53.394187        32.626480                31.836964   NaN  NaN         NaN     NaN            8.736706              1.353283               1.137115                       0.154896                       0.840264
+        LIMIT_20           53.366846        32.610334                31.820818   NaN  NaN         NaN     NaN            8.709365              1.337137               1.120969                       0.153529                       0.838335
+        LIMIT_25           52.362110        32.609903                31.820388   NaN  NaN         NaN     NaN            7.704629              1.336706               1.120538                       0.173494                       0.838283
+        LIMIT_30           51.355221        32.609688                31.820172   NaN  NaN         NaN     NaN            6.697740              1.336491               1.120323                       0.199544                       0.838257
+
+Decision Logic
+--------------
+1. If Filter13 budget rises but Filter15 does not, Filter15 is the next bottleneck.
+2. If Filter15 rises but Filter18 does not, Filter18 is the next bottleneck.
+3. If restored exposure survives through Filter18 and CAGR/Sharpe improve, Filter13 candidate survives the full-pipeline test.
+4. MDD deterioration remains a mandatory trade-off check.
+5. This output is gross/pre-cost; production change still requires turnover/cost and final implementation validation.

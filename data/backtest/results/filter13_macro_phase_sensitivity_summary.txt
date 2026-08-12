@@ -1,0 +1,20 @@
+============================================================================================
+FILTER13 MACRO–PHASE COMBINED CUT SENSITIVITY VALIDATION
+============================================================================================
+
+BASELINE CANONICAL PARITY: PASS
+Parity Fail Days : 0
+Max Error        : 0.00000000
+
+scenario  limit  avg_budget  changed_days  avg_budget_increase  avg_changed_spy_60d  good_60d_rate  bad_60d_rate  total_return     cagr        mdd  volatility   sharpe  cagr_improvement  mdd_change  sharpe_improvement
+BASELINE    NaN   48.400787             0             0.000000                  NaN            NaN           NaN    190.234116 6.518577 -14.446524    8.136347 0.816997          0.000000    0.000000            0.000000
+LIMIT_15   15.0   54.967439          1016            29.575787             6.159159       0.614679      0.073394    322.703258 8.918780 -16.500494    9.970575 0.906869          2.400203   -2.053970            0.089872
+LIMIT_20   20.0   54.939685           974            30.720739             6.411339       0.626596      0.063830    322.417777 8.914419 -16.500494    9.967779 0.906694          2.395842   -2.053970            0.089697
+LIMIT_25   25.0   53.919799           943            26.781548             6.439479       0.628571      0.063736    301.252349 8.583112 -15.995059    9.605122 0.905511          2.064535   -1.548535            0.088514
+LIMIT_30   30.0   52.897727           924            22.270563             6.466744       0.634119      0.062851    282.747312 8.279690 -15.173410    9.273972 0.904297          1.761113   -0.726885            0.087300
+
+Interpretation:
+- Look for broad improvement across multiple limits.
+- Do NOT select the single highest CAGR.
+- Prefer robust plateau + acceptable MDD trade-off.
+- If only one limit works, treat as overfit risk.

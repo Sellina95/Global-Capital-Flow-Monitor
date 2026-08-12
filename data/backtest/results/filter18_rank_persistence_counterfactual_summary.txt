@@ -1,0 +1,26 @@
+=============================================================================================================================
+FILTER18 RANK PERSISTENCE COUNTERFACTUAL
+=============================================================================================================================
+
+Production semantics:
+- Normal days: apply exact 2%p / 5%p rebalance threshold.
+- Deleveraging days: BYPASS threshold exactly as Production.
+- Rank persistence NEVER blocks deleveraging.
+
+Old threshold replay turnover : 49.26x
+Corrected baseline turnover   : 50.54x
+Correction delta              : +1.27x
+
+   scenario  persistence_days  annualized_turnover  turnover_reduction_rate  total_cost_pct  suppressed_rank_days  rank_confirmation_days  forced_deleveraging_days  gross_cagr  net_cagr    net_mdd  net_volatility  net_sharpe  net_cagr_delta  net_mdd_delta  net_sharpe_delta
+BASELINE_1D                 1            50.538071                 0.000000        46.57725                     0                       0                      1604    2.580804  0.021414 -12.937895        4.410462    0.026945        0.000000       0.000000          0.000000
+ PERSIST_2D                 2            23.489275                 0.535216        21.64835                  2158                     151                      1604    1.962688  0.772264  -9.311451        3.513190    0.236554        0.750850       3.626445          0.209610
+ PERSIST_3D                 3            22.705444                 0.550726        20.92595                  2294                      34                      1604    2.022266  0.870686  -8.918896        3.474438    0.266899        0.849272       4.018999          0.239954
+ PERSIST_5D                 5            22.660958                 0.551606        20.88495                  2401                      15                      1604    2.023066  0.873723  -8.892568        3.474052    0.267792        0.852309       4.045327          0.240847
+
+Decision Rules:
+1. Persistence must materially reduce executed turnover.
+2. Net CAGR / Sharpe must not deteriorate materially.
+3. MDD must remain acceptable.
+4. Prefer a broad 2D/3D/5D plateau, not one magic parameter.
+5. Deleveraging safety override must remain untouched.
+6. This is a research counterfactual only. Production code remains unchanged.

@@ -1,0 +1,19 @@
+=============================================================================================================================
+FILTER18 PRODUCTION REBALANCE THRESHOLD SEQUENTIAL REPLAY
+=============================================================================================================================
+
+Important:
+Target weights = build_tactical_allocation output.
+Executed weights = target weights after exact Production apply_rebalance_threshold semantics.
+
+        scenario  target_annualized_turnover  executed_annualized_turnover  turnover_reduction_rate  avg_hold_count  avg_small_adjust_count  avg_rebalance_count  gross_cagr  net_cagr    net_mdd  net_sharpe  total_cost_pct
+BASELINE_CURRENT                   51.862251                     49.264671                 0.050086        2.600861                0.933046             0.920775    2.572120  0.076648 -12.854871    0.039475        45.40365
+        LIMIT_15                   55.743268                     53.380707                 0.042383        2.479871                0.942734             1.032078    3.012116  0.299369 -13.780197    0.087347        49.19710
+        LIMIT_20                   55.740013                     53.391557                 0.042132        2.478149                0.943811             1.032723    3.012420  0.299121 -13.780197    0.087317        49.20710
+        LIMIT_25                   55.741315                     53.392859                 0.042131        2.478149                0.943811             1.032723    3.010916  0.297591 -13.780197    0.086991        49.20830
+        LIMIT_30                   55.741966                     53.393510                 0.042131        2.478149                0.943811             1.032723    3.010164  0.296826 -13.780197    0.086827        49.20890
+
+Decision:
+- If executed turnover is materially below target turnover, previous turnover audits were measuring target churn rather than Production execution churn.
+- Only executed turnover should be used for subsequent Filter18 attribution and cost analysis.
+- Production code remains unchanged.

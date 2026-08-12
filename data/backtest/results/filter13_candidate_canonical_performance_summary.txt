@@ -1,0 +1,25 @@
+=============================================================================================================================
+FILTER13 CANDIDATE — CANONICAL PERFORMANCE / TURNOVER / COST AUDIT
+=============================================================================================================================
+
+Performance contract:
+- Same sector → ETF mapping as performance.py
+- Same execution_date return convention
+- Filter18 weights ALWAYS divided by 100
+- One-way transaction cost = 5.0 bps
+
+Valid P&L coverage: 100.00%
+
+        scenario  annualized_turnover  total_cost_pct  gross_cagr  net_cagr  cagr_cost_drag    net_mdd  net_volatility  net_sharpe  net_cagr_delta  net_mdd_delta  net_sharpe_delta  survival_13_to_15  survival_15_to_18
+BASELINE_CURRENT            51.862251        47.79765    2.577623 -0.047884        2.625507 -12.906741        4.430163    0.011377        0.000000       0.000000          0.000000                NaN                NaN
+        LIMIT_15            55.743268        51.37450    3.006018  0.175023        2.830995 -14.014435        4.687426    0.060785        0.222907      -1.107694          0.049408           0.154896           0.840264
+        LIMIT_20            55.740013        51.37150    3.004925  0.174121        2.830803 -14.014435        4.684770    0.060601        0.222006      -1.107694          0.049224           0.153529           0.838335
+        LIMIT_25            55.741315        51.37270    3.003421  0.172593        2.830828 -14.014435        4.684735    0.060276        0.220477      -1.107694          0.048899           0.173494           0.838283
+        LIMIT_30            55.741966        51.37330    3.002669  0.171829        2.830840 -14.014435        4.684721    0.060113        0.219713      -1.107694          0.048736           0.199544           0.838257
+
+FINAL GATE:
+- Candidate must retain net CAGR / Sharpe improvement.
+- Turnover increase must be economically reasonable.
+- MDD trade-off must remain acceptable.
+- Improvement should remain broad across 15/20/25/30.
+- Do not select a parameter solely for the highest return.

@@ -1,0 +1,45 @@
+========================================================================================================================
+FILTER18 TURNOVER ATTRIBUTION AUDIT
+========================================================================================================================
+
+TURNOVER PARITY
+---------------
+Fail days        : 0
+Max abs error    : 0.0000000000
+
+ROTATION DIAGNOSTICS
+--------------------
+Rotation-dominant days            : 1,944
+Rotation-dominant turnover share  : 64.6%
+Pure-rotation candidate days      : 176
+Pure-rotation turnover share      : 6.4%
+Corr rotation turnover vs |Δ15|   : 0.087
+Corr rotation turnover vs |Δ18|   : 0.059
+
+SECTOR TURNOVER CONTRIBUTION
+----------------------------
+                sector  total_abs_weight_change  turnover_share  avg_daily_abs_change  median_daily_abs_change  p95_abs_change  change_days  large_change_days_gt5pct  corr_with_total_turnover  corr_with_rotation_turnover
+            Technology                  185.032        0.193558              0.039835                    0.015          0.1450         2711                      1534                  0.686667                     0.630087
+           Health Care                  160.418        0.167810              0.034536                    0.020          0.1170         3220                      1355                  0.804494                     0.654431
+      Consumer Staples                  152.810        0.159851              0.032898                    0.018          0.1170         3247                      1254                  0.736678                     0.529169
+Consumer Discretionary                  101.828        0.106520              0.021922                    0.000          0.1010         2007                       941                  0.604178                     0.579254
+             Utilities                   70.546        0.073797              0.015188                    0.000          0.0838         1386                       619                  0.431232                     0.245339
+Communication Services                   66.370        0.069428              0.014288                    0.000          0.0600         1754                       497                  0.614564                     0.601552
+            Financials                   64.509        0.067481              0.013888                    0.000          0.0820         1252                       632                  0.467144                     0.438227
+           Industrials                   59.510        0.062252              0.012812                    0.000          0.0890         2036                       419                  0.495690                     0.470105
+                Energy                   51.194        0.053553              0.011021                    0.000          0.0650         1841                       359                  0.370862                     0.240684
+             Materials                   43.736        0.045751              0.009416                    0.000          0.0500         1876                       241                  0.368993                     0.204430
+
+EVENT GROUPS
+------------
+  turnover_driver  days  avg_turnover  total_turnover  avg_sector_rotation  avg_exposure_change  avg_abs_change_13  avg_abs_change_15  avg_abs_change_18  avg_sector_change_count  pure_rotation_days  turnover_share
+         BALANCED  1282      0.000421           0.540             0.000211             0.000211           1.193599           0.033568           0.021077                 0.010140                   0        0.000565
+EXPOSURE_DOMINANT  1419      0.238116         337.887             0.046371             0.191746          16.016209          19.613108          19.174560                 5.939394                   0        0.353456
+ROTATION_DOMINANT  1944      0.317657         617.526             0.244893             0.072764           7.975823           7.917695           7.276440                 6.630144                 176        0.645979
+
+Interpretation:
+- A few sectors dominating turnover → sector-specific ranking/cap rules should be inspected.
+- Broad sector participation with high rotation and low gross-exposure change → Filter18 allocation reshuffling is likely structural.
+- High pure-rotation turnover share → rank persistence / hysteresis / rebalance threshold becomes a strong production candidate.
+- If rotation turnover rises mainly when Filter15 changes, Filter18 may be reacting mechanically to upstream exposure.
+- If rotation remains high despite small |Δ15|, Filter18 itself is the primary source.

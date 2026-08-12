@@ -1,0 +1,32 @@
+=============================================================================================================================
+FINAL FILTER13 + FILTER18 PRODUCTION CANDIDATE VALIDATION
+=============================================================================================================================
+
+Candidates:
+- Filter13: Macro–Phase combined-cut LIMIT20
+- Filter18: Rank Persistence 3D
+- Filter15: unchanged
+- Macro persistence: rejected / not used
+
+                    scenario  annualized_turnover  total_cost_pct  gross_cagr  net_cagr    net_mdd  net_volatility  net_sharpe  net_cagr_delta_vs_current  net_mdd_delta_vs_current  net_sharpe_delta_vs_current
+                     CURRENT            50.538071        46.57725    2.580804  0.021414 -12.937895        4.410462    0.026945                   0.000000                  0.000000                     0.000000
+       FILTER13_LIMIT20_ONLY            54.486035        50.21580    3.009098  0.241010 -14.093134        4.676561    0.074899                   0.219596                 -1.155238                     0.047955
+        FILTER18_RANK3D_ONLY            22.705444        20.92595    2.022266  0.870686  -8.918896        3.474438    0.266899                   0.849272                  4.018999                     0.239954
+FILTER13_LIMIT20_PLUS_RANK3D            23.500777        21.65895    2.154854  0.961577 -12.642946        3.585839    0.284824                   0.940163                  0.294949                     0.257879
+
+INTERACTION CHECK
+-----------------
+Combined Net CAGR interaction : -0.1287%p
+Combined Sharpe interaction   : -0.0300
+
+FINAL PRODUCTION DECISION RULE
+------------------------------
+PASS combined candidate if:
+1. Combined net CAGR > CURRENT.
+2. Combined net Sharpe > CURRENT.
+3. Turnover remains materially below CURRENT.
+4. MDD does not introduce unacceptable risk.
+5. Filter13 + Filter18 interaction is not strongly destructive.
+6. Deleveraging safety path remains unblocked.
+
+No Production code was modified by this audit.

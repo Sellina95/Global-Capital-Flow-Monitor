@@ -1,0 +1,51 @@
+===================================================================================================================
+PORTFOLIO TURNOVER ANATOMY AUDIT
+===================================================================================================================
+
+Source:
+BASELINE_CURRENT from saved 13→15→18 full-pipeline detail.
+
+Rows                 : 4,645
+Annualized Turnover  : 51.86x
+
+TURNOVER DECOMPOSITION
+----------------------
+Exposure-change share : 43.3%
+Sector-rotation share : 56.7%
+Tiny-jitter share     : 0.1%
+
+TURNOVER DISTRIBUTION
+---------------------
+Median daily turnover : 18.90%
+P90 daily turnover    : 45.40%
+P95 daily turnover    : 55.80%
+P99 daily turnover    : 74.66%
+
+CONCENTRATION
+-------------
+Top 1% days share     : 4.2%
+Top 5% days share     : 16.5%
+Top 10% days share    : 28.5%
+
+UPSTREAM CORRELATION
+--------------------
+Turnover vs |Δ13|     : 0.517
+Turnover vs |Δ15|     : 0.613
+Turnover vs |Δ18|     : 0.605
+
+TURNOVER BUCKETS
+----------------
+turnover_bucket  days  avg_turnover  total_turnover  avg_exposure_change_turnover  avg_sector_rotation_turnover  avg_tiny_jitter_turnover  avg_abs_change_13  avg_abs_change_15  avg_abs_change_18  turnover_share
+           <=1%  1289      0.000047           0.060                      0.000029                      0.000017                  0.000023           1.174689           0.021739           0.002950        0.000063
+           1-5%   100      0.031280           3.128                      0.020140                      0.011140                  0.002230           2.700000           2.680000           2.014000        0.003272
+          5-10%   236      0.077864          18.376                      0.043034                      0.034831                  0.001042           5.046610           4.724576           4.303390        0.019223
+         10-25%  1261      0.180286         227.341                      0.090600                      0.089686                  0.000515           8.821570           9.282316           9.060032        0.237816
+         25-50%  1436      0.349403         501.743                      0.163360                      0.186043                  0.000159          14.631616          17.105850          16.336003        0.524862
+           >50%   323      0.635619         205.305                      0.163378                      0.472241                  0.000136          14.402477          17.294118          16.337771        0.214765
+
+Interpretation:
+- High exposure-change share → gross exposure adjustment is the dominant turnover source.
+- High sector-rotation share → Filter18 allocation reshuffling is the dominant source.
+- High tiny-jitter share → rebalance threshold / no-trade band should be investigated.
+- Strong turnover correlation with |Δ15| → Filter15 exposure instability is likely driving trades.
+- Strong turnover correlation with |Δ18| but weak |Δ15| → sector allocator is likely the main culprit.

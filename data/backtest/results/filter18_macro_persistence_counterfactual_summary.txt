@@ -1,0 +1,24 @@
+=============================================================================================================================
+FILTER18 MACRO PROFILE PERSISTENCE COUNTERFACTUAL
+=============================================================================================================================
+
+Rank persistence fixed at 3D.
+Macro persistence is tested only for incremental value after Rank 3D.
+
+Risk safety:
+DELEVERAGING_REQUIRED bypasses all persistence gates.
+
+      scenario  macro_persistence_days  annualized_turnover  incremental_turnover_reduction  total_cost_pct  suppressed_macro_days  macro_confirmation_days  forced_deleveraging_days  gross_cagr  net_cagr    net_mdd  net_volatility  net_sharpe  net_cagr_delta  net_mdd_delta  net_sharpe_delta
+   RANK3D_ONLY                       1            22.705444                        0.000000        20.92595                      0                        0                      1604    2.022266  0.870686  -8.918896        3.474438    0.266899        0.000000       0.000000          0.000000
+RANK3D_MACRO2D                       2            22.166723                        0.023727        20.42945                   1647                      273                      1604    1.905228  0.782115 -10.949318        3.435443    0.243966       -0.088571      -2.030422         -0.022933
+RANK3D_MACRO3D                       3            22.146107                        0.024634        20.41045                   1849                       61                      1604    1.930914  0.808556 -10.709024        3.429681    0.251967       -0.062130      -1.790128         -0.014932
+RANK3D_MACRO5D                       5            22.101621                        0.026594        20.36945                   1913                       11                      1604    1.931714  0.811591 -10.709024        3.429289    0.252870       -0.059095      -1.790128         -0.014029
+
+Decision Rules:
+1. Compare all scenarios against RANK3D_ONLY.
+2. Macro persistence should deliver meaningful incremental turnover/cost reduction.
+3. Net CAGR / Sharpe must not deteriorate materially.
+4. MDD must remain acceptable.
+5. If incremental benefit is small, do NOT add another Production state machine.
+6. Prefer the simpler Rank Persistence-only design when performance is economically equivalent.
+7. Production code remains unchanged.
