@@ -74,6 +74,7 @@ def build_series_snapshot(
     if column not in panel.columns:
         return {
             "today": None,
+            "prev": None,
             "pct_change": None,
             "history": [],
         }
@@ -88,20 +89,28 @@ def build_series_snapshot(
     if values.empty:
         return {
             "today": None,
+            "prev": None,
             "pct_change": None,
             "history": [],
         }
 
     today = float(values.iloc[-1])
 
+    prev = (
+        float(values.iloc[-2])
+        if len(values) >= 2
+        else None
+    )
+
     pct_change = None
-    if len(values) >= 2 and float(values.iloc[-2]) != 0:
+    if prev is not None and prev != 0:
         pct_change = (
-            float(values.iloc[-1]) / float(values.iloc[-2]) - 1.0
+            today / prev - 1.0
         ) * 100.0
 
     return {
         "today": today,
+        "prev": prev,
         "pct_change": pct_change,
         "history": values.astype(float).tolist(),
     }

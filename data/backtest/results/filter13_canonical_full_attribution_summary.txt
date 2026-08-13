@@ -1,0 +1,82 @@
+# FILTER13 CANONICAL FULL ATTRIBUTION
+
+## Source Contract
+
+- CURRENT master_panel.csv
+- CURRENT prepare_filter13_execution_state()
+- CURRENT Production narrative_engine_filter()
+- Runtime line-trace of actual Production budget mutations
+- Existing canonical baseline used only as an independent parity anchor
+- Legacy attribution / candidate artifacts NOT USED
+- Production code modified: NO
+
+## Hard Parity
+
+Rows             : 4,645
+Execution errors : 0
+precap_trace_reconstruction_error       : fail=0, max_abs_error=0.000000000000
+precap_marketdata_error                 : fail=0, max_abs_error=0.000000000000
+precap_canonical_error                  : fail=0, max_abs_error=0.000000000000
+final_trace_reconstruction_error        : fail=0, max_abs_error=0.000000000000
+final_marketdata_error                  : fail=0, max_abs_error=0.000000000000
+final_canonical_error                   : fail=0, max_abs_error=0.000000000000
+final_cap_error                         : fail=0, max_abs_error=0.000000000000
+
+FULL ATTRIBUTION PARITY: PASS
+
+## Budget Levels
+
+Average Base Budget    : 61.135630
+Average Pre-Cap Budget : 52.977826
+Average Final Budget   : 45.018299
+
+## Layer Attribution
+
+                  layer  applied_days  cut_days  add_days  avg_delta_all_days  total_delta  total_cut_abs  avg_cut_when_cut  avg_add_when_add  final_below_stage_before_rate_on_cut_days
+              Phase Cap          1857      1857         0           -7.962971     -36988.0        36988.0        -19.918148               NaN                                        NaN
+                  Macro          2813      2239       574           -6.939074     -32232.0        35520.0        -15.864225          5.728223                                   0.999553
+                 Credit          4645      2891      1754           -4.335845     -20140.0        28910.0        -10.000000          5.000000                                   0.892425
+              Structure          2698      1341      1357            0.034446        160.0        13410.0        -10.000000         10.000000                                   0.971663
+            Positioning          1954      1954         0           -2.096017      -9736.0         9736.0         -4.982600               NaN                                   0.999488
+        Liquidity Level          4149      1521      2628            1.191604       5535.0         7605.0         -5.000000          5.000000                                   0.705457
+    Liquidity Direction           672       312       360           -0.284177      -1320.0         3120.0        -10.000000          5.000000                                   0.923077
+          Structural v2           158       158         0           -0.519268      -2412.0         2412.0        -15.265823               NaN                                   1.000000
+        Flow Continuity          2680       310      2370            0.357804       1662.0          930.0         -3.000000          1.093671                                   0.977419
+Structural v2 Final Cap             1         1         0           -0.000431         -2.0            2.0         -2.000000               NaN                                        NaN
+                  Drift          2879         0      2879            1.416792       6581.0            0.0               NaN          2.285863                                        NaN
+             Flow Gamma          1898         0      1898            0.817223       3796.0            0.0               NaN          2.000000                                        NaN
+            Flow Regime          4027         0      4027            2.193541      10189.0            0.0               NaN          2.530171                                        NaN
+            Event Floor             3         0         3            0.005167         24.0            0.0               NaN          8.000000                                        NaN
+               Rounding             0         0         0            0.000000          0.0            0.0               NaN               NaN                                        NaN
+            Final Clamp             3         0         3            0.003875         18.0            0.0               NaN          6.000000                                        NaN
+
+## Ex-Post Economic Diagnostics on Cut Days
+
+                  layer  cut_days    avg_cut  avg_spy_fwd_5d  avg_spy_fwd_20d  avg_spy_fwd_60d  down_20d_rate  down_60d_rate  avg_fwd_mdd_20d  avg_fwd_mdd_60d  mdd20_le_minus5_rate  mdd60_le_minus10_rate  total_cut_abs
+              Phase Cap      1857 -19.918148        0.294811         1.132529         3.166587       0.318794       0.261174        -4.824434        -8.558668              0.336564               0.231556        36988.0
+                  Macro      2239 -15.864225        0.225133         1.017011         3.073015       0.330058       0.253685        -4.603180        -8.146691              0.316213               0.212595        35520.0
+                 Credit      2891 -10.000000        0.249373         1.126029         3.237000       0.315462       0.244206        -4.335716        -7.628208              0.285022               0.195434        28910.0
+              Structure      1341 -10.000000        0.095858         0.792991         2.334550       0.332588       0.260254        -3.915214        -7.308686              0.232662               0.194631        13410.0
+            Positioning      1954  -4.982600        0.095051         0.497669         1.878882       0.315251       0.242068        -2.981263        -6.015071              0.128966               0.097236         9736.0
+        Liquidity Level      1521  -5.000000        0.228080         0.871592         2.887038       0.324129       0.249178        -3.413256        -6.280392              0.211703               0.159106         7605.0
+    Liquidity Direction       312 -10.000000        0.189692         0.876669         2.954658       0.320513       0.230769        -3.606777        -6.599056              0.227564               0.176282         3120.0
+          Structural v2       158 -15.265823        0.202102         0.057023         2.128076       0.373418       0.303797        -6.126187        -9.402068              0.379747               0.297468         2412.0
+        Flow Continuity       310  -3.000000        0.093616         1.043555         2.899305       0.309677       0.238710        -3.849832        -7.561289              0.200000               0.209677          930.0
+Structural v2 Final Cap         1  -2.000000             NaN         2.190483              NaN       0.000000       0.000000        -4.494653        -4.494653              0.000000               0.000000            2.0
+             Flow Gamma         0        NaN             NaN              NaN              NaN            NaN            NaN              NaN              NaN                   NaN                    NaN            0.0
+                  Drift         0        NaN             NaN              NaN              NaN            NaN            NaN              NaN              NaN                   NaN                    NaN            0.0
+            Event Floor         0        NaN             NaN              NaN              NaN            NaN            NaN              NaN              NaN                   NaN                    NaN            0.0
+            Flow Regime         0        NaN             NaN              NaN              NaN            NaN            NaN              NaN              NaN                   NaN                    NaN            0.0
+               Rounding         0        NaN             NaN              NaN              NaN            NaN            NaN              NaN              NaN                   NaN                    NaN            0.0
+            Final Clamp         0        NaN             NaN              NaN              NaN            NaN            NaN              NaN              NaN                   NaN                    NaN            0.0
+
+## Interpretation Rules
+
+- Large total_cut_abs identifies where Filter13 removes the most risk.
+- Forward returns / forward MDD are ex-post diagnostics only; they are NOT Production inputs.
+- A cut layer with materially worse subsequent downside may represent useful protection.
+- A cut layer followed by consistently strong positive returns may represent opportunity cost and should become a separate research ticket.
+- No Production rule is changed by this audit.
+- Candidate tuning is prohibited unless a separate research hypothesis is opened after this attribution closes.
+
+FINAL STATUS: PASS

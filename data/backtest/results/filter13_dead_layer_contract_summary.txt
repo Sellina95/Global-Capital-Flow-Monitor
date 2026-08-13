@@ -1,0 +1,48 @@
+# FILTER13 DEAD-LAYER CONTRACT AUDIT
+
+## Source Contract
+
+- CURRENT canonical full-attribution daily artifact
+- Production code modified: NO
+- Candidate logic used: NO
+- Economic optimization performed: NO
+
+## Liquidity Level
+
+HIGH rows       : 2,628
+LOW rows        : 1,521
+Actionable rows : 4,149
+Verdict         : PASS_ACTIONABLE_VALUES_PRESENT
+
+Observed values:
+
+- HIGH: 2,628
+- LOW: 1,521
+- MID: 443
+- <BLANK>: 53
+
+## Structure
+
+Captured candidate runtime columns: mixed, easing, tightening
+Verdict: RUNTIME_INPUTS_PRESENT_REVIEW_VALUES
+
+### mixed
+- Nonblank: 4,645
+- Unique: 2
+- Top values: FALSE:2698 | TRUE:1947
+
+### easing
+- Nonblank: 4,645
+- Unique: 2
+- Top values: FALSE:3288 | TRUE:1357
+
+### tightening
+- Nonblank: 4,645
+- Unique: 2
+- Top values: FALSE:3304 | TRUE:1341
+
+## Decision
+
+- Liquidity Level can be classified directly from the observed canonical values.
+- Structure must NOT be guessed if its runtime inputs were not captured.
+- No Filter13 Production rule should be changed from this audit.

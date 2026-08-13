@@ -1,0 +1,35 @@
+FILTER13 CANONICAL PRODUCTION BASELINE
+======================================================================
+
+Panel rows             : 4,817
+Successful rows        : 4,645
+Execution errors       : 0
+
+SOURCE CONTRACT
+- current master_panel.csv
+- current prepare_filter13_execution_state()
+- current Production narrative_engine_filter()
+- same-frame local-variable capture
+- legacy attribution CSV NOT USED
+- legacy daily_positions.csv NOT USED
+- candidate logic NOT USED
+
+SAME-FRAME PARITY
+pre_cap_error                 : fail=0, max_abs_error=0.000000000000
+budget_error                  : fail=0, max_abs_error=0.000000000000
+final_state_budget_error      : fail=0, max_abs_error=0.000000000000
+macro_tilt_error              : fail=0, max_abs_error=0.000000000000
+phase_cap_error               : fail=0, max_abs_error=0.000000000000
+
+STRUCTURAL CHECKS
+Missing PRE_CAP_BUDGET : 0
+Missing RISK_BUDGET    : 0
+Invalid budget         : 0
+Final-cap violations   : 0
+
+Average Pre-Cap Budget : 52.977826
+Average Final Budget   : 45.018299
+
+FINAL STATUS: PASS
+Canonical Filter13 baseline is now frozen.
+This file may be used as the ONLY Filter13 candidate research baseline.

@@ -1,0 +1,3 @@
+layer,rows,actionable_rows,verdict
+Liquidity Level,4645,4149.0,PASS_ACTIONABLE_VALUES_PRESENT
+Structure,4645,,RUNTIME_INPUTS_PRESENT_REVIEW_VALUES

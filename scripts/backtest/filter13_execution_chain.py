@@ -186,6 +186,114 @@ def build_historical_drift_data(
 
 
 # ============================================================
+# Historical / PIT Liquidity Level Producer
+# ============================================================
+
+def build_historical_liquidity_level_contract(
+    market_data: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Production attach_liquidity_layer()의 NET_LIQ level contract를
+    historical PIT 데이터로 재현한다.
+
+    중요:
+    - market_data["NET_LIQ"]["history"]는 market_data_builder가
+      현재 row_index까지만 생성한 history다.
+    - 미래 데이터는 절대 사용하지 않는다.
+    - Production과 동일한 percentile bucket semantics를 사용한다.
+    """
+
+    net = market_data.get("NET_LIQ", {}) or {}
+
+    if not isinstance(net, dict):
+        net = {}
+
+    def _float_or_none(value):
+        try:
+            if value is None or pd.isna(value):
+                return None
+            return float(value)
+        except Exception:
+            return None
+
+    net_today = _float_or_none(
+        net.get("today")
+    )
+
+    net_prev = _float_or_none(
+        net.get("prev")
+    )
+
+    if net_today is None or net_prev is None:
+        net_dir = "N/A"
+    elif net_today > net_prev:
+        net_dir = "UP"
+    elif net_today < net_prev:
+        net_dir = "DOWN"
+    else:
+        net_dir = "FLAT"
+
+    history = pd.to_numeric(
+        pd.Series(
+            net.get("history", [])
+        ),
+        errors="coerce",
+    ).dropna()
+
+    level_bucket = "N/A"
+
+    if (
+        net_today is not None
+        and not history.empty
+    ):
+        if len(history) >= 20:
+            pct_rank = float(
+                (history <= net_today).mean()
+            )
+        else:
+            vmin = float(history.min())
+            vmax = float(history.max())
+
+            if vmax == vmin:
+                pct_rank = 0.5
+            else:
+                pct_rank = (
+                    net_today - vmin
+                ) / (
+                    vmax - vmin
+                )
+
+        if pct_rank < 0.33:
+            level_bucket = "LOW"
+        elif pct_rank < 0.66:
+            level_bucket = "MID"
+        else:
+            level_bucket = "HIGH"
+
+    net = dict(net)
+
+    net["dir"] = net_dir
+    net["level_bucket"] = level_bucket
+
+    market_data["NET_LIQ"] = net
+    market_data["NET_LIQ_DIR"] = net_dir
+    market_data[
+        "NET_LIQ_LEVEL_BUCKET"
+    ] = level_bucket
+
+    # Audit metadata
+    market_data[
+        "_NET_LIQ_LEVEL_SOURCE"
+    ] = "HISTORICAL_PIT_HISTORY"
+
+    market_data[
+        "_NET_LIQ_LEVEL_HISTORY_COUNT"
+    ] = int(len(history))
+
+    return market_data
+
+
+# ============================================================
 # Production Pre-Filter13 Execution Adapter
 # ============================================================
 
@@ -259,6 +367,17 @@ def prepare_filter13_execution_state(
 
     market_data["SEW_STATUS"] = "HISTORICAL_UNAVAILABLE"
     market_data["SEW_EVENT_TYPE"] = "HISTORICAL_UNAVAILABLE"
+
+    # --------------------------------------------------
+    # Historical/PIT Liquidity Level Contract
+    #
+    # Production attach_liquidity_layer() creates this
+    # before the downstream Filter13 generator chain.
+    # --------------------------------------------------
+
+    build_historical_liquidity_level_contract(
+        market_data
+    )
 
     # --------------------------------------------------
     # Production Pre-13 execution order
