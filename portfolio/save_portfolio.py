@@ -1,6 +1,7 @@
+import json
 import os
 from datetime import datetime
-from typing import Dict
+from typing import Any, Dict
 
 import pandas as pd
 
@@ -264,6 +265,288 @@ def load_previous_weights(filepath: str = "data/paper_portfolio_log.csv") -> dic
             continue
 
     return weights
+
+# ============================================================
+# Filter18 Rank Persistence State
+# ============================================================
+
+FILTER18_RANK_STATE_PATH = "data/filter18_rank_state.json"
+FILTER18_RANK_STATE_VERSION = 1
+
+
+def _default_filter18_rank_state() -> Dict[str, Any]:
+    """
+    Filter18 Rank Persistence의 안전한 초기 상태.
+
+    원칙:
+    - Production portfolio state와 분리
+    - state 파일이 없거나 손상되어도 기존 Filter18 실행을 막지 않음
+    - 첫 정상 실행에서 현재 rank를 INITIAL_ACCEPT 할 수 있도록 빈 상태 반환
+    """
+    return {
+        "version": FILTER18_RANK_STATE_VERSION,
+        "accepted_rank": "",
+        "accepted_target_weights": {},
+        "pending_rank": "",
+        "pending_count": 0,
+        "last_processed_date": "",
+        "last_output_target_weights": {},
+        "last_action": "UNINITIALIZED",
+    }
+
+
+def load_filter18_rank_state(
+    filepath: str = FILTER18_RANK_STATE_PATH,
+) -> Dict[str, Any]:
+    """
+    Filter18 Rank Persistence state를 읽는다.
+
+    Fail-safe:
+    - 파일 없음
+    - JSON 손상
+    - schema 이상
+
+    위 경우 모두 default state 반환.
+
+    주의:
+    이 함수는 portfolio weights를 읽는 함수와 완전히 분리되어 있다.
+    """
+
+    default = _default_filter18_rank_state()
+
+    if not os.path.exists(filepath):
+        return default
+
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except Exception:
+        return default
+
+    if not isinstance(raw, dict):
+        return default
+
+    state = dict(default)
+
+    # --------------------------------------------------------
+    # Scalar fields
+    # --------------------------------------------------------
+
+    state["version"] = raw.get(
+        "version",
+        FILTER18_RANK_STATE_VERSION,
+    )
+
+    state["accepted_rank"] = str(
+        raw.get("accepted_rank", "") or ""
+    )
+
+    state["pending_rank"] = str(
+        raw.get("pending_rank", "") or ""
+    )
+
+    state["last_processed_date"] = str(
+        raw.get("last_processed_date", "") or ""
+    )
+
+    state["last_action"] = str(
+        raw.get("last_action", "UNINITIALIZED")
+        or "UNINITIALIZED"
+    )
+
+    try:
+        state["pending_count"] = max(
+            0,
+            int(raw.get("pending_count", 0) or 0),
+        )
+    except Exception:
+        state["pending_count"] = 0
+
+    # --------------------------------------------------------
+    # Weight dictionaries
+    # --------------------------------------------------------
+
+    for key in [
+        "accepted_target_weights",
+        "last_output_target_weights",
+    ]:
+
+        node = raw.get(key, {})
+
+        if not isinstance(node, dict):
+            state[key] = {}
+            continue
+
+        clean_weights: Dict[str, float] = {}
+
+        for sector, value in node.items():
+            try:
+                weight = float(value)
+            except (TypeError, ValueError):
+                continue
+
+            if pd.isna(weight):
+                continue
+
+            clean_weights[str(sector)] = round(
+                weight,
+                4,
+            )
+
+        state[key] = clean_weights
+
+    return state
+
+
+def save_filter18_rank_state(
+    state: Dict[str, Any],
+    filepath: str = FILTER18_RANK_STATE_PATH,
+) -> None:
+    """
+    Filter18 Rank Persistence state를 atomic write한다.
+
+    Production 원칙:
+    - 임시 파일에 먼저 저장
+    - 저장 성공 후 os.replace()
+    - 중간 실패 시 기존 정상 state 파일 유지
+
+    호출 시점:
+    최종 portfolio/trade state 저장이 성공한 뒤에만 호출해야 한다.
+    """
+
+    if not isinstance(state, dict):
+        raise TypeError(
+            "Filter18 rank state must be a dictionary."
+        )
+
+    directory = os.path.dirname(filepath)
+
+    if directory:
+        os.makedirs(
+            directory,
+            exist_ok=True,
+        )
+
+    clean_state = _default_filter18_rank_state()
+
+    clean_state["version"] = (
+        FILTER18_RANK_STATE_VERSION
+    )
+
+    clean_state["accepted_rank"] = str(
+        state.get("accepted_rank", "") or ""
+    )
+
+    clean_state["pending_rank"] = str(
+        state.get("pending_rank", "") or ""
+    )
+
+    clean_state["last_processed_date"] = str(
+        state.get("last_processed_date", "") or ""
+    )
+
+    clean_state["last_action"] = str(
+        state.get("last_action", "UNKNOWN")
+        or "UNKNOWN"
+    )
+
+    try:
+        clean_state["pending_count"] = max(
+            0,
+            int(
+                state.get(
+                    "pending_count",
+                    0,
+                )
+                or 0
+            ),
+        )
+    except Exception:
+        clean_state["pending_count"] = 0
+
+    for key in [
+        "accepted_target_weights",
+        "last_output_target_weights",
+    ]:
+
+        source = state.get(
+            key,
+            {},
+        )
+
+        if not isinstance(source, dict):
+            source = {}
+
+        clean_weights: Dict[str, float] = {}
+
+        for sector, value in source.items():
+
+            try:
+                weight = float(value)
+            except (TypeError, ValueError):
+                continue
+
+            if pd.isna(weight):
+                continue
+
+            clean_weights[str(sector)] = round(
+                weight,
+                4,
+            )
+
+        clean_state[key] = clean_weights
+
+    tmp_path = f"{filepath}.tmp"
+
+    try:
+        with open(
+            tmp_path,
+            "w",
+            encoding="utf-8",
+        ) as f:
+
+            json.dump(
+                clean_state,
+                f,
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+
+            f.flush()
+            os.fsync(
+                f.fileno()
+            )
+
+        os.replace(
+            tmp_path,
+            filepath,
+        )
+
+    finally:
+
+        if os.path.exists(tmp_path):
+
+            try:
+                os.remove(
+                    tmp_path
+                )
+            except Exception:
+                pass
+
+
+def clear_filter18_rank_state(
+    filepath: str = FILTER18_RANK_STATE_PATH,
+) -> None:
+    """
+    운영상 rollback / reset 용도.
+
+    Production 로직에서는 자동 호출하지 않는다.
+    명시적인 운영 판단이 있을 때만 사용.
+    """
+
+    if os.path.exists(filepath):
+        os.remove(filepath)
 
 
 def save_paper_portfolio(
