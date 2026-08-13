@@ -6829,6 +6829,316 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     participation_quality_score = alloc_result.get("participation_quality_score", 0)
     participation_mode = alloc_result.get("participation_mode", "BALANCED")
 
+    # ========================================================
+    # Filter18 Rank Persistence 3D
+    #
+    # Production candidate validated in research:
+    # - normal days: changed sector rank must persist 3 trading days
+    # - deleveraging: ALWAYS bypass persistence immediately
+    # - existing 2% / 5% rebalance threshold remains downstream
+    #
+    # IMPORTANT:
+    # State is staged here but committed only after portfolio
+    # persistence succeeds later in the execution path.
+    # ========================================================
+
+    FILTER18_RANK_PERSISTENCE_ENABLED = True
+    FILTER18_RANK_CONFIRM_DAYS = 3
+
+    raw_target_weights = dict(weights)
+
+    # Research rank contract:
+    # positive sector score, descending by score then sector name.
+    _rank_rows = []
+
+    for _sector, _score in score.items():
+        try:
+            _score_float = float(_score)
+        except (TypeError, ValueError):
+            continue
+
+        if _score_float > 0:
+            _rank_rows.append(
+                (_sector, _score_float)
+            )
+
+    _rank_rows.sort(
+        key=lambda item: (
+            -item[1],
+            item[0],
+        )
+    )
+
+    raw_rank = "|".join(
+        sector
+        for sector, _
+        in _rank_rows
+    )
+
+    rank_state_next = None
+    rank_action = "DISABLED"
+    accepted_rank = raw_rank
+    pending_rank = ""
+    pending_count = 0
+
+    if FILTER18_RANK_PERSISTENCE_ENABLED:
+
+        try:
+            from portfolio.save_portfolio import (
+                load_filter18_rank_state,
+            )
+
+            rank_state = (
+                load_filter18_rank_state()
+                or {}
+            )
+
+        except Exception:
+            rank_state = {}
+
+        accepted_rank = str(
+            rank_state.get(
+                "accepted_rank",
+                "",
+            )
+            or ""
+        )
+
+        accepted_target_weights = (
+            rank_state.get(
+                "accepted_target_weights",
+                {},
+            )
+            or {}
+        )
+
+        if not isinstance(
+            accepted_target_weights,
+            dict,
+        ):
+            accepted_target_weights = {}
+
+        pending_rank = str(
+            rank_state.get(
+                "pending_rank",
+                "",
+            )
+            or ""
+        )
+
+        try:
+            pending_count = int(
+                rank_state.get(
+                    "pending_count",
+                    0,
+                )
+                or 0
+            )
+        except Exception:
+            pending_count = 0
+
+        last_processed_date = str(
+            rank_state.get(
+                "last_processed_date",
+                "",
+            )
+            or ""
+        )
+
+        today_rank_date = (
+            pd.Timestamp.now(
+                tz="Asia/Seoul"
+            )
+            .strftime("%Y-%m-%d")
+        )
+
+        # ----------------------------------------------------
+        # SAFETY OVERRIDE
+        # ----------------------------------------------------
+
+        # Research contract:
+        # first-ever state is reported as INITIAL_ACCEPT even
+        # when deleveraging is active. Execution safety remains
+        # unchanged: raw defensive target is accepted immediately
+        # and rebalance threshold is still bypassed downstream.
+        rank_state_was_uninitialized = not accepted_rank
+
+        if deleveraging_required:
+
+            accepted_rank = raw_rank
+            accepted_target_weights = dict(
+                raw_target_weights
+            )
+
+            pending_rank = ""
+            pending_count = 0
+
+            weights = dict(
+                raw_target_weights
+            )
+
+            rank_action = (
+                "INITIAL_ACCEPT"
+                if rank_state_was_uninitialized
+                else "FORCED_DELEVERAGE_ACCEPT"
+            )
+
+        # ----------------------------------------------------
+        # First initialization
+        # ----------------------------------------------------
+
+        elif not accepted_rank:
+
+            accepted_rank = raw_rank
+            accepted_target_weights = dict(
+                raw_target_weights
+            )
+
+            pending_rank = ""
+            pending_count = 0
+
+            weights = dict(
+                raw_target_weights
+            )
+
+            rank_action = "INITIAL_ACCEPT"
+
+        # ----------------------------------------------------
+        # Same accepted rank
+        #
+        # Rank is unchanged, so today's target weights are
+        # allowed to refresh normally.
+        # ----------------------------------------------------
+
+        elif raw_rank == accepted_rank:
+
+            accepted_target_weights = dict(
+                raw_target_weights
+            )
+
+            pending_rank = ""
+            pending_count = 0
+
+            weights = dict(
+                raw_target_weights
+            )
+
+            rank_action = (
+                "ACCEPTED_RANK_UPDATE"
+            )
+
+        # ----------------------------------------------------
+        # Rank changed
+        # ----------------------------------------------------
+
+        else:
+
+            # Same-day rerun must NOT increment confirmation.
+            same_day_rerun = (
+                last_processed_date
+                == today_rank_date
+            )
+
+            if not same_day_rerun:
+
+                if pending_rank == raw_rank:
+                    pending_count += 1
+
+                else:
+                    pending_rank = raw_rank
+                    pending_count = 1
+
+            if (
+                pending_rank == raw_rank
+                and pending_count
+                >= FILTER18_RANK_CONFIRM_DAYS
+            ):
+
+                accepted_rank = raw_rank
+                accepted_target_weights = dict(
+                    raw_target_weights
+                )
+
+                pending_rank = ""
+                pending_count = 0
+
+                weights = dict(
+                    raw_target_weights
+                )
+
+                rank_action = (
+                    "RANK_CONFIRMED"
+                )
+
+            else:
+
+                # Until confirmation, preserve the last
+                # accepted target portfolio.
+                weights = {
+                    str(sector): float(weight)
+                    for sector, weight
+                    in accepted_target_weights.items()
+                }
+
+                rank_action = (
+                    "RANK_CHANGE_SUPPRESSED"
+                )
+
+        cash_weight = round(
+            100.0
+            - sum(weights.values()),
+            1,
+        )
+
+        rank_state_next = {
+            "accepted_rank":
+                accepted_rank,
+
+            "accepted_target_weights":
+                dict(
+                    accepted_target_weights
+                ),
+
+            "pending_rank":
+                pending_rank,
+
+            "pending_count":
+                pending_count,
+
+            "last_processed_date":
+                today_rank_date,
+
+            "last_output_target_weights":
+                dict(weights),
+
+            "last_action":
+                rank_action,
+        }
+
+    # --------------------------------------------------------
+    # Filter18 audit lineage
+    # --------------------------------------------------------
+
+    market_data[
+        "FILTER18_RAW_RANK"
+    ] = raw_rank
+
+    market_data[
+        "FILTER18_ACCEPTED_RANK"
+    ] = accepted_rank
+
+    market_data[
+        "FILTER18_PENDING_RANK"
+    ] = pending_rank
+
+    market_data[
+        "FILTER18_PENDING_COUNT"
+    ] = pending_count
+
+    market_data[
+        "FILTER18_RANK_ACTION"
+    ] = rank_action
+
     # -------------------------
     # Rebalancing Threshold
     # -------------------------
@@ -7052,6 +7362,28 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             cash_weight=cash_weight,
             exposure=final_exposure,
         )
+
+        # --------------------------------------------------
+        # Filter18 Rank Persistence State Commit
+        #
+        # Commit ONLY after portfolio persistence succeeds.
+        # A failed portfolio save must never advance Rank3D.
+        # --------------------------------------------------
+        if rank_state_next is not None:
+            try:
+                from portfolio.save_portfolio import (
+                    save_filter18_rank_state,
+                )
+
+                save_filter18_rank_state(
+                    rank_state_next
+                )
+
+            except Exception as rank_state_error:
+                print(
+                    "⚠️ Filter18 rank state save failed: "
+                    f"{rank_state_error}"
+                )
     
     except Exception as e:
         print(f"⚠️ Portfolio save failed: {e}")

@@ -1,0 +1,37 @@
+# FILTER18 RANK3D FINAL PRODUCTION GATE
+
+## Lineage / Parity
+Canonical Filter13 rows : 4,645
+Canonical parity fails  : 0
+Canonical max error     : 0.0000000000
+Filter18 source parity  : PASS
+Rank3D semantic parity  : PASS
+
+## Economic Comparison
+
+   scenario  annualized_turnover  total_cost_pct  gross_cagr  net_cagr    net_mdd  net_volatility  net_sharpe  turnover_reduction_vs_baseline  net_cagr_delta  net_mdd_delta  net_sharpe_delta
+BASELINE_1D            50.538071        46.57725    2.580804  0.021414 -12.937895        4.410462    0.026945                        0.000000        0.000000       0.000000          0.000000
+ PERSIST_3D            22.705444        20.92595    2.022266  0.870686  -8.918896        3.474438    0.266899                        0.550726        0.849272       4.018999          0.239954
+
+## Production Gates
+
+canonical_filter13_parity     : PASS
+filter18_source_parity        : PASS
+filter18_semantic_parity      : PASS
+turnover_reduction            : PASS
+net_cagr_improvement          : PASS
+net_sharpe_improvement        : PASS
+mdd_not_worse                 : PASS
+
+Turnover reduction : 55.07%
+Net CAGR delta      : +0.849272%p
+Net Sharpe delta    : +0.239954
+Net MDD delta       : +4.018999%p
+
+FINAL STATUS: PASS
+
+PRODUCTION DECISION:
+Filter13 = CURRENT / NO CHANGE
+Filter15 = CURRENT / NO CHANGE
+Filter18 = RANK PERSISTENCE 3D APPROVED
+Macro persistence = REJECTED / NOT USED

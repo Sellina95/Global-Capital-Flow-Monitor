@@ -1,0 +1,13 @@
+# FILTER18 RANK3D EXACT SEMANTIC PARITY
+
+Rows                     : 4,645
+Sector count             : 10
+
+Executed-weight fail days: 0
+Max weight abs error     : 0.0000000000
+Accepted-rank fail days  : 0
+Pending-rank fail days   : 0
+Pending-count fail days  : 0
+Action fail days         : 0
+
+FINAL STATUS: PASS
