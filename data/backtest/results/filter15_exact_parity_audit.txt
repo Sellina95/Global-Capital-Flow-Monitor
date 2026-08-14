@@ -1,0 +1,25 @@
+# FILTER15 EXACT PARITY AUDIT
+
+Rows                 : 4817
+PASS                 : 4624
+EXPECTED WARMUP      : 21
+NON EXECUTABLE       : 172
+PARITY FAIL          : 0
+CONTRACT FAIL        : 0
+OUTPUT FAIL          : 0
+ERROR                : 0
+
+Mature Exact Mismatch: 0
+Max Absolute Error   : 0.0
+
+Production Filter15:
+filters.strategist_filters.volatility_controlled_exposure_filter
+
+Independent Oracle:
+audit_filter15_exact_parity.py
+
+Production source modified: NO
+Future-data backfill: NO
+
+RESULT: FILTER15 EXACT PARITY PASS
+FILTER15 PARITY: CLOSED

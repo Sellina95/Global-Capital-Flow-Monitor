@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+import contextlib
+import io
 import pandas as pd
+from filters.leadership_breadth import leadership_breadth_filter
 
 import filters.strategist_filters as sf
 
@@ -292,6 +295,112 @@ def build_historical_liquidity_level_contract(
 
     return market_data
 
+def build_historical_pos_slope(
+    market_data: dict[str, Any],
+    panel: pd.DataFrame,
+    row_index: int,
+) -> dict[str, Any]:
+    """
+    Historical/PIT equivalent of Production get_recent_pos_slope().
+
+    Production:
+        last 3 non-null SP500_POS_Z observations
+        slope = (latest - third_latest) / 2
+
+    Backtest:
+        master_panel의 positioning__SP500_POS_Z를 사용한다.
+        현재 row_index까지의 데이터만 사용하므로
+        미래 데이터는 포함하지 않는다.
+    """
+
+    # master_panel의 실제 positioning column
+    pos_col = "positioning__SP500_POS_Z"
+
+    # Column 자체가 없는 경우에만 Production-style fallback
+    if pos_col not in panel.columns:
+        market_data["POS_SLOPE"] = 0.0
+        market_data["_POS_SLOPE_SOURCE"] = "MISSING_COLUMN_FALLBACK"
+        return market_data
+
+    # 현재 historical 시점까지만 사용 (PIT)
+    history = pd.to_numeric(
+        panel.loc[:row_index, pos_col],
+        errors="coerce",
+    ).dropna()
+
+    # Production get_recent_pos_slope()와 동일하게
+    # 최근 최대 3개 observation 사용
+    vals = history.tail(3).tolist()
+
+    if len(vals) >= 3:
+        slope = float(
+            (vals[-1] - vals[-3]) / 2.0
+        )
+    elif len(vals) == 2:
+        slope = float(
+            vals[-1] - vals[-2]
+        )
+    else:
+        slope = 0.0
+
+    market_data["POS_SLOPE"] = slope
+
+    # Audit metadata
+    market_data["_POS_SLOPE_SOURCE"] = (
+        "HISTORICAL_PIT_POSITIONING_SP500_POS_Z"
+    )
+
+    market_data["_POS_SLOPE_HISTORY_COUNT"] = int(
+        len(history)
+    )
+
+    return market_data
+
+
+def build_historical_cross_asset_pct_history(
+    market_data: dict[str, Any],
+    panel: pd.DataFrame,
+    row_index: int,
+) -> dict[str, Any]:
+    """
+    Historical/PIT history contract for Production
+    build_cross_asset_tape().
+
+    Production _compute_zscore_strength() expects percentage-change
+    histories for US10Y, DXY, VIX, and WTI.
+
+    Only observations available through row_index are used.
+    """
+
+    assets = ("US10Y", "DXY", "VIX", "WTI")
+
+    for asset in assets:
+        history_key = f"{asset}_PCT_HISTORY"
+
+        if asset not in panel.columns:
+            market_data[history_key] = []
+            continue
+
+        levels = pd.to_numeric(
+            panel.loc[:row_index, asset],
+            errors="coerce",
+        )
+
+        pct_history = (
+            levels.pct_change(fill_method=None)
+            .mul(100.0)
+            .dropna()
+            .tolist()
+        )
+
+        market_data[history_key] = pct_history
+
+    market_data["_CROSS_ASSET_HISTORY_SOURCE"] = (
+        "HISTORICAL_PIT_MASTER_PANEL"
+    )
+
+    return market_data
+
 
 # ============================================================
 # Production Pre-Filter13 Execution Adapter
@@ -378,7 +487,84 @@ def prepare_filter13_execution_state(
     build_historical_liquidity_level_contract(
         market_data
     )
+    build_historical_pos_slope(
+        market_data=market_data,
+        panel=panel,
+        row_index=row_index,
+    )
 
+    build_historical_cross_asset_pct_history(
+        market_data=market_data,
+        panel=panel,
+        row_index=row_index,
+    )
+    # --------------------------------------------------
+    # Historical/PIT Leadership Breadth Contract
+    #
+    # Production:
+    # attach_leadership_layer()
+    #     -> leadership_breadth_filter()
+    #
+    # Backtest:
+    # master_panel의 현재 row와 직전 row만 사용해
+    # 동일 LEAD_* contract를 만든 뒤
+    # Production scoring function을 그대로 실행한다.
+    # --------------------------------------------------
+
+    leadership_mapping = {
+        "QQQ": "LEAD_QQQ",
+        "SPY": "LEAD_SPY",
+        "SMH": "LEAD_SMH",
+        "SOXX": "LEAD_SOXX",
+        "IWM": "LEAD_IWM",
+        "XLK": "LEAD_XLK",
+        "XLF": "LEAD_XLF",
+        "XLI": "LEAD_XLI",
+        "XLY": "LEAD_XLY",
+    }
+
+    current_row = panel.iloc[row_index]
+    previous_row = (
+        panel.iloc[row_index - 1]
+        if row_index > 0
+        else None
+    )
+
+    for source_col, target_key in leadership_mapping.items():
+
+        current_value = (
+            current_row.get(source_col)
+            if source_col in panel.columns
+            else None
+        )
+
+        previous_value = (
+            previous_row.get(source_col)
+            if (
+                previous_row is not None
+                and source_col in panel.columns
+            )
+            else None
+        )
+
+        market_data[target_key] = (
+            float(current_value)
+            if pd.notna(current_value)
+            else 0.0
+        )
+
+        market_data[f"{target_key}_PREV"] = (
+            float(previous_value)
+            if pd.notna(previous_value)
+            else 0.0
+        )
+
+    market_data["_LEADERSHIP_SOURCE"] = (
+        "HISTORICAL_PIT_MASTER_PANEL"
+    )
+
+    with contextlib.redirect_stdout(io.StringIO()):
+        leadership_breadth_filter(market_data)
     # --------------------------------------------------
     # Production Pre-13 execution order
     # --------------------------------------------------

@@ -1,0 +1,38 @@
+# FILTER15 EXPOSURE ATTRIBUTION AUDIT
+
+Executable Rows        : 4645
+PASS                   : 4645
+PARITY FAIL            : 0
+RECONCILIATION FAIL    : 0
+OUTPUT FAIL            : 0
+ERROR                  : 0
+
+Max Parity Error       : 0.0
+Max Reconciliation Err : 3.552713678800501e-15
+
+Average Filter13 Budget: 44.8235
+Average Filter15 Exp.  : 31.4753
+Average 13->15 Change  : 13.3481
+Total Signed Reduction : 62002.0000
+
+Hard Deadman Days      : 1391
+Risk Compression Days  : 492
+
+Attribution:
+- HARD_DEADMAN: reduction_days=1391, increase_days=0, total_reduction=20580.6016, total_increase=-0.0000, net=20580.6016
+- VIX_REGIME: reduction_days=2154, increase_days=1382, total_reduction=17294.0443, total_increase=4175.0675, net=13118.9768
+- CREDIT_LEVEL: reduction_days=1716, increase_days=0, total_reduction=11812.3929, total_increase=-0.0000, net=11812.3929
+- POSITIONING: reduction_days=1953, increase_days=0, total_reduction=9222.5160, total_increase=-0.0000, net=9222.5160
+- CTA: reduction_days=1673, increase_days=0, total_reduction=4998.0439, total_increase=-0.0000, net=4998.0439
+- VIX_CONVEXITY: reduction_days=551, increase_days=0, total_reduction=2124.2500, total_increase=-0.0000, net=2124.2500
+- ROUNDING_CLAMP: reduction_days=1523, increase_days=1533, total_reduction=415.1568, total_increase=372.5982, net=42.5586
+- CREDIT_CHANGE: reduction_days=72, increase_days=0, total_reduction=102.6602, total_increase=-0.0000, net=102.6602
+- LEADERSHIP_OFFSET: reduction_days=0, increase_days=0, total_reduction=0.0000, total_increase=-0.0000, net=0.0000
+- GAMMA: reduction_days=0, increase_days=0, total_reduction=0.0000, total_increase=-0.0000, net=0.0000
+
+Production source modified: NO
+Future-data backfill: NO
+Attribution order: Production execution order
+
+RESULT: FILTER15 ATTRIBUTION AUDIT PASS
+FILTER15 ATTRIBUTION: VALIDATED

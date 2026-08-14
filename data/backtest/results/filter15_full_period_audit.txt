@@ -1,0 +1,29 @@
+========================================================================
+FILTER15 FULL-PERIOD PRODUCTION EXECUTION AUDIT
+========================================================================
+
+Rows                 : 4645
+PASS                 : 4624
+EXPECTED WARMUP      : 21
+FAIL                 : 0
+ERROR                : 0
+
+Missing Exposure      : 0
+Missing Contract Days : 0
+Exposure < 0          : 0
+Exposure > 100        : 0
+
+HY_OAS_STATUS         : EXPECTED_PRODUCTION_FALLBACK
+
+Production Filter15 function:
+filters.strategist_filters.volatility_controlled_exposure_filter
+
+Production source modified: NO
+
+RESULT: FULL-PERIOD EXECUTION PASS
+
+NOTE:
+PASS proves that the historical Backtest execution chain
+can supply the required Filter15 contract and execute the
+Production Filter15 function across the full period.
+It does not by itself prove independent output parity.
