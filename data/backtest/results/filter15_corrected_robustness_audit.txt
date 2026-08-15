@@ -1,0 +1,86 @@
+==============================================================================
+FILTER15 CORRECTED DAILY-BASELINE ROBUSTNESS AUDIT
+==============================================================================
+
+Production Modified         : NO
+New Indicator               : NO
+New Threshold               : NO
+Parameter Optimization      : NO
+Forward Fill                : NO
+Contract                    : DAILY BASELINE x 25/50/100
+
+===== RECONCILIATION =====
+Max Return Error            : 0.000000000000
+Max MDD Error               : 0.000000000000
+Reconciliation              : PASS
+
+===== OVERALL =====
+Episodes                    : 25
+Recovery Completed          : 12
+Recovery Incomplete         : 13
+Positive / Negative / Flat  : 16 / 9 / 0
+Total Episode Return        : 4.382%
+Average Episode Return      : 0.175%
+Median Episode Return       : 0.031%
+Worst Episode Return        : -1.331%
+Worst MDD                   : -7.498%
+Worst MDD Episode           : 1
+
+===== EXCLUDING 2008 / EPISODE 1 =====
+Episodes                    : 24
+Total Episode Return        : 5.713%
+Average Episode Return      : 0.238%
+Worst MDD                   : -1.411%
+Direction Positive          : True
+
+===== LEAVE-ONE-EPISODE-OUT =====
+Positive Conclusion Survives: 100.00%
+Worst Remaining Total       : 3.442%
+LOO Gate                    : PASS
+
+===== ERA ROBUSTNESS =====
+      era  episodes  completed_episodes  positive_episodes  negative_episodes  total_episode_return  avg_episode_return  median_episode_return  worst_episode_return  worst_mdd  avg_exposure
+2008-2010         6                   3                  4                  2              0.000795            0.000132               0.000284             -0.013308  -0.074978      7.354394
+2011-2013         4                   3                  4                  0              0.022120            0.005530               0.006204              0.000306  -0.008195      9.776403
+2014-2016         5                   3                  4                  1              0.019740            0.003948               0.003231             -0.000075  -0.008778     10.164823
+2020-2021         7                   3                  4                  3              0.002201            0.000314               0.000188             -0.001416  -0.002083      6.579440
+2022-2023         3                   0                  0                  3             -0.001034           -0.000345              -0.000354             -0.000433   0.000000      4.869000
+
+Positive Era Rate           : 80.00%
+Era Gate                    : PASS
+
+===== COMPLETION STATE =====
+        state_group  episodes  positive_episodes  negative_episodes  total_episode_return  avg_episode_return  median_episode_return  worst_episode_return   avg_mdd  worst_mdd  avg_exposure  avg_rebrake_days
+ RECOVERY_COMPLETED        12                  9                  3              0.042699            0.003558               0.004911             -0.013308 -0.010307  -0.074978     11.468951         13.000000
+RECOVERY_INCOMPLETE        13                  7                  6              0.001123            0.000086               0.000084             -0.000433 -0.000234  -0.001743      4.391674          0.769231
+
+===== WORST TAIL EPISODES =====
+ episode_id start_signal_date          diagnosis  recovery_completed  total_return       mdd  avg_exposure  full_days  rebrake_days  stage1_days  stage2_days
+          1        2008-01-10        TIMING_RISK                True     -0.013308 -0.074978     11.483487        431            37           14            6
+          6        2010-05-10 SUCCESSFUL_RELEASE                True      0.005301 -0.014106     11.266114         81            19            5            2
+         35        2015-11-17 SUCCESSFUL_RELEASE                True      0.007807 -0.008778     12.275544         82            29           11            5
+         16        2011-10-14 SUCCESSFUL_RELEASE                True      0.007886 -0.008195     10.698450         54            27            5            2
+         20        2012-05-10 SUCCESSFUL_RELEASE                True      0.009407 -0.007255     11.111627         33            17            7            2
+          2        2010-01-13 SUCCESSFUL_RELEASE                True      0.008465 -0.003556      8.346763         18            20            4            1
+         50        2020-05-08 SUCCESSFUL_RELEASE                True      0.002799 -0.002083      7.410650          6             5            3            2
+         33        2015-10-05 SUCCESSFUL_RELEASE                True      0.008082 -0.001924     16.366071         12             0            1            1
+         68        2020-09-30  AMBIGUOUS_FAILURE               False     -0.000150 -0.001743      5.587980          0             1            2            2
+         53        2020-07-01 SUCCESSFUL_RELEASE                True     -0.000076 -0.001650     12.272750          6             0            1            1
+
+===== CONCENTRATION =====
+Largest Absolute Return Contribution: 17.42%
+Concentration Warning       : False
+Tail Warning (MDD <= -5%)   : True
+
+===== INSTITUTIONAL GATE DECISION =====
+STATUS                      : PASS_WITH_TAIL_WARNING
+
+해석:
+- Corrected daily-baseline contract의 aggregate 방향은 유지된다.
+- 2008 episode를 제거해도 방향이 유지되고 LOO도 통과한다.
+- 다만 worst-tail이 충분히 크므로 Production 승격 전에
+  해당 episode의 state/exposure path를 별도로 trace해야 한다.
+- 여기서 25/50/100 숫자를 다시 최적화하지 않는다.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: ACTUAL-SOURCE EXACT PARITY + WORST-EPISODE TRACE

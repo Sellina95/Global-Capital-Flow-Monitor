@@ -1,0 +1,78 @@
+==============================================================================
+FILTER15 ACTUAL-SOURCE EXACT PARITY + WORST EPISODE TRACE
+==============================================================================
+
+Production Main Modified     : NO
+Source Under Test            : current-worktree filters/strategist_filters.py
+Simulator Rewrite            : NO
+Signal Timing                : t only
+Forward Fill                 : NO
+State Transition             : one actual call per executable signal date
+Canonical                    : corrected daily-baseline 25/50/100
+
+===== ACTUAL-SOURCE PARITY =====
+Rows Checked                 : 1002
+Exact Match Rows             : 171
+Parity Fail Rows             : 831
+Max Exposure Error           : 22.050000000000
+Episodes Checked             : 25
+Episodes PASS                : 0
+PARITY                       : FAIL
+
+===== EPISODE 1 / 2008 TAIL TRACE =====
+Rows                         : 488
+Canonical MDD                : -7.498%
+Actual-Source MDD            : -1.632%
+MDD Reconciliation           : FAIL
+Worst Drawdown Signal Date   : 2009-03-06 00:00:00
+State at Worst Drawdown      : POST_RECOVERY_NORMAL
+Exposure at Worst Drawdown   : 10.8
+
+===== FIRST PARITY FAILURES =====
+ episode_id signal_date  daily_filter15_baseline  corrected_candidate  actual_source_candidate  corrected_streak  actual_source_streak_out      corrected_state actual_source_state  corrected_exposure  actual_source_exposure  exposure_error  pit_hy_oas  pit_vix
+          1  2008-01-10                  14.4000                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.6000                     4.0          0.4000        6.63    23.45
+          1  2008-01-14                  14.4000                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.6000                     4.0          0.4000        6.66    22.90
+          1  2008-01-24                  14.4000                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.6000                     4.0          0.4000        7.12    27.78
+          1  2008-01-25                  14.4000                 True                     True                 2                         2     RECOVERY_STAGE_2    RECOVERY_STAGE_2              7.2000                     7.0          0.2000        6.99    29.08
+          1  2008-01-29                  14.4000                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.6000                     4.0          0.4000        6.85    27.32
+          1  2008-01-30                  14.4000                 True                     True                 2                         2     RECOVERY_STAGE_2    RECOVERY_STAGE_2              7.2000                     7.0          0.2000        6.78    27.62
+          1  2008-02-04                  11.2608                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              2.8152                     3.0          0.1848        6.92    25.99
+          1  2008-02-14                  14.4000                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.6000                     4.0          0.4000        7.25    25.54
+          1  2008-02-19                  14.4000                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.6000                     4.0          0.4000        7.25    25.59
+          1  2008-02-25                  14.4000                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.6000                     4.0          0.4000        7.21    23.03
+          1  2008-02-26                  14.4000                 True                     True                 2                         2     RECOVERY_STAGE_2    RECOVERY_STAGE_2              7.2000                     7.0          0.2000        7.17    21.90
+          1  2008-03-05                  14.4000                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.6000                     4.0          0.4000        7.68    24.60
+          1  2008-03-11                  15.1200                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.7800                     4.0          0.2200        7.95    26.36
+          1  2008-03-18                  15.1200                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.7800                     4.0          0.2200        8.39    25.79
+          1  2008-03-19                  10.4040                 True                     True                 2                         2     RECOVERY_STAGE_2    RECOVERY_STAGE_2              5.2020                     5.0          0.2020        8.37    29.84
+          1  2008-03-24                  14.4000                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.6000                     4.0          0.4000        8.07    25.73
+          1  2008-03-25                  14.4000                 True                     True                 2                         2     RECOVERY_STAGE_2    RECOVERY_STAGE_2              7.2000                     7.0          0.2000        7.97    25.72
+          1  2008-03-27                  14.4000                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.6000                     4.0          0.4000        7.94    25.88
+          1  2008-04-01                  15.1200                 True                     True                 1                         1     RECOVERY_STAGE_1    RECOVERY_STAGE_1              3.7800                     4.0          0.2200        8.02    22.68
+          1  2008-04-02                  14.4000                 True                     True                 2                         2     RECOVERY_STAGE_2    RECOVERY_STAGE_2              7.2000                     7.0          0.2000        7.86    23.43
+          1  2008-04-03                  14.4000                 True                     True                 3                         0    RECOVERY_COMPLETE              NORMAL             14.4000                    14.0          0.4000        7.78    23.21
+          1  2008-04-04                  14.4000                 True                     True                 3                         1 POST_RECOVERY_NORMAL    RECOVERY_STAGE_1             14.4000                     4.0         10.4000        7.76    22.45
+          1  2008-04-07                  14.4000                 True                     True                 3                         2 POST_RECOVERY_NORMAL    RECOVERY_STAGE_2             14.4000                     7.0          7.4000        7.54    22.42
+          1  2008-04-08                  14.4000                False                    False                 3                         0 POST_RECOVERY_NORMAL    RECOVERY_REBRAKE             14.4000                     0.0         14.4000        7.58    22.36
+          1  2008-04-09                  14.4000                False                    False                 3                         0 POST_RECOVERY_NORMAL    RECOVERY_REBRAKE             14.4000                     0.0         14.4000        7.71    22.81
+          1  2008-04-10                  14.4000                 True                     True                 3                         1 POST_RECOVERY_NORMAL    RECOVERY_STAGE_1             14.4000                     4.0         10.4000        7.70    21.98
+          1  2008-04-11                  11.2608                False                    False                 3                         0 POST_RECOVERY_NORMAL    RECOVERY_REBRAKE             11.2608                     0.0         11.2608        7.76    23.46
+          1  2008-04-14                  14.4000                 True                     True                 3                         1 POST_RECOVERY_NORMAL    RECOVERY_STAGE_1             14.4000                     4.0         10.4000        7.74    23.82
+          1  2008-04-15                  14.4000                 True                     True                 3                         2 POST_RECOVERY_NORMAL    RECOVERY_STAGE_2             14.4000                     7.0          7.4000        7.65    22.78
+          1  2008-04-16                  15.1200                 True                     True                 3                         0 POST_RECOVERY_NORMAL              NORMAL             15.1200                    15.0          0.1200        7.46    20.53
+
+===== FINAL GATE =====
+STATUS                       : FAIL
+
+판정:
+- 현재 actual source와 corrected canonical 사이에 contract 차이가 남아 있다.
+- Production behavior를 추가 수정하지 말고 최초 mismatch를 진단한다.
+- 특히 candidate/state/streak/exposure 중 최초로 갈라지는 열을 확인한다.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: DIAGNOSE FIRST ACTUAL-SOURCE MISMATCH
+
+Saved: /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/filter15_actual_source_parity_daily.csv
+Saved: /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/filter15_actual_source_parity_summary.csv
+Saved: /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/filter15_actual_source_episode1_tail_trace.csv
+Saved: /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/filter15_actual_source_parity_and_tail_trace_audit.txt

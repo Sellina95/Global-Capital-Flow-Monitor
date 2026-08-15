@@ -1,0 +1,2 @@
+rows_checked,exact_match_rows,parity_fail_rows,max_exposure_error,episodes_checked,episodes_pass,episode1_canonical_mdd,episode1_actual_source_mdd,episode1_mdd_reconciles,parity_pass,final_pass
+1002,171,831,22.05,25,0,-0.07497823657125735,-0.01632038182455464,False,False,False

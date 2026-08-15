@@ -1,0 +1,2 @@
+contract,episodes,completed_episodes,positive_episodes,negative_episodes,total_episode_return,avg_episode_return,median_episode_return,avg_mdd,worst_mdd,avg_exposure,max_exposure_formula_error,completion_violation_rows,calendar_rows_skipped
+DAILY_BASELINE_25_50_100_COMPLETE,25,12,16,9,0.04382198437819007,0.0017528793751276027,0.0003061991577602008,-0.0050691808018136705,-0.07497823657125702,7.788766956930752,0.0,0,37

@@ -4856,13 +4856,95 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     confidence_multiplier = 1.00
     
     # --------------------------------------------------
-    # 7️⃣ Final Override
+    # 7️⃣ Final Override + Deadman Recovery State
     # --------------------------------------------------
-    if hard_deadman:
+    # 기존 hard_deadman trigger 계산은 변경하지 않는다.
+    # 검증된 release candidate: HY_FALLING_VIX_LT_30
+    #
+    # Contract:
+    # - 새 Deadman 최초 진입은 기존대로 0%.
+    # - 전일부터 Deadman 상태였거나 recovery 중이면,
+    #   hard_deadman이 현재도 True여도 recovery candidate를 평가한다.
+    # - candidate 연속 1/2/3회 -> 25% / 50% / 100%.
+    # - candidate break -> 즉시 0% re-brake.
+
+    prev_deadman = bool(
+        market_data.get("FILTER15_PREV_DEADMAN", False)
+    )
+    recovery_active = bool(
+        market_data.get("FILTER15_RECOVERY_ACTIVE", False)
+    )
+    recovery_completed = bool(
+        market_data.get("FILTER15_RECOVERY_COMPLETED", False)
+    )
+
+    try:
+        recovery_streak = int(
+            market_data.get("FILTER15_RECOVERY_STREAK", 0) or 0
+        )
+    except Exception:
+        recovery_streak = 0
+
+    prev_hy_level = _to_float(
+        market_data.get("FILTER15_PREV_HY_OAS")
+    )
+
+    recovery_candidate = (
+        hy_level is not None
+        and prev_hy_level is not None
+        and hy_level < prev_hy_level
+        and vix_today is not None
+        and vix_today < 30
+    )
+
+    in_recovery_contract = (
+        (prev_deadman or recovery_active)
+        and not recovery_completed
+    )
+
+    if in_recovery_contract:
+        if recovery_candidate:
+            recovery_active = True
+            recovery_streak += 1
+
+            if recovery_streak == 1:
+                exposure *= 0.25
+                status = "RECOVERY_STAGE_1"
+
+            elif recovery_streak == 2:
+                exposure *= 0.50
+                status = "RECOVERY_STAGE_2"
+
+            else:
+                # 3회 연속 recovery 확인 후 정상 Filter15 exposure 복원.
+                # 동일 Deadman episode에서는 recovery contract에 재진입하지 않는다.
+                recovery_active = False
+                recovery_completed = True
+                recovery_streak = 0
+                status = (
+                    "RISK_COMPRESSION"
+                    if risk_compression
+                    else "NORMAL"
+                )
+
+        else:
+            # Recovery 조건이 깨지면 즉시 re-brake.
+            exposure = 0
+            recovery_active = True
+            recovery_streak = 0
+            status = "RECOVERY_REBRAKE"
+
+    elif hard_deadman:
+        # 새 Deadman 최초 진입은 기존 Production contract 유지.
         exposure = 0
+        recovery_active = False
+        recovery_completed = False
+        recovery_streak = 0
         status = "HARD_DEADMAN"
+
     elif risk_compression:
         status = "RISK_COMPRESSION"
+
     else:
         status = "NORMAL"
 
@@ -4871,6 +4953,13 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     market_data["RECOMMENDED_EXPOSURE"] = exposure
     market_data["PREV_EXPOSURE"] = exposure
     market_data["SEW_STATUS"] = status
+
+    # 다음 실행으로 넘길 Filter15 persistent state.
+    market_data["FILTER15_PREV_DEADMAN"] = bool(hard_deadman)
+    market_data["FILTER15_RECOVERY_ACTIVE"] = bool(recovery_active)
+    market_data["FILTER15_RECOVERY_COMPLETED"] = bool(recovery_completed)
+    market_data["FILTER15_RECOVERY_STREAK"] = int(recovery_streak)
+    market_data["FILTER15_PREV_HY_OAS"] = hy_level
     brake_drivers = _dedupe(brake_drivers)
     pos_notes = _dedupe(pos_notes)
 

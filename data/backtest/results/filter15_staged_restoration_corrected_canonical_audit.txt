@@ -1,0 +1,37 @@
+==============================================================================
+FILTER15 CORRECTED DAILY-BASELINE CANONICAL AUDIT
+==============================================================================
+
+Old Canonical Source      : filter15_staged_restoration_parameter_sensitivity_canonical_daily.csv
+Attribution Source        : filter15_exposure_attribution_daily.csv
+Daily Baseline Column    : after_credit_change
+Recovery Candidate       : reused canonical candidate
+Recovery Path            : 25% -> 50% -> 100%
+Re-brake                 : candidate break before completion -> 0%
+Completion Semantics     : once complete, remain normal
+Forward Fill             : NO
+Future Data Added        : NO
+Production Modified      : NO
+
+===== CONTRACT CHECK =====
+Episodes                  : 25
+Completed Episodes        : 12
+Calendar Rows Skipped     : 37
+Exposure Formula Max Error: 0.000000000000
+Completion Violations     : 0
+CONTRACT                  : PASS
+
+===== CORRECTED RESEARCH SUMMARY =====
+                         contract  episodes  completed_episodes  positive_episodes  negative_episodes  total_episode_return  avg_episode_return  median_episode_return   avg_mdd  worst_mdd  avg_exposure  max_exposure_formula_error  completion_violation_rows  calendar_rows_skipped
+DAILY_BASELINE_25_50_100_COMPLETE        25                  12                 16                  9              0.043822            0.001753               0.000306 -0.005069  -0.074978      7.788767                         0.0                          0                     37
+
+RESULT: CORRECTED CANONICAL BUILT
+
+IMPORTANT:
+- This does NOT approve Production.
+- Old fixed-release-exposure research economics are superseded
+  for the production-parity decision.
+- Robustness must be rerun on this corrected daily-baseline contract.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: CORRECTED ROBUSTNESS + ACTUAL-SOURCE PARITY
