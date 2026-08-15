@@ -1,0 +1,25 @@
+==============================================================================
+FILTER15 RESEARCH <-> PRODUCTION CANDIDATE EXACT PARITY v3
+==============================================================================
+
+Research Path            : RAMP_3
+Production Modified      : NO
+Future Data Added        : NO
+HY Contract              : FULL PANEL HY_t < HY_t-1
+VIX Missing              : candidate=False / RE_BRAKE
+Duplicate Date Contract  : ONE STATE TRANSITION PER EPISODE/DATE
+Staged Path              : 25% -> 50% -> 100%
+
+===== PARITY SUMMARY =====
+Rows Checked             : 4156
+Exact Match Rows         : 4156
+Parity Fail Rows         : 0
+Max Multiplier Error     : 0.000000000000
+Max Exposure Error       : 0.000000000000
+Episodes Checked         : 25
+Episodes PASS            : 25
+
+PARITY: PASS
+
+PRODUCTION DECISION: CANDIDATE PARITY APPROVED
+NEXT GATE: MINIMAL PATCH APPLICATION ON RESEARCH BRANCH + POST-PATCH REGRESSION

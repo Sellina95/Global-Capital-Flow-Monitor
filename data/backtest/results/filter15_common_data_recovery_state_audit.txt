@@ -1,0 +1,111 @@
+==============================================================================
+FILTER15 COMMON-DATA RECOVERY STATE HYPOTHESIS AUDIT
+==============================================================================
+
+Episodes              : 25
+Successful Releases   : 13
+Timing Risk           : 1
+Ambiguous Failures    : 11
+
+Production Modified   : NO
+Future-data Backfill  : NO
+New Indicator         : NO
+Missing-data Gate     : NO
+Threshold Optimization: NO
+
+===== COMMON-DATA AVAILABILITY =====
+                   field  timing_available  successful_available  common_usable
+                  HY_OAS              True                  True           True
+       HY_OAS_PCT_CHANGE              True                  True           True
+               VIX_TODAY              True                  True           True
+          VIX_PCT_CHANGE              True                  True           True
+               POS_SLOPE              True                  True           True
+       DEALER_GAMMA_BIAS              True                  True           True
+      CTA_MOMENTUM_SCORE              True                  True           True
+INSTITUTIONAL_FLOW_SCORE              True                  True           True
+         PREV_FLOW_SCORE              True                  True           True
+LEADERSHIP_BREADTH_SCORE              True                  True           True
+             RISK_BUDGET              True                  True           True
+
+Common usable fields:
+- HY_OAS
+- HY_OAS_PCT_CHANGE
+- VIX_TODAY
+- VIX_PCT_CHANGE
+- POS_SLOPE
+- DEALER_GAMMA_BIAS
+- CTA_MOMENTUM_SCORE
+- INSTITUTIONAL_FLOW_SCORE
+- PREV_FLOW_SCORE
+- LEADERSHIP_BREADTH_SCORE
+- RISK_BUDGET
+
+===== TIMING RISK / 2008 =====
+ episode_id release_date   diagnosis  common_hy  common_hy_change  common_vix  common_vix_change  common_pos_slope  common_gamma  common_cta  common_flow  common_prev_flow  common_leadership  credit_recovery_evidence  vol_recovery_evidence  market_mechanics_evidence  flow_recovery_evidence  leadership_recovery_evidence  cta_recovery_evidence  common_recovery_axes_count research_state_hint  full_incremental_return  full_incremental_mdd
+          1   2008-01-10 TIMING_RISK       6.63         -1.485884       23.45          -2.777778               0.0           1.0         0.0          6.0               6.0                2.0                      True                   True                       True                    True                          True                  False                           5         STABILIZING                -0.019289             -0.127123
+
+===== RECOVERY AXIS SEPARATION =====
+                        axis  timing_risk_pct  successful_pct  ambiguous_pct  success_minus_timing
+       cta_recovery_evidence              0.0       38.461538      72.727273             38.461538
+    credit_recovery_evidence            100.0      100.000000     100.000000              0.000000
+   market_mechanics_evidence            100.0      100.000000     100.000000              0.000000
+       vol_recovery_evidence            100.0       92.307692      27.272727             -7.692308
+      flow_recovery_evidence            100.0       92.307692      72.727273             -7.692308
+leadership_recovery_evidence            100.0       61.538462      63.636364            -38.461538
+
+===== RESEARCH STATE HINT =====
+         diagnosis   research_state_hint  episodes
+ AMBIGUOUS_FAILURE CRISIS_OR_UNCONFIRMED         8
+ AMBIGUOUS_FAILURE           STABILIZING         3
+SUCCESSFUL_RELEASE CRISIS_OR_UNCONFIRMED         1
+SUCCESSFUL_RELEASE           STABILIZING        12
+       TIMING_RISK           STABILIZING         1
+
+===== COMMON-DATA FEATURE SUMMARY =====
+                     feature             type  TIMING_RISK_mean  TIMING_RISK_median  SUCCESSFUL_RELEASE_mean  SUCCESSFUL_RELEASE_median  AMBIGUOUS_FAILURE_mean  AMBIGUOUS_FAILURE_median  timing_minus_success
+                   common_hy          NUMERIC          6.630000            6.630000                 6.459231                    6.25000                5.156364                  4.980000              0.170769
+            common_hy_change          NUMERIC         -1.485884           -1.485884                -1.316298                   -1.12000               -1.055196                 -0.813008             -0.169586
+                  common_vix          NUMERIC         23.450000           23.450000                21.565385                   19.54000               23.842727                 24.540000              1.884615
+           common_vix_change          NUMERIC         -2.777778           -2.777778                -7.960790                   -6.22510                1.484481                  3.413401              5.183012
+            common_pos_slope          NUMERIC          0.000000            0.000000                 0.090475                    0.06754                0.002145                  0.005174             -0.090475
+                common_gamma          NUMERIC          1.000000            1.000000                 1.000000                    1.00000                1.000000                  1.000000              0.000000
+                  common_cta          NUMERIC          0.000000            0.000000                 0.307692                    0.00000                0.545455                  1.000000             -0.307692
+                 common_flow          NUMERIC          6.000000            6.000000                 5.615385                    6.00000                3.818182                  5.000000              0.384615
+            common_prev_flow          NUMERIC          6.000000            6.000000                 2.923077                    2.00000                2.454545                  2.000000              3.076923
+           common_leadership          NUMERIC          2.000000            2.000000                 2.615385                    2.00000                1.545455                  3.000000             -0.615385
+          common_risk_budget          NUMERIC         20.000000           20.000000                20.000000                   20.00000               28.363636                 31.000000              0.000000
+  common_recovery_axes_count          NUMERIC          5.000000            5.000000                 4.846154                    5.00000                4.363636                  4.000000              0.153846
+         common_hy_improving BOOLEAN_PCT_TRUE        100.000000                 NaN               100.000000                        NaN              100.000000                       NaN              0.000000
+        common_vix_improving BOOLEAN_PCT_TRUE        100.000000                 NaN                92.307692                        NaN               27.272727                       NaN              7.692308
+      common_vix_below_panic BOOLEAN_PCT_TRUE        100.000000                 NaN               100.000000                        NaN              100.000000                       NaN              0.000000
+     common_pos_slope_stable BOOLEAN_PCT_TRUE        100.000000                 NaN               100.000000                        NaN              100.000000                       NaN              0.000000
+    common_gamma_nonnegative BOOLEAN_PCT_TRUE        100.000000                 NaN               100.000000                        NaN              100.000000                       NaN              0.000000
+         common_cta_positive BOOLEAN_PCT_TRUE          0.000000                 NaN                38.461538                        NaN               72.727273                       NaN            -38.461538
+        common_flow_positive BOOLEAN_PCT_TRUE        100.000000                 NaN               100.000000                        NaN               81.818182                       NaN              0.000000
+      common_flow_persistent BOOLEAN_PCT_TRUE        100.000000                 NaN                92.307692                        NaN               72.727273                       NaN              7.692308
+   common_leadership_present BOOLEAN_PCT_TRUE        100.000000                 NaN                61.538462                        NaN               63.636364                       NaN             38.461538
+    credit_recovery_evidence BOOLEAN_PCT_TRUE        100.000000                 NaN               100.000000                        NaN              100.000000                       NaN              0.000000
+       vol_recovery_evidence BOOLEAN_PCT_TRUE        100.000000                 NaN                92.307692                        NaN               27.272727                       NaN              7.692308
+   market_mechanics_evidence BOOLEAN_PCT_TRUE        100.000000                 NaN               100.000000                        NaN              100.000000                       NaN              0.000000
+      flow_recovery_evidence BOOLEAN_PCT_TRUE        100.000000                 NaN                92.307692                        NaN               72.727273                       NaN              7.692308
+leadership_recovery_evidence BOOLEAN_PCT_TRUE        100.000000                 NaN                61.538462                        NaN               63.636364                       NaN             38.461538
+       cta_recovery_evidence BOOLEAN_PCT_TRUE          0.000000                 NaN                38.461538                        NaN               72.727273                       NaN            -38.461538
+
+==============================================================================
+해석 원칙
+==============================================================================
+
+1. 2008에서 결측인 VIX_Z / SP500_POS_Z / NET_LIQ / Cross-Asset Z는 recovery gate에 사용하지 않는다.
+
+2. HY 하락과 VIX 하락은 stabilization을 의미할 수 있지만 그 자체가 exposure 복원 승인을 의미하지 않는다.
+
+3. Recovery는 Credit / Volatility / Market Mechanics / Flow / Leadership / CTA의 독립 축으로 평가한다.
+
+4. 이번 Audit의 research_state_hint는 STABILIZING 가능성을 확인하기 위한 진단 label이며 Production state가 아니다.
+
+5. RECOVERY_CONFIRMED threshold는 이번 단계에서 만들지 않는다. TIMING_RISK가 1개뿐이므로 axes_count 숫자를 고르면 2008 과적합 위험이 있다.
+
+6. 여러 독립 축에서 반복적으로 separation이 확인될 경우에만 다음 단계에서 state-machine counterfactual을 만든다.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: STATE-MACHINE COUNTERFACTUAL DESIGN

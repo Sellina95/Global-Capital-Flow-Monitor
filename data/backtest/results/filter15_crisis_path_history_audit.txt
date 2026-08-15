@@ -1,0 +1,76 @@
+==============================================================================
+FILTER15 CRISIS PATH / HISTORY AUDIT
+==============================================================================
+
+Episodes            : 25
+Successful          : 13
+Timing Risk         : 1
+Ambiguous           : 11
+
+PIT Source           : data/backtest/master_panel.csv
+Signal Date          : master_panel.signal_date
+Execution Date       : master_panel.execution_date
+HY OAS Source        : master_panel.credit__HY_OAS
+VIX Source           : master_panel.VIX
+Execution Convention : SIGNAL t -> RETURN t+1
+Future Backfill      : NO
+Production Modified  : NO
+Threshold Optimize   : NO
+
+===== TIMING RISK / 2008 PATH =====
+ episode_id release_date   diagnosis  history_hy  history_vix  preceding_crisis_run  hy_improving_streak  vix_improving_streak  dual_improving_streak  hy_peak_5  hy_norm_pct_5  vix_peak_5  vix_norm_pct_5  hy_peak_10  hy_norm_pct_10  vix_peak_10  vix_norm_pct_10  hy_peak_20  hy_norm_pct_20  vix_peak_20  vix_norm_pct_20  full_incremental_return  full_incremental_mdd
+          1   2008-01-10 TIMING_RISK        6.63    23.450001                     7                    1                     2                      1       6.73       1.485884       25.43        7.786078        6.73        1.485884        25.43         7.786078        6.73        1.485884        25.43         7.786078                -0.019289             -0.127123
+
+===== SUCCESSFUL RELEASE PATHS =====
+ episode_id release_date          diagnosis  history_hy  history_vix  preceding_crisis_run  hy_improving_streak  vix_improving_streak  dual_improving_streak  hy_peak_5  hy_norm_pct_5  vix_peak_5  vix_norm_pct_5  hy_peak_10  hy_norm_pct_10  vix_peak_10  vix_norm_pct_10  hy_peak_20  hy_norm_pct_20  vix_peak_20  vix_norm_pct_20  full_incremental_return  full_incremental_mdd
+          2   2010-01-13 SUCCESSFUL_RELEASE        6.03    17.850000                     2                    1                     1                      1       6.07       0.658979   19.059999        6.348369        6.39        5.633803    21.680000        17.666051        6.91       12.735166    22.510000        20.701909                 0.004534             -0.016257
+          6   2010-05-10 SUCCESSFUL_RELEASE        6.25    28.840000                     3                    1                     1                      1       6.47       3.400309   40.950001       29.572651        6.47        3.400309    40.950001        29.572651        6.47        3.400309    40.950001        29.572651                 0.006639             -0.025772
+         16   2011-10-14 SUCCESSFUL_RELEASE        7.89    28.240000                    52                    4                     9                      4       8.56       7.827103   33.020000       14.476077        9.10       13.296703    45.450001        37.865788        9.10       13.296703    45.450001        37.865788                 0.025885             -0.019448
+         17   2012-03-07 SUCCESSFUL_RELEASE        6.18    19.070000                     3                    1                     1                      1       6.25       1.120000   20.870001        8.624825        6.25        1.120000    20.870001         8.624825        6.35        2.677165    21.139999         9.791863                 0.002779              0.000000
+         19   2012-04-11 SUCCESSFUL_RELEASE        6.30    20.020000                     5                    1                     1                      1       6.32       0.316456   20.389999        1.814610        6.32        0.316456    20.389999         1.814610        6.32        0.316456    20.389999         1.814610                 0.004229             -0.003305
+         20   2012-05-10 SUCCESSFUL_RELEASE        6.00    18.830000                     3                    1                     1                      1       6.04       0.662252   20.080000        6.225100        6.04        0.662252    20.080000         6.225100        6.26        4.153355    20.080000         6.225100                 0.006811             -0.011784
+         33   2015-10-05 SUCCESSFUL_RELEASE        6.62    19.540001                     8                    1                     5                      1       6.83       3.074671   26.830000       27.171074        6.83        3.074671    27.629999        29.279763        6.83        3.074671    27.629999        29.279763                 0.006815             -0.002218
+         35   2015-11-17 SUCCESSFUL_RELEASE        6.19    18.840000                     6                    1                     0                      0       6.28       1.433121   20.080000        6.175298        6.28        1.433121    20.080000         6.175298        6.28        1.433121    20.080000         6.175298                 0.007812             -0.026212
+         36   2016-06-02 SUCCESSFUL_RELEASE        6.00    13.630000                     2                    1                     1                      1       6.08       1.315789   14.200000        4.014082        6.22        3.536977    15.820000        13.843234        6.53        8.116386    16.330000        16.533985                 0.000420             -0.000597
+         37   2016-06-15 SUCCESSFUL_RELEASE        6.18    20.139999                     3                    1                     2                      1       6.19       0.161551   20.969999        3.958035        6.19        0.161551    20.969999         3.958035        6.29        1.748808    20.969999         3.958035                 0.001708             -0.000745
+         38   2016-06-28 SUCCESSFUL_RELEASE        6.48    18.750000                     3                    1                     2                      1       6.57       1.369863   25.760000       27.212734        6.57        1.369863    25.760000        27.212734        6.57        1.369863    25.760000        27.212734                 0.005958             -0.001439
+         50   2020-05-08 SUCCESSFUL_RELEASE        7.52    27.980000                    52                    1                     2                      1       7.79       3.465982   35.970001       22.212959        8.02        6.234414    37.189999        24.764720        8.03        6.351183    45.410000        38.383617                 0.010693             -0.007509
+         53   2020-07-01 SUCCESSFUL_RELEASE        6.33    28.620001                    15                    2                     3                      2       6.52       2.914110   34.730000       17.592856        6.52        2.914110    35.119999        18.507968        6.52        2.914110    40.790001        29.835744                 0.005418             -0.002063
+
+===== LARGEST PATH DIFFERENCES =====
+              feature  TIMING_RISK_mean  SUCCESSFUL_RELEASE_mean  SUCCESSFUL_RELEASE_median  AMBIGUOUS_FAILURE_mean  timing_minus_success
+      vix_norm_pct_20          7.786078                19.796238                  20.701909               14.417242            -12.010161
+      vix_norm_pct_10          7.786078                17.346983                  17.666051                6.537829             -9.560905
+       vix_norm_pct_5          7.786078                13.492205                   8.624825                4.182030             -5.706128
+ preceding_crisis_run          7.000000                12.076923                   3.000000                5.545455             -5.076923
+      vix_norm_abs_20          1.980000                 6.703077                   4.660000                4.499091             -4.723077
+      vix_norm_abs_10          1.980000                 5.510769                   3.830000                1.651818             -3.530769
+       hy_norm_pct_20          1.485884                 4.737484                   3.074671                8.045097             -3.251600
+          vix_peak_20         25.430000                28.268462                  22.510000               28.341818             -2.838461
+       vix_norm_abs_5          1.980000                 4.043077                   1.800001                1.031818             -2.063077
+          history_vix         23.450001                21.565385                  19.540001               23.842727              1.884616
+       hy_norm_pct_10          1.485884                 3.319556                   2.914110                5.013645             -1.833672
+        vix_change_1d         -0.670000                -2.339231                  -1.400000                0.398182              1.669231
+          vix_peak_10         25.430000                27.076154                  21.680000               25.494545             -1.646153
+        hy_norm_pct_5          1.485884                 2.132322                   1.369863                3.636121             -0.646438
+  hy_improving_streak          1.000000                 1.307692                   1.000000                1.818182             -0.307692
+       hy_norm_abs_20          0.100000                 0.345385                   0.210000                0.448182             -0.245385
+ vix_improving_streak          2.000000                 2.230769                   1.000000                0.454545             -0.230769
+dual_improving_streak          1.000000                 1.230769                   1.000000                0.272727             -0.230769
+            hy_path_5          0.270000                 0.089231                   0.060000               -0.126364              0.180769
+           vix_path_5         -0.490000                -0.669231                  -0.330000                0.074000              0.179231
+           vix_peak_5         25.430000                25.608462                  20.969999               24.874545             -0.178461
+           history_hy          6.630000                 6.459231                   6.250000                5.156364              0.170769
+       hy_norm_abs_10          0.100000                 0.248462                   0.190000                0.270909             -0.148462
+            hy_peak_5          6.730000                 6.613077                   6.320000                5.350000              0.116923
+           hy_peak_20          6.730000                 6.804615                   6.520000                5.604545             -0.074615
+
+===== INTERPRETATION GATE =====
+1. 2008만 분리되는 숫자를 production rule로 채택하지 않는다.
+2. Successful recovery 여러 건에서 반복되는 path 특성이 있는지 본다.
+3. HY/VIX peak normalization과 improvement persistence를 우선 본다.
+4. path/history도 분리력이 약하면 recovery timing 예측보다 staged re-risking/sizing을 다음 연구 대상으로 이동한다.
+5. 본 Audit은 진단용이며 Production 변경을 승인하지 않는다.
+
+RESULT: RESEARCH DIAGNOSTIC ONLY
+NEXT GATE: PATH SEPARATION OR STAGED RE-RISKING

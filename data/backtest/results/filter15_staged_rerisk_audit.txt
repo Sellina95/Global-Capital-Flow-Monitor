@@ -1,0 +1,66 @@
+==============================================================================
+FILTER15 STAGED RE-RISKING COUNTERFACTUAL
+==============================================================================
+
+Research Question:
+Deadman 이후 즉시 FULL exposure로 복원하지 않고 초기 sizing을 낮추면 false-recovery tail risk를 줄이면서 recovery upside를 유지할 수 있는가?
+
+Release Episodes       : 25
+Production Exposure Col: actual_exposure_15
+Deadman Source         : PARITY:hard_deadman
+Release Candidate      : HY_FALLING_VIX_LT_30
+Execution              : SIGNAL t -> RETURN t+1
+Production Modified    : NO
+Future Data in Signal  : NO
+New Indicator          : NO
+New Release Threshold  : NO
+Sizing Tested          : FULL / HALF / QUARTER
+
+===== SIZING SUMMARY =====
+ sizing  multiplier  episodes  positive_episodes  negative_episodes  flat_episodes  total_incremental_return  avg_incremental_return  median_incremental_return  avg_incremental_mdd  worst_incremental_mdd  avg_rows_at_reduced_risk
+   FULL        1.00        25                 13                  3              9                  0.063578                0.002543                   0.000420            -0.010304              -0.127123                     41.56
+   HALF        0.50        25                 13                  3              9                  0.033096                0.001324                   0.000210            -0.005212              -0.064912                     41.56
+QUARTER        0.25        25                 13                  3              9                  0.016878                0.000675                   0.000105            -0.002621              -0.032792                     41.56
+
+===== TIMING RISK / 2008 =====
+ episode_id release_date  rows_released_early  sizing  multiplier  incremental_return  incremental_mdd                  measurement_source
+          1   2008-01-10                  504    FULL        1.00           -0.019289        -0.127123 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+          1   2008-01-10                  504    HALF        0.50           -0.008531        -0.064912 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+          1   2008-01-10                  504 QUARTER        0.25           -0.003983        -0.032792 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+
+===== WORST CASES =====
+ episode_id          diagnosis release_date  rows_released_early  sizing  incremental_return  incremental_mdd                  measurement_source
+          1        TIMING_RISK   2008-01-10                  504    FULL           -0.019289        -0.127123 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+          1        TIMING_RISK   2008-01-10                  504    HALF           -0.008531        -0.064912 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+          1        TIMING_RISK   2008-01-10                  504 QUARTER           -0.003983        -0.032792 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+         35 SUCCESSFUL_RELEASE   2015-11-17                  133    FULL            0.007812        -0.026212 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+          6 SUCCESSFUL_RELEASE   2010-05-10                  110    FULL            0.006639        -0.025772 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+         16 SUCCESSFUL_RELEASE   2011-10-14                   93    FULL            0.025885        -0.019448 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+          2 SUCCESSFUL_RELEASE   2010-01-13                   45    FULL            0.004534        -0.016257 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+         35 SUCCESSFUL_RELEASE   2015-11-17                  133    HALF            0.003964        -0.013153 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+          6 SUCCESSFUL_RELEASE   2010-05-10                  110    HALF            0.003406        -0.012923 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+         20 SUCCESSFUL_RELEASE   2012-05-10                   61    FULL            0.006811        -0.011784 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+         16 SUCCESSFUL_RELEASE   2011-10-14                   93    HALF            0.012937        -0.009744 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+          2 SUCCESSFUL_RELEASE   2010-01-13                   45    HALF            0.002286        -0.008148 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+         69  AMBIGUOUS_FAILURE   2020-10-13                    6    FULL           -0.006757        -0.008148 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+         50 SUCCESSFUL_RELEASE   2020-05-08                   17    FULL            0.010693        -0.007509 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+         35 SUCCESSFUL_RELEASE   2015-11-17                  133 QUARTER            0.001996        -0.006589 VALIDATED_FAILURE_ANALYSIS_ARTIFACT
+
+==============================================================================
+판정 기준
+==============================================================================
+
+1. HALF/QUARTER가 2008형 false recovery의 worst MDD를 의미 있게 줄이는지 확인한다.
+
+2. Tail risk 감소의 대가로 successful recovery의 incremental return을 얼마나 포기하는지 확인한다.
+
+3. 가장 높은 평균 수익률을 자동으로 선택하지 않는다.
+
+4. 기관 관점에서는 tail-loss 감소, recovery participation, rule simplicity와 robustness를 함께 평가한다.
+
+5. 이번 결과만으로 25%/50% sizing을 Production에 채택하지 않는다.
+
+6. 유효한 sizing이 확인되면 다음 Gate에서 단계적 exposure restoration path를 검증한다.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: STAGED RESTORATION PATH

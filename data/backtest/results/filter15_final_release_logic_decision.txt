@@ -1,0 +1,58 @@
+==============================================================================
+FILTER15 FINAL RELEASE-LOGIC DECISION
+==============================================================================
+
+Production Modified      : NO
+New Indicator            : NO
+New Threshold            : NO
+Parameter Optimization   : NO
+
+===== GATE SUMMARY =====
+                                      gate                                         status                                                                                                                                   decision
+FILTER15_PRODUCTION_PARITY_AND_ATTRIBUTION                                           PASS                                                                                                           기존 Filter15 실행/attribution 검증 유지
+                     DEADMAN_EPISODE_AUDIT                                           PASS                                                                                                Deadman trigger/release episode contract 유지
+                 RELEASE_FAILURE_DIAGNOSIS                                  PASS_RESEARCH                                                                                            즉시 full re-risking의 false-recovery tail risk 확인
+                PERSISTENCE_COUNTERFACTUAL                             INSUFFICIENT_ALONE                                                                                              단순 2~3일 confirmation만으로 crisis tail 문제 해결 안 됨
+                        STAGED_RESTORATION                                  PASS_RESEARCH                                                                                                  단계적 exposure restoration + re-brake 구조 유효
+                                ROBUSTNESS                             PASS_WITH_TRADEOFF                                                                                     2008 단일 episode 의존 아님; 일부 recovery opportunity cost 존재
+           CANONICAL_PARAMETER_SENSITIVITY                                           PASS                                                                                                                  인접 parameter에서도 구조적 방향 유지
+                       FINAL_RELEASE_LOGIC RESEARCH_VALIDATED_PRODUCTION_NOT_YET_MODIFIED Deadman 이후 즉시 full restoration보다 staged re-risking 구조를 Production 후보로 승격할 연구 근거가 충분함. 단, 특정 20/25/30/40 초기 sizing을 수익률 기준으로 최적화하여 선택하지 않음.
+
+===== CANONICAL SENSITIVITY =====
+          path  episodes  positive_episodes  negative_episodes  total_episode_return  avg_episode_return  median_episode_return   avg_mdd  worst_mdd  avg_exposure
+RAMP_20_50_100        25                 16                  9              0.019399            0.000776               0.000347 -0.002038  -0.017145      5.744285
+RAMP_25_50_100        25                 16                  9              0.016461            0.000658               0.000371 -0.002150  -0.018580      6.431138
+RAMP_30_60_100        25                 15                 10              0.013700            0.000548               0.000446 -0.002402  -0.021538      7.332965
+RAMP_40_70_100        25                 15                 10              0.008009            0.000320               0.000522 -0.002789  -0.025915      8.921645
+
+All Neighbor Paths Positive : True
+Tail Pattern Monotonic       : True
+
+===== FINAL RESEARCH DECISION =====
+Decision  : RESEARCH_VALIDATED_PRODUCTION_NOT_YET_MODIFIED
+Candidate : STAGED_RE_RISKING_STRUCTURE
+
+Deadman 이후 즉시 full restoration보다 staged re-risking 구조를 Production 후보로 승격할 연구 근거가 충분함. 단, 특정 20/25/30/40 초기 sizing을 수익률 기준으로 최적화하여 선택하지 않음.
+
+최종 연구 결론:
+
+1. Filter15 기존 Production parity / attribution 결과는 유지한다.
+
+2. Hard Deadman 자체를 제거하지 않는다.
+
+3. Deadman 해제 직후 즉시 기존 full exposure로 복원하는 방식은
+   false-recovery tail risk 때문에 개선 후보로 본다.
+
+4. Production 후보 구조는:
+   DEADMAN -> RECOVERY SIGNAL -> STAGED RE-RISKING -> FULL RESTORATION
+   그리고 recovery signal이 깨지면 RE-BRAKE 한다.
+
+5. 20/50/100이 표본상 가장 좋아 보여도 자동 선택하지 않는다.
+   이번 Gate가 승인하는 것은 'staged structure'이지 최적 숫자가 아니다.
+
+6. 실제 Production 수정 전에는 별도의 minimal production patch와
+   production-vs-research exact parity regression test가 필요하다.
+
+PRODUCTION DECISION: APPROVE STRUCTURE FOR IMPLEMENTATION CANDIDATE
+PRODUCTION CODE CHANGE: NOT YET
+NEXT GATE: MINIMAL PRODUCTION PATCH + EXACT PARITY REGRESSION

@@ -1,0 +1,187 @@
+==============================================================================
+FILTER15 SYSTEMIC CRISIS EXECUTION-STATE AUDIT
+==============================================================================
+
+Release Episodes Analysed : 25
+Successful Releases       : 13
+Timing Risk Episodes      : 1
+Ambiguous Failures        : 11
+Snapshots Missing         : 0
+Execution Errors          : 0
+
+Production Modified       : NO
+Future-data Backfill      : NO
+New Indicators Added      : NO
+New Release Rule Applied  : NO
+Threshold Optimization    : NO
+
+Execution Source:
+build_market_data
+-> prepare_filter13_execution_state
+-> Production narrative_engine_filter
+-> Filter15 pre-execution market_data snapshot
+
+===== STATE AVAILABILITY =====
+MACRO_NARRATIVE               : 0/25
+MARKET_REGIME                 : 0/25
+STRUCT_V2_STATE               : 0/25
+GAMMA_STATE                   : 0/25
+POLICY_BIAS_LINE              : 0/25
+VIX_Z                         : 24/25
+POS_SLOPE                     : 25/25
+INSTITUTIONAL_FLOW_STATE      : 0/25
+INSTITUTIONAL_FLOW_SCORE      : 25/25
+LEADERSHIP_BREADTH_SCORE      : 25/25
+
+===== TIMING RISK vs SUCCESSFUL RELEASE =====
+                   field  timing_risk_value  successful_mean  successful_median  ambiguous_mean  timing_minus_success_mean
+             RISK_BUDGET          20.000000     2.000000e+01       2.000000e+01    2.836364e+01                   0.000000
+               VIX_TODAY          23.450000     2.156538e+01       1.954000e+01    2.384273e+01                   1.884615
+          VIX_PCT_CHANGE          -2.777778    -7.960790e+00      -6.225100e+00    1.484481e+00                   5.183012
+                   VIX_Z                NaN    -9.215385e-01      -8.300000e-01    3.981818e-01                        NaN
+                  HY_OAS           6.630000     6.459231e+00       6.250000e+00    5.156364e+00                   0.170769
+       HY_OAS_PCT_CHANGE          -1.485884    -1.316298e+00      -1.120000e+00   -1.055196e+00                  -0.169586
+             SP500_POS_Z                NaN     6.666177e-01       9.161195e-01    7.701375e-01                        NaN
+               POS_SLOPE           0.000000     9.047504e-02       6.754000e-02    2.144532e-03                  -0.090475
+       DEALER_GAMMA_BIAS           1.000000     1.000000e+00       1.000000e+00    1.000000e+00                   0.000000
+      CTA_MOMENTUM_SCORE           0.000000     3.076923e-01       0.000000e+00    5.454545e-01                  -0.307692
+                 NET_LIQ                NaN     3.698028e+06       4.165081e+06    5.325331e+06                        NaN
+INSTITUTIONAL_FLOW_SCORE           6.000000     5.615385e+00       6.000000e+00    3.818182e+00                   0.384615
+         PREV_FLOW_SCORE           6.000000     2.923077e+00       2.000000e+00    2.454545e+00                   3.076923
+LEADERSHIP_BREADTH_SCORE           2.000000     2.615385e+00       2.000000e+00    1.545455e+00                  -0.615385
+     CROSS_ASSET_US10Y_Z                NaN     5.784615e-01       6.100000e-01    1.345455e-01                        NaN
+       CROSS_ASSET_DXY_Z                NaN    -3.684615e-01      -4.400000e-01    7.090909e-02                        NaN
+       CROSS_ASSET_WTI_Z                NaN     3.269231e-01       4.900000e-01   -4.272727e-02                        NaN
+
+===== EPISODE 1 / 2008 EXECUTION STATE =====
+ episode_id release_date execution_date   diagnosis  RISK_BUDGET  VIX_TODAY  VIX_PCT_CHANGE  VIX_Z  HY_OAS  HY_OAS_PCT_CHANGE HY_OAS_STATUS  SP500_POS_Z  POS_SLOPE  DEALER_GAMMA_BIAS  CTA_MOMENTUM_SCORE  NET_LIQ NET_LIQ_DIR NET_LIQ_LEVEL_BUCKET MACRO_NARRATIVE MARKET_REGIME STRUCT_V2_STATE      GAMMA_STATE                                                                                                               POLICY_BIAS_LINE INSTITUTIONAL_FLOW_STATE  INSTITUTIONAL_FLOW_SCORE PREV_FLOW_STATE  PREV_FLOW_SCORE  LEADERSHIP_BREADTH_SCORE  CROSS_ASSET_US10Y_Z  CROSS_ASSET_DXY_Z  CROSS_ASSET_WTI_Z                       POS_SLOPE_SOURCE  CROSS_ASSET_HISTORY_SOURCE   NET_LIQ_LEVEL_SOURCE  full_incremental_return  full_incremental_mdd
+          1   2008-01-10     2008-01-11 TIMING_RISK         20.0      23.45       -2.777778    NaN    6.63          -1.485884       MISSING          NaN        0.0                1.0                 0.0      NaN         N/A                  N/A   CREDIT_STRESS HARD RISK-OFF         NEUTRAL 🔴 NEGATIVE GAMMA Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.120 / FCI value=0.475 (low-frequency) / DXYΔ -0.490 / US10YΔ +0.090               ⚡ BUILDING                       6.0  TRACE_BUILDING              6.0                       2.0                  NaN                NaN                NaN HISTORICAL_PIT_POSITIONING_SP500_POS_Z HISTORICAL_PIT_MASTER_PANEL HISTORICAL_PIT_HISTORY                -0.019289             -0.127123
+
+===== CATEGORICAL STATE COMPARISON =====
+
+--- MACRO_NARRATIVE ---
+        _diagnosis MACRO_NARRATIVE  episodes
+ AMBIGUOUS_FAILURE   CREDIT_STRESS        11
+SUCCESSFUL_RELEASE   CREDIT_STRESS        13
+       TIMING_RISK   CREDIT_STRESS         1
+
+--- MARKET_REGIME ---
+        _diagnosis MARKET_REGIME  episodes
+ AMBIGUOUS_FAILURE HARD RISK-OFF        11
+SUCCESSFUL_RELEASE HARD RISK-OFF        13
+       TIMING_RISK HARD RISK-OFF         1
+
+--- STRUCT_V2_STATE ---
+        _diagnosis                         STRUCT_V2_STATE  episodes
+ AMBIGUOUS_FAILURE GLOBAL FINANCIAL TIGHTENING (글로벌 긴축 구조)         2
+ AMBIGUOUS_FAILURE                                 NEUTRAL         8
+ AMBIGUOUS_FAILURE          WEAK DEMAND + RISK-OFF (수요 둔화)         1
+SUCCESSFUL_RELEASE          COST-PUSH STRUCTURE (비용 주도 구조)         1
+SUCCESSFUL_RELEASE GLOBAL FINANCIAL TIGHTENING (글로벌 긴축 구조)         1
+SUCCESSFUL_RELEASE                                 NEUTRAL        10
+SUCCESSFUL_RELEASE          WEAK DEMAND + RISK-OFF (수요 둔화)         1
+       TIMING_RISK                                 NEUTRAL         1
+
+--- GAMMA_STATE ---
+        _diagnosis             GAMMA_STATE  episodes
+ AMBIGUOUS_FAILURE        🔴 NEGATIVE GAMMA         6
+ AMBIGUOUS_FAILURE   🟡 POSITIVE-TRANSITION         1
+ AMBIGUOUS_FAILURE            🟡 TRANSITION         1
+ AMBIGUOUS_FAILURE 🟡 VOL STRESS TRANSITION         3
+SUCCESSFUL_RELEASE        🔴 NEGATIVE GAMMA         6
+SUCCESSFUL_RELEASE   🟡 POSITIVE-TRANSITION         2
+SUCCESSFUL_RELEASE            🟡 TRANSITION         5
+       TIMING_RISK        🔴 NEGATIVE GAMMA         1
+
+--- POLICY_BIAS_LINE ---
+        _diagnosis                                                                                                                         POLICY_BIAS_LINE  episodes
+ AMBIGUOUS_FAILURE     Policy Bias: EASING (완화) (MODERATE, score=-2.0) | REAL_RATEΔ -0.010 / FCI value=-0.590 (low-frequency) / DXYΔ -0.270 / US10YΔ +0.000         1
+ AMBIGUOUS_FAILURE       Policy Bias: EASING (완화) (STRONG, score=-2.5) | REAL_RATEΔ -0.060 / FCI value=-0.160 (low-frequency) / DXYΔ -0.260 / US10YΔ -0.080         1
+ AMBIGUOUS_FAILURE          Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.010 / FCI value=-0.537 (low-frequency) / DXYΔ -0.100 / US10YΔ +0.010         1
+ AMBIGUOUS_FAILURE          Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.090 / FCI value=-0.446 (low-frequency) / DXYΔ -0.490 / US10YΔ +0.160         1
+ AMBIGUOUS_FAILURE          Policy Bias: MIXED (혼조) (WEAK, score=-0.5) | REAL_RATEΔ -0.020 / FCI value=-0.490 (low-frequency) / DXYΔ +0.460 / US10YΔ -0.050         1
+ AMBIGUOUS_FAILURE          Policy Bias: MIXED (혼조) (WEAK, score=-0.5) | REAL_RATEΔ -0.030 / FCI value=-0.170 (low-frequency) / DXYΔ +0.050 / US10YΔ -0.030         1
+ AMBIGUOUS_FAILURE          Policy Bias: MIXED (혼조) (WEAK, score=-0.5) | REAL_RATEΔ -0.040 / FCI value=-0.152 (low-frequency) / DXYΔ +0.420 / US10YΔ -0.060         1
+ AMBIGUOUS_FAILURE Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.040 / FCI value=-0.492 (low-frequency) / DXYΔ +0.000 / US10YΔ +0.030         1
+ AMBIGUOUS_FAILURE Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.040 / FCI value=-0.505 (low-frequency) / DXYΔ +0.000 / US10YΔ +0.050         1
+ AMBIGUOUS_FAILURE   Policy Bias: TIGHTENING (긴축) (STRONG, score=+2.5) | REAL_RATEΔ +0.010 / FCI value=-0.371 (low-frequency) / DXYΔ +0.250 / US10YΔ +0.020         1
+ AMBIGUOUS_FAILURE   Policy Bias: TIGHTENING (긴축) (STRONG, score=+2.5) | REAL_RATEΔ +0.030 / FCI value=-0.397 (low-frequency) / DXYΔ +0.250 / US10YΔ +0.060         1
+SUCCESSFUL_RELEASE     Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ -0.010 / FCI value=-0.417 (low-frequency) / DXYΔ -0.150 / US10YΔ +0.020         1
+SUCCESSFUL_RELEASE     Policy Bias: EASING (완화) (MODERATE, score=-1.5) | REAL_RATEΔ -0.010 / FCI value=-0.427 (low-frequency) / DXYΔ -0.110 / US10YΔ +0.040         1
+SUCCESSFUL_RELEASE     Policy Bias: EASING (완화) (MODERATE, score=-2.0) | REAL_RATEΔ -0.030 / FCI value=-0.346 (low-frequency) / DXYΔ -0.290 / US10YΔ +0.000         1
+SUCCESSFUL_RELEASE       Policy Bias: EASING (완화) (STRONG, score=-2.5) | REAL_RATEΔ -0.040 / FCI value=-0.359 (low-frequency) / DXYΔ -0.320 / US10YΔ -0.020         1
+SUCCESSFUL_RELEASE          Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.010 / FCI value=-0.070 (low-frequency) / DXYΔ -0.370 / US10YΔ +0.070         1
+SUCCESSFUL_RELEASE          Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.020 / FCI value=-0.039 (low-frequency) / DXYΔ -0.160 / US10YΔ +0.060         1
+SUCCESSFUL_RELEASE          Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.030 / FCI value=-0.270 (low-frequency) / DXYΔ -0.290 / US10YΔ +0.120         1
+SUCCESSFUL_RELEASE          Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.080 / FCI value=-0.190 (low-frequency) / DXYΔ -0.100 / US10YΔ +0.060         1
+SUCCESSFUL_RELEASE          Policy Bias: MIXED (혼조) (WEAK, score=-0.5) | REAL_RATEΔ +0.000 / FCI value=-0.386 (low-frequency) / DXYΔ -0.190 / US10YΔ +0.030         1
+SUCCESSFUL_RELEASE          Policy Bias: MIXED (혼조) (WEAK, score=-0.5) | REAL_RATEΔ -0.040 / FCI value=-0.373 (low-frequency) / DXYΔ +0.100 / US10YΔ -0.040         1
+SUCCESSFUL_RELEASE          Policy Bias: MIXED (혼조) (WEAK, score=-0.5) | REAL_RATEΔ -0.040 / FCI value=-0.465 (low-frequency) / DXYΔ +0.190 / US10YΔ -0.020         1
+SUCCESSFUL_RELEASE   Policy Bias: TIGHTENING (긴축) (STRONG, score=+2.5) | REAL_RATEΔ +0.020 / FCI value=-0.351 (low-frequency) / DXYΔ +0.030 / US10YΔ +0.020         1
+SUCCESSFUL_RELEASE   Policy Bias: TIGHTENING (긴축) (STRONG, score=+2.5) | REAL_RATEΔ +0.050 / FCI value=-0.413 (low-frequency) / DXYΔ +0.280 / US10YΔ +0.080         1
+       TIMING_RISK           Policy Bias: MIXED (혼조) (WEAK, score=+0.5) | REAL_RATEΔ +0.120 / FCI value=0.475 (low-frequency) / DXYΔ -0.490 / US10YΔ +0.090         1
+
+--- NET_LIQ_DIR ---
+        _diagnosis NET_LIQ_DIR  episodes
+ AMBIGUOUS_FAILURE        DOWN         2
+ AMBIGUOUS_FAILURE        FLAT         8
+ AMBIGUOUS_FAILURE          UP         1
+SUCCESSFUL_RELEASE        DOWN         1
+SUCCESSFUL_RELEASE        FLAT        10
+SUCCESSFUL_RELEASE          UP         2
+       TIMING_RISK         N/A         1
+
+--- NET_LIQ_LEVEL_BUCKET ---
+        _diagnosis NET_LIQ_LEVEL_BUCKET  episodes
+ AMBIGUOUS_FAILURE                 HIGH         8
+ AMBIGUOUS_FAILURE                  LOW         2
+ AMBIGUOUS_FAILURE                  MID         1
+SUCCESSFUL_RELEASE                 HIGH         9
+SUCCESSFUL_RELEASE                  LOW         2
+SUCCESSFUL_RELEASE                  MID         2
+       TIMING_RISK                  N/A         1
+
+--- INSTITUTIONAL_FLOW_STATE ---
+        _diagnosis INSTITUTIONAL_FLOW_STATE  episodes
+ AMBIGUOUS_FAILURE            NO CLEAR FLOW         2
+ AMBIGUOUS_FAILURE               ⚡ BUILDING         7
+ AMBIGUOUS_FAILURE            🌱 LIGHT TRACE         1
+ AMBIGUOUS_FAILURE            👀 EARLY TRACE         1
+SUCCESSFUL_RELEASE               ⚡ BUILDING        12
+SUCCESSFUL_RELEASE            👀 EARLY TRACE         1
+       TIMING_RISK               ⚡ BUILDING         1
+
+--- PREV_FLOW_STATE ---
+        _diagnosis PREV_FLOW_STATE  episodes
+ AMBIGUOUS_FAILURE  CONFIRMED_FLOW         1
+ AMBIGUOUS_FAILURE     EARLY_TRACE         1
+ AMBIGUOUS_FAILURE      FLOW_BREAK         2
+ AMBIGUOUS_FAILURE       FLOW_FADE         6
+ AMBIGUOUS_FAILURE  TRACE_BUILDING         1
+SUCCESSFUL_RELEASE  CONFIRMED_FLOW         1
+SUCCESSFUL_RELEASE     EARLY_TRACE         4
+SUCCESSFUL_RELEASE       FLOW_FADE         2
+SUCCESSFUL_RELEASE   NO CLEAR FLOW         1
+SUCCESSFUL_RELEASE    NO_FLOW_BASE         2
+SUCCESSFUL_RELEASE  TRACE_BUILDING         2
+SUCCESSFUL_RELEASE   🌱 LIGHT TRACE         1
+       TIMING_RISK  TRACE_BUILDING         1
+
+==============================================================================
+판단 원칙
+==============================================================================
+
+1. 이번 결과는 master_panel의 raw state가 아니라 검증된 historical Production execution chain이 Filter15 직전에 생성한 실제 market_data를 사용한다.
+
+2. TIMING_RISK가 1개뿐이므로 2008을 맞히는 단일 threshold를 최적화하지 않는다.
+
+3. Credit / Volatility / Macro / Cross Asset / Flow / Liquidity가 같은 방향으로 systemic stress를 보여주는지 본다.
+
+4. 여러 독립 축에서 2008과 성공 recovery가 분리될 경우에만 CRISIS -> STABILIZING -> RECOVERY_CONFIRMED state-machine hypothesis로 이동한다.
+
+5. 기존 execution state로 분리가 불가능한 경우에만 새로운 데이터 필요성을 검토한다.
+
+6. 이번 결과만으로 Production Filter15를 수정하지 않는다.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: SYSTEMIC STATE SEPARATION REVIEW

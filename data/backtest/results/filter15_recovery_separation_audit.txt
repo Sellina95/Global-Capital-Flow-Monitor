@@ -1,0 +1,119 @@
+==============================================================================
+FILTER15 RECOVERY SEPARATION AUDIT
+==============================================================================
+
+Episodes              : 25
+Successful Releases   : 13
+Timing Risk           : 1
+Ambiguous Failures    : 11
+
+Production Modified   : NO
+Future-data Backfill  : NO
+New Indicator         : NO
+Release Rule Modified : NO
+Threshold Optimization: NO
+
+===== TIMING RISK / 2008 =====
+ episode_id release_date   diagnosis  HY_OAS  HY_OAS_PCT_CHANGE  VIX_TODAY  VIX_PCT_CHANGE  VIX_Z  SP500_POS_Z  POS_SLOPE  DEALER_GAMMA_BIAS  CTA_MOMENTUM_SCORE  INSTITUTIONAL_FLOW_SCORE  PREV_FLOW_SCORE  LEADERSHIP_BREADTH_SCORE  confirmation_available_count  confirmation_available_pct  stabilization_evidence_count  full_incremental_return  full_incremental_mdd
+          1   2008-01-10 TIMING_RISK    6.63          -1.485884      23.45       -2.777778    NaN          NaN        0.0                1.0                 0.0                       6.0              6.0                       2.0                             9                        60.0                             8                -0.019289             -0.127123
+
+===== SUCCESSFUL RELEASE AVERAGES =====
+                     feature       mean    median
+                     diag_hy   6.459231   6.25000
+              diag_hy_change  -1.316298  -1.12000
+                    diag_vix  21.565385  19.54000
+             diag_vix_change  -7.960790  -6.22510
+                  diag_vix_z  -0.921538  -0.83000
+                  diag_pos_z   0.666618   0.91612
+              diag_pos_slope   0.090475   0.06754
+                    diag_cta   0.307692   0.00000
+                   diag_flow   5.615385   6.00000
+              diag_prev_flow   2.923077   2.00000
+             diag_leadership   2.615385   2.00000
+confirmation_available_count  15.000000  15.00000
+  confirmation_available_pct 100.000000 100.00000
+stabilization_evidence_count   9.769231  10.00000
+
+===== LARGEST TIMING-vs-SUCCESS DIFFERENCES =====
+                         feature     feature_type  TIMING_RISK_mean  SUCCESSFUL_RELEASE_mean  timing_minus_success
+                     has_net_liq BOOLEAN_PCT_TRUE          0.000000               100.000000           -100.000000
+evidence_positioning_not_extreme BOOLEAN_PCT_TRUE          0.000000               100.000000           -100.000000
+                       has_vix_z BOOLEAN_PCT_TRUE          0.000000               100.000000           -100.000000
+                 has_positioning BOOLEAN_PCT_TRUE          0.000000               100.000000           -100.000000
+                       has_dxy_z BOOLEAN_PCT_TRUE          0.000000               100.000000           -100.000000
+                     has_us10y_z BOOLEAN_PCT_TRUE          0.000000               100.000000           -100.000000
+                       has_wti_z BOOLEAN_PCT_TRUE          0.000000               100.000000           -100.000000
+      evidence_vix_z_nonpositive BOOLEAN_PCT_TRUE          0.000000                92.307692            -92.307692
+      confirmation_available_pct          NUMERIC         60.000000               100.000000            -40.000000
+        evidence_cta_not_bearish BOOLEAN_PCT_TRUE          0.000000                38.461538            -38.461538
+     evidence_leadership_present BOOLEAN_PCT_TRUE        100.000000                61.538462             38.461538
+        evidence_flow_persistent BOOLEAN_PCT_TRUE        100.000000                92.307692              7.692308
+            evidence_vix_falling BOOLEAN_PCT_TRUE        100.000000                92.307692              7.692308
+    confirmation_available_count          NUMERIC          9.000000                15.000000             -6.000000
+                 diag_vix_change          NUMERIC         -2.777778                -7.960790              5.183012
+                  diag_prev_flow          NUMERIC          6.000000                 2.923077              3.076923
+                        diag_vix          NUMERIC         23.450000                21.565385              1.884615
+    stabilization_evidence_count          NUMERIC          8.000000                 9.769231             -1.769231
+                 diag_leadership          NUMERIC          2.000000                 2.615385             -0.615385
+                       diag_flow          NUMERIC          6.000000                 5.615385              0.384615
+
+===== FULL FEATURE SUMMARY =====
+                              feature     feature_type  TIMING_RISK_mean  TIMING_RISK_median  SUCCESSFUL_RELEASE_mean  SUCCESSFUL_RELEASE_median  AMBIGUOUS_FAILURE_mean  AMBIGUOUS_FAILURE_median  timing_minus_success
+                              diag_hy          NUMERIC          6.630000            6.630000             6.459231e+00               6.250000e+00            5.156364e+00              4.980000e+00              0.170769
+                       diag_hy_change          NUMERIC         -1.485884           -1.485884            -1.316298e+00              -1.120000e+00           -1.055196e+00             -8.130081e-01             -0.169586
+                             diag_vix          NUMERIC         23.450000           23.450000             2.156538e+01               1.954000e+01            2.384273e+01              2.454000e+01              1.884615
+                      diag_vix_change          NUMERIC         -2.777778           -2.777778            -7.960790e+00              -6.225100e+00            1.484481e+00              3.413401e+00              5.183012
+                           diag_vix_z          NUMERIC               NaN                 NaN            -9.215385e-01              -8.300000e-01            3.981818e-01              4.500000e-01                   NaN
+                           diag_pos_z          NUMERIC               NaN                 NaN             6.666177e-01               9.161195e-01            7.701375e-01              1.534187e+00                   NaN
+                       diag_pos_slope          NUMERIC          0.000000            0.000000             9.047504e-02               6.754000e-02            2.144532e-03              5.173740e-03             -0.090475
+                           diag_gamma          NUMERIC          1.000000            1.000000             1.000000e+00               1.000000e+00            1.000000e+00              1.000000e+00              0.000000
+                             diag_cta          NUMERIC          0.000000            0.000000             3.076923e-01               0.000000e+00            5.454545e-01              1.000000e+00             -0.307692
+                         diag_net_liq          NUMERIC               NaN                 NaN             3.698028e+06               4.165081e+06            5.325331e+06              5.377575e+06                   NaN
+                            diag_flow          NUMERIC          6.000000            6.000000             5.615385e+00               6.000000e+00            3.818182e+00              5.000000e+00              0.384615
+                       diag_prev_flow          NUMERIC          6.000000            6.000000             2.923077e+00               2.000000e+00            2.454545e+00              2.000000e+00              3.076923
+                      diag_leadership          NUMERIC          2.000000            2.000000             2.615385e+00               2.000000e+00            1.545455e+00              3.000000e+00             -0.615385
+                         diag_us10y_z          NUMERIC               NaN                 NaN             5.784615e-01               6.100000e-01            1.345455e-01              1.000000e-01                   NaN
+                           diag_dxy_z          NUMERIC               NaN                 NaN            -3.684615e-01              -4.400000e-01            7.090909e-02              0.000000e+00                   NaN
+                           diag_wti_z          NUMERIC               NaN                 NaN             3.269231e-01               4.900000e-01           -4.272727e-02              2.100000e-01                   NaN
+         confirmation_available_count          NUMERIC          9.000000            9.000000             1.500000e+01               1.500000e+01            1.500000e+01              1.500000e+01             -6.000000
+           confirmation_available_pct          NUMERIC         60.000000           60.000000             1.000000e+02               1.000000e+02            1.000000e+02              1.000000e+02            -40.000000
+         stabilization_evidence_count          NUMERIC          8.000000            8.000000             9.769231e+00               1.000000e+01            8.363636e+00              8.000000e+00             -1.769231
+                            has_vix_z BOOLEAN_PCT_TRUE          0.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN           -100.000000
+                      has_positioning BOOLEAN_PCT_TRUE          0.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN           -100.000000
+                        has_pos_slope BOOLEAN_PCT_TRUE        100.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN              0.000000
+                          has_net_liq BOOLEAN_PCT_TRUE          0.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN           -100.000000
+                             has_flow BOOLEAN_PCT_TRUE        100.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN              0.000000
+                       has_leadership BOOLEAN_PCT_TRUE        100.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN              0.000000
+                          has_us10y_z BOOLEAN_PCT_TRUE          0.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN           -100.000000
+                            has_dxy_z BOOLEAN_PCT_TRUE          0.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN           -100.000000
+                            has_wti_z BOOLEAN_PCT_TRUE          0.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN           -100.000000
+                  evidence_hy_falling BOOLEAN_PCT_TRUE        100.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN              0.000000
+                 evidence_vix_falling BOOLEAN_PCT_TRUE        100.000000                 NaN             9.230769e+01                        NaN            2.727273e+01                       NaN              7.692308
+             evidence_vix_below_panic BOOLEAN_PCT_TRUE        100.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN              0.000000
+           evidence_vix_z_nonpositive BOOLEAN_PCT_TRUE          0.000000                 NaN             9.230769e+01                        NaN            2.727273e+01                       NaN            -92.307692
+     evidence_positioning_not_extreme BOOLEAN_PCT_TRUE          0.000000                 NaN             1.000000e+02                        NaN            9.090909e+01                       NaN           -100.000000
+evidence_positioning_not_accelerating BOOLEAN_PCT_TRUE        100.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN              0.000000
+    evidence_gamma_not_negative_proxy BOOLEAN_PCT_TRUE        100.000000                 NaN             1.000000e+02                        NaN            1.000000e+02                       NaN              0.000000
+             evidence_cta_not_bearish BOOLEAN_PCT_TRUE          0.000000                 NaN             3.846154e+01                        NaN            7.272727e+01                       NaN            -38.461538
+               evidence_flow_positive BOOLEAN_PCT_TRUE        100.000000                 NaN             1.000000e+02                        NaN            8.181818e+01                       NaN              0.000000
+             evidence_flow_persistent BOOLEAN_PCT_TRUE        100.000000                 NaN             9.230769e+01                        NaN            7.272727e+01                       NaN              7.692308
+          evidence_leadership_present BOOLEAN_PCT_TRUE        100.000000                 NaN             6.153846e+01                        NaN            6.363636e+01                       NaN             38.461538
+
+==============================================================================
+해석 원칙
+==============================================================================
+
+1. TIMING_RISK는 1개 episode뿐이므로 2008에 맞는 숫자 threshold를 만들지 않는다.
+
+2. 이번 단계의 목적은 어떤 독립 축이 성공 recovery와 실패 recovery를 구분할 가능성이 있는지 후보를 좁히는 것이다.
+
+3. 단일 지표보다 Credit / Volatility / Financial Conditions / Flow / Leadership / Positioning / Liquidity의 복수 확인 구조를 우선 검토한다.
+
+4. confirmation_available_count는 데이터가 많다는 이유만으로 release를 허용하기 위한 점수가 아니다. 회복 판단 당시 정보 품질을 진단하기 위한 값이다.
+
+5. 이번 결과에서 의미 있는 separation 후보가 발견되면 그 다음에만 CRISIS -> STABILIZING -> RECOVERY_CONFIRMED research state-machine을 정의한다.
+
+6. state-machine 정의 후에도 바로 Production에 넣지 않고 별도 point-in-time counterfactual과 out-of-sample 검증을 거친다.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: RECOVERY STATE HYPOTHESIS

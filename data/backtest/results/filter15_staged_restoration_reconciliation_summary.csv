@@ -1,0 +1,3 @@
+comparison,episodes,exact_matches,mismatches,release_date_mismatches,return_mismatches,mdd_mismatches,exposure_mismatches,invested_days_mismatches,full_days_mismatches,rebrake_days_mismatches,max_abs_return_delta,max_abs_mdd_delta,max_abs_exposure_delta
+RAMP_3 vs RAMP_3_25_50_100,25,16,9,0,8,1,9,8,3,4,0.0026518037272203004,6.769461013369973e-05,0.395816572807723
+STATIC_FULL vs STATIC_FULL,25,10,15,0,15,12,15,15,15,15,0.0234215086927076,0.057686861230100694,14.007936507936508

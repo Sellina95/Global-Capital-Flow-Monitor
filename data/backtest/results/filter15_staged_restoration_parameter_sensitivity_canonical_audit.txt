@@ -1,0 +1,33 @@
+==============================================================================
+FILTER15 CANONICAL PARAMETER SENSITIVITY AUDIT
+==============================================================================
+
+Canonical Source        : filter15_staged_restoration_daily.csv
+Canonical State Path    : RAMP_3
+Production Modified     : NO
+New Indicator           : NO
+New Threshold           : NO
+State Machine Rewritten : NO
+
+===== CANONICAL PARITY CHECK =====
+25/50/100 Return Max Error : 0.0
+25/50/100 MDD Max Error    : 0.0
+PARITY                    : PASS
+
+===== SENSITIVITY SUMMARY =====
+          path  episodes  positive_episodes  negative_episodes  total_episode_return  avg_episode_return  median_episode_return   avg_mdd  worst_mdd  avg_exposure
+RAMP_20_50_100        25                 16                  9              0.019399            0.000776               0.000347 -0.002038  -0.017145      5.744285
+RAMP_25_50_100        25                 16                  9              0.016461            0.000658               0.000371 -0.002150  -0.018580      6.431138
+RAMP_30_60_100        25                 15                 10              0.013700            0.000548               0.000446 -0.002402  -0.021538      7.332965
+RAMP_40_70_100        25                 15                 10              0.008009            0.000320               0.000522 -0.002789  -0.025915      8.921645
+
+RESULT: CANONICAL SENSITIVITY VALID
+
+해석:
+25/50/100의 기존 검증 경로를 정확히 재현한 상태에서
+20/50/100, 30/60/100, 40/70/100의 sizing만 비교한다.
+여러 인접 parameter에서 방향이 유지되면 staged restoration 구조의
+robustness 근거가 강화된다.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: FINAL FILTER15 RELEASE-LOGIC DECISION

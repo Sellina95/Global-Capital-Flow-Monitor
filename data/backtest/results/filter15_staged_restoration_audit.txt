@@ -1,0 +1,51 @@
+==============================================================================
+FILTER15 STAGED RESTORATION PATH AUDIT
+==============================================================================
+
+Release Episodes      : 25
+Candidate             : HY_FALLING_VIX_LT_30
+Paths                 : STATIC_FULL / RAMP_2 / RAMP_3
+Re-brake              : candidate breaks -> 0%
+Execution             : SIGNAL t -> RETURN t+1
+PIT Source            : master_panel.csv
+Production Modified   : NO
+Future Data in Signal : NO
+New Indicator         : NO
+Threshold Optimization: NO
+
+===== ALL EPISODES =====
+       path  episodes  positive_episodes  negative_episodes  flat_episodes  total_episode_return  avg_episode_return  median_episode_return   avg_mdd  worst_mdd  avg_exposure  avg_invested_days  avg_full_days  avg_rebrake_days
+STATIC_FULL        25                 12                 13              0             -0.026437           -0.001057              -0.000285 -0.005249  -0.054461     17.808802               16.2          16.20             25.36
+     RAMP_2        25                 15                 10              0              0.002661            0.000106               0.000254 -0.003444  -0.033293     10.940274               16.2           8.72             25.36
+     RAMP_3        25                 16                  9              0              0.016461            0.000658               0.000371 -0.002150  -0.018580      6.431138               16.2           5.00             25.36
+
+===== SUCCESSFUL RECOVERY ONLY =====
+       path  episodes  avg_return  median_return   avg_mdd  worst_mdd  avg_exposure
+     RAMP_2        13    0.001039       0.001279 -0.003449  -0.010733      8.434166
+     RAMP_3        13    0.001285       0.001420 -0.002399  -0.007038      5.767543
+STATIC_FULL        13    0.000667      -0.000285 -0.004913  -0.015560     11.176511
+
+===== TIMING RISK / 2008 =====
+ episode_id release_date  rows_released_early  candidate_exposure        path  total_return       mdd  invested_days  full_days  rebrake_days  avg_exposure
+          1   2008-01-10                  504                20.0 STATIC_FULL     -0.031134 -0.054461            151        151           353      5.992063
+          1   2008-01-10                  504                20.0      RAMP_2     -0.010486 -0.033293            151         84           353      4.662698
+          1   2008-01-10                  504                20.0      RAMP_3      0.000267 -0.018580            151         48           353      3.283730
+
+==============================================================================
+판정 질문
+==============================================================================
+
+1. RAMP_2/RAMP_3가 STATIC_FULL 대비 2008 MDD를 실질적으로 줄이는가?
+
+2. successful recovery에서는 STATIC_FULL의 upside를 대부분 유지하는가?
+
+3. re-brake가 false stabilization에서 실제로 작동하는가?
+
+4. RAMP_3가 RAMP_2보다 복잡성 증가에 상응하는 추가적인 tail protection을 제공하는가?
+
+5. 단 하나의 2008 episode에 최적화된 결과라면 Production 후보로 승격하지 않는다.
+
+6. 가장 단순한 robust path를 우선한다.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: ROBUSTNESS / EPISODE-LEVEL VALIDATION

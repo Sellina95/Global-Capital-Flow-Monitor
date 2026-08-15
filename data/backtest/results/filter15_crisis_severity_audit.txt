@@ -1,0 +1,81 @@
+==============================================================================
+FILTER15 CRISIS SEVERITY / LEVEL-vs-DIRECTION AUDIT
+==============================================================================
+
+Episodes              : 25
+Successful Releases   : 13
+Timing Risk           : 1
+Ambiguous Failures    : 11
+
+Production Modified   : NO
+Future-data Backfill  : NO
+New Indicator         : NO
+Threshold Optimization: NO
+Threshold Source      : EXISTING FILTER15 PRODUCTION BOUNDARIES
+
+===== TIMING RISK / 2008 =====
+ episode_id release_date   diagnosis  common_hy  common_hy_change credit_level_state credit_direction  common_vix  common_vix_change vix_level_state vix_direction  credit_direction_level_conflict  vix_direction_level_conflict  dual_direction_improvement  dual_improvement_but_crisis_level severity_state_hint  full_incremental_return  full_incremental_mdd
+          1   2008-01-10 TIMING_RISK       6.63         -1.485884             CRISIS        IMPROVING       23.45          -2.777778          STRESS     IMPROVING                             True                          True                        True                               True EARLY_STABILIZATION                -0.019289             -0.127123
+
+===== SUCCESSFUL RELEASES =====
+ episode_id release_date          diagnosis  common_hy  common_hy_change credit_level_state credit_direction  common_vix  common_vix_change vix_level_state vix_direction  credit_direction_level_conflict  vix_direction_level_conflict  dual_direction_improvement  dual_improvement_but_crisis_level severity_state_hint  full_incremental_return  full_incremental_mdd
+          2   2010-01-13 SUCCESSFUL_RELEASE       6.03         -0.658979             CRISIS        IMPROVING       17.85          -2.191781          NORMAL     IMPROVING                             True                         False                        True                               True EARLY_STABILIZATION                 0.004534             -0.016257
+          6   2010-05-10 SUCCESSFUL_RELEASE       6.25         -3.400309             CRISIS        IMPROVING       28.84         -29.572650          STRESS     IMPROVING                             True                          True                        True                               True EARLY_STABILIZATION                 0.006639             -0.025772
+         16   2011-10-14 SUCCESSFUL_RELEASE       7.89         -1.987578             CRISIS        IMPROVING       28.24          -8.013029          STRESS     IMPROVING                             True                          True                        True                               True EARLY_STABILIZATION                 0.025885             -0.019448
+         17   2012-03-07 SUCCESSFUL_RELEASE       6.18         -1.120000             CRISIS        IMPROVING       19.07          -8.624820          NORMAL     IMPROVING                             True                         False                        True                               True EARLY_STABILIZATION                 0.002779              0.000000
+         19   2012-04-11 SUCCESSFUL_RELEASE       6.30         -0.316456             CRISIS        IMPROVING       20.02          -1.814615          STRESS     IMPROVING                             True                          True                        True                               True EARLY_STABILIZATION                 0.004229             -0.003305
+         20   2012-05-10 SUCCESSFUL_RELEASE       6.00         -0.662252             CRISIS        IMPROVING       18.83          -6.225100          NORMAL     IMPROVING                             True                         False                        True                               True EARLY_STABILIZATION                 0.006811             -0.011784
+         33   2015-10-05 SUCCESSFUL_RELEASE       6.62         -3.074671             CRISIS        IMPROVING       19.54          -6.685769          NORMAL     IMPROVING                             True                         False                        True                               True EARLY_STABILIZATION                 0.006815             -0.002218
+         35   2015-11-17 SUCCESSFUL_RELEASE       6.19         -1.433121             CRISIS        IMPROVING       18.84           3.744493          NORMAL DETERIORATING                             True                         False                       False                              False  CRISIS_OR_UNSTABLE                 0.007812             -0.026212
+         36   2016-06-02 SUCCESSFUL_RELEASE       6.00         -0.166389             CRISIS        IMPROVING       13.63          -4.014085             LOW     IMPROVING                             True                         False                        True                               True EARLY_STABILIZATION                 0.000420             -0.000597
+         37   2016-06-15 SUCCESSFUL_RELEASE       6.18         -0.161551             CRISIS        IMPROVING       20.14          -1.756098          STRESS     IMPROVING                             True                          True                        True                               True EARLY_STABILIZATION                 0.001708             -0.000745
+         38   2016-06-28 SUCCESSFUL_RELEASE       6.48         -1.369863             CRISIS        IMPROVING       18.75         -21.383648          NORMAL     IMPROVING                             True                         False                        True                               True EARLY_STABILIZATION                 0.005958             -0.001439
+         50   2020-05-08 SUCCESSFUL_RELEASE       7.52         -1.052632             CRISIS        IMPROVING       27.98         -11.005089          STRESS     IMPROVING                             True                          True                        True                               True EARLY_STABILIZATION                 0.010693             -0.007509
+         53   2020-07-01 SUCCESSFUL_RELEASE       6.33         -1.708075             CRISIS        IMPROVING       28.62          -5.948078          STRESS     IMPROVING                             True                          True                        True                               True EARLY_STABILIZATION                 0.005418             -0.002063
+
+===== LEVEL-vs-DIRECTION SEPARATION =====
+                          feature  TIMING_RISK_pct  SUCCESSFUL_RELEASE_pct  AMBIGUOUS_FAILURE_pct  timing_minus_success
+                 credit_improving            100.0              100.000000             100.000000              0.000000
+                    vix_improving            100.0               92.307692              27.272727              7.692308
+              credit_still_crisis            100.0              100.000000              27.272727              0.000000
+              credit_still_stress            100.0              100.000000              45.454545              0.000000
+                 vix_still_stress            100.0               46.153846              81.818182             53.846154
+                  vix_still_panic              0.0                0.000000               0.000000              0.000000
+  credit_direction_level_conflict            100.0              100.000000              27.272727              0.000000
+     vix_direction_level_conflict            100.0               46.153846               9.090909             53.846154
+       dual_direction_improvement            100.0               92.307692              27.272727              7.692308
+dual_improvement_but_crisis_level            100.0               92.307692              27.272727              7.692308
+
+===== NUMERIC COMPARISON =====
+          feature  TIMING_RISK_mean  TIMING_RISK_median  SUCCESSFUL_RELEASE_mean  SUCCESSFUL_RELEASE_median  AMBIGUOUS_FAILURE_mean  AMBIGUOUS_FAILURE_median
+        common_hy          6.630000            6.630000                 6.459231                     6.2500                5.156364                  4.980000
+ common_hy_change         -1.485884           -1.485884                -1.316298                    -1.1200               -1.055196                 -0.813008
+       common_vix         23.450000           23.450000                21.565385                    19.5400               23.842727                 24.540000
+common_vix_change         -2.777778           -2.777778                -7.960790                    -6.2251                1.484481                  3.413401
+
+===== SEVERITY STATE DISTRIBUTION =====
+         diagnosis severity_state_hint  episodes
+ AMBIGUOUS_FAILURE  CRISIS_OR_UNSTABLE         8
+ AMBIGUOUS_FAILURE EARLY_STABILIZATION         3
+SUCCESSFUL_RELEASE  CRISIS_OR_UNSTABLE         1
+SUCCESSFUL_RELEASE EARLY_STABILIZATION        12
+       TIMING_RISK EARLY_STABILIZATION         1
+
+==============================================================================
+해석 원칙
+==============================================================================
+
+1. Direction improvement는 crisis 종료와 동일하지 않다.
+
+2. HY가 하락 중이어도 HY >= 6이면 Production 정의상 Credit Crisis level은 아직 유지된다.
+
+3. VIX가 하락 중이어도 절대 level이 높다면 시장 stress가 완전히 정상화되었다고 볼 수 없다.
+
+4. EARLY_STABILIZATION은 recovery 실패 판정이 아니라 '방향은 개선됐지만 crisis severity가 남아 있음'을 뜻한다.
+
+5. 이 Audit에서 2008 Timing Risk가 EARLY_STABILIZATION에 위치하고 성공 recovery가 LEVEL_NORMALIZING에 집중되는지 확인한다.
+
+6. separation이 확인되지 않으면 새로운 숫자를 최적화하지 않고 crisis persistence / regime history로 연구 범위를 이동한다.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: CRISIS -> STABILIZING -> RECOVERY_CONFIRMED STATE-MACHINE ELIGIBILITY

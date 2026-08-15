@@ -1,0 +1,8338 @@
+from __future__ import annotations
+from typing import Dict, Any, Optional, List, Tuple
+from scripts.data_processing import download_all_etfs_and_save
+from scripts.data_processing import load_etf_data_from_csv
+from sklearn.metrics.pairwise import cosine_similarity
+from portfolio.save_portfolio import save_paper_portfolio
+from filters.growth_sustainability import growth_sustainability_filter
+from filters.flow_authenticity import flow_authenticity_filter
+from filters.leadership_breadth import leadership_breadth_filter
+from filters.positioning_stress import positioning_stress_filter
+from filters.participation_quality import classify_participation_quality, mode_policy
+
+import numpy as np
+from pathlib import Path
+
+
+import pandas as pd
+import math
+
+# =========================
+# Helpers
+# =========================
+
+def _move_strength(pct: Optional[float]) -> str:
+    """
+    방향(+, -)이 아니라 움직임 강도 자체를 평가
+    기준:
+    VERY_LOW / LOW / MEDIUM / HIGH / EXTREME
+    """
+    if pct is None:
+        return "UNKNOWN"
+
+    try:
+        x = abs(float(pct))
+    except Exception:
+        return "UNKNOWN"
+
+    if x < 0.2:
+        return "VERY_LOW"
+    elif x < 0.5:
+        return "LOW"
+    elif x < 1.0:
+        return "MEDIUM"
+    elif x < 2.0:
+        return "HIGH"
+    return "EXTREME"
+    
+def _compute_zscore_strength(
+    pct: Optional[float],
+    history: Optional[list],
+    lookback: int = 20
+) -> tuple[Optional[float], str]:
+    """
+    최근 lookback 기준 표준편차 대비 현재 움직임 강도
+    반환:
+    (z_score, z_strength)
+    """
+    if pct is None or history is None:
+        return None, "UNKNOWN"
+
+    try:
+        valid = [float(x) for x in history if x is not None]
+
+        if len(valid) < lookback:
+            return None, "UNKNOWN"
+
+        sample = valid[-lookback:]
+
+        mean_val = sum(sample) / len(sample)
+
+        variance = sum((x - mean_val) ** 2 for x in sample) / len(sample)
+        std_val = variance ** 0.5
+
+        if std_val == 0:
+            return 0.0, "VERY_LOW"
+
+        z = (float(pct) - mean_val) / std_val
+        abs_z = abs(z)
+
+        if abs_z < 0.5:
+            strength = "VERY_LOW"
+        elif abs_z < 1.0:
+            strength = "LOW"
+        elif abs_z < 1.5:
+            strength = "MEDIUM"
+        elif abs_z < 2.0:
+            strength = "HIGH"
+        else:
+            strength = "EXTREME"
+
+        return round(z, 2), strength
+
+    except Exception:
+        return None, "UNKNOWN"
+
+
+def rank_deleveraging_priority(
+    score: Dict[str, float],
+    weights: Dict[str, float],
+    divergence_flags: Dict[str, str],
+    momentum_scores: Dict[str, float] = None,
+    sector_classification: Dict[str, str] = None,
+) -> List[Dict[str, Any]]:
+    """
+    18.5) Deleveraging Priority Ranker (Upgraded)
+
+    목적:
+    - '무엇을 먼저 줄일 것인가'를 정함
+    - NEGATIVE_DIVERGENCE / THEORY_TRAP / FLOW_WEAK 우선 컷
+    - HIGH_CONVICTION_ALIGNED는 가능한 마지막 컷
+    - 단순 overweight만으로 리더 섹터가 먼저 잘리는 현상 방지
+    """
+
+    priority_list = []
+
+    avg_weight = sum(weights.values()) / len(weights) if weights else 0
+
+    for sector, w in weights.items():
+
+        # -------------------------
+        # 1️⃣ Divergence Flag
+        # -------------------------
+        div_flag = divergence_flags.get(sector, "ALIGNED")
+
+        if div_flag == "NEGATIVE_DIVERGENCE":
+            divergence_score = 4.0
+
+        elif div_flag == "POSITIVE_DIVERGENCE":
+            divergence_score = -2.0
+
+        else:
+            divergence_score = 0.0
+
+        # -------------------------
+        # 2️⃣ Classification Layer (NEW 핵심)
+        # -------------------------
+        classification = (
+            sector_classification.get(sector, "ALIGNED")
+            if sector_classification else "ALIGNED"
+        )
+
+        if classification == "THEORY_TRAP":
+            class_score = 4.0
+
+        elif classification == "FLOW_WEAK":
+            class_score = 0.0
+
+        elif classification == "AVOID":
+            class_score = 5.0
+
+        elif classification == "POSITIVE_DIVERGENCE":
+            class_score = -1.5
+
+        elif classification == "HIGH_CONVICTION_ALIGNED":
+            class_score = -4.0
+
+        else:
+            class_score = 0.0
+
+        # -------------------------
+        # 3️⃣ Momentum
+        # -------------------------
+        mom = momentum_scores.get(sector, 0) if momentum_scores else 0
+
+        if mom < 0:
+            momentum_score = abs(mom) * 1.5
+
+        elif mom > 0:
+            momentum_score = -mom * 1.0
+
+        else:
+            momentum_score = 0.0
+
+        # -------------------------
+        # 4️⃣ Score Quality
+        # -------------------------
+        s = score.get(sector, 0)
+
+        # 좋은 점수면 보호 / 나쁜 점수면 컷 우선
+        if s <= 0:
+            score_penalty = abs(s) * 1.5
+
+        elif s >= 2:
+            score_penalty = -2.0
+
+        else:
+            score_penalty = -s * 0.5
+
+        # -------------------------
+        # 5️⃣ Overweight
+        # -------------------------
+        overweight = w - avg_weight
+
+        # overweight 영향 축소 (기존보다 훨씬 약하게)
+        if overweight > 0:
+            overweight_score = overweight * 0.15
+
+        else:
+            overweight_score = 0.0
+
+        # -------------------------
+        # FINAL PRIORITY
+        # -------------------------
+        priority_score = (
+            divergence_score
+            + class_score
+            + momentum_score
+            + score_penalty
+            + overweight_score
+        )
+
+        priority_list.append({
+            "sector": sector,
+            "priority_score": round(priority_score, 2),
+            "classification": classification,
+            "div": div_flag,
+            "mom": mom,
+            "score": s,
+            "weight": w,
+        })
+
+    # 높은 점수일수록 먼저 컷
+    priority_list = sorted(
+        priority_list,
+        key=lambda x: x["priority_score"],
+        reverse=True
+    )
+
+    return priority_list
+
+def detect_flow_signal(market_data):
+
+    sew = market_data.get("SEW_STATE", "NORMAL")
+    drift_score = market_data.get("DRIFT_SCORE", 0)
+
+    signal = "NONE"
+    strength = 0
+
+    # 🔥 1. Drift 먼저 (기관 축적 단계)
+    if drift_score >= 3:
+        signal = "FLOW_BUILDING"
+        strength = 1
+
+    # 🔥 2. Drift + SEW = 진짜 신호
+    if drift_score >= 2 and sew in ["WATCH", "ALERT"]:
+        signal = "PRE_SHOCK"
+        strength = 2
+
+    # 🔥 3. SEW만 단독
+    if sew in ["ALERT", "DEADMAN"]:
+        signal = "SHOCK"
+        strength = 3
+
+    market_data["FLOW_SIGNAL"] = signal
+    market_data["FLOW_STRENGTH"] = strength
+
+    return market_data
+    
+def classify_drift_label(drift: Dict[str, Any]) -> str:
+    spy_1d = drift.get("SPY", {}).get("1D")
+    wti_1d = drift.get("WTI", {}).get("1D")
+    dxy_1d = drift.get("DXY", {}).get("1D")
+    gold_1d = drift.get("GOLD", {}).get("1D")
+
+    def up(x, thr=0.8):
+        return x is not None and x > thr
+
+    def down(x, thr=-0.8):
+        return x is not None and x < thr
+
+    # --------------------------------------------------
+    # 1) DISINFLATION RISK-ON
+    # 주식↑ / 유가↓ / 금↑(선택)
+    # --------------------------------------------------
+    if up(spy_1d) and down(wti_1d):
+        return "DISINFLATION_RISK_ON"
+
+    # --------------------------------------------------
+    # 2) SYSTEMIC HEDGE
+    # 금↑ / 달러↑ / 주식↓
+    # --------------------------------------------------
+    if up(gold_1d) and up(dxy_1d) and down(spy_1d):
+        return "SYSTEMIC_HEDGE"
+
+    # --------------------------------------------------
+    # 3) OIL SHOCK
+    # 유가↑↑ + 주식↓
+    # --------------------------------------------------
+    if up(wti_1d, 2.0) and down(spy_1d):
+        return "OIL_SHOCK"
+
+    # --------------------------------------------------
+    # 4) TIGHTENING PRESSURE
+    # 달러↑ + 주식↓
+    # --------------------------------------------------
+    if up(dxy_1d) and down(spy_1d):
+        return "TIGHTENING_PRESSURE"
+
+    # --------------------------------------------------
+    # 5) DEFAULT
+    # --------------------------------------------------
+    return "MIXED"
+    
+def interpret_macro_narrative(tape: Dict[str, Any]) -> str:
+    """
+    Layer B — Macro Interpretation
+    Cross-Asset Tape를 거시 서사로 해석
+    """
+
+    us10y = tape.get("US10Y_DIR", 0)
+    dxy = tape.get("DXY_DIR", 0)
+    vix = tape.get("VIX_DIR", 0)
+    wti = tape.get("WTI_DIR", 0)
+
+    hy_status = str(tape.get("HY_OAS_STATUS", "UNKNOWN"))
+    
+    
+    # STAGFLATION: 유가/금리/달러 상승 + 크레딧 경계
+    if us10y == 1 and dxy == 1 and wti == 1 and hy_status in ["WATCH", "HOT"]:
+        return "STAGFLATION_RISK"
+    
+    # 진짜 크레딧 위기
+    if hy_status == "FRACTURE" or (hy_status == "HOT" and vix == 1 and tape.get("VIX_TODAY", 0) >= 22):
+        return "CREDIT_STRESS"
+
+    # 2) 금리↑ + 달러↑ + 유가↑
+    if us10y == 1 and dxy == 1 and wti == 1:
+        return "INFLATION_PRESSURE"
+
+    # 3) 금리↑ + 달러↑ + 유가↓
+    if us10y == 1 and dxy == 1 and wti == -1:
+        return "TIGHTENING_GROWTH_SCARE"
+
+    # 4) 금리↓ + 달러↓ + 유가↓
+    if us10y == -1 and dxy == -1 and wti == -1:
+        return "DISINFLATION"
+
+    # 5) 금리↑ + 달러↓ + 유가↑
+    if us10y == 1 and dxy == -1 and wti == 1:
+        return "REFLATION"
+        
+
+
+    # POLICY EASING / LIQUIDITY SUPPORT
+    if us10y == -1 and dxy == -1 and vix != 1:
+        return "POLICY_EASING"
+
+    return "UNKNOWN_TRANSITION"
+    
+def map_to_portfolio_regime(policy_state: str, macro_narrative: str, tape: Dict[str, Any]) -> str:
+    """
+    Layer C — Final Portfolio Regime
+    Policy + Macro Narrative + Tape → 최종 포트폴리오 국면
+    """
+
+    vix_today = tape.get("VIX_TODAY", 20)
+    vix_z = abs(_to_float(tape.get("VIX_Z")) or 0)
+    dxy_z = abs(_to_float(tape.get("DXY_Z")) or 0)
+    us10y_z = abs(_to_float(tape.get("US10Y_Z")) or 0)
+    wti_z = abs(_to_float(tape.get("WTI_Z")) or 0)
+    hy_status = str(tape.get("HY_OAS_STATUS", "UNKNOWN")).upper()
+    
+    # --------------------------------------------------
+    # STEP 1-B: Sigma Shock Override (최우선)
+    # --------------------------------------------------
+    if (
+        vix_z >= 3
+        and dxy_z >= 2
+        and hy_status == "FRACTURE"
+    ):
+        return "SHOCK RISK-OFF / SYSTEMIC"
+    
+    if (
+        vix_z >= 2.5
+        and us10y_z >= 2
+        and wti_z >= 1.5
+    ):
+        return "SHOCK RISK-OFF / INFLATION"
+    
+    if (
+        vix_z >= 2
+        and dxy_z >= 1.5
+    ):
+        return "HARD RISK-OFF"
+    
+    # 1) 크레딧 스트레스
+    if macro_narrative == "CREDIT_STRESS":
+        return "HARD RISK-OFF"
+
+    # 2) 긴축 + 성장둔화
+    if macro_narrative == "TIGHTENING_GROWTH_SCARE":
+        if vix_today >= 22:
+            return "HARD RISK-OFF"
+        return "SOFT RISK-OFF"
+
+    # 3) 인플레 압력
+    if macro_narrative == "INFLATION_PRESSURE":
+        return "EVENT-WATCHING / INFLATION"
+
+    # 4) 디스인플레이션
+    if macro_narrative == "DISINFLATION":
+        if tape.get("VIX_TODAY", 20) < 15 and tape.get("HY_OAS_STATUS") == "COOL":
+            return "GOLDILOCKS"
+        if "EASING" in str(policy_state):
+            return "GOLDILOCKS"
+        return "EARLY RISK-ON"
+
+    # 5) 리플레이션
+    if macro_narrative == "REFLATION":
+        return "RISK-ON / REFLATION"
+       
+    #)스테그플레이션     
+    if macro_narrative == "STAGFLATION_RISK":
+        if tape.get("VIX_TODAY", 0) >= 22 and tape.get("HY_OAS_STATUS") in ["HOT", "FRACTURE"]:
+            return "HARD RISK-OFF / INFLATION SHOCK"
+        return "SOFT RISK-OFF / STAGFLATION"
+
+
+    # 7) 정책 완화
+    if macro_narrative == "POLICY_EASING":
+        if vix_today < 18:
+            return "RISK-ON / LIQUIDITY"
+        return "EVENT-WATCHING / POLICY SHIFT"
+        
+    # --------------------------------------------------
+    # Shock Override Layer (Magnitude-aware)
+    # --------------------------------------------------
+    us10y_z = abs(_to_float(tape.get("US10Y_Z")) or 0)
+    dxy_z = abs(_to_float(tape.get("DXY_Z")) or 0)
+    vix_z = abs(_to_float(tape.get("VIX_Z")) or 0)
+    
+    shock_count = sum([
+        us10y_z >= 2.5,
+        dxy_z >= 2.0,
+        vix_z >= 2.5,
+    ])
+    
+    # 동시다발 충격 → 방향보다 위험 우선
+    if shock_count >= 3:
+        if "DISINFLATION" in macro_narrative:
+            return "VOLATILE DISINFLATION"
+        elif "REFLATION" in macro_narrative:
+            return "OVERHEATED REFLATION"
+        elif "STAGFLATION" in macro_narrative:
+            return "HARD RISK-OFF / MACRO SHOCK"
+
+    return "TRANSITION / MIXED"
+
+def build_cross_asset_tape(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Layer A — Cross-Asset Raw Tape
+    판단하지 않고, 원재료만 표준화한다.
+    """
+
+  
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    vix = _get_series(market_data, "VIX")
+    wti = _get_series(market_data, "WTI")
+    
+    us10y_hist = market_data.get("US10Y_PCT_HISTORY", [])
+    dxy_hist = market_data.get("DXY_PCT_HISTORY", [])
+    vix_hist = market_data.get("VIX_PCT_HISTORY", [])
+    wti_hist = market_data.get("WTI_PCT_HISTORY", [])
+
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    vix_dir = _sign_from(vix)
+    wti_dir = _sign_from(wti)
+    
+    
+
+    hy_oas = None
+    hy_status = "UNKNOWN"
+
+    try:
+        hy_obj = market_data.get("HY_OAS", {})
+        if isinstance(hy_obj, dict):
+            hy_oas = hy_obj.get("today")
+        else:
+            hy_oas = market_data.get("HY_OAS")
+
+        hy_oas = _to_float(hy_oas)
+
+        if hy_oas is not None:
+            if hy_oas < 3.0:
+                hy_status = "COOL"
+            elif hy_oas < 4.0:
+                hy_status = "WATCH"
+            elif hy_oas < 6.0:
+                hy_status = "HOT"
+            else:
+                hy_status = "FRACTURE"
+
+    except Exception:
+        hy_oas = None
+        hy_status = "UNKNOWN"
+        
+    us10y_z, us10y_z_strength = _compute_zscore_strength(us10y.get("pct_change"), us10y_hist)
+    dxy_z, dxy_z_strength = _compute_zscore_strength(dxy.get("pct_change"), dxy_hist)
+    vix_z, vix_z_strength = _compute_zscore_strength(vix.get("pct_change"), vix_hist)
+    wti_z, wti_z_strength = _compute_zscore_strength(wti.get("pct_change"), wti_hist)
+    
+    
+    tape = {
+        "US10Y_DIR": us10y_dir,
+        "DXY_DIR": dxy_dir,
+        "VIX_DIR": vix_dir,
+        "WTI_DIR": wti_dir,
+
+        "US10Y_Z": us10y_z,
+        "DXY_Z": dxy_z,
+        "VIX_Z": vix_z,
+        "WTI_Z": wti_z,
+
+        "US10Y_Z_STRENGTH": us10y_z_strength,
+        "DXY_Z_STRENGTH": dxy_z_strength,
+        "VIX_Z_STRENGTH": vix_z_strength,
+        "WTI_Z_STRENGTH": wti_z_strength,
+
+        "US10Y_PCT": us10y.get("pct_change"),
+        "DXY_PCT": dxy.get("pct_change"),
+        "VIX_PCT": vix.get("pct_change"),
+        "WTI_PCT": wti.get("pct_change"),
+
+        "US10Y_DELTA": us10y.get("delta"),
+        "DXY_DELTA": dxy.get("delta"),
+        "VIX_DELTA": vix.get("delta"),
+        "WTI_DELTA": wti.get("delta"),
+
+        "US10Y_STRENGTH": _move_strength(us10y.get("pct_change")),
+        "DXY_STRENGTH": _move_strength(dxy.get("pct_change")),
+        "VIX_STRENGTH": _move_strength(vix.get("pct_change")),
+        "WTI_STRENGTH": _move_strength(wti.get("pct_change")),
+
+        "VIX_TODAY": vix.get("today"),
+        "HY_OAS_LEVEL": hy_oas,
+        "HY_OAS_STATUS": hy_status,
+    }
+
+    return tape
+   
+    
+
+def classify_drift_label(drift_inputs: Dict[str, Any]) -> str:
+    """
+    drift_inputs 예시:
+    {
+        "SPY": {"1D": ...},
+        "WTI": {"1D": ...},
+        "DXY": {"1D": ...},
+        "GOLD": {"1D": ...},
+    }
+    """
+
+    spy_1d = drift_inputs.get("SPY", {}).get("1D")
+    wti_1d = drift_inputs.get("WTI", {}).get("1D")
+    dxy_1d = drift_inputs.get("DXY", {}).get("1D")
+    gold_1d = drift_inputs.get("GOLD", {}).get("1D")
+
+    def up(x, thr=0.8):
+        return x is not None and x > thr
+
+    def down(x, thr=-0.8):
+        return x is not None and x < thr
+
+    # 1) 디스인플레이션 + 리스크온
+    if up(spy_1d) and down(wti_1d):
+        return "DISINFLATION_RISK_ON"
+
+    # 2) 시스템 헤지
+    if up(gold_1d) and up(dxy_1d) and down(spy_1d):
+        return "SYSTEMIC_HEDGE"
+
+    # 3) 오일 쇼크
+    if up(wti_1d, 2.0) and down(spy_1d):
+        return "OIL_SHOCK"
+
+    # 4) 긴축 압력
+    if up(dxy_1d) and down(spy_1d):
+        return "TIGHTENING_PRESSURE"
+
+    return "MIXED"
+
+
+def drift_monitor_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Drift Monitor v4 (visualized)
+    - 기존 점수 계산 로직 유지
+    - 출력만 방향 / 단기 정렬 / 강도 중심으로 개선
+    """
+
+    drift = market_data.get("DRIFT_DATA", {}) or {}
+
+    def g(asset, key):
+        try:
+            return drift.get(asset, {}).get(key)
+        except Exception:
+            return None
+            
+    # -----------------------------
+    # Drift Score v5 (Early + Structural + Event)
+    # -----------------------------
+    score = 0
+    reasons = []
+
+    spy = g("SPY", "ret_1d") or 0
+    rsp = g("RSP", "ret_1d") or 0
+    qqqe = g("QQQE", "ret_1d") or 0
+    wti = g("WTI", "ret_1d") or 0
+    dxy = g("DXY", "ret_1d") or 0
+    gold = g("GOLD", "ret_1d") or 0
+    hyg = g("HYG", "ret_1d") or 0
+    lqd = g("LQD", "ret_1d") or 0
+
+    xlk = g("XLK", "ret_1d") or 0
+    xli = g("XLI", "ret_1d") or 0
+    xlf = g("XLF", "ret_1d") or 0
+    xly = g("XLY", "ret_1d") or 0
+    xlp = g("XLP", "ret_1d") or 0
+    xlu = g("XLU", "ret_1d") or 0
+
+    # -----------------------------
+    # [A] EARLY DRIFT
+    # -----------------------------
+    if spy > 0.3:
+        score += 1
+        reasons.append("SPY positive drift")
+
+    if rsp > 0:
+        score += 1
+        reasons.append("Breadth participation (RSP)")
+
+    if qqqe > 0:
+        score += 1
+        reasons.append("Equal-weight Nasdaq participation")
+
+    if hyg >= lqd:
+        score += 1
+        reasons.append("Credit supports risk")
+
+    leadership_hits = sum([
+        xlk > 0,
+        xli > 0,
+        xlf > 0,
+        xly > 0,
+    ])
+
+    if leadership_hits >= 2:
+        score += 1
+        reasons.append("Sector breadth expanding")
+
+    # -----------------------------
+    # [B] STRUCTURAL DRIFT
+    # -----------------------------
+    if spy >= 0.75:
+        score += 2
+        reasons.append("Strong SPY continuation")
+
+    if leadership_hits >= 3:
+        score += 2
+        reasons.append("Broad cyclical leadership")
+
+    if xlp <= 0 and xlu <= 0:
+        score += 1
+        reasons.append("Defensives lagging")
+
+    if dxy <= 0.3:
+        score += 1
+        reasons.append("Dollar not restrictive")
+
+    # -----------------------------
+    # [C] EVENT / EXTREME
+    # -----------------------------
+    if abs(wti) >= 4:
+        score += 2
+        reasons.append("WTI shock")
+
+    if abs(gold) >= 2:
+        score += 1
+        reasons.append("Gold event move")
+
+    if g("SPY", "norm_1d") is not None and abs(g("SPY", "norm_1d")) >= 1.5:
+        score += 2
+        reasons.append("SPY > 1.5 ATR")
+
+    if g("WTI", "norm_1d") is not None and abs(g("WTI", "norm_1d")) >= 2:
+        score += 2
+        reasons.append("WTI extreme ATR")
+
+  
+
+    # -----------------------------
+    # ATR 기반 강화 (기존 유지)
+    # -----------------------------
+    if g("SPY", "norm_1d") is not None and abs(g("SPY", "norm_1d")) >= 1.5:
+        score += 1
+        reasons.append("SPY move > 1.5 ATR")
+
+    if g("WTI", "norm_1d") is not None and abs(g("WTI", "norm_1d")) >= 2.0:
+        score += 1
+        reasons.append("WTI extreme ATR move")
+
+    # -----------------------------
+    # State 정의 (기존 유지)
+    # -----------------------------
+    if score >= 8:
+        state = "🔥 EXTREME DRIFT"
+    elif score >= 5:
+        state = "⚡ STRUCTURAL DRIFT"
+    elif score >= 2:
+        state = "👀 EARLY DRIFT"
+    elif score == 1:
+        state = "WEAK DRIFT (노이즈 가능)"
+    else:
+        state = "NO DRIFT"
+
+    # -----------------------------
+    # Label 정의 (기존 유지)
+    # -----------------------------
+    label = "NEUTRAL"
+
+    spy = g("SPY", "ret_1d")
+    wti = g("WTI", "ret_1d")
+    dxy = g("DXY", "ret_1d")
+    gold = g("GOLD", "ret_1d")
+
+    # -----------------------------
+    # NEW: Stealth accumulation
+    # -----------------------------
+    if spy is not None and rsp is not None:
+        if spy > 0 and rsp > 0 and leadership_hits >= 2:
+            label = "STEALTH_ACCUMULATION"
+
+    # -----------------------------
+    # 기존 Macro Label
+    # -----------------------------
+    elif spy and wti and dxy:
+        if spy > 0 and wti < 0 and dxy < 0:
+            label = "DISINFLATION_RISK_ON"
+        elif spy < 0 and wti > 0 and dxy > 0:
+            label = "INFLATION_RISK_OFF"
+        elif spy < 0 and wti < 0:
+            label = "GROWTH_SCARE"
+        elif spy > 0 and wti > 0:
+            label = "REOPENING / DEMAND_BOOM"
+
+    # -----------------------------
+    # SEW 조합 신호 (기존 유지)
+    # -----------------------------
+    sew_status = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
+
+    combo_signal = "NONE"
+
+    if sew_status == "STABLE" and score >= 3:
+        combo_signal = "🟢 EARLY FLOW WITHOUT SHOCK"
+    elif sew_status in ["WATCH", "ALERT"] and score >= 3:
+        combo_signal = "🟠 FLOW + SHOCK CONFLICT / EVENT RISK"
+    elif sew_status in ["WATCH", "ALERT"] and score <= 1:
+        combo_signal = "🔴 SHOCK WITHOUT DRIFT"
+
+    # -----------------------------
+    # 저장 (기존 유지)
+    # -----------------------------
+    market_data["DRIFT_SCORE"] = score
+    market_data["DRIFT_STATE"] = state
+
+    market_data["DRIFT"] = {
+        "data": drift,
+        "score": score,
+        "state": state,
+        "label": label,
+        "combo_signal": combo_signal,
+    }
+
+    # -----------------------------
+    # 시각화용 helper
+    # -----------------------------
+    def fmt(x):
+        try:
+            if x is None:
+                return "N/A"
+            return f"{float(x):+.2f}%"
+        except Exception:
+            return "N/A"
+
+    def short_alignment(asset: str) -> str:
+        vals = [
+            g(asset, "ret_15m"),
+            g(asset, "ret_30m"),
+            g(asset, "ret_1h"),
+            g(asset, "ret_4h"),
+        ]
+        vals = [v for v in vals if v is not None]
+
+        if not vals:
+            return "N/A"
+
+        up = sum(1 for v in vals if v > 0)
+        down = sum(1 for v in vals if v < 0)
+
+        if up >= 3:
+            return "SHORT UP"
+        if down >= 3:
+            return "SHORT DOWN"
+        return "MIXED"
+
+    def trend_direction(asset: str) -> str:
+        d1 = g(asset, "ret_1d")
+        d5 = g(asset, "ret_5d")
+
+        if d1 is None or d5 is None:
+            return "N/A"
+
+        if d1 > 0 and d5 > 0:
+            return "🟢 UP"
+        if d1 < 0 and d5 < 0:
+            return "🔴 DOWN"
+        if d1 > 0 and d5 < 0:
+            return "🟡 REBOUND"
+        if d1 < 0 and d5 > 0:
+            return "🟡 PULLBACK"
+        return "⚪ SIDEWAYS"
+
+    def strength_label(asset: str) -> str:
+        d1 = g(asset, "ret_1d")
+        d5 = g(asset, "ret_5d")
+
+        vals = [abs(v) for v in [d1, d5] if v is not None]
+        if not vals:
+            return "N/A"
+
+        strength = sum(vals) / len(vals)
+
+        if strength >= 5:
+            return "HIGH"
+        if strength >= 2:
+            return "MEDIUM"
+        return "LOW"
+
+    def asset_summary(asset: str) -> str:
+        direction = trend_direction(asset)
+        short = short_alignment(asset)
+        strength = strength_label(asset)
+        d1 = fmt(g(asset, "ret_1d"))
+        d5 = fmt(g(asset, "ret_5d"))
+        return f"- **{asset}:** {direction} | Short-term: {short} | 1D={d1} / 5D={d5} | Strength: {strength}"
+
+    # -----------------------------
+    # Output
+    # -----------------------------
+    lines = []
+    lines.append("### 🌊 Drift Monitor (v4)")
+    lines.append("- **정의:** 누적 흐름 + ATR 기반 강도 감지")
+    lines.append("")
+
+    for asset in ["SPY", "WTI", "DXY", "GOLD"]:
+        lines.append(asset_summary(asset))
+
+    lines.append("")
+    lines.append(f"- **Drift Score:** {score}")
+    lines.append(f"- **State:** **{state}**")
+    lines.append(f"- **Label:** {label}")
+    lines.append(f"- **SEW Combo Signal:** {combo_signal}")
+
+    lines.append("")
+    lines.append("- **Market Drift Summary:**")
+    lines.append(f"  - Equity (SPY): {trend_direction('SPY')} / {short_alignment('SPY')}")
+    lines.append(f"  - Oil (WTI): {trend_direction('WTI')} / {short_alignment('WTI')}")
+    lines.append(f"  - Dollar (DXY): {trend_direction('DXY')} / {short_alignment('DXY')}")
+    lines.append(f"  - Gold (GOLD): {trend_direction('GOLD')} / {short_alignment('GOLD')}")
+
+    if reasons:
+        lines.append("")
+        lines.append("- **Drivers:**")
+        for r in reasons:
+            lines.append(f"  - {r}")
+
+    return "\n".join(lines)
+# -------------------------------------------------------------------
+# 6.5) Correlation Break Monitor (stabilized v2.0)
+# -------------------------------------------------------------------
+def correlation_break_filter(market_data: Dict[str, Any]) -> str:
+    state = correlation_break_state(market_data)
+
+    lines = []
+    lines.append("### ⚠ 6.5) Correlation Break Monitor")
+
+    if market_data.get("_STALE"):
+        lines.append("⚠ Market Closed / Stale Data → Correlation signals evaluated conservatively.")
+        lines.append("")
+
+    if state["break"]:
+        lines.append("Correlation Break Detected:")
+        for b in state["reasons"]:
+            lines.append(f"- {b}")
+        lines.append("")
+        lines.append("So What?")
+        lines.append("- 결론: **공식이 깨진 구간** → 총노출 추가 감산보다 **추격 자제 + 퀄리티/리더 중심 배분**")
+    else:
+        lines.append("No significant correlation break detected.")
+
+    return "\n".join(lines)
+
+
+def correlation_break_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    def pct(key: str) -> Optional[float]:
+        v = market_data.get(key, {}) or {}
+        x = v.get("pct_change")
+        try:
+            return None if x is None else float(x)
+        except Exception:
+            return None
+
+    def signif(x: Optional[float], thr: float) -> bool:
+        return (x is not None) and (abs(x) >= thr)
+
+    us10y = pct("US10Y")
+    dxy = pct("DXY")
+    vix = pct("VIX")
+    spy = pct("SPY")
+    qqq = pct("QQQ")
+    xlk = pct("XLK")
+
+    # Tech proxy 우선순위: QQQ -> XLK
+    tech = qqq if qqq is not None else xlk
+
+    # --------------------------------------------------
+    # 안정화 threshold
+    # --------------------------------------------------
+    THR_US10Y = 0.20   # 기존 0.10 → 상향
+    THR_DXY = 0.20     # 기존 0.15 → 상향
+    THR_VIX = 1.20     # 기존 1.00 → 상향
+    THR_EQ = 0.35      # 기존 0.25 → 상향
+
+    breaks = []
+    score = 0
+
+    # 금리와 주식/기술주의 비정상 동행
+    if signif(us10y, THR_US10Y):
+        if us10y > 0:
+            if signif(tech, THR_EQ) and tech > 0:
+                breaks.append("US10Y ↑ but Technology ↑")
+                score += 1
+            if signif(spy, THR_EQ) and spy > 0:
+                breaks.append("US10Y ↑ but SPY ↑")
+                score += 1
+
+        elif us10y < 0:
+            if signif(tech, THR_EQ) and tech < 0:
+                breaks.append("US10Y ↓ but Technology ↓")
+                score += 1
+            if signif(spy, THR_EQ) and spy < 0:
+                breaks.append("US10Y ↓ but SPY ↓")
+                score += 1
+
+    # VIX와 주식의 비정상 동행
+    if signif(vix, THR_VIX) and vix > 0:
+        if signif(spy, THR_EQ) and spy > 0:
+            breaks.append("VIX ↑ but SPY ↑")
+            score += 1
+        if signif(tech, THR_EQ) and tech > 0:
+            breaks.append("VIX ↑ but Technology ↑")
+            score += 1
+
+    # DXY와 SPY/Tech의 비정상 동행
+    if signif(dxy, THR_DXY) and dxy > 0:
+        if signif(spy, THR_EQ) and spy > 0:
+            breaks.append("DXY ↑ but SPY ↑")
+            score += 1
+        if signif(tech, THR_EQ) and tech > 0:
+            breaks.append("DXY ↑ but Technology ↑")
+            score += 1
+
+    return {
+        "break": len(breaks) > 0,
+        "score": score,
+        "reasons": breaks,
+    }
+
+
+# -------------------------------------------------------------------
+# 6.6) Sector Correlation Break Monitor (stabilized v2.0)
+# -------------------------------------------------------------------
+def sector_correlation_break_filter(market_data: Dict[str, Any]) -> str:
+    state = sector_correlation_break_state(market_data)
+
+    lines = []
+    lines.append("### ⚠ 6.6) Sector Correlation Break Monitor")
+
+    if market_data.get("_STALE"):
+        lines.append("⚠ Market Closed / Stale Data → Sector signals evaluated conservatively.")
+        lines.append("")
+
+    if state["break"]:
+        lines.append("Correlation Break Detected:")
+        for b in state["reasons"]:
+            lines.append(f"- {b}")
+        lines.append("")
+        lines.append("So What?")
+        lines.append("- 결론: **섹터 ‘공식’이 깨진 구간** → 총노출 추가 감산보다 **섹터 배분 보수화 + 리더 중심**")
+    else:
+        lines.append("No significant sector-level correlation break detected.")
+
+    return "\n".join(lines)
+
+
+def sector_correlation_break_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    def pct(key: str) -> Optional[float]:
+        v = market_data.get(key, {}) or {}
+        x = v.get("pct_change")
+        try:
+            return None if x is None else float(x)
+        except Exception:
+            return None
+
+    def signif(x: Optional[float], thr: float) -> bool:
+        return (x is not None) and (abs(x) >= thr)
+
+    us10y = pct("US10Y")
+    wti = pct("WTI")
+    dxy = pct("DXY")
+    vix = pct("VIX")
+
+    xlk = pct("XLK")
+    xlf = pct("XLF")
+    xle = pct("XLE")
+    xlre = pct("XLRE")
+
+    # --------------------------------------------------
+    # 안정화 threshold
+    # --------------------------------------------------
+    THR_US10Y = 0.20   # 금리 변화 의미 있게
+    THR_WTI = 2.00     # 유가 이벤트성 움직임만 반영
+    THR_DXY = 0.20
+    THR_VIX = 1.20
+    THR_SECTOR = 0.35  # 섹터는 0.35 이상일 때만 의미 부여
+
+    breaks = []
+    score = 0
+
+    # 금리 상승인데 금융/리츠/기술주가 반대로 움직이는 경우
+    if signif(us10y, THR_US10Y):
+        if us10y > 0:
+            if signif(xlf, THR_SECTOR) and xlf < 0:
+                breaks.append("US10Y ↑ but XLF ↓")
+                score += 1
+            if signif(xlre, THR_SECTOR) and xlre > 0:
+                breaks.append("US10Y ↑ but XLRE ↑")
+                score += 1
+            if signif(xlk, THR_SECTOR) and xlk > 0:
+                breaks.append("US10Y ↑ but XLK ↑")
+                score += 1
+
+        elif us10y < 0:
+            if signif(xlk, THR_SECTOR) and xlk < 0:
+                breaks.append("US10Y ↓ but XLK ↓")
+                score += 1
+            if signif(xlf, THR_SECTOR) and xlf < 0:
+                breaks.append("US10Y ↓ but XLF ↓")
+                score += 1
+
+    # 유가 상승인데 에너지 섹터 하락
+    if signif(wti, THR_WTI) and wti > 0:
+        if signif(xle, THR_SECTOR) and xle < 0:
+            breaks.append("WTI ↑ but XLE ↓")
+            score += 1
+
+    # VIX 상승인데 금융 상승
+    if signif(vix, THR_VIX) and vix > 0:
+        if signif(xlf, THR_SECTOR) and xlf > 0:
+            breaks.append("VIX ↑ but XLF ↑")
+            score += 1
+
+    # 달러 상승인데 기술 상승
+    if signif(dxy, THR_DXY) and dxy > 0:
+        if signif(xlk, THR_SECTOR) and xlk > 0:
+            breaks.append("DXY ↑ but XLK ↑")
+            score += 1
+
+    breakdown_type = "NONE"
+
+    if len(breaks) > 0:
+        if "DXY ↑ but XLK ↑" in breaks:
+            breakdown_type = "MACRO_TIGHTENING_TECH_RALLY"
+
+        elif "US10Y ↑ but XLF ↓" in breaks:
+            breakdown_type = "XLF_BETRAYAL"
+
+        elif "WTI ↑ but XLE ↓" in breaks:
+            breakdown_type = "ENERGY_BETRAYAL"
+
+        elif "US10Y ↓ but XLK ↓" in breaks:
+            breakdown_type = "GROWTH_FAILED_ON_RATE_RELIEF"
+
+        elif "US10Y ↓ but XLF ↓" in breaks:
+            breakdown_type = "FINANCIALS_WEAK_ON_RATE_RELIEF"
+
+        elif "VIX ↑ but XLF ↑" in breaks:
+            breakdown_type = "FINANCIALS_RESILIENCE_UNDER_VOL"
+
+        else:
+            breakdown_type = "UNCLASSIFIED_SECTOR_BREAK"
+
+    return {
+        "break": len(breaks) > 0,
+        "score": score,
+        "reasons": breaks,
+        "breakdown_type": breakdown_type,
+        "primary_reason": breaks[0] if breaks else "NONE",
+    }
+
+    
+def _cumret_series_from_df(df: pd.DataFrame, col: str, days: int = 5) -> pd.Series:
+    s = pd.to_numeric(df[col], errors="coerce")
+    s = s.dropna()
+    return s.pct_change(days) * 100.0
+    
+def _to_float(x: Any) -> Optional[float]:
+    try:
+        if x is None:
+            return None
+        return float(x)
+    except Exception:
+        return None
+
+
+def _get_series(market_data: Dict[str, Any], key: str) -> Dict[str, Any]:
+    # ✅ 방탄: market_data가 None으로 들어와도 죽지 않게
+    if market_data is None:
+        market_data = {}
+
+    raw = market_data.get(key)
+
+    if isinstance(raw, dict):
+        today = _to_float(raw.get("today", raw.get("value", raw.get("current"))))
+        prev = _to_float(raw.get("prev", raw.get("previous")))
+        pct = _to_float(raw.get("pct_change", raw.get("pct", raw.get("change_pct"))))
+
+        delta = None
+        if today is not None and prev is not None:
+            delta = today - prev
+            if pct is None and prev != 0:
+                pct = (delta / prev) * 100.0
+
+        return {"today": today, "prev": prev, "pct_change": pct, "delta": delta}
+
+    today = _to_float(raw)
+    return {"today": today, "prev": None, "pct_change": None, "delta": None}
+
+
+
+def _sign_from(series: Dict[str, Any]) -> int:
+    pct = _to_float(series.get("pct_change"))
+    delta = _to_float(series.get("delta"))
+
+    if pct is not None:
+        if pct > 0:
+            return 1
+        if pct < 0:
+            return -1
+        return 0
+
+    if delta is not None:
+        if delta > 0:
+            return 1
+        if delta < 0:
+            return -1
+        return 0
+
+    return 0
+
+
+def _dir_str(d: int) -> str:
+    if d == 1:
+        return "↑"
+    if d == -1:
+        return "↓"
+    return "→"
+
+
+def _fmt_num(x: Optional[float], nd: int = 3) -> str:
+    if x is None:
+        return "N/A"
+    return f"{x:.{nd}f}"
+
+
+def _strength_label(key: str, pct_change: Optional[float]) -> str:
+    if pct_change is None:
+        return "N/A"
+
+    p = abs(pct_change)
+
+    if key in ("US10Y",):
+        if p < 0.02:
+            return "Noise"
+        if p < 0.07:
+            return "Mild"
+        if p < 0.15:
+            return "Clear"
+        return "Strong"
+
+    if key in ("DXY",):
+        if p < 0.05:
+            return "Noise"
+        if p < 0.15:
+            return "Mild"
+        if p < 0.35:
+            return "Clear"
+        return "Strong"
+
+    if key in ("WTI",):
+        if p < 0.15:
+            return "Noise"
+        if p < 0.60:
+            return "Mild"
+        if p < 1.30:
+            return "Clear"
+        return "Strong"
+
+    if key in ("VIX",):
+        if p < 0.40:
+            return "Noise"
+        if p < 1.20:
+            return "Mild"
+        if p < 2.50:
+            return "Clear"
+        return "Strong"
+
+    if key in ("USDKRW",):
+        if p < 0.05:
+            return "Noise"
+        if p < 0.20:
+            return "Mild"
+        if p < 0.50:
+            return "Clear"
+        return "Strong"
+
+    # ✅ ETF류(HYG/LQD 등)는 좀 더 넓게
+    if key in ("HYG", "LQD"):
+        if p < 0.10:
+            return "Noise"
+        if p < 0.40:
+            return "Mild"
+        if p < 0.90:
+            return "Clear"
+        return "Strong"
+
+    if p < 0.10:
+        return "Noise"
+    if p < 0.30:
+        return "Mild"
+    if p < 0.80:
+        return "Clear"
+    return "Strong"
+    
+
+# =========================
+# 1) Regime
+# =========================
+# =========================================================
+# PATCH TARGET:
+# get_regime_label() 함수만 수정
+# (market_regime_filter는 출력용이라 최대한 유지)
+#
+# 핵심:
+# 1. 기존 구조 최대 보존
+# 2. VIX 레벨 + 강도 반영
+# 3. SOFT / HARD / MIXED 추가
+# 4. VIX 16~18 노이즈를 HARD RISK-OFF로 오판 방지
+# =========================================================
+
+def get_regime_label(market_data: Dict[str, Any]) -> str:
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    vix = _get_series(market_data, "VIX")
+    wti = _get_series(market_data, "WTI")  # 디스인플레 완충용 추가
+
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    vix_dir = _sign_from(vix)
+
+    # -----------------------------
+    # 실제 레벨 / 변화율
+    # -----------------------------
+    vix_today = vix.get("today")
+    vix_change = abs(vix.get("pct", 0) or 0)
+
+    dxy_change = abs(dxy.get("pct", 0) or 0)
+    us10y_change = abs(us10y.get("pct", 0) or 0)
+
+    wti_pct = wti.get("pct", 0) if wti else 0
+
+    combo = (us10y_dir, dxy_dir, vix_dir)
+
+    # 기본값
+    regime = "TRANSITION / MIXED (전환·혼조)"
+
+    # =====================================================
+    # 0) WAITING
+    # =====================================================
+    if combo == (0, 0, 0):
+        regime = "WAITING / RANGE (대기·박스권)"
+
+    # =====================================================
+    # 1) FULL RISK ON
+    # =====================================================
+    # =====================================================
+    # 1) FULL RISK ON
+    # =====================================================
+    elif combo == (-1, -1, -1):
+
+        # 유가 급락이면 단순 Risk-On보다
+        # 디스인플레이션 / 성장둔화 가능성 고려
+        if wti_pct is not None and wti_pct <= -3:
+            regime = "DISINFLATION / GROWTH TRANSITION"
+        else:
+            regime = "RISK-ON (완화 기대·리스크 선호)"
+    # =====================================================
+    # 2) FULL RISK OFF
+    # 단, 진짜 강한 공포일 때만
+    # =====================================================
+    elif combo == (1, 1, 1):
+        if vix_today is not None and vix_today >= 22 and vix_change >= 3:
+            regime = "HARD RISK-OFF (긴축/불안 심화)"
+        else:
+            regime = "SOFT RISK-OFF (경계 강화)"
+
+    # =====================================================
+    # 3) EVENT WATCHING
+    # =====================================================
+    # =====================================================
+    # 5) PARTIAL RISK ON
+    # 진짜 부분 리스크온은 VIX↓ + (금리↓ 또는 달러↓)만으로 부족.
+    # DXY↑ / 유가↑ / 긴축 구조에서는 TRANSITION으로 둔다.
+    # =====================================================
+    elif vix_dir == -1 and (dxy_dir == -1 or us10y_dir == -1):
+
+        # 달러가 같이 약해질 때만 부분 Risk-On 인정
+        if dxy_dir == -1:
+            regime = "RISK-ON (부분 정렬)"
+
+        # 달러는 강한데 금리만 내려가면 risk-on 확정 아님
+        elif us10y_dir == -1 and dxy_dir == 1:
+            if wti_pct is not None and wti_pct > 1:
+                regime = "TRANSITION / MIXED (전환·혼조)"
+            else:
+                regime = "EVENT-WATCHING (이벤트 관망)"
+
+        else:
+            regime = "TRANSITION / MIXED (전환·혼조)"
+
+    # =====================================================
+    # 4) TIGHTENING
+    # =====================================================
+    elif us10y_dir == 1 and dxy_dir == 1 and vix_dir != -1:
+        if vix_today is not None and vix_today < 18:
+            regime = "TIGHTENING BIAS (긴축 편향)"
+        else:
+            regime = "SOFT RISK-OFF (긴축 우려)"
+
+    # =====================================================
+    # 5) PARTIAL RISK ON
+    # =====================================================
+    elif vix_dir == -1 and (dxy_dir == -1 or us10y_dir == -1):
+        regime = "RISK-ON (부분 정렬)"
+
+    # =====================================================
+    # 6) PARTIAL RISK OFF
+    # 오늘 같은 과민반응 방지 핵심
+    # =====================================================
+    elif vix_dir == 1 and (dxy_dir == 1 or us10y_dir == 1):
+
+        # VIX 낮고 / 상승폭 작고 / 유가 급락이면
+        # 완전 리스크오프보다 혼조 또는 소프트 처리
+        if (
+            vix_today is not None
+            and vix_today < 18
+            and vix_change < 3
+        ):
+            if wti_pct <= -2:
+                regime = "MIXED / FRAGILE (혼조·디스인플레)"
+            else:
+                regime = "SOFT RISK-OFF (부분 경계)"
+
+        else:
+            regime = "RISK-OFF (부분 정렬)"
+
+    return regime
+    
+def market_regime_filter(market_data: Dict[str, Any]) -> str:
+    vix = _get_series(market_data, "VIX")
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+
+    vix_today = vix["today"]
+    vix_level = "N/A"
+    if vix_today is not None:
+        if vix_today < 14:
+            vix_level = "Low (Risk-on bias)"
+        elif vix_today < 20:
+            vix_level = "Mid (Neutral/Mixed)"
+        else:
+            vix_level = "High (Risk-off bias)"
+
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    vix_dir = _sign_from(vix)
+    
+    tape = build_cross_asset_tape(market_data)
+    market_data["CROSS_ASSET_TAPE"] = tape
+    
+    print("[DEBUG][CROSS_ASSET_TAPE]", tape)
+    macro_narrative = interpret_macro_narrative(tape)
+    policy_state = str(market_data.get("POLICY_BACKBONE_STATE", "MIXED"))
+    regime = map_to_portfolio_regime(policy_state, macro_narrative, tape)
+    #regime = map_to_portfolio_regime("EASING", macro, tape)
+        # --------------------------------------------------
+    # Flow Context Overlay (Display only, all regimes)
+    # 내부 MARKET_REGIME 값은 건드리지 않고, 리포트 표시용으로만 사용
+    # --------------------------------------------------
+    flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+
+    flow_score = flow.get("score", 0)
+    try:
+        flow_score = int(flow_score)
+    except Exception:
+        flow_score = 0
+
+    if flow_score >= 7:
+        flow_suffix = " (Flow Confirmed)"
+    elif flow_score >= 5:
+        flow_suffix = " (Flow Building)"
+    elif flow_score >= 3:
+        flow_suffix = " (Flow Improving)"
+    else:
+        flow_suffix = " (Flow Weak)"
+
+    display_context = f"{regime} | Flow: {flow_suffix}"
+    
+    # ✅ Phase/Regime를 다른 필터(Narrative Engine 등)에서 쓰도록 저장
+    market_data["MARKET_REGIME"] = regime
+    market_data["MACRO_NARRATIVE"] = macro_narrative
+    market_data["CROSS_ASSET_TAPE"] = tape
+
+    reason = f"Macro Narrative={macro_narrative} / Policy={policy_state} / Credit={tape.get('HY_OAS_STATUS')}"
+    if regime.startswith("WAITING"):
+        reason = "핵심 축(금리/달러/변동성) 모두 보합 → 방향성 부재"
+    elif regime.startswith("RISK-ON") and "부분" not in regime:
+        reason = "금리↓ + 달러↓ + VIX↓ → 위험자산 선호/유동성 기대"
+    elif regime.startswith("RISK-OFF") and "부분" not in regime:
+        reason = "금리↑ + 달러↑ + VIX↑ → 안전자산/현금 선호 강화"
+    elif regime.startswith("EVENT-WATCHING"):
+        reason = "변동성은 눌려있지만 금리/달러가 움직임 → 데이터/이벤트 대기"
+    elif regime.startswith("TIGHTENING"):
+        reason = "금리↑ + 달러↑ → 글로벌 금융여건 타이트해질 가능성"
+    elif "부분" in regime and regime.startswith("RISK-ON"):
+        reason = "VIX↓ + (금리↓ 또는 달러↓) → 리스크 선호가 서서히 강화"
+    elif "부분" in regime and regime.startswith("RISK-OFF"):
+        reason = "VIX↑ + (금리↑ 또는 달러↑) → 불안/긴축 우려 확대"
+
+    lines = []
+    lines.append("### 🧩 1) Market Regime Filter")
+    lines.append("- **정의:** 지금 어떤 장(場)인지 판단하는 *시장 국면 필터*")
+    lines.append("- **추가 이유:** 같은 지표도 ‘국면’에 따라 의미가 완전히 달라지기 때문")
+    lines.append("")
+    lines.append(f"- **VIX 레벨:** {_fmt_num(vix_today, 2)} → **{vix_level}**")
+    lines.append(
+        f"- **핵심 조합(전일 대비 방향):** "
+        f"US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})"
+    )
+    lines.append(f"- **판정:** **{display_context}**")
+    lines.append(f"- **근거:** {reason}")
+    return "\n".join(lines)
+
+
+# =========================
+# 2) Liquidity (rates/dollar/vix)
+# =========================
+def liquidity_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Enhanced Liquidity Filter (Expectation + Reality + Incentive)
+    - US10Y/DXY/VIX: 'market expectations' (price-based)
+    - FCI: 'real-world pressure' (lower = easier)
+    - REAL_RATE(TIPS): 'risk-taking incentive' (lower = easier)
+
+    Output: no raw numbers, only direction + level labels.
+    """
+
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    vix = _get_series(market_data, "VIX")
+
+    fci = _get_series(market_data, "FCI")
+    rr  = _get_series(market_data, "REAL_RATE")
+
+    def _valid(x):
+        return x is not None and not pd.isna(x)
+
+    us10y_dir = _sign_from(us10y)
+    dxy_dir   = _sign_from(dxy)
+    vix_dir   = _sign_from(vix)
+
+    # Direction: REAL_RATE는 daily dir 사용, FCI는 low-frequency proxy로 direction 비강조
+    fci_raw_dir = _sign_from(fci)
+    rr_raw_dir  = _sign_from(rr)
+
+    fci_eff_dir = None
+    rr_eff_dir  = -rr_raw_dir if _valid(rr.get("today")) else 0
+    
+    def fci_level_label(x: Optional[float]) -> str:
+        if x is None or pd.isna(x):
+            return "N/A"
+        if x <= -0.25:
+            return "EASY (완화)"
+        if x < 0.25:
+            return "NEUTRAL (중립)"
+        return "TIGHT (압박)"
+
+    def rr_level_label(x: Optional[float]) -> str:
+        if x is None or pd.isna(x):
+            return "N/A"
+        if x < 1.0:
+            return "SUPPORTIVE (유인↑)"
+        if x < 2.0:
+            return "NEUTRAL (중립)"
+        return "RESTRICTIVE (유인↓)"
+
+    fci_level = fci_level_label(_to_float(fci.get("today")))
+    rr_level  = rr_level_label(_to_float(rr.get("today")))
+
+    exp_easing = (us10y_dir == -1 and dxy_dir == -1 and vix_dir in (-1, 0))
+    exp_tight  = (us10y_dir == 1 and dxy_dir == 1)
+
+    def level_score(label: str) -> int:
+        if label in ("EASY (완화)", "SUPPORTIVE (유인↑)"):
+            return 1
+        if label in ("TIGHT (압박)", "RESTRICTIVE (유인↓)"):
+            return -1
+        return 0
+
+    reality_score = level_score(fci_level)
+    incentive_score = level_score(rr_level)
+
+    state = "LIQUIDITY MIXED / FRAGILE (혼조·취약)"
+    rationale = "기대(가격)와 현실(FCI)/유인(실질금리) 정렬이 불완전"
+
+    if exp_easing and reality_score == 1 and incentive_score == 1:
+        state = "LIQUIDITY EXPANDING (Confirmed) (유동성 확대·확인)"
+        rationale = "기대 완화 + FCI 완화 + 실질금리 유인↑ → ‘현실/유인’까지 동반"
+    elif exp_easing and (reality_score >= 0 and incentive_score >= 0):
+        state = "LIQUIDITY EXPANDING (Expectation-led) (기대 주도 확대)"
+        rationale = "기대는 완화 쪽, FCI/실질금리는 중립 이상 → 랠리 지속 가능성은 ‘열려있음’"
+    elif exp_easing and (reality_score == -1 or incentive_score == -1):
+        state = "LIQUIDITY MIXED / FRAGILE (혼조·취약)"
+        rationale = "기대는 완화지만 FCI 압박 또는 실질금리 유인↓ → 리스크자산 지속성 약화 리스크"
+    elif exp_tight and (reality_score == -1 or incentive_score == -1):
+        state = "LIQUIDITY TIGHTENING (유동성 축소)"
+        rationale = "금리↑+달러↑ + (FCI 압박 또는 실질금리 유인↓) → 리스크자산에 불리"
+    elif exp_tight and reality_score == 1 and incentive_score == 1:
+        state = "LIQUIDITY MIXED / FRAGILE (혼조·취약)"
+        rationale = "가격은 타이트하지만 FCI/유인은 완화 → ‘가격 신호의 과잉’ 가능"
+
+    fci_asof = market_data.get("_FCI_ASOF")
+    rr_asof  = market_data.get("_REAL_ASOF")
+ 
+    lines = []
+    lines.append("### 💧 2) Liquidity Filter (Enhanced)")
+    lines.append("- **질문:** 시장에 새 돈이 들어오는가, 말라가는가?")
+    lines.append(
+        "- **추가 이유:** US10Y/DXY/VIX는 ‘시장의 기대’를 보여주고, "
+        "FCI는 ‘현실의 압박’을, Real Rates는 ‘위험을 감수할 유인’을 보여준다."
+    )
+    lines.append("")
+    lines.append(
+        f"- **기대(가격) 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})"
+    )
+
+    fci_value = _to_float(fci.get("today"))
+    rr_value = _to_float(rr.get("today"))
+    
+    if not _valid(fci.get("today")):
+        lines.append("- **현실(FCI):** N/A (not available)")
+    else:
+        lines.append(
+            f"- **현실(FCI):** value={fci_value:.3f} / level={fci_level} / update=low-frequency"
+            + (f" | as of: {fci_asof} (latest available)" if fci_asof else "")
+        )
+    
+    if not _valid(rr.get("today")):
+        lines.append("- **유인(Real Rates):** N/A (not available)")
+    else:
+        lines.append(
+            f"- **유인(Real Rates):** value={rr_value:.3f} / level={rr_level} / dir({_dir_str(rr_eff_dir)})"
+            + (f" | as of: {rr_asof} (latest available)" if rr_asof else "")
+        )
+    
+    lines.append(f"- **판정:** **{state}**")
+    lines.append(f"- **근거:** {rationale}")
+    lines.append("- **Note:** FCI는 저빈도 금융환경 프록시로 level 중심 해석, Real Rates는 영업일 기준 변화 방향을 함께 반영함")
+    
+    return "\n".join(lines)
+    
+
+# =========================
+# 3) Policy
+# =========================
+from typing import Dict, Any
+def policy_filter_with_expectations(market_data: Dict[str, Any]) -> str:
+    """
+    Policy Filter upgraded with Macro-Δ structure engine.
+    - Always works even when EXPECTATIONS is missing/unusable.
+    - Uses REAL_RATE/FCI + DXY + US10Y to infer policy bias (structure).
+    - Combines structure (bias) + price impulse (US10Y/DXY/VIX) into final regime.
+    """
+
+    # ---- helpers ----
+    def _safe_get_series(key: str) -> Dict[str, Any]:
+        s = _get_series(market_data, key) or {}
+        return {
+            "today": s.get("today"),
+            "prev": s.get("prev"),
+            "pct_change": s.get("pct_change"),
+        }
+
+    def _delta(s: Dict[str, Any]):
+        t, p = s.get("today"), s.get("prev")
+        if t is None or p is None:
+            return None
+        try:
+            return float(t) - float(p)
+        except Exception:
+            return None
+
+    def _dir_from_delta(d):
+        if d is None:
+            return 0
+        return 1 if d > 0 else (-1 if d < 0 else 0)
+
+    def _fmt_delta(d, digits=3):
+        if d is None:
+            return "N/A"
+        return f"{d:+.{digits}f}"
+
+    # ---- 1) pull series ----
+    us10y = _safe_get_series("US10Y")
+    dxy = _safe_get_series("DXY")
+    vix = _safe_get_series("VIX")
+    fci = _safe_get_series("FCI")
+    real = _safe_get_series("REAL_RATE")
+
+    us10y_d = _delta(us10y)
+    dxy_d = _delta(dxy)
+    vix_d = _delta(vix)  # (not used in structure score, but kept for display)
+    fci_d = _delta(fci)
+    real_d = _delta(real)
+
+    # Price impulse (what market did) - uses pct_change sign from _sign_from()
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    vix_dir = _sign_from(vix)
+
+    # ---- 2) structure score (policy bias) ----
+    # Convention: + direction = tighter / - direction = easier
+    # Stronger weights: REAL_RATE, FCI, DXY. Weaker: US10Y (overlaps with REAL_RATE somewhat)
+    score = 0.0
+    components = []
+
+    def add_component(name: str, d, w: float):
+        nonlocal score
+        if d is None:
+            components.append(f"{name}Δ N/A")
+            return
+        direction = _dir_from_delta(d)  # + => tightening impulse, - => easing impulse
+        score += w * direction
+        components.append(f"{name}Δ {_fmt_delta(d)}")
+
+    add_component("REAL_RATE", real_d, 1.0)   # real yield up = tighter
+    fci_value = _to_float(fci.get("today"))
+
+    if fci_value is None:
+        components.append("FCI value=N/A (low-frequency)")
+    else:
+        components.append(f"FCI value={fci_value:.3f} (low-frequency)")
+    add_component("DXY", dxy_d, 1.0)          # dollar stronger = tighter
+    add_component("US10Y", us10y_d, 0.5)      # nominal up = tighter (weaker weight)
+
+    # Bias buckets (structure)
+    if score >= 2.5:
+        bias = "TIGHTENING (긴축)"
+        strength = "STRONG"
+    elif score <= -2.5:
+        bias = "EASING (완화)"
+        strength = "STRONG"
+    elif score >= 1.0:
+        bias = "TIGHTENING (긴축)"
+        strength = "MODERATE"
+    elif score <= -1.0:
+        bias = "EASING (완화)"
+        strength = "MODERATE"
+    else:
+        bias = "MIXED (혼조)"
+        strength = "WEAK"
+
+    bias_line = f"Policy Bias: {bias} ({strength}, score={score:+.1f}) | " + " / ".join(components)
+    market_data["POLICY_BIAS_LINE"] = bias_line
+
+    # ---- 3) baseline regime from price action ----
+    price_regime = "POLICY MIXED (정책 신호 혼조)"
+    price_rationale = "금리/달러/변동성 신호가 완전히 정렬되지 않음"
+
+    if us10y_dir == -1 and dxy_dir == -1 and vix_dir in (-1, 0):
+        price_regime = "POLICY EASING (완화)"
+        price_rationale = "금리↓ + 달러↓ (+VIX 안정) → 완화 쪽"
+    elif us10y_dir == 1 and dxy_dir == 1:
+        price_regime = "POLICY TIGHTENING (긴축)"
+        price_rationale = "금리↑ + 달러↑ → 긴축 압력"
+
+    # ---- 4) combine: structure vs price -> final regime ----
+    # Simple decision rule:
+    # - If structure is STRONG and conflicts with price -> structure-led
+    # - If structure is STRONG and aligns -> reinforced
+    # - Otherwise -> price-led (default)
+    def _structure_label(bias_text: str) -> str:
+        if "EASING" in bias_text:
+            return "EASING"
+        if "TIGHTENING" in bias_text:
+            return "TIGHTENING"
+        return "MIXED"
+
+    def _price_label(regime_text: str) -> str:
+        if "EASING" in regime_text:
+            return "EASING"
+        if "TIGHTENING" in regime_text:
+            return "TIGHTENING"
+        return "MIXED"
+
+    s_lab = _structure_label(bias)
+    p_lab = _price_label(price_regime)
+
+    if strength == "STRONG" and s_lab != "MIXED" and p_lab != "MIXED" and s_lab != p_lab:
+        regime = f"POLICY {s_lab} (structure-led) (구조 주도)"
+        rationale = f"구조(REAL/FCI/DXY/US10Y)가 {s_lab} 방향으로 강함 → 가격신호({price_regime})는 확인/노이즈로 처리"
+        one_liner = f"구조는 {bias}, 가격은 {price_regime} → 최종 POLICY {s_lab} (structure-led) (구조 주도)"
+    elif strength == "STRONG" and s_lab != "MIXED" and s_lab == p_lab:
+        regime = f"POLICY {s_lab} (reinforced) (강화)"
+        rationale = f"구조(REAL/FCI/DXY/US10Y)와 가격신호가 모두 {s_lab}로 정렬 → 신호 신뢰도 상승"
+        one_liner = f"구조={bias} & 가격={price_regime} 정렬 → 최종 POLICY {s_lab} (reinforced) (강화)"
+    else:
+        regime = price_regime
+        rationale = price_rationale
+        one_liner = f"구조={bias}({strength})는 참고, 가격={price_regime} 중심 → 최종 {regime}"
+
+    # ---- 5) expectations (optional, display only for now) ----
+    expectations_raw = market_data.get("EXPECTATIONS")
+    if expectations_raw is None:
+        exp_line = "Expectations: N/A (no data attached)"
+    elif isinstance(expectations_raw, list):
+        exp_line = f"Expectations: list received (len={len(expectations_raw)}), event-surprise layer not applied."
+    elif isinstance(expectations_raw, dict):
+        exp_line = "Expectations: dict received."
+    else:
+        exp_line = f"Expectations: unsupported type={type(expectations_raw).__name__}"
+
+    # ---- 6) report ----
+    lines = []
+    lines.append("### 🏛️ 3) Policy Filter (with Expectations)")
+    lines.append("- **질문:** 중앙은행·정책 환경은 완화인가, 긴축인가?")
+    lines.append("")
+    lines.append(
+        f"- **가격(현재) 신호:** US10Y({_dir_str(us10y_dir)}) / DXY({_dir_str(dxy_dir)}) / VIX({_dir_str(vix_dir)})"
+    )
+    lines.append(f"- **{bias_line}**")
+    lines.append(f"- **{exp_line}**")
+    lines.append("")
+    lines.append(f"- **판정:** **{regime}**")
+    lines.append(f"- **근거:** {rationale}")
+    lines.append(f"- **한줄요약 ~~** {one_liner}")
+
+    return "\n".join(lines)
+
+
+
+# =========================
+# 4) Fed Plumbing (TGA/RRP/Net Liquidity)
+# =========================
+def fed_plumbing_filter(market_data: Dict[str, Any]) -> str:
+    tga = _get_series(market_data, "TGA")
+    rrp = _get_series(market_data, "RRP")
+    net = _get_series(market_data, "NET_LIQ")
+
+    # ✅ generate_report.py: "_LIQ_ASOF"
+    # ✅ legacy/other: "LIQUIDITY_ASOF"
+    as_of = None
+    raw_as_of = market_data.get("_LIQ_ASOF")
+
+    if isinstance(raw_as_of, str) and raw_as_of.strip():
+        as_of = raw_as_of.strip()
+
+    if tga["today"] is None and rrp["today"] is None and net["today"] is None:
+        lines = [
+            "### 🧰 4) Fed Plumbing Filter (TGA/RRP/Net Liquidity)",
+            "- **질문:** 시장의 ‘달러 체력’은 늘고 있나, 줄고 있나?",
+            "- **추가 이유:** 금리·달러가 안정적이어도 유동성이 빠지면 리스크 자산은 쉽게 흔들릴 수 있음",
+            "- **Status:** Not ready (TGA/RRP/NET_LIQ not found in market_data)",
+        ]
+        return "\n".join(lines)
+
+    tga_dir = _sign_from(tga)
+    rrp_dir = _sign_from(rrp)
+    net_dir = _sign_from(net)
+
+    state = "LIQUIDITY NEUTRAL"
+    rationale = "레벨/방향 혼조 또는 정보 제한"
+
+    if net["today"] is not None:
+        if net_dir == 1:
+            state = "LIQUIDITY SUPPORTIVE (완만한 유동성 우호)"
+            rationale = "Net Liquidity↑ → 시장 내 달러 여력 개선"
+        elif net_dir == -1:
+            state = "LIQUIDITY DRAINING (유동성 흡수)"
+            rationale = "Net Liquidity↓ → 시장 내 달러 여력 축소 가능"
+
+    lines = []
+    lines.append("### 🧰 4) Fed Plumbing Filter (TGA/RRP/Net Liquidity)")
+    lines.append("- **질문:** 시장의 ‘달러 체력’은 늘고 있나, 줄고 있나?")
+    lines.append("- **추가 이유:** 금리·달러가 안정적이어도 유동성이 빠지면 리스크 자산은 쉽게 흔들릴 수 있음")
+    if as_of:
+        lines.append(f"- **Liquidity as of:** {as_of} (FRED latest)")
+    if net["today"] is not None:
+        lines.append(f"- **NET_LIQ level:** {_fmt_num(net['today'], 1)}")
+    if tga["today"] is not None:
+        lines.append(f"- **TGA level:** {_fmt_num(tga['today'], 1)}")
+    if rrp["today"] is not None:
+        lines.append(f"- **RRP level:** {_fmt_num(rrp['today'], 3)}")
+
+    lines.append(
+        f"- **방향(전일 대비):** TGA({_dir_str(tga_dir)}) / RRP({_dir_str(rrp_dir)}) / NET_LIQ({_dir_str(net_dir)})"
+    )
+    lines.append(f"- **판정:** **{state}**")
+    lines.append(f"- **근거:** {rationale}")
+    lines.append("- **Note:** TGA/RRP/WALCL은 매일 갱신되지 않을 수 있어, 리포트에는 ‘최근 available 값’을 반영함")
+    return "\n".join(lines)
+
+
+def get_credit_state(market_data):
+    hy = _get_series(market_data, "HY_OAS")
+
+    if hy.get("today") is None:
+        return {
+            "state": "UNKNOWN",
+            "level": None,
+            "direction": 0,
+            "is_credit_fracture": False,
+            "is_credit_stress": False,
+        }
+
+    level = float(hy["today"])
+    direction = _sign_from(hy)
+
+    if level >= 6.0:
+        state = "CREDIT_CRISIS"
+    elif level >= 4.0:
+        state = "CREDIT_STRESS"
+    elif level >= 3.0:
+        state = "CREDIT_WATCH"
+    else:
+        state = "CREDIT_CALM"
+
+    is_credit_fracture = level >= 6.0
+    is_credit_stress = level >= 4.0 and direction == 1
+
+    return {
+        "state": state,
+        "level": level,
+        "direction": direction,
+        "is_credit_fracture": is_credit_fracture,
+        "is_credit_stress": is_credit_stress,
+    }
+
+# =========================
+# 4.5) Credit Stress Filter (HYG vs LQD)
+# =========================
+def credit_stress_filter(market_data: Dict[str, Any]) -> str:
+    """
+    If HYG ↓ and LQD ↑ or → :
+        Credit Stress ↑ (Risk-off warning)
+
+    해석:
+      - 하이일드(저신용) 채권이 약해지고,
+      - IG(우량) 채권은 버티거나 강해지면,
+      → 시장이 '위험을 감수할 이유가 없다'고 판단하며
+        크레딧 리스크를 먼저 줄이는 신호로 해석
+    """
+    hyg = _get_series(market_data, "HYG")
+    lqd = _get_series(market_data, "LQD")
+
+    if hyg["today"] is None or lqd["today"] is None:
+        lines = [
+            "### 🧾 4.5) Credit Stress Filter (HYG vs LQD)",
+            "- **질문:** 크레딧 시장이 먼저 ‘리스크오프’를 말하고 있는가?",
+            "- **추가 이유:** HYG가 LQD보다 약해지면, 시장이 ‘위험을 감수할 이유가 없다’고 판단하기 시작했을 가능성",
+            "- **Status:** Not ready (need HYG & LQD in market_data)",
+        ]
+        return "\n".join(lines)
+
+    hyg_dir = _sign_from(hyg)
+    lqd_dir = _sign_from(lqd)
+
+    state = "CREDIT NEUTRAL"
+    rationale = "HYG/LQD 방향성이 뚜렷하지 않음"
+
+    # 핵심 룰
+    if hyg_dir == -1 and lqd_dir in (0, 1):
+        state = "CREDIT STRESS ↑ (Risk-off warning)"
+        rationale = "하이일드 약세(HYG↓) + 우량채 방어(LQD→/↑) → 위험회피로 크레딧 프리미엄 재평가 가능"
+    elif hyg_dir == 1 and lqd_dir in (0, -1):
+        state = "CREDIT RISK-ON (risk appetite improving)"
+        rationale = "하이일드 강세(HYG↑) + 우량채 약세/보합(LQD→/↓) → 위험선호 회복 가능"
+
+    lines = []
+    lines.append("### 🧾 4.5) Credit Stress Filter (HYG vs LQD)")
+    lines.append("- **질문:** 크레딧 시장이 먼저 ‘리스크오프’를 말하고 있는가?")
+    lines.append("- **추가 이유:** HYG가 LQD보다 약해지면, 시장이 ‘위험을 감수할 이유가 없다’고 판단하기 시작했을 가능성")
+    lines.append(f"- **방향(전일 대비):** HYG({_dir_str(hyg_dir)}) / LQD({_dir_str(lqd_dir)})")
+    lines.append(f"- **HYG:** today {_fmt_num(hyg['today'], 3)} / prev {_fmt_num(hyg['prev'], 3)} / pct {_fmt_num(hyg['pct_change'], 2)}%")
+    lines.append(f"- **LQD:** today {_fmt_num(lqd['today'], 3)} / prev {_fmt_num(lqd['prev'], 3)} / pct {_fmt_num(lqd['pct_change'], 2)}%")
+    lines.append(f"- **판정:** **{state}**")
+    lines.append(f"- **근거:** {rationale}")
+    return "\n".join(lines)
+
+def high_yield_spread_filter(market_data: Dict[str, Any]) -> str:
+    """
+    4.2) High Yield Spread Filter (HY OAS)
+    - HY OAS level = 크레딧 공포의 '온도'
+    - Level이 높을수록: 디폴트/자금조달/리스크 프리미엄 스트레스 ↑
+    """
+    hy = _get_series(market_data, "HY_OAS")
+    asof = market_data.get("_HY_ASOF")
+
+    if hy.get("today") is None:
+        lines = [
+            "### 🌡️ 4.2) High Yield Spread Filter (HY OAS)",
+            "- **질문:** 시장 공포의 ‘온도’는 올라가고 있나, 내려가고 있나?",
+            "- **추가 이유:** HYG/LQD가 ‘방향’이라면, HY Spread는 ‘강도(얼마나 무서워하는지)’를 보여줌",
+            "- **Status:** Not ready (need HY_OAS in market_data)",
+        ]
+        return "\n".join(lines)
+
+    level = float(hy["today"])
+    d = _sign_from(hy)
+    pct = hy.get("pct_change")
+    pct_txt = f"{pct:+.2f}%" if pct is not None else "N/A"
+
+    # ✅ 간단/실무형 레벨 구간 (퍼센트 단위)
+    # (너 프로젝트에 맞춰 추후 조정 가능)
+    if level < 3.0:
+        temp = "COOL (낮은 공포)"
+        base_state = "CREDIT CALM"
+        base_reason = "HY 스프레드 낮음 → 크레딧 스트레스 제한"
+    elif level < 4.0:
+        temp = "WARM (경계)"
+        base_state = "CREDIT WATCH"
+        base_reason = "스프레드 상승 구간 진입 → 리스크 프리미엄 확대 가능"
+    elif level < 6.0:
+        temp = "HOT (스트레스)"
+        base_state = "CREDIT STRESS"
+        base_reason = "스프레드 의미 있게 높음 → 위험자산 변동성↑ 가능"
+    else:
+        temp = "BURNING (위기 수준)"
+        base_state = "CREDIT CRISIS"
+        base_reason = "스프레드 급등 구간 → 디폴트/유동성 경색 우려"
+
+    # 방향까지 반영해 한 줄 더 “온도 해석”을 얹기
+    if d == 1:
+        nuance = "스프레드가 벌어지는 중 → 공포 온도 상승"
+    elif d == -1:
+        nuance = "스프레드가 좁혀지는 중 → 공포 온도 완화"
+    else:
+        nuance = "방향성 제한 → 레벨 중심 해석"
+
+    lines = []
+    lines.append("### 🌡️ 4.2) High Yield Spread Filter (HY OAS)")
+    lines.append("- **질문:** 시장 공포의 ‘온도’는 올라가고 있나, 내려가고 있나?")
+    lines.append("- **추가 이유:** HYG/LQD가 ‘방향’이라면, HY Spread는 ‘강도(얼마나 무서워하는지)’를 보여줌")
+    if asof:
+        lines.append(f"- **Spread as of:** {asof} (FRED latest)")
+    lines.append(f"- **HY_OAS level:** {_fmt_num(level, 2)}% → **{temp}**")
+    lines.append(f"- **방향(전일 대비):** HY_OAS({_dir_str(d)}) / {pct_txt}")
+    lines.append(f"- **판정:** **{base_state}**")
+    lines.append(f"- **근거:** {base_reason} / {nuance}")
+    lines.append("- **Note:** HY OAS는 매일 갱신되지 않을 수 있어, ‘최근 available 값’을 반영함")
+    return "\n".join(lines)
+
+
+
+# =========================
+# 5) Directional signals (legacy)
+# =========================
+def legacy_directional_filters(market_data: Dict[str, Any]) -> str:
+    def line(key: str, label: str, up: str, down: str, flat: str) -> str:
+        s = _get_series(market_data, key)
+        direction = _sign_from(s)
+        pct = _to_float(s.get("pct_change"))
+        strength = _strength_label(key, pct)
+
+        if direction == 1:
+            msg = up
+        elif direction == -1:
+            msg = down
+        else:
+            msg = flat
+
+        pct_txt = f"{pct:+.2f}%" if pct is not None else "N/A"
+        return f"- {label} **({strength}, {pct_txt})** → {msg}"
+
+    lines = []
+    lines.append("### 📌 5) Directional Signals (Legacy Filters)")
+    lines.append("**추가 이유:** 개별 자산의 단기 방향성과 노이즈 강도를 구분해 과도한 해석을 방지하기 위함")
+    lines.append(line("US10Y", "미국 금리(US10Y)", "완화 기대 약화/금리 부담", "완화 기대 강화", "보합(관망)"))
+    lines.append(line("DXY", "DXY", "달러 강세/신흥국 부담", "달러 약세/리스크 선호", "달러 보합(방향성 약함)"))
+    lines.append(line("WTI", "WTI", "인플레 재자극 가능성", "물가 부담 완화", "유가 보합(물가 변수 제한)"))
+    lines.append(line("VIX", "VIX", "심리 악화/리스크오프", "심리 개선/리스크온", "변동성 보합(심리 변화 제한)"))
+    lines.append(line("USDKRW", "원/달러(USDKRW)", "원화 약세/수급 부담", "원화 강세/수급 개선", "환율 보합(수급 압력 제한)"))
+    lines.append(line("HYG", "HYG (High Yield ETF)", "크레딧 위험선호↑", "크레딧 스트레스↑", "보합(크레딧 변화 제한)"))
+    lines.append(line("LQD", "LQD (IG Bond ETF)", "우량채 강세(리스크오프 성향)", "우량채 약세(리스크온 성향)", "보합(방향성 제한)"))
+    return "\n".join(lines)
+
+
+# =========================
+# 6) Cross-Asset Filter
+# =========================
+def cross_asset_filter(market_data: Dict[str, Any]) -> str:
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    wti = _get_series(market_data, "WTI")
+    vix = _get_series(market_data, "VIX")
+
+    us10y_dir = _sign_from(us10y)
+    # dxy_dir = _sign_from(dxy) # 필요시 사용
+    wti_dir = _sign_from(wti)
+    vix_dir = _sign_from(vix)
+
+    lines = []
+    lines.append("### 🧩 6) Cross-Asset Filter (자산군 연쇄 반응 분석)")
+    lines.append("- **추가 이유:** 단일 지표의 노이즈를 제거하고, 매크로 충격이 자산군 전반으로 확산되는 **전이 경로(Transmission Path)**를 파악하기 위함")
+    lines.append("")
+
+    # 1. 금리-통화 연쇄 반응
+    if us10y_dir == 1:
+        lines.append("- **금리 상승(US10Y↑)** → 실질 금리 압박 → 달러 강세(DXY↑) 유도: **신흥국 자본 유출 및 고밸류 성장주 할인율 부담 증가**")
+    elif us10y_dir == -1:
+        lines.append("- **금리 하락(US10Y↓)** → 할인율 압박 완화 → 달러 약세(DXY↓) 유도: **위험자산(Growth/EM) 선호 심리 강화 및 유동성 환경 개선**")
+    else:
+        lines.append("- **금리 보합(US10Y→)** → 할인율 변수 제한: 시장은 정책 경로 재확인을 위한 대기 국면")
+
+    # 2. 심리-수요 연쇄 반응
+    if vix_dir == 1:
+        lines.append("- **변동성 상승(VIX↑)** → 위험회피(Risk-Off) 강화: **안전 자산(Cash/USD) 선호도 급증 및 하이일드 스프레드 확대 압력**")
+    elif vix_dir == -1:
+        lines.append("- **변동성 하락(VIX↓)** → 심리 개선(Risk-On): **자산군 전반의 위험 수용 여력(Risk Appetite) 회복 및 랠리 지속 가능성**")
+    else:
+        lines.append("- **변동성 보합(VIX→)** → 심리 변화 제한: 현재의 추세가 관성적으로 유지되는 구간")
+
+    # 3. 에너지-인플레 연쇄 반응
+    if wti_dir == 1:
+        lines.append("- **유가 상승(WTI↑)** → 기대 인플레이션 자극: **제조/운송업 비용 부담 가중 및 중앙은행의 긴축 유지 명분 강화**")
+    elif wti_dir == -1:
+        lines.append("- **유가 하락(WTI↓)** → 물가 부담 완화: **실질 구매력 회복 및 긴축 압력 완화(Dovish Tilt) 가능성 시사**")
+    else:
+        lines.append("- **유가 보합(WTI→)** → 물가 변수 제한: 에너지발 매크로 충격은 제한적인 국면")
+
+    # 4. 연결 고리 (Check Point)
+    lines.append("")
+    lines.append("> **[Strategic Note]:** 위 연쇄 반응이 역사적 상관관계에서 벗어날 경우, **6.5) Correlation Break Monitor**를 통해 국면 전환 여부를 정밀 판별함")
+
+    return "\n".join(lines)
+
+
+    
+# =========================
+# 7) Risk Exposure Filter
+# =========================
+def risk_exposure_filter(market_data: Dict[str, Any]) -> str:
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    wti = _get_series(market_data, "WTI")
+    vix = _get_series(market_data, "VIX")
+
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    wti_dir = _sign_from(wti)
+    vix_dir = _sign_from(vix)
+
+    lines = []
+    lines.append("### 🧩 7) Risk Exposure Filter (숨은 리스크 분석)")
+    lines.append("- **추가 이유:** 숫자는 괜찮아 보여도 그 뒤에 숨은 리스크를 식별하기 위함")
+    lines.append("")
+
+    if vix_dir == 1:
+        lines.append("- **VIX 상승(VIX↑)** → 변동성 확대: 포지션 축소/헤지 수요 증가 가능")
+    elif vix_dir == -1:
+        lines.append("- **VIX 하락(VIX↓)** → 심리 안정: 리스크 수용 여력 개선")
+    else:
+        lines.append("- **VIX 보합(VIX→)** → 심리 변화 제한")
+
+    if us10y_dir == 1:
+        lines.append("- **금리 상승(US10Y↑)** → 할인율 부담/유동성 압박 가능")
+    elif us10y_dir == -1:
+        lines.append("- **금리 하락(US10Y↓)** → 완화 기대/할인율 부담 완화 가능")
+    else:
+        lines.append("- **금리 보합(US10Y→)** → 금리 변수 제한")
+
+    if dxy_dir == 1:
+        lines.append("- **달러 강세(DXY↑)** → 신흥국·원자재·원화 등 위험자산에 부담")
+    elif dxy_dir == -1:
+        lines.append("- **달러 약세(DXY↓)** → 위험자산 선호/신흥국 부담 완화 가능")
+    else:
+        lines.append("- **달러 보합(DXY→)** → 달러 변수 제한")
+
+    if wti_dir == 1:
+        lines.append("- **유가 상승(WTI↑)** → 인플레 압력/실질소득 부담 가능")
+    elif wti_dir == -1:
+        lines.append("- **유가 하락(WTI↓)** → 물가 부담 완화 가능")
+    else:
+        lines.append("- **유가 보합(WTI→)** → 물가 변수 제한")
+
+    return "\n".join(lines)
+
+
+
+# filters/strategist_filters.py (어딘가 상단 상수 구간)
+
+# filters/strategist_filters.py (상단 상수 구간)
+
+# filters/strategist_filters.py (상수 구간)
+
+
+
+# 급락 여부를 체크하는 함수
+GEO_WINDOW = 60
+
+def check_etf_crash(
+    df: pd.DataFrame,
+    etf_symbol: str,
+    days: int = 5,
+    threshold: float = 2.0,
+) -> bool:
+    """
+    ETF별 '위험 방향'을 반영한 crash/stress 체크 함수.
+
+    - 일반 risk asset (EEM, EMB, SPY, EIS, FXI, EWJ, BND 등):
+        5일 누적수익률이 -threshold%보다 낮으면 급락/위험
+    - safe haven / stress asset (GLD, VXX):
+        5일 누적수익률이 +threshold%보다 높으면 stress 확대(위험)
+
+    threshold는 절대값 기준 (기본 2.0%)
+    """
+    if etf_symbol not in df.columns:
+        return False
+
+    s = pd.to_numeric(df[etf_symbol], errors="coerce").dropna()
+    if len(s) < days + 1:
+        return False
+
+    cum_ret = (
+        (s.pct_change().add(1).rolling(window=days).apply(lambda x: x.prod(), raw=True) - 1)
+        * 100
+    )
+
+    if cum_ret.dropna().empty:
+        return False
+
+    last_val = float(cum_ret.dropna().iloc[-1])
+
+    # ✅ 방향성 정의
+    upside_risk_assets = {"GLD", "VXX"}   # 상승이 stress / risk-off
+    downside_risk_assets = {"EIS", "SPY", "EEM", "EMB", "FXI", "EWJ", "BND"}
+
+    if etf_symbol in upside_risk_assets:
+        if last_val > threshold:
+            print(f"[INFO] {etf_symbol} stress spike detected: {last_val:.2f}% change")
+            return True
+        return False
+
+    # default: 하락이 위험
+    if etf_symbol in downside_risk_assets or True:
+        if last_val < -threshold:
+            print(f"[INFO] {etf_symbol} has crashed: {last_val:.2f}% change")
+            return True
+
+    return False
+
+
+def attach_country_risk_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int,
+    window: int = GEO_WINDOW,
+) -> Dict[str, Any]:
+    """
+    country_etf_data_combined.csv 에서 전체 국가 ETF 데이터를 읽어
+    각 ETF별 급락 여부 / z-score를 계산
+    """
+    file_path = "data/country_etf_data_combined.csv"
+    all_etf_data = load_etf_data_from_csv(file_path)
+
+    if all_etf_data.empty:
+        print("[ERROR] No combined ETF data found.")
+        return market_data
+
+    all_etf_data = all_etf_data.sort_index()
+
+    country_etf_list = [
+        "EIS",
+        "SPY",
+        "EEM",
+        "EMB",
+        "GLD",
+        "VXX",
+        "FXI",
+        "EWJ",
+        "BND",
+    ]
+
+    # ✅ 방향성 정의
+    upside_risk_assets = {"GLD", "VXX"}  # 상승이 stress
+    downside_risk_assets = {"EIS", "SPY", "EEM", "EMB", "FXI", "EWJ", "BND"}  # 하락이 stress
+
+    for country_etf in country_etf_list:
+        if country_etf not in all_etf_data.columns:
+            print(f"[WARN] {country_etf} not found in combined ETF data.")
+            continue
+
+        etf_data = all_etf_data[[country_etf]].copy()
+        etf_data[country_etf] = pd.to_numeric(etf_data[country_etf], errors="coerce")
+        etf_data = etf_data.dropna()
+
+        if etf_data.empty or len(etf_data) < 6:
+            print(f"[WARN] Not enough data for {country_etf}")
+            continue
+
+        pct_1d = etf_data[country_etf].pct_change() * 100
+        pct_5d = (
+            (etf_data[country_etf].pct_change().add(1).rolling(window=5).apply(lambda x: x.prod(), raw=True) - 1)
+            * 100
+        )
+
+        z_1d = _zscore_last(pct_1d, window)
+        z_5d = _zscore_last(pct_5d, window)
+
+        print(f"[INFO] {country_etf} z_1d: {z_1d}, z_5d: {z_5d}")
+
+        country_risk = "NORMAL"
+
+        # ✅ z_5d 방향성도 ETF별로 다르게 해석
+        if z_5d is not None:
+            if country_etf in upside_risk_assets and z_5d > 2:
+                country_risk = "HIGH"
+            elif country_etf in downside_risk_assets and z_5d < -2:
+                country_risk = "HIGH"
+
+        is_crash = check_etf_crash(etf_data, country_etf)
+        if is_crash:
+            country_risk = "EXTREME"
+
+        market_data[f"COUNTRY_RISK_{country_etf}"] = {
+            "country_etf": country_etf,
+            "z_1d": z_1d,
+            "z_5d": z_5d,
+            "risk_level": country_risk,
+            "crash": is_crash,
+        }
+
+    return market_data
+
+
+            
+# (key, weight, transform, mode)
+# mode: "pct" | "level"
+GEO_FACTORS = [
+    # -----------------------
+    # Market Reaction
+    # -----------------------
+    ("VIX",    0.18, "normal", "pct"),
+    ("WTI",    0.10, "normal", "pct"),
+    ("GOLD",   0.12, "normal", "pct"),
+    ("USDCNH", 0.18, "normal", "pct"),
+
+    # -----------------------
+    # EM Stress
+    # -----------------------
+    ("EEM",    0.10, "inverse", "pct"),
+    ("EMB",    0.12, "inverse", "pct"),
+    ("USDMXN", 0.05, "normal",  "pct"),
+    ("USDJPY", 0.05, "inverse", "pct"),
+
+    # -----------------------
+    # Supply Chain / Shipping
+    # -----------------------
+    ("SEA",    0.05, "inverse", "pct"),
+    ("BDRY",   0.05, "normal",  "pct"),
+
+    # -----------------------
+    # Defense
+    # -----------------------
+    ("ITA",    0.03, "normal", "pct"),
+    ("XAR",    0.02, "normal", "pct"),
+
+    # -----------------------
+    # ✅ Sovereign Spread (CDS proxy) — NEW
+    # spread는 pct_change보다 레벨 자체가 의미있어서 level z-score
+    # -----------------------
+    ("KR10Y_SPREAD", 0.08, "normal", "level"),
+    ("JP10Y_SPREAD", 0.06, "normal", "level"),
+    ("DE10Y_SPREAD", 0.06, "normal", "level"),
+    ("IL10Y_SPREAD", 0.05, "normal", "level"),
+]
+
+GEO_THRESHOLDS = [
+    ("NORMAL",   -0.75, 0.75),
+    ("ELEVATED",  0.75, 1.50),
+    ("HIGH",      1.50, 2.50),
+    ("CONFLICT",  2.50, 99.0),
+]
+
+
+def _to_num(x) -> Optional[float]:
+    v = pd.to_numeric(x, errors="coerce")
+    return None if pd.isna(v) else float(v)
+
+
+def _pct_series_from_df(df: pd.DataFrame, col: str) -> pd.Series:
+    """
+    df[col]에서 % 변화(전일 대비)를 시계열로 만듦.
+    결측/스키마변경에도 견고하게.
+    """
+    s = pd.to_numeric(df[col], errors="coerce")
+    s = s.dropna()
+    # pct_change는 (t - t-1)/t-1 * 100
+    return s.pct_change() * 100.0
+
+
+# Z-score 계산용 헬퍼 함수
+def _zscore_last(s: pd.Series, window: int) -> Optional[float]:
+    s = pd.to_numeric(s, errors="coerce").dropna()
+    if s.empty:
+        return None
+    x = s.tail(window).dropna()
+    if len(x) < 5:
+        return None
+    mu = float(x.mean())
+    sd = float(x.std(ddof=0))
+    last = float(x.iloc[-1])
+    if sd == 0:
+        return 0.0
+    return (last - mu) / sd
+
+
+from typing import Dict, Any, Optional, List, Tuple
+import pandas as pd
+
+def attach_geopolitical_ew_layer(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int,
+    window: int = GEO_WINDOW,
+) -> Dict[str, Any]:
+
+    if market_data is None:
+        market_data = {}
+
+    df2 = df.iloc[: today_idx + 1].copy()
+
+    # -----------------------
+    # merge sovereign spreads
+    # -----------------------
+    try:
+        sov = load_sovereign_spreads_df()
+
+        if sov is not None and not sov.empty and "date" in sov.columns:
+
+            sov2 = sov.copy()
+            sov2["date"] = pd.to_datetime(sov2["date"], errors="coerce")
+            sov2 = sov2.dropna(subset=["date"]).sort_values("date").drop_duplicates("date", keep="last")
+
+            if "date" in df2.columns:
+                df2["date"] = pd.to_datetime(df2["date"], errors="coerce")
+
+            wanted_cols = ["date"]
+
+            for c in [
+                "KR10Y_SPREAD",
+                "JP10Y_SPREAD",
+                "DE10Y_SPREAD",
+                "IL10Y_SPREAD",
+            ]:
+                if c in sov2.columns:
+                    wanted_cols.append(c)
+
+            if len(wanted_cols) > 1:
+                df2 = pd.merge(df2, sov2[wanted_cols], on="date", how="left")
+
+                for c in wanted_cols:
+                    if c != "date":
+                        df2[c] = pd.to_numeric(df2[c], errors="coerce").ffill()
+
+                        # fallback → market_data
+                        if pd.isna(df2[c].iloc[-1]):
+                            if c in market_data:
+                                df2.loc[df2.index[-1], c] = market_data.get(c)
+
+    except Exception:
+        pass
+
+    # -----------------------
+    # helpers
+    # -----------------------
+    def _zscore_last_level(series: pd.Series, win: int):
+        s = pd.to_numeric(series, errors="coerce").dropna()
+
+        if len(s) < max(10, min(win, 20)):
+            return None
+
+        tail = s.tail(win)
+        mu = float(tail.mean())
+        sd = float(tail.std(ddof=0))
+
+        if sd == 0:
+            return 0.0
+
+        return float((tail.iloc[-1] - mu) / sd)
+
+    def _series_level_from_df(df_, key):
+        return pd.to_numeric(df_.get(key), errors="coerce")
+
+    def _merge_spreads_for_hist(df_hist: pd.DataFrame) -> pd.DataFrame:
+        """
+        Geo momentum 계산용: 히스토리 slice에도 sovereign spreads 동일 방식으로 merge
+        """
+        out = df_hist.copy()
+
+        try:
+            sov_hist = load_sovereign_spreads_df()
+            if sov_hist is not None and not sov_hist.empty and "date" in sov_hist.columns:
+                sov_hist = sov_hist.copy()
+                sov_hist["date"] = pd.to_datetime(sov_hist["date"], errors="coerce")
+                sov_hist = (
+                    sov_hist.dropna(subset=["date"])
+                    .sort_values("date")
+                    .drop_duplicates("date", keep="last")
+                )
+
+                if "date" in out.columns:
+                    out["date"] = pd.to_datetime(out["date"], errors="coerce")
+
+                wanted_cols = ["date"]
+                for c in ["KR10Y_SPREAD", "JP10Y_SPREAD", "DE10Y_SPREAD", "IL10Y_SPREAD"]:
+                    if c in sov_hist.columns:
+                        wanted_cols.append(c)
+
+                if len(wanted_cols) > 1:
+                    out = pd.merge(out, sov_hist[wanted_cols], on="date", how="left")
+                    for c in wanted_cols:
+                        if c != "date":
+                            out[c] = pd.to_numeric(out[c], errors="coerce").ffill()
+        except Exception:
+            pass
+
+        return out
+
+    def _compute_geo_score_only(df_input: pd.DataFrame) -> Optional[float]:
+        """
+        Momentum 계산용: score만 간단히 계산
+        """
+        local_usable_components = []
+
+        for item in GEO_FACTORS:
+            key = item[0]
+            raw_weight = float(item[1])
+            transform = item[2]
+            mode = item[3] if len(item) >= 4 else None
+
+            if mode is None:
+                mode = "level" if key.endswith("_SPREAD") else "pct"
+
+            if key not in df_input.columns:
+                continue
+
+            z = None
+            z_1d = None
+            z_5d = None
+
+            if mode == "level":
+                level_series = _series_level_from_df(df_input, key)
+                z = _zscore_last_level(level_series, window)
+            else:
+                pct_1d = _pct_series_from_df(df_input, key)
+                pct_5d = _cumret_series_from_df(df_input, key, days=5)
+
+                z_1d = _zscore_last(pct_1d, window)
+                z_5d = _zscore_last(pct_5d, window)
+
+                if z_1d is None and z_5d is None:
+                    z = None
+                elif z_1d is None:
+                    z = z_5d
+                elif z_5d is None:
+                    z = z_1d
+                else:
+                    z = 0.6 * float(z_1d) + 0.4 * float(z_5d)
+
+            if z is None:
+                continue
+
+            z_used = -z if transform == "inverse" else z
+
+            local_usable_components.append(
+                {
+                    "raw_weight": raw_weight,
+                    "z_used": float(z_used),
+                }
+            )
+
+        local_used_weight = sum(c["raw_weight"] for c in local_usable_components)
+        if local_used_weight <= 0:
+            return None
+
+        local_score = 0.0
+        for c in local_usable_components:
+            norm_w = c["raw_weight"] / local_used_weight
+            local_score += c["z_used"] * norm_w
+
+        return float(local_score)
+
+    # -----------------------
+    # pass 1: collect usable factors
+    # -----------------------
+    usable_components = []
+    missing = []
+
+    total_defined_weight = sum(float(item[1]) for item in GEO_FACTORS)
+
+    for item in GEO_FACTORS:
+        key = item[0]
+        raw_weight = float(item[1])
+        transform = item[2]
+        mode = item[3] if len(item) >= 4 else None
+
+        if mode is None:
+            mode = "level" if key.endswith("_SPREAD") else "pct"
+
+        # -----------------------
+        # fallback check
+        # -----------------------
+        if key not in df2.columns:
+            if key in market_data:
+                val = market_data.get(key)
+                if val is not None:
+                    df2.loc[df2.index[-1], key] = val
+                else:
+                    missing.append(key)
+                    continue
+            else:
+                missing.append(key)
+                continue
+
+        # -----------------------
+        # compute zscore
+        # -----------------------
+        z = None
+        z_1d = None
+        z_5d = None
+
+        if mode == "level":
+            level_series = _series_level_from_df(df2, key)
+            z = _zscore_last_level(level_series, window)
+
+        else:
+            pct_1d = _pct_series_from_df(df2, key)
+            pct_5d = _cumret_series_from_df(df2, key, days=5)
+
+            z_1d = _zscore_last(pct_1d, window)
+            z_5d = _zscore_last(pct_5d, window)
+
+            if z_1d is None and z_5d is None:
+                z = None
+            elif z_1d is None:
+                z = z_5d
+            elif z_5d is None:
+                z = z_1d
+            else:
+                z = 0.6 * float(z_1d) + 0.4 * float(z_5d)
+
+        if z is None:
+            missing.append(key)
+            continue
+
+        z_used = -z if transform == "inverse" else z
+
+        usable_components.append(
+            {
+                "key": key,
+                "raw_weight": raw_weight,
+                "z": float(z),
+                "z_1d": None if z_1d is None else float(z_1d),
+                "z_5d": None if z_5d is None else float(z_5d),
+                "z_used": float(z_used),
+                "transform": transform,
+                "mode": mode,
+            }
+        )
+
+    # -----------------------
+    # pass 2: dynamic re-weighting
+    # -----------------------
+    used_weight = sum(c["raw_weight"] for c in usable_components)
+    coverage = (used_weight / total_defined_weight) if total_defined_weight > 0 else 0.0
+
+    components = []
+    score = None
+
+    if used_weight > 0:
+        score = 0.0
+
+        for c in usable_components:
+            normalized_weight = c["raw_weight"] / used_weight
+            contrib = c["z_used"] * normalized_weight
+            score += contrib
+
+            components.append(
+                {
+                    "key": c["key"],
+                    "weight": c["raw_weight"],
+                    "normalized_weight": normalized_weight,
+                    "z": c["z"],
+                    "z_1d": c["z_1d"],
+                    "z_5d": c["z_5d"],
+                    "z_used": c["z_used"],
+                    "contrib": contrib,
+                    "transform": c["transform"],
+                    "mode": c["mode"],
+                }
+            )
+
+    # -----------------------
+    # Geo Momentum
+    # -----------------------
+    geo_score_3d_avg = None
+    geo_momentum = None
+    geo_momentum_label = "N/A"
+
+    try:
+        recent_scores = []
+        start_idx = max(0, today_idx - 2)  # 최근 3개 시점
+
+        for idx in range(start_idx, today_idx + 1):
+            df_hist = df.iloc[: idx + 1].copy()
+            df_hist = _merge_spreads_for_hist(df_hist)
+
+            s = _compute_geo_score_only(df_hist)
+            if s is not None:
+                recent_scores.append(float(s))
+
+        if len(recent_scores) >= 2:
+            geo_score_3d_avg = float(sum(recent_scores) / len(recent_scores))
+
+            if score is not None:
+                geo_momentum = float(score - geo_score_3d_avg)
+
+                if geo_momentum >= 0.25:
+                    geo_momentum_label = "RISING"
+                elif geo_momentum <= -0.25:
+                    geo_momentum_label = "FALLING"
+                else:
+                    geo_momentum_label = "FLAT"
+    except Exception:
+        pass
+
+    # -----------------------
+    # level label
+    # -----------------------
+    level = "N/A"
+
+    if score is not None:
+        for name, lo, hi in GEO_THRESHOLDS:
+            if score >= lo and score < hi:
+                level = name
+                break
+
+    market_data["GEO_EW"] = {
+        "score": score,
+        "level": level,
+        "window": window,
+        "used_weight": used_weight,
+        "total_defined_weight": total_defined_weight,
+        "coverage": coverage,
+        "missing": missing,
+        "components": components,
+        "score_3d_avg": geo_score_3d_avg,
+        "momentum": geo_momentum,
+        "momentum_label": geo_momentum_label,
+    }
+
+    return market_data
+
+GEO_SIMILARITY_FEATURES = [
+    "geo_score",
+    "geo_momentum",
+    "VIX",
+    "WTI",
+    "GOLD",
+    "USDCNH",
+    "EEM",
+    "EMB",
+    "BDRY",
+    "ITA",
+    "KR10Y_SPREAD",
+    "IL10Y_SPREAD",
+    "country_crash_count",
+    "country_high_count",
+]
+
+GEO_EVENT_TEMPLATES = {
+    "Ukraine_2022": {
+        "geo_score": 2.4,
+        "geo_momentum": 0.8,
+        "VIX": 2.0,
+        "WTI": 2.2,
+        "GOLD": 1.4,
+        "USDCNH": 1.0,
+        "EEM": 1.3,
+        "EMB": 1.1,
+        "BDRY": 0.6,
+        "ITA": 1.7,
+        "KR10Y_SPREAD": 0.7,
+        "IL10Y_SPREAD": 0.3,
+        "country_crash_count": 1.0,
+        "country_high_count": 2.0,
+    },
+    "Israel_2023": {
+        "geo_score": 1.8,
+        "geo_momentum": 0.5,
+        "VIX": 1.1,
+        "WTI": 1.0,
+        "GOLD": 1.2,
+        "USDCNH": 0.4,
+        "EEM": 0.7,
+        "EMB": 0.6,
+        "BDRY": 0.2,
+        "ITA": 2.0,
+        "KR10Y_SPREAD": 0.2,
+        "IL10Y_SPREAD": 1.8,
+        "country_crash_count": 1.0,
+        "country_high_count": 1.0,
+    },
+    "Taiwan_Tension": {
+        "geo_score": 1.5,
+        "geo_momentum": 0.6,
+        "VIX": 0.9,
+        "WTI": 0.4,
+        "GOLD": 0.8,
+        "USDCNH": 1.8,
+        "EEM": 0.9,
+        "EMB": 0.7,
+        "BDRY": 0.4,
+        "ITA": 0.5,
+        "KR10Y_SPREAD": 0.4,
+        "IL10Y_SPREAD": 0.0,
+        "country_crash_count": 0.0,
+        "country_high_count": 2.0,
+    },
+    "Red_Sea": {
+        "geo_score": 1.6,
+        "geo_momentum": 0.7,
+        "VIX": 0.8,
+        "WTI": 1.4,
+        "GOLD": 0.7,
+        "USDCNH": 0.3,
+        "EEM": 0.4,
+        "EMB": 0.4,
+        "BDRY": 1.8,
+        "ITA": 0.6,
+        "KR10Y_SPREAD": 0.2,
+        "IL10Y_SPREAD": 0.2,
+        "country_crash_count": 0.0,
+        "country_high_count": 1.0,
+    },
+    "China_Trade_2018": {
+        "geo_score": 1.7,
+        "geo_momentum": 0.5,
+        "VIX": 1.2,
+        "WTI": 0.6,
+        "GOLD": 0.9,
+        "USDCNH": 2.2,       # 위안화 변동성 극대화 (핵심 변수)
+        "EEM": 1.8,          # 신흥국 자산 타격
+        "EMB": 1.4,          # 신흥국 채권 스트레스
+        "BDRY": 1.5,         # 글로벌 물동량 우려 (해운지수)
+        "ITA": 0.4,
+        "KR10Y_SPREAD": 1.2, # 한국 금리 스프레드 민감도 높음
+        "IL10Y_SPREAD": 0.1,
+        "country_crash_count": 1.0,
+        "country_high_count": 2.0,
+    },
+    "Iran_Crisis_2020": {
+        "geo_score": 2.1,
+        "geo_momentum": 0.9,
+        "VIX": 1.8,
+        "WTI": 2.5,          # 유가 급등 (핵심 변수)
+        "GOLD": 1.9,         # 안전자산 선호
+        "USDCNH": 0.5,
+        "EEM": 0.8,
+        "EMB": 0.7,
+        "BDRY": 0.3,
+        "ITA": 1.5,          # 방산 섹터 반응
+        "KR10Y_SPREAD": 0.3,
+        "IL10Y_SPREAD": 0.2,
+        "country_crash_count": 0.0,
+        "country_high_count": 1.0,
+    },
+
+        
+}
+
+
+def _safe_float(x, default: float = 0.0) -> float:
+    try:
+        if x is None or pd.isna(x):
+            return default
+        return float(x)
+    except Exception:
+        return default
+
+
+def _extract_geo_component_map(market_data: Dict[str, Any]) -> Dict[str, float]:
+    geo = market_data.get("GEO_EW", {}) or {}
+    comps = geo.get("components", []) or []
+
+    out = {}
+    for c in comps:
+        key = c.get("key")
+        if key is None:
+            continue
+        out[key] = _safe_float(c.get("z_used"), 0.0)
+
+    return out
+
+
+def _extract_country_risk_counts(market_data: Dict[str, Any]) -> Tuple[int, int]:
+    crash_count = 0
+    high_count = 0
+
+    for k, v in market_data.items():
+        if not str(k).startswith("COUNTRY_RISK_"):
+            continue
+
+        item = v or {}
+
+        if item.get("crash"):
+            crash_count += 1
+
+        risk_level = item.get("risk_level", "NORMAL")
+        if risk_level in ["HIGH", "EXTREME"]:
+            high_count += 1
+
+    return crash_count, high_count
+
+
+def build_current_geo_similarity_vector(market_data: Dict[str, Any]) -> Tuple[np.ndarray, Dict[str, float]]:
+    geo = market_data.get("GEO_EW", {}) or {}
+    comp_map = _extract_geo_component_map(market_data)
+    crash_count, high_count = _extract_country_risk_counts(market_data)
+
+    feature_map = {
+        "geo_score": _safe_float(geo.get("score"), 0.0),
+        "geo_momentum": _safe_float(geo.get("momentum"), 0.0),
+        "VIX": _safe_float(comp_map.get("VIX"), 0.0),
+        "WTI": _safe_float(comp_map.get("WTI"), 0.0),
+        "GOLD": _safe_float(comp_map.get("GOLD"), 0.0),
+        "USDCNH": _safe_float(comp_map.get("USDCNH"), 0.0),
+        "EEM": _safe_float(comp_map.get("EEM"), 0.0),
+        "EMB": _safe_float(comp_map.get("EMB"), 0.0),
+        "BDRY": _safe_float(comp_map.get("BDRY"), 0.0),
+        "ITA": _safe_float(comp_map.get("ITA"), 0.0),
+        "KR10Y_SPREAD": _safe_float(comp_map.get("KR10Y_SPREAD"), 0.0),
+        "IL10Y_SPREAD": _safe_float(comp_map.get("IL10Y_SPREAD"), 0.0),
+        "country_crash_count": float(crash_count),
+        "country_high_count": float(high_count),
+    }
+
+    current_vector = np.array(
+        [feature_map[k] for k in GEO_SIMILARITY_FEATURES],
+        dtype=float
+    )
+
+    return current_vector, feature_map
+
+
+def calculate_cosine_similarity(current_vector: np.ndarray, historical_vectors: np.ndarray) -> np.ndarray:
+    """
+    현재 벡터와 과거 이벤트 벡터들 간 cosine similarity를 계산한다.
+    """
+    current_vector = np.asarray(current_vector, dtype=float).reshape(1, -1)
+    historical_vectors = np.asarray(historical_vectors, dtype=float)
+
+    if historical_vectors.ndim != 2:
+        raise ValueError("historical_vectors must be a 2D array")
+
+    if current_vector.shape[1] != historical_vectors.shape[1]:
+        raise ValueError(
+            f"Feature size mismatch: current_vector has {current_vector.shape[1]} features, "
+            f"historical_vectors has {historical_vectors.shape[1]} features"
+        )
+
+    if np.isnan(current_vector).any():
+        current_vector = np.nan_to_num(current_vector, nan=0.0)
+
+    if np.isnan(historical_vectors).any():
+        historical_vectors = np.nan_to_num(historical_vectors, nan=0.0)
+
+    return cosine_similarity(current_vector, historical_vectors)[0]
+
+
+def attach_geo_similarity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    if market_data is None:
+        market_data = {}
+
+    geo = market_data.get("GEO_EW", {}) or {}
+
+    if geo.get("score") is None:
+        geo["cosine_similarity"] = {
+            "score": None,
+            "matched_event": None,
+            "signal": "N/A",
+            "all_scores": {},
+            "feature_map": {},
+        }
+        market_data["GEO_EW"] = geo
+        return market_data
+
+    current_vector, feature_map = build_current_geo_similarity_vector(market_data)
+
+    template_names = list(GEO_EVENT_TEMPLATES.keys())
+
+    historical_vectors = np.array([
+        [GEO_EVENT_TEMPLATES[name].get(k, 0.0) for k in GEO_SIMILARITY_FEATURES]
+        for name in template_names
+    ], dtype=float)
+
+    similarities = calculate_cosine_similarity(current_vector, historical_vectors)
+
+    score_map = {
+        name: float(score)
+        for name, score in zip(template_names, similarities)
+    }
+
+    best_idx = int(np.argmax(similarities))
+    best_score = float(similarities[best_idx])
+    best_match = template_names[best_idx]
+
+    if best_score >= 0.90:
+        signal = "EXTREME_MATCH"
+    elif best_score >= 0.80:
+        signal = "HIGH_MATCH"
+    elif best_score >= 0.70:
+        signal = "ELEVATED_MATCH"
+    else:
+        signal = "LOW_MATCH"
+
+    geo["cosine_similarity"] = {
+        "score": best_score,
+        "matched_event": best_match,
+        "signal": signal,
+        "all_scores": score_map,
+        "feature_map": feature_map,
+    }
+
+    market_data["GEO_EW"] = geo
+    return market_data
+
+def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Drift v3 (with ATR normalization)
+    - 15m / 30m / 1H / 4H / 1D / 5D returns
+    - ATR 기반 정규화 포함
+    """
+
+    import yfinance as yf
+    import pandas as pd
+
+    drift_tickers = {
+        "SPY": "SPY",
+        "WTI": "CL=F",
+        "DXY": "DX-Y.NYB",
+        "GOLD": "GC=F",
+    
+        # Credit / Risk participation
+        "HYG": "HYG",
+        "LQD": "LQD",
+    
+        # EM / China
+        "EEM": "EEM",
+        "FXI": "FXI",
+    
+        # Sector leadership
+        "XLK": "XLK",
+        "XLI": "XLI",
+        "XLF": "XLF",
+        "XLY": "XLY",
+    
+        # Defensive comparison
+        "XLP": "XLP",
+        "XLU": "XLU",
+
+    }
+    drift_data = {}
+
+    # -----------------------------
+    # Helpers
+    # -----------------------------
+    def safe_ret(curr, past):
+        try:
+            if curr is None or past is None or past == 0:
+                return None
+            return ((curr / past) - 1.0) * 100.0
+        except Exception:
+            return None
+
+    def extract_close_series(df):
+        if df is None or df.empty:
+            return None
+
+        try:
+            if isinstance(df.columns, pd.MultiIndex):
+                close_cols = [c for c in df.columns if str(c[0]).lower() == "close"]
+                if not close_cols:
+                    return None
+                s = df[close_cols]
+                if isinstance(s, pd.DataFrame):
+                    s = s.squeeze()
+            else:
+                if "Close" not in df.columns:
+                    return None
+                s = df["Close"]
+
+            if isinstance(s, pd.DataFrame):
+                s = s.squeeze()
+
+            s = pd.to_numeric(s, errors="coerce").dropna()
+            if s.empty:
+                return None
+
+            return s
+        except Exception:
+            return None
+
+    def calculate_atr(df, period=14):
+        try:
+            high = df["High"]
+            low = df["Low"]
+            close = df["Close"]
+
+            tr1 = high - low
+            tr2 = (high - close.shift(1)).abs()
+            tr3 = (low - close.shift(1)).abs()
+
+            tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+            atr = tr.rolling(period).mean()
+
+            return atr
+        except Exception:
+            return None
+
+    # -----------------------------
+    # Main loop
+    # -----------------------------
+    for name, ticker in drift_tickers.items():
+        try:
+            intraday = yf.download(
+                ticker,
+                period="7d",
+                interval="15m",
+                progress=False,
+                auto_adjust=False,
+                threads=False,
+            )
+
+            daily = yf.download(
+                ticker,
+                period="3mo",
+                interval="1d",
+                progress=False,
+                auto_adjust=False,
+                threads=False,
+            )
+
+            intraday_close = extract_close_series(intraday)
+            daily_close = extract_close_series(daily)
+
+            if intraday_close is None or daily_close is None:
+                drift_data[name] = {}
+                continue
+
+            curr = float(intraday_close.iloc[-1])
+
+            # intraday
+            m15 = float(intraday_close.iloc[-2]) if len(intraday_close) >= 2 else None
+            m30 = float(intraday_close.iloc[-3]) if len(intraday_close) >= 3 else None
+            h1 = float(intraday_close.iloc[-5]) if len(intraday_close) >= 5 else None
+            h4 = float(intraday_close.iloc[-17]) if len(intraday_close) >= 17 else None
+
+            # daily
+            d1 = float(daily_close.iloc[-2]) if len(daily_close) >= 2 else None
+            d5 = float(daily_close.iloc[-6]) if len(daily_close) >= 6 else None
+
+            # ATR
+            atr_series = calculate_atr(daily)
+            atr_latest = float(atr_series.iloc[-1]) if atr_series is not None else None
+
+            def norm(ret):
+                try:
+                    if ret is None or atr_latest is None or atr_latest == 0:
+                        return None
+                    return ret / atr_latest
+                except Exception:
+                    return None
+
+            drift_data[name] = {
+                "ret_15m": safe_ret(curr, m15),
+                "ret_30m": safe_ret(curr, m30),
+                "ret_1h": safe_ret(curr, h1),
+                "ret_4h": safe_ret(curr, h4),
+                "ret_1d": safe_ret(curr, d1),
+                "ret_5d": safe_ret(curr, d5),
+                "atr": atr_latest,
+                "norm_1d": norm(safe_ret(curr, d1)),
+                "norm_5d": norm(safe_ret(curr, d5)),
+            }
+
+        except Exception:
+            drift_data[name] = {}
+
+    market_data["DRIFT_DATA"] = drift_data
+    
+    print("[DRIFT_DATA KEYS]", sorted(drift_data.keys()))
+    return market_data
+
+def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:
+    """
+    리포트 출력용 문자열
+    """
+
+    geo = (market_data.get("GEO_EW") or {})
+    score = geo.get("score")
+    level = geo.get("level", "N/A")
+    missing = geo.get("missing", [])
+    comps = geo.get("components", [])
+    score_3d_avg = geo.get("score_3d_avg")
+    momentum = geo.get("momentum")
+    momentum_label = geo.get("momentum_label", "N/A")
+
+    cosine_info = geo.get("cosine_similarity", {}) or {}
+    cosine_score = cosine_info.get("score")
+    cosine_match = cosine_info.get("matched_event")
+    cosine_signal = cosine_info.get("signal")
+    cosine_all = cosine_info.get("all_scores", {}) or {}
+
+    # -----------------------
+    # Friendly label mapping
+    # -----------------------
+    similarity_label_map = {
+        "LOW_MATCH": "Weak Historical Match",
+        "ELEVATED_MATCH": "Moderate Historical Match",
+        "HIGH_MATCH": "Strong Historical Match",
+        "EXTREME_MATCH": "Extreme Historical Match",
+        "N/A": "N/A",
+        None: "N/A",
+    }
+    cosine_signal_label = similarity_label_map.get(cosine_signal, str(cosine_signal))
+
+    # -----------------------
+    # Country ETF risk aggregation
+    # -----------------------
+    country_risk_keys = sorted([k for k in market_data.keys() if k.startswith("COUNTRY_RISK_")])
+
+    crashed_etfs = []
+    tracked_etfs = []
+    high_risk_etfs = []
+    extreme_risk_etfs = []
+
+    for key in country_risk_keys:
+        item = market_data.get(key, {}) or {}
+        etf = item.get("country_etf", "UNKNOWN")
+        tracked_etfs.append(etf)
+
+        if item.get("crash"):
+            crashed_etfs.append(etf)
+
+        risk_level = item.get("risk_level", "NORMAL")
+        if risk_level == "HIGH":
+            high_risk_etfs.append(etf)
+        elif risk_level == "EXTREME":
+            extreme_risk_etfs.append(etf)
+
+    lines = []
+    lines.append("### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)")
+
+    if market_data.get("_STALE"):
+        lines.append("⚠ Market Closed / Stale Data → Price-based geo signals muted.")
+        lines.append("")
+
+    # -----------------------
+    # insufficient data
+    # -----------------------
+    if score is None:
+        lines.append("- **Status:** N/A (insufficient data)")
+        lines.append(f"- **Missing/Skipped:** {', '.join(missing) if missing else 'None'}")
+        lines.append("- **Sovereign Spread factors included:** None")
+        lines.append("- **Cosine Similarity Score:** N/A")
+        lines.append("- **So What?:** 데이터가 쌓이거나 지표가 추가되면 조기경보 점수를 계산합니다.")
+
+        if tracked_etfs:
+            if crashed_etfs:
+                lines.append(f"- **Country ETF Crash?** Yes ({', '.join(crashed_etfs)})")
+            else:
+                lines.append(f"- **Country ETF Crash?** No ({', '.join(tracked_etfs)})")
+        else:
+            lines.append("- **Country ETF Crash?** N/A")
+        return "\n".join(lines)
+
+    # -----------------------
+    # main score
+    # -----------------------
+    coverage = geo.get("coverage")
+    used_weight = geo.get("used_weight")
+    total_defined_weight = geo.get("total_defined_weight")
+
+    lines.append(f"- **Geo Stress Score (z-composite):** **{score:+.2f}**  *(Level: {level})*")
+
+    if coverage is not None:
+        lines.append(
+            f"- **Coverage:** {coverage:.0%} *(used weight: {used_weight:.2f} / defined weight: {total_defined_weight:.2f})*"
+        )
+
+    if score_3d_avg is not None:
+        lines.append(f"- **3D Avg Score:** {score_3d_avg:+.2f}")
+
+    if momentum is not None:
+        lines.append(f"- **Geo Momentum:** {momentum:+.2f} *(Status: {momentum_label})*")
+
+    # -----------------------
+    # cosine similarity section
+    # -----------------------
+    if cosine_score is not None:
+        lines.append("")
+        lines.append("**Historical Pattern Match (Cosine Similarity):**")
+        lines.append(f"- **Closest Historical Match:** {cosine_match}")
+        lines.append(f"- **Cosine Similarity Score:** {cosine_score:.3f}")
+        lines.append(f"- **Similarity Signal:** {cosine_signal_label}")
+
+        top_similarity = sorted(cosine_all.items(), key=lambda x: x[1], reverse=True)[:3]
+        if top_similarity:
+            lines.append("- **Top Similarity Matches:**")
+            for name, sc in top_similarity:
+                lines.append(f"  - {name}: {sc:.3f}")
+    else:
+        lines.append("- **Cosine Similarity Score:** N/A")
+
+    # -----------------------
+    # top contributors
+    # -----------------------
+    comps_sorted = sorted(
+        comps,
+        key=lambda x: abs(float(x.get("contrib", 0.0))),
+        reverse=True
+    )
+
+    top = comps_sorted[:4]
+
+    lines.append("- **Top Drivers:**")
+    for c in top:
+        nw = c.get("normalized_weight", c.get("weight", 0.0))
+
+        if c.get("mode") == "pct":
+            z1 = c.get("z_1d")
+            z5 = c.get("z_5d")
+            z1_txt = "NA" if z1 is None else f"{z1:+.2f}"
+            z5_txt = "NA" if z5 is None else f"{z5:+.2f}"
+
+            lines.append(
+                f"  - {c['key']}: z_used={c['z_used']:+.2f} "
+                f"(z1d={z1_txt}, z5d={z5_txt}, raw_w={c['weight']:.2f}, norm_w={nw:.2f}) "
+                f"→ contrib={c['contrib']:+.2f}"
+            )
+        else:
+            lines.append(
+                f"  - {c['key']}: z_used={c['z_used']:+.2f} "
+                f"(mode=level, raw_w={c['weight']:.2f}, norm_w={nw:.2f}) → contrib={c['contrib']:+.2f}"
+            )
+
+    # -----------------------
+    # always show missing line
+    # -----------------------
+    lines.append(f"- **Missing/Skipped:** {', '.join(missing) if missing else 'None'}")
+
+    # -----------------------
+    # sovereign spread check
+    # -----------------------
+    spread_comps = [
+        c for c in comps
+        if str(c.get("key", "")).endswith("_SPREAD")
+    ]
+
+    if spread_comps:
+        spread_names = ", ".join([c["key"] for c in spread_comps])
+        lines.append(f"- **Sovereign Spread factors included:** {spread_names}")
+    else:
+        lines.append("- **Sovereign Spread factors included:** None")
+
+    # -----------------------
+    # So What → Trade Information
+    # -----------------------
+    lines.append("")
+    lines.append("**Trade Information:**")
+
+    # 1) Geo stress regime interpretation
+    if level == "NORMAL":
+        if momentum_label == "RISING":
+            lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 상승하고 있는 중입니다. 경계 강화 필요.")
+        elif momentum_label == "FALLING":
+            lines.append("- 지정학 스트레스는 여전히 정상 범위에 있지만 최근 압력이 완화되고 있는 중입니다. 경계 유지.")
+        else:
+            lines.append("- 지정학 스트레스 프록시가 평온. 기존 매크로 레짐/리스크 예산 신호를 우선.")
+
+    elif level == "ELEVATED":
+        if momentum_label == "RISING":
+            lines.append("- 스트레스 ‘상승’ 구간: 리스크 상승 가속 → 헤지/사이징 축소 검토.")
+        elif momentum_label == "FALLING":
+            lines.append("- 스트레스 ‘상승’ 구간: 리스크는 여전히 높지만 단기 압력은 완화 중. 과잉 대응보다는 선별 대응이 필요.")
+        else:
+            lines.append("- 지정학 스트레스가 경계 구간(ELEVATED)에 머물고 있습니다. 기존 레짐은 유지하되 EM·원자재·중국 민감 익스포저는 보수적으로 점검할 필요가 있습니다.")
+
+    elif level == "HIGH":
+        if momentum_label == "RISING":
+            lines.append("- 스트레스 ‘높음’ + 상승 중: 리스크 익스포저 축소와 헤지 강화가 우선입니다.")
+        elif momentum_label == "FALLING":
+            lines.append("- 스트레스 ‘높음’이지만 단기 과열은 일부 완화 중입니다. 다만 고베타·EM 노출은 여전히 점검이 필요합니다.")
+        else:
+            lines.append("- 스트레스 ‘높음’: EM/고베타/레버리지 노출 점검 및 방어적 대응이 필요합니다.")
+
+    else:
+        lines.append("- 스트레스 ‘극단’: 디레버리징 + 방어자산/헤지 우선, 갭리스크 대비(현금/단기).")
+
+    # 2) Similarity interpretation
+    if cosine_score is not None:
+        if cosine_score >= 0.80:
+            lines.append(
+                f"- 과거 위기 패턴과의 유사도가 높습니다. 현재 시장은 **{cosine_match}** 유형의 지정학 리스크 재현 가능성을 시사하므로, 단기 risk-off 대응을 강화할 필요가 있습니다."
+            )
+        elif cosine_score >= 0.60:
+            lines.append(
+                f"- 과거 위기 패턴과 부분적으로 유사합니다. 현재 시장은 **{cosine_match}** 계열의 초기 징후를 일부 보이고 있어, 관련 자산군과 지역 노출을 점검할 필요가 있습니다."
+            )
+        else:
+            lines.append(
+                f"- 역사적 위기 패턴 유사도는 낮습니다. 현재는 **{cosine_match}** 유형과 가장 가깝지만, 전면적 지정학 쇼크보다는 제한적·국지적 리스크 모니터링 구간으로 해석됩니다."
+            )
+
+    # 3) Country ETF crash line
+    if crashed_etfs:
+        lines.append(f"- **Country ETF Crash?** Yes ({', '.join(crashed_etfs)})")
+    elif tracked_etfs:
+        lines.append(f"- **Country ETF Crash?** No ({', '.join(tracked_etfs)})")
+    else:
+        lines.append("- **Country ETF Crash?** N/A")
+
+    if extreme_risk_etfs:
+        lines.append(f"- **Extreme Country Risk:** {', '.join(extreme_risk_etfs)}")
+    elif high_risk_etfs:
+        lines.append(f"- **High Country Risk:** {', '.join(high_risk_etfs)}")
+
+    return "\n".join(lines)
+
+def pseudo_gamma_filter(market_data: Dict[str, Any]) -> str:
+    """
+    7.3) Pseudo Gamma Filter (v1.1)
+
+    목적:
+    - 옵션 데이터 없이 시장의 감마 상태를 추론
+    - Drift + VIX + SEW 기반 구조 판단
+    - DEALER_GAMMA_BIAS 숫자는 별도 표시하여 Pseudo Gamma State와 혼동 방지
+
+    주의:
+    - DEALER_GAMMA_BIAS는 실제 옵션 감마 데이터가 아니라 positioning layer에서 주입된 proxy 값
+    - GAMMA_STATE는 Drift/VIX/SEW 기반 pseudo regime label
+    """
+
+    drift_score = market_data.get("DRIFT_SCORE", 0)
+    drift_state = market_data.get("DRIFT_STATE", "N/A")
+
+    try:
+        drift_score = int(float(drift_score))
+    except Exception:
+        drift_score = 0
+
+    vix = market_data.get("VIX", {}) or {}
+    vix_level = vix.get("today")
+
+    try:
+        vix_level = float(vix_level) if vix_level is not None else None
+    except Exception:
+        vix_level = None
+
+    dealer_gamma_bias = market_data.get("DEALER_GAMMA_BIAS", 1.0)
+
+    try:
+        dealer_gamma_bias = float(dealer_gamma_bias)
+    except Exception:
+        dealer_gamma_bias = 1.0
+
+    sew_state = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
+    sew_event_type = str(market_data.get("SEW_EVENT_TYPE", "N/A") or "N/A").upper()
+
+    gamma_state = "UNKNOWN"
+    gamma_bias = ""
+    strategy = ""
+
+    # -------------------------
+    # 1️⃣ Positive Gamma Zone
+    # -------------------------
+    if vix_level is not None and vix_level < 18:
+        if drift_score <= 1:
+            gamma_state = "🟢 POSITIVE GAMMA"
+            gamma_bias = "Mean-reverting / 딜러가 변동성 흡수"
+            strategy = "눌림 매수 / 추격 금지"
+        else:
+            gamma_state = "🟡 POSITIVE-TRANSITION"
+            gamma_bias = "VIX는 안정적이나 Drift가 형성 중"
+            strategy = "초기 방향성 관찰 / 과도한 추격 금지"
+
+    # -------------------------
+    # 2️⃣ Negative Gamma Zone
+    # -------------------------
+    elif vix_level is not None and vix_level >= 20:
+        if drift_score >= 3:
+            gamma_state = "🔴 NEGATIVE GAMMA"
+            gamma_bias = "Trend acceleration / 변동성 확대"
+            strategy = "추세 추종 / 빠른 대응"
+        else:
+            gamma_state = "🟡 VOL STRESS TRANSITION"
+            gamma_bias = "VIX는 높지만 방향성 확정 전"
+            strategy = "리스크 축소 / 신호 확인"
+
+    # -------------------------
+    # 3️⃣ Neutral / Transition Zone
+    # -------------------------
+    else:
+        if drift_score >= 2:
+            gamma_state = "🟡 TRANSITION"
+            gamma_bias = "초기 방향성 형성 / 감마 전환 구간"
+            strategy = "포지션 확대 신중 / 초기 진입 구간"
+        else:
+            gamma_state = "🟢 POSITIVE GAMMA (WEAK)"
+            gamma_bias = "안정적 시장"
+            strategy = "과도한 베팅 금지"
+
+    # -------------------------
+    # 4️⃣ Dealer Gamma Bias Note
+    # -------------------------
+    if dealer_gamma_bias < 0.5:
+        dealer_gamma_note = "RUN RISK / dealer gamma proxy weak"
+    elif dealer_gamma_bias > 1.5:
+        dealer_gamma_note = "STABILIZING / dealer gamma proxy supportive"
+    else:
+        dealer_gamma_note = "NEUTRAL / transition zone"
+
+    # -------------------------
+    # 5️⃣ SEW 결합
+    # -------------------------
+    combo_signal = ""
+
+    if sew_state in ["ALERT", "CRISIS", "DEADMAN", "WATCH"]:
+        if "NEGATIVE" in gamma_state:
+            combo_signal = "🚨 SHOCK + NEGATIVE GAMMA → 폭발 구간"
+        else:
+            combo_signal = "⚠️ SHOCK but gamma not fully negative"
+    else:
+        if "TRANSITION" in gamma_state:
+            combo_signal = "🟢 EARLY FLOW WITHOUT SHOCK"
+        elif "POSITIVE" in gamma_state:
+            combo_signal = "🟢 STABLE FLOW"
+        else:
+            combo_signal = "🔴 TREND ACCELERATION"
+
+    # -------------------------
+    # Save to market_data
+    # -------------------------
+    market_data["GAMMA_STATE"] = gamma_state
+    market_data["GAMMA_COMBO"] = combo_signal
+    market_data["DEALER_GAMMA_NOTE"] = dealer_gamma_note
+
+    # -------------------------
+    # Output
+    # -------------------------
+    lines = []
+    lines.append("### ⚡ 7.3) Pseudo Gamma Filter")
+    lines.append("- **정의:** 옵션 데이터 없이 시장의 감마 환경을 추론")
+    lines.append("- **주의:** Dealer Gamma Bias 숫자와 Pseudo Gamma State는 서로 다른 레이어")
+    lines.append("")
+
+    lines.append(f"- **Pseudo Gamma State:** {gamma_state}")
+    lines.append(f"- **Dealer Gamma Bias:** {dealer_gamma_bias:.2f} ({dealer_gamma_note})")
+    lines.append(f"- **Bias:** {gamma_bias}")
+    lines.append(f"- **Strategy:** {strategy}")
+    lines.append("")
+    lines.append(f"- **Drift Score:** {drift_score} ({drift_state})")
+    lines.append(f"- **VIX:** {vix_level if vix_level is not None else 'N/A'}")
+    lines.append(f"- **SEW:** {sew_state} / {sew_event_type}")
+    lines.append("")
+    lines.append(f"- **🚀 Combo Signal:** {combo_signal}")
+
+    return "\n".join(lines)
+
+# =========================
+# 8) Incentive Filter
+# =========================
+def incentive_filter(market_data: Dict[str, Any]) -> str:
+    """
+    8) Incentive Filter (Wall St. Logic)
+    실질 금리와 장단기 금리차를 활용해 자본의 '진짜 의도'를 파악
+    """
+    if market_data is None:
+        market_data = {}
+        
+    state = market_data.get("FINAL_STATE", {}) or {}
+
+    def fetch_val(key: str, default: float) -> float:
+        # 1. FINAL_STATE에서 먼저 확인
+        val = state.get(key.upper()) or state.get(key.lower())
+        if isinstance(val, (int, float)):
+            return float(val)
+        if isinstance(val, dict):
+            val = val.get("today")
+
+        # 2. market_data 루트에서 다시 확인 (fallback)
+        if val is None:
+            node = market_data.get(key.upper()) or market_data.get(key.lower())
+            if isinstance(node, (int, float)):
+                return float(node)
+            if isinstance(node, dict):
+                val = node.get("today")
+
+        try:
+            return float(val) if val is not None else default
+        except Exception:
+            return default
+
+    # -------------------------
+    # 1) 데이터 로드 및 단위 보정
+    # -------------------------
+    raw_t10y2y = state.get("T10Y2Y") 
+    if not isinstance(raw_t10y2y, (int, float)):
+        raw_t10y2y = fetch_val("T10Y2Y", 0.0)
+
+    # bp 단위 보정
+    t10y2y_bp = raw_t10y2y * 100 if abs(raw_t10y2y) < 5 else raw_t10y2y
+    
+    rr_val = fetch_val("DFII10", 0.0)
+    dxy_val = fetch_val("DXY", 100.0)
+
+    # 2번 필터 스타일의 날짜 정보 가져오기 (추가된 부분)
+    rr_asof = market_data.get("_DFII10_ASOF")
+    dxy_asof = market_data.get("_DXY_ASOF")
+
+    # -------------------------
+    # 2) 리포트 문구 생성
+    # -------------------------
+    lines = []
+    lines.append("### 🎯 8) Incentive Filter (Wall St. Logic)")
+    lines.append("")
+    lines.append(f"**핵심 신호:** 장단기차({t10y2y_bp:.2f}bp) | 실질금리({rr_val:.2f}%) | DXY({dxy_val:.2f})")
+    
+    # 💡 [추가] 날짜 정보가 있으면 한 줄 넣어주기 (2번 필터와 통일감)
+    as_of_list = []
+    if rr_asof: as_of_list.append(f"RealRate: {rr_asof}")
+    if dxy_asof: as_of_list.append(f"DXY: {dxy_asof}")
+    if as_of_list:
+        lines.append(f"*(as of: {', '.join(as_of_list)} / FRED last available)*")
+    
+    lines.append("")
+
+    # -------------------------
+    # 3) 자본 흐름 로직 (Wall St. Insight)
+    # -------------------------
+    if rr_val < 1.0:
+        incentive_text = "✅ **자본이 쏠리는 곳 (Long Incentive):**\nGrowth/Quality (QUAL) - 유동성 환경 우호 및 저금리 수혜"
+    elif rr_val >= 2.0:
+        incentive_text = "❌ **자본이 탈출하는 곳 (Short Incentive):**\n고금리(실질금리 2% 상회) 부담으로 인한 리스크 오프 신호"
+    else:
+        incentive_text = "Neutral - 자본의 방향성이 탐색 구간에 있음 (실질금리 정상화 과정)"
+
+    lines.append(incentive_text)
+    lines.append("")
+    lines.append("- **Note:** 실질금리와 달러는 자본의 '기회비용'을 결정하는 핵심 유인책입니다.")
+    
+    return "\n".join(lines)
+
+# =========================
+# 9) Cause Filter
+def cause_filter(market_data: Dict[str, Any]) -> str:
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    wti = _get_series(market_data, "WTI")
+    vix = _get_series(market_data, "VIX")
+
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    wti_dir = _sign_from(wti)
+    vix_dir = _sign_from(vix)
+
+    # -------------------------
+    # 1) 지표 조합 기반 Narrative 판정 로직
+    # -------------------------
+    narrative = ""
+    
+    # CASE A: 전형적인 골디락스 / 리스크온 (금리↓, 달러↓, 유가↓, VIX↓)
+    if us10y_dir <= 0 and dxy_dir <= 0 and vix_dir == -1:
+        narrative = "금리·달러 안정에 따른 전형적인 '위험자산 선호(Risk-On)'"
+    
+    # CASE B: 비용 압박 완화 (유가↓, 금리↓)
+    elif wti_dir == -1 and us10y_dir <= 0:
+        narrative = "인플레이션 압력 둔화 및 비용 감소형 안도 랠리"
+        
+    # CASE C: 긴축 우려 / 리스크오프 (금리↑, 달러↑, VIX↑)
+    elif us10y_dir == 1 and dxy_dir == 1 and vix_dir == 1:
+        narrative = "긴축 공포 및 달러 수급 경색에 따른 '위험회피(Risk-Off)'"
+        
+    # CASE D: 스태그플레이션 우려 (유가↑, 금리↑)
+    elif wti_dir == 1 and us10y_dir == 1:
+        narrative = "비용 상승형 물가 부담 및 경기 둔화 우려 반영"
+        
+    # CASE E: 단순 유동성/심리 장세
+    elif vix_dir == -1:
+        narrative = "매크로 지표 혼조 속 시장 심리 개선 주도"
+    
+    else:
+        narrative = "복합적 요인에 의한 지표 혼조 및 방향성 탐색"
+
+    # -------------------------
+    # 2) 출력 정리
+    # -------------------------
+    parts = []
+    if us10y_dir == 1: parts.append("금리↑")
+    elif us10y_dir == -1: parts.append("금리↓")
+    if dxy_dir == 1: parts.append("달러↑")
+    elif dxy_dir == -1: parts.append("달러↓")
+    if wti_dir == 1: parts.append("유가↑")
+    elif wti_dir == -1: parts.append("유가↓")
+    if vix_dir == 1: parts.append("VIX↑")
+    elif vix_dir == -1: parts.append("VIX↓")
+
+    raw_signals = " + ".join(parts) if parts else "신호 없음"
+
+    lines = []
+    lines.append("### 🔍 9) Cause Filter")
+    lines.append("- **질문:** 무엇이 이 움직임을 만들었는가?")
+    lines.append(f"- **핵심 신호:** {raw_signals}")
+    lines.append(f"- **최종 판정:** **{narrative}**") # 핵심 서사 출력
+    
+    return "\n".join(lines)
+
+
+# =========================
+# 10) Direction Filter
+# =========================
+def direction_filter(market_data: Dict[str, Any]) -> str:
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    wti = _get_series(market_data, "WTI")
+    vix = _get_series(market_data, "VIX")
+
+    us10y_strength = _strength_label("US10Y", us10y.get("pct_change"))
+    dxy_strength = _strength_label("DXY", dxy.get("pct_change"))
+    wti_strength = _strength_label("WTI", wti.get("pct_change"))
+    vix_strength = _strength_label("VIX", vix.get("pct_change"))
+
+    lines = []
+    lines.append("### 🔄 10) Direction Filter")
+    lines.append("- **질문:** 오늘 움직임은 ‘노이즈’인가 ‘의미 있는 변화’인가?")
+    lines.append(
+        f"- **강도:** US10Y({us10y_strength}) / DXY({dxy_strength}) / WTI({wti_strength}) / VIX({vix_strength})"
+    )
+
+    if "Strong" in (us10y_strength, dxy_strength, wti_strength, vix_strength) or "Clear" in (
+        us10y_strength,
+        dxy_strength,
+        wti_strength,
+        vix_strength,
+    ):
+        lines.append("- **판정:** **SIGNIFICANT MOVE (의미 있는 변화)**")
+    else:
+        lines.append("- **판정:** **MOSTLY NOISE (대부분 노이즈)**")
+
+    return "\n".join(lines)
+
+
+# =========================
+# 11) Timing Filter
+# =========================
+def timing_filter(market_data: Dict[str, Any]) -> str:
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    vix = _get_series(market_data, "VIX")
+
+    lines = []
+    lines.append("### ⏳ 11) Timing Filter")
+    lines.append("- **질문:** 이 신호는 단기/중기/장기 중 어디에 더 중요하게 작용하는가?")
+    lines.append("- **가이드:**")
+    lines.append("  - 금리/달러의 ‘레벨’ 변화는 중기(수 주~수개월) 영향이 더 큼")
+    lines.append("  - VIX 급등/급락은 단기(수 일~수 주) 심리 변화에 민감")
+    lines.append(
+        f"- **Today snapshot:** US10Y({_fmt_num(us10y['today'], 3)}), DXY({_fmt_num(dxy['today'], 3)}), VIX({_fmt_num(vix['today'], 2)})"
+    )
+    return "\n".join(lines)
+
+
+# =========================
+# 12) Structural Filter
+# =========================
+def structural_filter(market_data: Dict[str, Any]) -> str:
+    # 1. 데이터 추출
+    us10y = _get_series(market_data, "US10Y")
+    dxy = _get_series(market_data, "DXY")
+    vix = _get_series(market_data, "VIX")
+    wti = _get_series(market_data, "WTI")
+    gold = _get_series(market_data, "GOLD")
+    rr = _get_series(market_data, "REAL_RATE")
+
+    us10y_dir = _sign_from(us10y)
+    dxy_dir = _sign_from(dxy)
+    vix_dir = _sign_from(vix)
+    wti_dir = _sign_from(wti)
+    gold_dir = _sign_from(gold)
+
+    # 값 / 변화율 추출
+    rr_val = _to_float(rr.get("today")) if rr else None
+    wti_val = _to_float(wti.get("today")) if wti else None
+
+    us10y_pct = _to_float(us10y.get("pct_change")) if us10y else None
+    dxy_pct = _to_float(dxy.get("pct_change")) if dxy else None
+    vix_pct = _to_float(vix.get("pct_change")) if vix else None
+    wti_pct = _to_float(wti.get("pct_change")) if wti else None
+    gold_pct = _to_float(gold.get("pct_change")) if gold else None
+
+    # 2. 상태 초기화
+    state = "NEUTRAL"
+    rationale = "글로벌 매크로 구조의 특이 신호가 감지되지 않음"
+
+    # ---------------------------------------------------------
+    # [NEW] Deadband / Meaningful move thresholds
+    # ---------------------------------------------------------
+    TH_DXY = 0.20
+    TH_GOLD = 0.50
+    TH_VIX = 1.00
+    TH_US10Y = 0.20
+    TH_WTI = 2.00
+
+    dxy_up_meaningful = dxy_pct is not None and dxy_pct >= TH_DXY
+    gold_up_meaningful = gold_pct is not None and gold_pct >= TH_GOLD
+    vix_up_meaningful = vix_pct is not None and vix_pct >= TH_VIX
+    us10y_down_meaningful = us10y_pct is not None and us10y_pct <= -TH_US10Y
+    us10y_up_meaningful = us10y_pct is not None and us10y_pct >= TH_US10Y
+    wti_up_meaningful = wti_pct is not None and wti_pct >= TH_WTI
+    wti_down_meaningful = wti_pct is not None and wti_pct <= -TH_WTI
+
+    # ---------------------------------------------------------
+    # [12번 필터 안정화 로직 - 우선순위 판정]
+    # ---------------------------------------------------------
+
+    # A) 시스템적 헤지
+    # 기존: dxy_dir == 1 and gold_dir == 1
+    # 문제: 미세한 + 부호만으로도 발동
+    # 개선: 의미 있는 상승 + 보조 리스크 신호 1개 동반 시에만 발동
+    if dxy_up_meaningful and gold_up_meaningful and (vix_up_meaningful or us10y_down_meaningful):
+        state = "SYSTEMIC HEDGE (시스템적 위험 회피)"
+        rationale = "달러와 금의 의미 있는 동반 상승이 확인되며, 보조 리스크 신호까지 동반됨"
+
+    # B) 에너지 주도 스태그플레이션
+    elif (
+        wti_val is not None and rr_val is not None
+        and wti_val > 90
+        and rr_val >= 2.0
+        and wti_up_meaningful
+    ):
+        state = "ENERGY-DRIVEN STAGFLATION (에너지 주도 스태그)"
+        rationale = f"긴축적인 실질금리({rr_val}%) 환경에서도 고유가가 의미 있게 유지/상승. 공급 측 구조 압박 가능성"
+
+    # C) 글로벌 긴축 구조
+    elif us10y_up_meaningful and dxy_up_meaningful:
+        state = "GLOBAL FINANCIAL TIGHTENING (글로벌 긴축 구조)"
+        rationale = "금리↑ + 달러↑가 모두 의미 있는 수준으로 나타나 글로벌 자본 조달 비용 압박"
+
+    # D) 비용 주도 구조
+    elif wti_up_meaningful and us10y_dir <= 0:
+        state = "COST-PUSH STRUCTURE (비용 주도 구조)"
+        rationale = "경기 지지(금리 하락/보합)가 필요한 상황에서 유가가 의미 있게 상승해 실물 비용 부담을 가중"
+
+    # E) 수요 둔화 우려
+    elif wti_down_meaningful and vix_up_meaningful:
+        state = "WEAK DEMAND + RISK-OFF (수요 둔화)"
+        rationale = "유가 하락과 변동성 상승이 동시에 의미 있게 나타나 성장 둔화 우려를 반영"
+
+    # ---------------------------------------------------------
+    # 3. 리포트 조립
+    # ---------------------------------------------------------
+    lines = []
+    lines.append("### 🏗️ 12) Structural Filter (v3)")
+    lines.append("- **질문:** 글로벌 화폐 가치와 에너지 패권 등 '판'의 변화가 있는가?")
+
+    signals = [
+        f"US10Y({_dir_str(us10y_dir)})",
+        f"DXY({_dir_str(dxy_dir)})",
+        f"GOLD({_dir_str(gold_dir)})",
+        f"VIX({_dir_str(vix_dir)})",
+        f"WTI({_dir_str(wti_dir)})",
+    ]
+    lines.append(f"- **핵심 신호:** {' / '.join(signals)}")
+    lines.append(
+        f"- **Meaningful Move Check:** "
+        f"DXY={dxy_pct if dxy_pct is not None else 'N/A'} / "
+        f"GOLD={gold_pct if gold_pct is not None else 'N/A'} / "
+        f"US10Y={us10y_pct if us10y_pct is not None else 'N/A'} / "
+        f"VIX={vix_pct if vix_pct is not None else 'N/A'} / "
+        f"WTI={wti_pct if wti_pct is not None else 'N/A'}"
+    )
+    lines.append(f"- **판정:** **{state}**")
+    lines.append(f"- **근거:** {rationale}")
+
+    market_data["STRUCT_V2_STATE"] = state
+
+    return "\n".join(lines)
+
+
+
+
+
+    
+from typing import Dict, Any, Optional
+
+def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Narrative Engine v2.2 (Restored Original Format + Drift Add-on + Realistic Scoring)
+
+    Structure + Sentiment + Credit + Liquidity + Phase
+    + Drift (보조 가점만)
+    → Final Risk Action + Risk Budget (0~100)
+
+    원칙:
+    - 기존 13번 양식 유지
+    - FINAL_STATE 정상 저장
+    - Drift는 메인 엔진이 아니라 보조 신호로만 반영
+    - 점수는 기존보다 과도하게 85로 치우치지 않도록 보수화
+    """
+
+    # --------------------------------------------------
+    # Helpers
+    # --------------------------------------------------
+
+    def _to_float(x) -> Optional[float]:
+        if x is None:
+            return None
+        if isinstance(x, (int, float)):
+            return float(x)
+        try:
+            return float(str(x).replace(",", "").replace("%", ""))
+        except Exception:
+            return None
+
+    def _clamp(x: int, lo: int = 0, hi: int = 100) -> int:
+        return max(lo, min(hi, int(x)))
+
+    def _sentiment_state(fear: Optional[float]) -> str:
+        if fear is None:
+            return "N/A"
+        if fear < 30:
+            return "FEAR"
+        if fear > 70:
+            return "GREED"
+        return "NEUTRAL"
+
+    def _liq_dir_tag(pct: Optional[float]) -> str:
+        if pct is None:
+            return "N/A"
+        if pct > 0:
+            return "UP"
+        if pct < 0:
+            return "DOWN"
+        return "FLAT"
+
+    # --------------------------------------------------
+    # --------------------------------------------------
+    # 1️⃣ Pull Signals
+    # --------------------------------------------------
+    struct_v2 = str(market_data.get("STRUCT_V2_STATE", "NEUTRAL")).upper()
+    policy_bias_line = str(market_data.get("POLICY_BIAS_LINE", "") or "")
+    
+    sentiment = market_data.get("SENTIMENT", {}) or {}
+    fear = _to_float(sentiment.get("fear_greed"))
+    sent_state = _sentiment_state(fear)
+    
+    hy_oas = market_data.get("HY_OAS", {}) or {}
+    hy_oas_today = _to_float(hy_oas.get("today"))
+    credit_calm: Optional[bool] = None
+    if hy_oas_today is not None:
+        credit_calm = hy_oas_today < 4.0
+    
+    net_liq = market_data.get("NET_LIQ", {}) or {}
+    net_liq_pct = _to_float(net_liq.get("pct_change"))
+    liq_dir_tag = _liq_dir_tag(net_liq_pct)
+    
+    liq_level_bucket = str(
+        net_liq.get("level_bucket") or market_data.get("NET_LIQ_LEVEL_BUCKET") or "N/A"
+    ).upper()
+    if liq_level_bucket not in ("HIGH", "MID", "LOW"):
+        liq_level_bucket = "N/A"
+    
+    phase = market_data.get("MARKET_REGIME", "N/A")
+    phase_upper = str(phase).upper()
+    
+    macro_narrative = str(market_data.get("MACRO_NARRATIVE", "N/A") or "N/A").upper()
+    cross_asset_tape = market_data.get("CROSS_ASSET_TAPE", {}) or {}
+    
+    macro_tilt_map = {
+    "DISINFLATION": +4,
+    "REFLATION": +3,
+    "TIGHTENING_GROWTH_SCARE": -4,
+    "STAGFLATION_RISK": -6,
+    "CREDIT_STRESS": -8,
+    }
+    macro_tilt = macro_tilt_map.get(str(macro_narrative).upper(), 0)
+    
+    policy_upper = policy_bias_line.upper()
+    mixed = "MIXED" in policy_upper
+    easing = "EASING" in policy_upper
+    tightening = "TIGHTENING" in policy_upper
+    
+    pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
+    if pos_z is None:
+        pos_z = 0.0
+        # --------------------------------------------------
+    # 1.5️⃣ Drift (보조 신호만)
+    # --------------------------------------------------
+    drift = market_data.get("DRIFT", {}) or {}
+    drift_score = drift.get("score", market_data.get("DRIFT_SCORE", 0))
+    try:
+        drift_score = int(drift_score)
+    except Exception:
+        drift_score = 0
+
+    drift_state = str(
+        drift.get("state", market_data.get("DRIFT_STATE", "N/A")) or "N/A"
+    )
+    drift_label = str(drift.get("label", "N/A") or "N/A")
+    drift_combo = str(drift.get("combo_signal", "NONE") or "NONE")
+
+    # --------------------------------------------------
+    # 2️⃣ Risk Budget Core
+    # --------------------------------------------------
+
+    # Base from sentiment
+    if sent_state == "FEAR":
+        budget = 35
+    elif sent_state == "GREED":
+        budget = 70
+    elif sent_state == "NEUTRAL":
+        budget = 55
+    else:
+        budget = 50
+
+    # Structure tilt
+    if not mixed:
+        if easing and not tightening:
+            budget += 10
+        elif tightening and not easing:
+            budget -= 10
+
+    # Credit tilt (보수화)
+    if credit_calm is True:
+        budget += 5
+    elif credit_calm is False:
+        budget -= 10
+
+    # Liquidity tilt (보수화)
+    if liq_dir_tag == "UP":
+        budget += 5
+    elif liq_dir_tag == "DOWN":
+        budget -= 10
+
+    if liq_level_bucket == "HIGH":
+        budget += 5
+    elif liq_level_bucket == "LOW":
+        budget -= 5
+
+    # --------------------------------------------------
+    # --------------------------------------------------
+    # 2.5️⃣ Structural v2 Penalty
+    # --------------------------------------------------
+    struct_v2_kr = "정상"
+    struct_alert = ""
+    v2_cap = 100
+
+    vix_block = market_data.get("VIX", {}) or {}
+    vix_today = _to_float(vix_block.get("today"))
+    vix_pct = _to_float(vix_block.get("pct_change"))
+
+    credit_stress = credit_calm is False
+
+    liq_stress = (
+        liq_dir_tag == "DOWN"
+        and liq_level_bucket == "LOW"
+    )
+
+    vol_stress = (
+        (vix_today is not None and vix_today >= 25)
+        or (vix_pct is not None and vix_pct >= 25)
+    )
+
+    systemic_confirmed = (
+        "SYSTEMIC" in struct_v2
+        and (
+            credit_stress
+            or liq_stress
+            or vol_stress
+        )
+    )
+
+    systemic_watch = (
+        "SYSTEMIC" in struct_v2
+        and not systemic_confirmed
+    )
+
+    if systemic_confirmed:
+        budget -= 20
+        struct_v2_kr = "시스템위기"
+        struct_alert = "🚨 시스템 불신 감지"
+        v2_cap = 30
+
+    elif systemic_watch:
+        budget -= 4
+        struct_v2_kr = "시스템 리스크 관찰"
+        struct_alert = "⚠️ 시스템 리스크 관찰"
+        v2_cap = 70
+
+    elif "STAGFLATION" in struct_v2:
+        budget -= 15
+        struct_v2_kr = "스태그플레이션"
+        struct_alert = "⚠️ 에너지 비용 전이"
+        v2_cap = 40
+
+    # --------------------------------------------------
+    # 2.7️⃣ Drift Adjustment (ADD ONLY)
+    # --------------------------------------------------
+    drift_tilt = 0
+
+    # 기존보다 과민 반응 완화:
+    # Drift는 "조기 탐지" 용도이지, 단독 국면 전환 트리거가 아님
+    if drift_score >= 6:
+        drift_tilt = 3
+    elif drift_score >= 3:
+        drift_tilt = 1
+    elif drift_score <= -3:
+        drift_tilt = -3
+    
+    budget += drift_tilt
+    
+    # --------------------------------------------------
+    # 2.75️⃣ Flow / Gamma Alignment Boost (ADD ONLY)
+    # --------------------------------------------------
+    flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+    gamma_state = str(market_data.get("GAMMA_STATE", "N/A") or "N/A").upper()
+    
+    flow_score = flow.get("score", 0)
+    try:
+        flow_score = int(flow_score)
+    except Exception:
+        flow_score = 0
+    
+    flow_gamma_tilt = 0
+    
+    # 상승 초기 정렬:
+    # Drift 단독이 아니라 Flow 확인 + Gamma 전환까지 필요
+    if drift_score >= 3 and flow_score >= 3 and "TRANSITION" in gamma_state:
+        flow_gamma_tilt = 2
+    
+    # 더 강한 상승 압력:
+    # 진짜 강한 Drift + 강한 Flow + Positive Gamma
+    elif drift_score >= 5 and flow_score >= 4 and "POSITIVE" in gamma_state:
+        flow_gamma_tilt = 4
+   
+    
+    budget += flow_gamma_tilt
+        # --------------------------------------------------
+    # 2.76️⃣ Flow Continuity Tilt (Prev Flow → Current Flow)
+    # --------------------------------------------------
+    prev_flow_state = str(market_data.get("PREV_FLOW_STATE", "N/A") or "N/A").upper()
+    prev_flow_score = _to_float(market_data.get("PREV_FLOW_SCORE", 0))
+    if prev_flow_score is None:
+        prev_flow_score = 0.0
+
+    flow_continuity_tilt = 0
+    flow_continuity_note = "N/A"
+
+    # 전일 NO FLOW → 금일 EARLY TRACE 이상
+    if "NO CLEAR FLOW" in prev_flow_state and flow_score >= 3:
+        flow_continuity_tilt = 2
+        flow_continuity_note = "NEW_FLOW_TRACE"
+
+    # 전일 EARLY TRACE → 금일 BUILDING 이상
+    elif "EARLY TRACE" in prev_flow_state and flow_score >= 5:
+        flow_continuity_tilt = 3
+        flow_continuity_note = "FLOW_STRENGTHENING"
+
+    # 전일 FLOW 있었는데 금일 약화
+    elif ("EARLY TRACE" in prev_flow_state or "BUILDING" in prev_flow_state) and flow_score <= 2:
+        flow_continuity_tilt = -3
+        flow_continuity_note = "FLOW_FADE"
+
+    # 전일과 금일 모두 흐름 유지
+    elif prev_flow_score >= 3 and flow_score >= 3:
+        flow_continuity_tilt = 1
+        flow_continuity_note = "FLOW_PERSISTENCE"
+
+    budget += flow_continuity_tilt
+
+    # --------------------------------------------------
+    # 2.77️⃣ Flow Regime Modifier (small, cap-aware)
+    # --------------------------------------------------
+    flow_regime_tilt = 0
+
+    if flow_score >= 7:
+        flow_regime_tilt = 4
+    elif flow_score >= 5:
+        flow_regime_tilt = 3
+        
+    elif flow_score >=3:
+        flow_regime_tilt = 2
+    elif flow_score >=1:
+        flow_regime_tilt = 1
+    
+
+    # SOFT RISK-OFF + Flow improving이면 과도한 보수성만 완화
+    if "SOFT RISK-OFF" in phase_upper and flow_score >= 3:
+        flow_regime_tilt += 1
+
+    # EVENT / WAITING에서 flow가 강하면 완전 방관 방지
+    if ("EVENT-WATCHING" in phase_upper or "WAITING" in phase_upper) and flow_score >= 5:
+        flow_regime_tilt += 2
+
+    budget += flow_regime_tilt
+
+    # --------------------------------------------------
+    # 2.79️⃣ Macro Narrative Tilt (NEW)
+    # Layer B subtype 반영
+    # --------------------------------------------------
+    macro_tilt = 0
+
+    if "GOLDILOCKS" in phase_upper:
+        macro_tilt += 8
+
+    elif "REFLATION" in phase_upper:
+        macro_tilt += 6
+
+    elif "LIQUIDITY" in phase_upper:
+        macro_tilt += 5
+
+    elif "TIGHTENING_GROWTH_SCARE" in macro_narrative:
+        macro_tilt -= 8
+
+    elif "STAGFLATION" in phase_upper:
+        macro_tilt -= 12
+
+    elif "INFLATION SHOCK" in phase_upper:
+        macro_tilt -= 12
+        
+    elif "INFLATION" in phase_upper:
+        macro_tilt -= 6
+        if macro_narrative == "N/A":
+            macro_narrative = "INFLATION_RISK"
+
+    elif "HARD RISK-OFF" in phase_upper:
+        macro_tilt -= 20
+
+    budget += macro_tilt
+
+    # --------------------------------------------------
+    # 2.8️⃣ Positioning Penalty
+    # --------------------------------------------------
+    pos_alert = ""
+    if pos_z >= 2.0:
+        budget -= 8
+        pos_alert = " ⚠️ 수급 과열 감지"
+    elif pos_z >= 1.5:
+        budget -= 4
+        pos_alert = " ⚠️ 수급 다소 과열"
+
+	# --------------------------------------------------
+    # 2.9️⃣ Event-Watching Floor
+    # --------------------------------------------------
+    # EVENT-WATCHING은 Risk-Off가 아니라 관망 국면.
+    # 크레딧이 안정적이면 과도한 현금화 방지.
+    if ("EVENT-WATCHING" in phase_upper or "WAITING" in phase_upper) and credit_calm is True:
+        budget = max(budget, 25)
+
+    # --------------------------------------------------
+    # --------------------------------------------------
+    # 3️⃣ Phase Cap v2
+    # --------------------------------------------------
+    # 원칙:
+    # - Phase/Regime 라벨 하나만으로 극단적 cap을 강제하지 않는다.
+    # - 20% cap은 확인된 systemic/shock 또는 심각한 credit stress에 한정한다.
+    # - 일반 HARD RISK-OFF는 방어적으로 유지하되 20% 고정을 피한다.
+    # - 기존 Structural v2 cap은 독립적인 상위 안전장치로 유지한다.
+
+    cap = 100
+
+    hy_status = str(
+        cross_asset_tape.get("HY_OAS_STATUS", "UNKNOWN") or "UNKNOWN"
+    ).upper()
+
+    # 1) 방향성 부재 / 관망
+    if phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
+        cap = 60
+
+    # 2) 확인된 시스템/쇼크 위기
+    elif (
+        phase_upper.startswith("SHOCK RISK-OFF")
+        or "SYSTEMIC" in phase_upper
+        or systemic_confirmed
+        or (
+            phase_upper.startswith("HARD RISK-OFF")
+            and hy_status == "FRACTURE"
+        )
+    ):
+        cap = 20
+
+    elif phase_upper.startswith("HARD RISK-OFF"):
+
+        # Recovery Watch:
+        # 위기 진입 방어는 유지하되,
+        # Liquidity / Flow 개선 확인 시 cap을 단계적으로 해제한다.
+        recovery_watch = (
+            liq_dir_tag == "UP"
+            and flow_score >= 3
+        )
+
+        if recovery_watch and hy_status != "FRACTURE":
+            cap = 65
+
+        elif hy_status == "HOT":
+            cap = 35
+
+        else:
+            cap = 45
+
+    # 4) SOFT RISK-OFF
+    elif phase_upper.startswith("SOFT RISK-OFF"):
+        cap = 50 if flow_score >= 3 else 45
+
+    # 5) 기타 RISK-OFF
+    elif "RISK-OFF" in phase_upper:
+        cap = 35
+
+    # 6) 혼조 / 취약
+    elif "MIXED / FRAGILE" in phase_upper:
+        cap = 55
+
+    elif phase_upper.startswith("TRANSITION") or "MIXED" in phase_upper:
+        cap = 65
+
+    # 7) Risk-On
+    elif phase_upper.startswith("RISK-ON"):
+        cap = 85
+
+    # --------------------------------------------------
+    # Structural v2 independent safety cap
+    # --------------------------------------------------
+    # SYSTEMIC은 기존 crisis protection 유지.
+    # STAGFLATION은 이미 Structural v2에서
+    # budget penalty + v2_cap=40이 적용되므로
+    # 여기서 다시 무조건 30 cap을 중복 적용하지 않는다.
+    if "SYSTEMIC" in struct_v2:
+        cap = min(cap, 30)
+
+    final_cap = min(cap, v2_cap)
+
+    pre_cap_budget = budget
+
+    budget = min(int(round(budget)), final_cap)
+    budget = _clamp(budget, 0, 100)
+
+    market_data["PRE_CAP_BUDGET"] = pre_cap_budget
+    market_data["PHASE_CAP"] = final_cap
+    market_data["RISK_BUDGET"] = budget
+    # --------------------------------------------------
+    # 4️⃣ Final Action
+    # --------------------------------------------------
+    # 추천:
+    if budget >= 75:
+        action = "INCREASE"
+    elif budget >= 55:
+        action = "HOLD"
+    elif budget >= 35:
+        action = "REDUCE"
+    else:
+        action = "STRONG REDUCE"
+
+    # 포지셔닝 과열 시 액션 오버라이드
+    if pos_z >= 2.0:
+        if action == "INCREASE":
+            action = "HOLD (POS_OVERHEATED)"
+        elif action == "HOLD":
+            action = "REDUCE (POS_OVERHEATED)"
+
+    # --------------------------------------------------
+    # 5️⃣ Narrative Line
+    # --------------------------------------------------
+    struct_tag = "MIXED"
+    if not mixed:
+        if easing and not tightening:
+            struct_tag = "EASING"
+        elif tightening and not easing:
+            struct_tag = "TIGHTENING"
+
+    struct_tag_final = f"{struct_tag}({struct_v2_kr})" if struct_v2_kr != "정상" else struct_tag
+
+    credit_tag = "안정" if credit_calm is True else ("불안" if credit_calm is False else "N/A")
+    liq_dir_kr = {"UP": "증가", "DOWN": "감소", "FLAT": "보합", "N/A": "N/A"}[liq_dir_tag]
+    liq_lvl_kr = {"HIGH": "높음", "MID": "중간", "LOW": "낮음", "N/A": "N/A"}.get(liq_level_bucket, "N/A")
+    liq_tag = f"{liq_dir_kr}/{liq_lvl_kr}"
+
+    narrative = (
+        f"구조={struct_tag_final} / 심리={sent_state} / 유동성={liq_tag} / "
+        f"크레딧={credit_tag} / 드리프트={drift_state} ({drift_label}) / "
+        f"수급={pos_z:.2f}{pos_alert} → Phase={phase}"
+    )
+
+    # --------------------------------------------------
+    # --------------------------------------------------
+    # 6.5️⃣ Final State Object
+    # 기존 FINAL_STATE(FRED_EXTRA 등)를 보존하면서 13번 결과만 업데이트
+    # --------------------------------------------------
+    existing_final_state = market_data.get("FINAL_STATE", {}) or {}
+    
+    final_state = {
+        **existing_final_state,
+    
+        "phase": phase,
+        "phase_cap": cap,
+        "risk_action": action,
+        "risk_budget": budget,
+    
+        "structure_tag": struct_tag,
+        "policy_bias_line": policy_bias_line,
+    
+        "sentiment_fear_greed": fear,
+        "sentiment_state": sent_state,
+    
+        "credit_calm": credit_calm,
+        "hy_oas_today": hy_oas_today,
+    
+        "liquidity_dir": liq_dir_tag,
+        "liquidity_level_bucket": liq_level_bucket,
+        "net_liq_pct_change": net_liq_pct,
+    
+        "pos_z": pos_z,
+    
+        "drift_score": drift_score,
+        "drift_state": drift_state,
+        "drift_label": drift_label,
+        "drift_combo_signal": drift_combo,
+        "drift_tilt": drift_tilt,
+        "flow_gamma_tilt": flow_gamma_tilt,
+    
+        "narrative_line": narrative,
+
+        "prev_flow_state": prev_flow_state,
+        "prev_flow_score": prev_flow_score,
+        "flow_score": flow_score,
+        "flow_continuity_tilt": flow_continuity_tilt,
+        "flow_continuity_note": flow_continuity_note,
+        "flow_state": flow.get("state", "N/A"),
+        "flow_confidence": flow.get("confidence", "N/A"),
+        "flow_regime_tilt": flow_regime_tilt,
+        
+        "macro_narrative": macro_narrative,
+        "cross_asset_tape": cross_asset_tape,
+        "macro_tilt": macro_tilt,
+    }
+    market_data["FINAL_STATE"] = final_state
+
+    # --------------------------------------------------
+    # 6️⃣ Output (원래 양식 복구)
+    # --------------------------------------------------
+    lines = []
+    lines.append("### 🧠 13) Narrative Engine (v2 + Risk Budget + Drift)")
+    lines.append("- **정의:** 구조·심리·크레딧·유동성·국면을 통합해 오늘의 리스크 액션을 결정")
+    lines.append("- **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문")
+    lines.append("")
+    lines.append(f"- **Structure Bias:** {policy_bias_line} ({struct_v2_kr})")
+    lines.append(f"- **Sentiment (Fear&Greed):** {fear if fear is not None else 'N/A'} ({sent_state})")
+    lines.append(f"- **Credit Calm:** {credit_calm}")
+    lines.append(f"- **Liquidity (NET_LIQ):** {liq_dir_tag} ({liq_level_bucket})")
+    lines.append(f"- **Structural Regime:** {macro_narrative}")
+    lines.append(f"- **Operational Phase:** {phase} (Cap: {cap})")
+    lines.append(f"- **Macro Tilt:** {macro_tilt:+d}")
+    
+    if struct_alert:
+        lines.append(f"- **[SPECIAL ALERT]**: **{struct_alert}** (Structural Cap: {v2_cap})")
+
+    lines.append(f"- **Drift:** {drift_state} / {drift_label} / {drift_combo}")
+    lines.append(f"- **Drift Score:** {drift_score}")
+    lines.append(f"- **Flow Score:** {flow_score}")
+    lines.append(
+        f"- **Flow Continuity:** {prev_flow_state} → {flow.get('state', 'N/A')} "
+        f"({flow_continuity_note}, tilt={flow_continuity_tilt:+d})"
+    )
+    lines.append(f"- **Flow Regime Tilt:** {flow_regime_tilt:+d} / Flow-Gamma Tilt: {flow_gamma_tilt:+d}")
+    
+    lines.append("")
+    lines.append(f"- **🎯 Final Risk Action:** **{action}**")
+    lines.append(f"- **Risk Budget (0~100):** **{budget}**")
+    lines.append(f"- **Narrative:** {narrative}")
+
+    return "\n".join(lines)
+
+    
+    # 3️⃣ Structure(정책) & Price(시장) 판별
+    structure = "EASING" if "EASING" in policy_bias_line.upper() else \
+                "TIGHTENING" if "TIGHTENING" in policy_bias_line.upper() else "MIXED"
+
+    # 내부 로직용 price_bucket / 출력용 price_display 분리
+    if "HARD RISK-OFF" in market_regime:
+        price = "HARD RISK-OFF"
+        price_bucket = "RISK-OFF"
+    elif "SOFT RISK-OFF" in market_regime:
+        price = "SOFT RISK-OFF"
+        price_bucket = "RISK-OFF"
+    elif "RISK-ON" in market_regime:
+        price = "RISK-ON"
+        price_bucket = "RISK-ON"
+    elif "EVENT-WATCHING" in market_regime:
+        price = "EVENT-WATCHING"
+        price_bucket = "MIXED"
+    elif "WAITING" in market_regime or "RANGE" in market_regime:
+        price = "WAITING / RANGE"
+        price_bucket = "MIXED"
+    elif "MIXED" in market_regime or "TRANSITION" in market_regime:
+        price = "TRANSITION / MIXED"
+        price_bucket = "MIXED"
+    else:
+        price = "MIXED"
+        price_bucket = "MIXED"
+
+
+
+def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
+    """
+    14) Divergence Monitor (Upgraded with Positioning Fragility Engine)
+
+    [핵심 로직]
+    - Macro(Structure) vs Price(Regime) 사이의 괴리 분석
+    - Positioning(Z-Score, Gamma, CTA)의 '임계치'와 '충돌'을 통한 폭발 가능성 진단
+    - SOFT/HARD RISK-OFF 등 세부 regime 표기는 보존하되,
+      내부 판정은 price_bucket으로 안정적으로 처리
+    """
+
+    # 1️⃣ 기초 데이터 로드
+    policy_bias_line = str(market_data.get("POLICY_BIAS_LINE", ""))
+    market_regime = str(market_data.get("MARKET_REGIME", "N/A")).upper()
+    vix_series = _get_series(market_data, "VIX") or {}
+    vix_value = float(vix_series.get("today", 20))
+
+    # 2️⃣ 포지셔닝 데이터 추출
+    try:
+        pos_z = float(market_data.get("SP500_POS_Z", 0.0))
+    except Exception:
+        pos_z = 0.0
+
+    try:
+        gamma = float(market_data.get("DEALER_GAMMA_BIAS", 1.0))
+    except Exception:
+        gamma = 1.0
+
+    try:
+        cta = float(market_data.get("CTA_MOMENTUM_SCORE", 0.0))
+    except Exception:
+        cta = 0.0
+
+    # 3️⃣ Structure(정책) & Price(시장) 판별
+    policy_upper = policy_bias_line.upper()
+
+    if "EASING" in policy_upper:
+        structure = "EASING"
+    elif "TIGHTENING" in policy_upper:
+        structure = "TIGHTENING"
+    else:
+        structure = "MIXED"
+
+    # 출력용 price / 내부 로직용 price_bucket 분리
+    if "HARD RISK-OFF" in market_regime:
+        price = "HARD RISK-OFF"
+        price_bucket = "RISK-OFF"
+    elif "SOFT RISK-OFF" in market_regime:
+        price = "SOFT RISK-OFF"
+        price_bucket = "RISK-OFF"
+    elif "RISK-OFF" in market_regime:
+        price = "RISK-OFF"
+        price_bucket = "RISK-OFF"
+    elif "RISK-ON" in market_regime:
+        price = "RISK-ON"
+        price_bucket = "RISK-ON"
+    elif "EVENT-WATCHING" in market_regime:
+        price = "EVENT-WATCHING"
+        price_bucket = "MIXED"
+    elif "WAITING" in market_regime or "RANGE" in market_regime:
+        price = "WAITING / RANGE"
+        price_bucket = "MIXED"
+    elif "MIXED" in market_regime or "TRANSITION" in market_regime:
+        price = "TRANSITION / MIXED"
+        price_bucket = "MIXED"
+    else:
+        price = "MIXED"
+        price_bucket = "MIXED"
+
+    # [고도화 로직 1: 국면별 가변 임계치]
+    # 관망/긴축/리스크오프 국면에서는 1.8만 넘어도 예민하게 반응
+    # 완화 + 리스크온 국면에서는 2.2까지 허용
+    threshold_z = 1.8 if price_bucket != "RISK-ON" or structure == "TIGHTENING" else 2.2
+
+    # [고도화 로직 2: 수급 취약성(Fragility) 판정]
+    # CTA는 쏠렸는데 딜러 감마가 받아줄 힘이 없는 상태
+    is_fragile = (abs(cta) > 0.8 and gamma < 0.5)
+
+    # 4️⃣ 판정 및 결과 조립
+    status = "ALIGNED"
+    explanation = "구조와 가격, 수급이 조화를 이루며 추세 유지 중"
+    action_signal = "STAY (포지션 유지)"
+
+    # CASE A: 정책 완화 vs 가격 하락
+    if structure == "EASING" and price_bucket == "RISK-OFF":
+        if pos_z < -threshold_z and cta < -0.7:
+            status = "🚀 CAPITULATION / GENERATIONAL BUY"
+            explanation = f"정책 완화 속 항복 매물 발생(Z:{pos_z:.2f}). 기계적 매도 정점 국면."
+            action_signal = "AGGRESSIVE ACCUMULATE (공격적 매수)"
+        else:
+            status = "BEAR TRAP / DISCOUNT"
+            explanation = "유동성 구조는 우호적이나 일시적 수급 꼬임"
+            action_signal = "ACCUMULATE (분할 매수)"
+
+    # CASE B: 정책 긴축 vs 가격 상승
+    elif structure == "TIGHTENING" and price_bucket == "RISK-ON":
+        if pos_z > threshold_z or is_fragile:
+            status = "🚨 EXTREME BULL TRAP / FRAGILITY"
+            explanation = (
+                f"긴축 중 가격 과열. 특히 수급 취약성(Gamma:{gamma:.2f}) 감지됨. "
+                "폭락 전 마지막 불꽃."
+            )
+            action_signal = "EXIT / PROTECT CAPITAL (RUN 액션 준비)"
+        else:
+            status = "BULL TRAP / OVERHEATED"
+            explanation = "긴축 구조 속 가격 상승. 점진적 과열 국면"
+            action_signal = "REDUCE RISK (익절 시작)"
+
+    # CASE C: 추세 고갈
+    elif abs(pos_z) > threshold_z:
+        status = "⚡ TREND EXHAUSTION"
+        explanation = f"추세와 정책은 일치하나 포지션 에너지 고갈(Z:{pos_z:.2f}). 반전 가능성 상존."
+        action_signal = "MONITOR REVERSAL (RUN 액션 준비)"
+
+    # 5️⃣ 리포트 텍스트 생성
+    lines = []
+    lines.append("### ⚠ 14) Divergence Monitor (Macro vs Positioning)")
+    lines.append("- **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단")
+    lines.append("- **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?")
+    lines.append("")
+
+    lines.append(
+        f"- **Structure(3번):** `{structure}` | "
+        f"**Price(Regime):** `{price}` | "
+        f"**Bucket:** `{price_bucket}` | "
+        f"**VIX:** `{vix_value:.2f}`"
+    )
+
+    pos_line = (
+        f"- **Positioning Data:** "
+        f"Z-Score: `{pos_z:.2f}` (>{threshold_z} 시 Run) | "
+        f"Gamma: `{gamma:.2f}` (<0.5 시 Run) | "
+        f"CTA: `{cta:.1f}` (추세 변곡점 확인)"
+    )
+    lines.append(pos_line)
+
+    lines.append(f"- **Status:** **{status}** -> **해석:** {explanation}")
+    lines.append(f"- **Action Signal:** 🚨 **{action_signal}**")
+
+    return "\n".join(lines)
+
+def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
+    """
+    🎯 15) Volatility-Controlled Exposure (v3.2)
+
+    핵심 수정:
+    - POS_Z 단독 과열은 DEADMAN이 아니라 Risk Compression
+    - Credit Crisis / Cross-Asset Shock 급만 0% 허용
+    """
+
+    def _to_float(x) -> Optional[float]:
+        if x is None:
+            return None
+        if isinstance(x, (int, float)):
+            return float(x)
+        try:
+            return float(str(x).replace(",", "").replace("%", "").strip())
+        except Exception:
+            return None
+
+    def _clamp(x, lo=0, hi=100):
+        return max(lo, min(int(round(x)), hi))
+              
+    def _dedupe(items):
+        seen = set()
+        result = []
+        for x in items:
+            if x not in seen:
+                result.append(x)
+                seen.add(x)
+        return result
+
+    risk_budget = _to_float(market_data.get("RISK_BUDGET", 50))
+    if risk_budget is None:
+        risk_budget = 50.0
+
+    vix_series = market_data.get("VIX", {}) or {}
+    vix_today = _to_float(vix_series.get("today"))
+    vix_pct = _to_float(vix_series.get("pct_change"))
+
+    pos_z = _to_float(market_data.get("SP500_POS_Z", 0.0))
+    if pos_z is None:
+        pos_z = 0.0
+
+    pos_slope = _to_float(market_data.get("POS_SLOPE"))
+    if pos_slope is None:
+        pos_slope = 0.0
+
+    market_data["POS_SLOPE"] = pos_slope
+
+    gamma = _to_float(market_data.get("DEALER_GAMMA_BIAS", 1.0))
+    if gamma is None:
+        gamma = 1.0
+
+    cta = _to_float(market_data.get("CTA_MOMENTUM_SCORE", 1.0))
+    if cta is None:
+        cta = 1.0
+
+    hy_oas = market_data.get("HY_OAS", {}) or {}
+    hy_level = _to_float(hy_oas.get("today"))
+    hy_pct = _to_float(hy_oas.get("pct_change"))
+
+    flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+    flow_score = flow.get("score", 0)
+    try:
+        flow_score = int(flow_score)
+    except Exception:
+        flow_score = 0
+
+    exposure = risk_budget
+    brake_drivers = []
+    pos_notes = []
+    
+    macro_narrative = str(market_data.get("MACRO_NARRATIVE", "N/A") or "N/A").upper()
+    cross_asset_tape = market_data.get("CROSS_ASSET_TAPE", {}) or {}
+
+    # --------------------------------------------------
+    # 0️⃣ Hard Deadman / Soft Compression 분리
+    # --------------------------------------------------
+    hard_deadman = False
+    hard_deadman_reason = ""
+
+    risk_compression = False
+    compression_reason = ""
+
+    # --------------------------------------------------
+    # HARD DEADMAN — Absolute Credit Fracture
+    # --------------------------------------------------
+    if hy_level is not None and hy_level >= 6.0:
+        hard_deadman = True
+        hard_deadman_reason = f"Credit Crisis / HY_OAS {hy_level:.2f}%"
+    
+    # --------------------------------------------------
+    # HARD DEADMAN — Structural Macro Shock
+    # --------------------------------------------------
+    elif macro_narrative == "CREDIT_STRESS":
+        hard_deadman = True
+        hard_deadman_reason = "Structural Credit Stress"
+    
+    elif macro_narrative == "STAGFLATION_RISK" and cross_asset_tape.get("VIX_Z", 0) >= 3:
+        hard_deadman = True
+        hard_deadman_reason = "Stagflation Shock + Volatility Spike"
+
+    # VIX Panic + 급등 = 진짜 0% 후보
+    elif vix_today is not None and vix_today >= 30:
+        hard_deadman = True
+        hard_deadman_reason = f"VIX Panic ({vix_today:.2f})"
+
+    # POS_Z 단독 = 0% 금지, 감속만
+    elif abs(pos_z) > 2.0:
+        risk_compression = True
+        compression_reason = f"POS_Z Extreme ({pos_z:.2f})"
+        brake_drivers.append("Extreme Positioning Heat")
+        pos_notes.append(f"Extreme Positioning Heat({pos_z:.2f})")
+
+    elif abs(pos_slope) > 0.5:
+        risk_compression = True
+        compression_reason = f"Aggressive Slope ({pos_slope:.2f})"
+        brake_drivers.append("Aggressive Positioning Slope")
+        pos_notes.append(f"Aggressive Slope({pos_slope:.2f})")
+
+    # --------------------------------------------------
+    # 1️⃣ VIX Regime
+    # --------------------------------------------------
+    multiplier = 1.0
+    vol_state = "N/A"
+
+    if vix_today is not None:
+        if vix_today < 14:
+            vol_state = "LOW"
+            multiplier *= 1.05
+        elif vix_today < 20:
+            vol_state = "NORMAL"
+        elif vix_today < 30:
+            vol_state = "STRESS"
+            multiplier *= 0.80
+            brake_drivers.append("High VIX")
+        else:
+            vol_state = "PANIC"
+            multiplier *= 0.60
+            brake_drivers.append("Extreme VIX")
+
+    if vix_pct is not None:
+        if vix_pct > 5:
+            multiplier *= 0.85
+            brake_drivers.append("VIX Spike")
+        elif vix_pct < -5:
+            multiplier *= 1.05
+            
+    if vix_today is not None and vix_pct is not None:
+        if vix_today >= 20 and vix_pct >= 10:
+            exposure *= 0.85
+            brake_drivers.append("VIX Convexity Shock")
+        elif vix_today >= 18 and vix_pct >= 5:
+            exposure *= 0.92
+            brake_drivers.append("VIX Convexity Warning")
+
+    # --------------------------------------------------
+    # 2️⃣ Positioning Layer
+    # --------------------------------------------------
+    pos_multiplier = 1.0
+
+    if pos_z >= 2.0:
+        pos_multiplier *= 0.85
+        if "Extreme Positioning Heat" not in brake_drivers:
+            brake_drivers.append("Extreme Positioning Heat")
+        if not any("Extreme Positioning Heat" in x for x in pos_notes):
+            pos_notes.append(f"Extreme Positioning Heat({pos_z:.2f})")
+
+    elif pos_z >= 1.7:
+        pos_multiplier *= 0.90
+        brake_drivers.append("Elevated Positioning Heat")
+        pos_notes.append(f"Elevated Positioning Heat({pos_z:.2f})")
+
+    elif pos_z >= 1.5:
+        pos_multiplier *= 0.95
+        brake_drivers.append("Positioning Heat")
+        pos_notes.append(f"Positioning Heat({pos_z:.2f})")
+
+    if pos_z > 2.0 and pos_slope < 0:
+        pos_multiplier *= 1.05
+        pos_notes.append("Position Unwind")
+
+    # --------------------------------------------------
+    # 3️⃣ Gamma Environment
+    # --------------------------------------------------
+    if gamma < 0.5:
+        pos_multiplier *= 0.85
+        brake_drivers.append("Negative Gamma")
+        pos_notes.append(f"Negative Gamma({gamma:.2f})")
+    elif gamma > 1.5:
+        pos_multiplier *= 1.03
+        pos_notes.append(f"Positive Gamma({gamma:.2f})")
+
+    # --------------------------------------------------
+    # 4️⃣ CTA
+    # --------------------------------------------------
+    if cta <= 0:
+        pos_multiplier *= 0.90
+        brake_drivers.append("Bearish CTA")
+        pos_notes.append(f"Bearish CTA({cta:.1f})")
+
+    exposure *= multiplier
+    exposure *= pos_multiplier
+    
+    
+    # --------------------------------------------------
+    # Leadership Breadth Offset
+    # crowded + broad participation
+    # --------------------------------------------------
+    
+    leadership_score = float(
+        market_data.get("LEADERSHIP_BREADTH_SCORE", 0) or 0
+    )
+    credit_status = market_data.get("HY_OAS_STATUS", "")
+    credit_calm = credit_status in ["COOL", "CALM", "NORMAL"]
+    
+    if (
+        leadership_score >= 6
+        and credit_calm is True
+        and pos_z >= 2.0
+    ):
+        pos_multiplier *= 1.05
+        pos_notes.append(f"Leadership Breadth Offset({leadership_score:.1f})")
+    
+    # --------------------------------------------------
+    # 5️⃣ Credit Layer
+    # --------------------------------------------------
+    if hy_level is not None:
+        if hy_level >= 6.0:
+            brake_drivers.append("Credit Crisis")
+        elif hy_level >= 5.0:
+            exposure *= 0.75
+            brake_drivers.append("Credit Stress")
+        elif hy_level >= 4.0:
+            exposure *= 0.90
+            brake_drivers.append("Mild Credit Stress")
+            
+    if hy_pct is not None:
+        if hy_pct >= 10:
+            exposure *= 0.85
+            brake_drivers.append("HY OAS Spike")
+        elif hy_pct >= 5:
+            exposure *= 0.93
+            brake_drivers.append("HY OAS Rising")        
+    
+    # --------------------------------------------------
+    # 6️⃣ Confidence Scaling
+    # --------------------------------------------------
+    confidence = "N/A"
+    confidence_multiplier = 1.00
+    
+    # --------------------------------------------------
+    # 7️⃣ Final Override + Deadman Recovery State
+    # --------------------------------------------------
+    # 기존 Hard Deadman trigger와 정상 exposure 계산은 그대로 둔다.
+    # 검증된 recovery candidate: HY_FALLING_VIX_LT_30
+    #
+    # Production caller가 전일 persistent state를 주입해야 한다:
+    # FILTER15_PREV_DEADMAN
+    # FILTER15_RECOVERY_ACTIVE
+    # FILTER15_RECOVERY_STREAK
+    # FILTER15_PREV_HY_OAS
+
+    prev_deadman = bool(market_data.get("FILTER15_PREV_DEADMAN", False))
+    recovery_active = bool(
+        market_data.get("FILTER15_RECOVERY_ACTIVE", False)
+    )
+
+    try:
+        recovery_streak = int(
+            market_data.get("FILTER15_RECOVERY_STREAK", 0) or 0
+        )
+    except Exception:
+        recovery_streak = 0
+
+    prev_hy_level = _to_float(
+        market_data.get("FILTER15_PREV_HY_OAS")
+    )
+
+    recovery_candidate = (
+        hy_level is not None
+        and prev_hy_level is not None
+        and hy_level < prev_hy_level
+        and vix_today is not None
+        and vix_today < 30
+    )
+
+    if hard_deadman:
+        exposure = 0
+        status = "HARD_DEADMAN"
+        recovery_active = False
+        recovery_streak = 0
+
+    else:
+        if prev_deadman or recovery_active:
+            if recovery_candidate:
+                recovery_active = True
+                recovery_streak += 1
+
+                if recovery_streak == 1:
+                    exposure *= 0.25
+                    status = "RECOVERY_STAGE_1"
+
+                elif recovery_streak == 2:
+                    exposure *= 0.50
+                    status = "RECOVERY_STAGE_2"
+
+                else:
+                    # 3회 연속 recovery 확인 후 정상 Filter15 exposure 복원.
+                    recovery_active = False
+                    recovery_streak = 0
+                    status = (
+                        "RISK_COMPRESSION"
+                        if risk_compression
+                        else "NORMAL"
+                    )
+
+            else:
+                # Recovery 조건이 깨지면 즉시 re-brake.
+                exposure = 0
+                recovery_active = True
+                recovery_streak = 0
+                status = "RECOVERY_REBRAKE"
+
+        elif risk_compression:
+            status = "RISK_COMPRESSION"
+
+        else:
+            status = "NORMAL"
+
+    exposure = _clamp(exposure)
+
+    market_data["RECOMMENDED_EXPOSURE"] = exposure
+    market_data["PREV_EXPOSURE"] = exposure
+    market_data["SEW_STATUS"] = status
+
+    # 다음 실행으로 넘길 Filter15 persistent state.
+    market_data["FILTER15_PREV_DEADMAN"] = bool(hard_deadman)
+    market_data["FILTER15_RECOVERY_ACTIVE"] = bool(recovery_active)
+    market_data["FILTER15_RECOVERY_STREAK"] = int(recovery_streak)
+    market_data["FILTER15_PREV_HY_OAS"] = hy_level
+    brake_drivers = _dedupe(brake_drivers)
+    pos_notes = _dedupe(pos_notes)
+
+    # --------------------------------------------------
+    # Output
+    # --------------------------------------------------
+    vix_display = f"{vix_today:.2f}" if vix_today is not None else "N/A"
+    vix_pct_display = f"{vix_pct:+.2f}%" if vix_pct is not None else "N/A"
+    total_multiplier = multiplier * pos_multiplier * confidence_multiplier
+
+    lines = []
+    lines.append("### 🎯 15) Volatility-Controlled Exposure (v3.2)")
+    lines.append("- **정의:** 13번 Risk Budget 실행 브레이크 레이어")
+    lines.append("- **추가 이유:** 전략 판단(13) 이후 실제 진입 강도를 조절하기 위함")
+    lines.append("")
+    lines.append(f"- **Base Risk Budget (13):** {risk_budget:.0f}")
+    lines.append(f"- **VIX Level:** {vix_display} ({vol_state}) | **Change:** {vix_pct_display}")
+
+    if hard_deadman:
+        lines.append("- **🚨 STATUS:** HARD DEAD MAN'S SWITCH ACTIVATED")
+        lines.append(f"- **Reason:** {hard_deadman_reason}")
+        lines.append("- **Action:** 포지션 진입 금지 / 기존 물량 강제 축소")
+    elif risk_compression:
+        lines.append("- **⚠️ STATUS:** RISK COMPRESSION")
+        lines.append(f"- **Reason:** {compression_reason}")
+        lines.append("- **Action:** 신규 추격 금지 / 일부 이익실현 / 베타 노출 축소")
+        lines.append(f"- **Final Multiplier:** {total_multiplier:.2f}x (VIX x Positioning x Credit/Convexity)")
+        lines.append(f"- **Slope Intensity:** {pos_slope:.4f}")
+  
+
+    if pos_notes:
+        lines.append(f"- **Positioning Layer:** ⚠️ {', '.join(pos_notes)}")
+
+    if brake_drivers:
+        lines.append(f"- **Brake Drivers:** ⚠️ {', '.join(brake_drivers)}")
+    else:
+        lines.append("- **Brake Drivers:** None")
+
+    lines.append("")
+    lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
+
+    return "\n".join(lines)
+
+        
+def style_tilt_filter(market_data: Dict[str, Any]) -> str:
+    """
+    🎨 16) Style Tilt (v1.1)
+
+    Improvements:
+    - Duration: use US10Y delta (today-prev) if available
+    - Cyclical/Defensive: use Exposure + Phase first, WTI as secondary
+    """
+
+    def _to_float(x):
+        try:
+            return float(str(x).replace(",", "").replace("%", ""))
+        except:
+            return None
+
+    policy_bias = str(market_data.get("POLICY_BIAS_LINE", "")).upper()
+    phase = str(market_data.get("MARKET_REGIME", "")).upper()
+
+    # US10Y: prefer delta
+    us10y = market_data.get("US10Y", {})
+    us10y_today = _to_float(us10y.get("today"))
+    us10y_prev = _to_float(us10y.get("prev"))
+    us10y_delta = None
+    if us10y_today is not None and us10y_prev is not None:
+        us10y_delta = us10y_today - us10y_prev
+
+    # WTI: optional secondary
+    oil = market_data.get("WTI", {})
+    oil_pct = _to_float(oil.get("pct_change"))
+
+    # Exposure (from filter 15)
+    exposure = _to_float(market_data.get("RECOMMENDED_EXPOSURE"))
+    if exposure is None:
+        exposure = _to_float(market_data.get("PREV_EXPOSURE"))
+
+    easing = "EASING" in policy_bias
+    tightening = "TIGHTENING" in policy_bias
+
+    # 1) Growth vs Value
+    style = "NEUTRAL"
+    if easing and (us10y_delta is None or us10y_delta <= 0):
+        style = "GROWTH TILT"
+    elif tightening or (us10y_delta is not None and us10y_delta > 0):
+        style = "VALUE TILT"
+
+    # 2) Duration
+    duration = "NEUTRAL"
+    if us10y_delta is not None:
+        if us10y_delta < 0:
+            duration = "LONG DURATION FAVORED"
+        elif us10y_delta > 0:
+            duration = "SHORT DURATION FAVORED"
+
+    # 3) Cyclical vs Defensive
+    cyclical = "NEUTRAL"
+
+    # primary: phase + exposure
+    if phase.startswith("RISK-ON"):
+        cyclical = "CYCLICAL FAVORED"
+    elif phase.startswith("RISK-OFF"):
+        cyclical = "DEFENSIVE FAVORED"
+    elif phase.startswith("WAITING") or "RANGE" in phase or phase.startswith("EVENT"):
+        cyclical = "DEFENSIVE / QUALITY BIAS"
+
+    # secondary: exposure high => cyclicals, low => defensive
+    if exposure is not None:
+        if exposure >= 70:
+            cyclical = "CYCLICAL FAVORED"
+        elif exposure <= 35:
+            cyclical = "DEFENSIVE FAVORED"
+
+    # tertiary: oil impulse
+    if oil_pct is not None and oil_pct > 1.0:
+        cyclical = "CYCLICAL (ENERGY) BIAS"
+
+    lines = []
+    lines.append("### 🎨 16) Style Tilt (v1.1)")
+    lines.append("- **정의:** Macro 구조 기반 스타일 기울기 판단")
+    lines.append("- **추가 이유:** 같은 Risk-On이라도 어떤 유형의 자산이 유리한지 구분")
+    lines.append("")
+    lines.append(f"- **Growth vs Value:** **{style}**")
+    lines.append(f"- **Duration Tilt:** **{duration}**")
+    lines.append(f"- **Cyclical vs Defensive:** **{cyclical}**")
+    return "\n".join(lines)
+
+
+def factor_layer_filter(market_data: Dict[str, Any]) -> str:
+    """
+    🧩 17) Factor Layer (v1)
+
+    정의: 시장을 움직이는 핵심 위험 요인 판별
+    목적: 자금이 무엇에 민감하게 반응하는지 파악
+    """
+
+    def _to_float(x):
+        try:
+            return float(str(x).replace(",", "").replace("%", ""))
+        except:
+            return None
+
+    # ---------------------------
+    # Pull Data
+    # ---------------------------
+
+    us10y = market_data.get("US10Y", {})
+    dxy = market_data.get("DXY", {})
+    oil = market_data.get("WTI", {})
+    hy = market_data.get("HY_OAS", {})
+
+    us10y_today = _to_float(us10y.get("today"))
+    us10y_prev = _to_float(us10y.get("prev"))
+    us10y_delta = None
+    if us10y_today is not None and us10y_prev is not None:
+        us10y_delta = us10y_today - us10y_prev
+
+    dxy_pct = _to_float(dxy.get("pct_change"))
+    oil_pct = _to_float(oil.get("pct_change"))
+    hy_level = _to_float(hy.get("today"))
+
+    # ---------------------------
+    # 1️⃣ Duration Factor
+    # ---------------------------
+
+    duration = "NEUTRAL"
+    if us10y_delta is not None:
+        if us10y_delta < 0:
+            duration = "LONG DURATION FAVORED"
+        elif us10y_delta > 0:
+            duration = "SHORT DURATION FAVORED"
+
+    # ---------------------------
+    # 2️⃣ Inflation Factor
+    # ---------------------------
+
+    inflation = "NEUTRAL"
+    if oil_pct is not None and us10y_delta is not None:
+        if oil_pct > 1 and us10y_delta > 0:
+            inflation = "INFLATION PRESSURE"
+        elif oil_pct < -1 and us10y_delta < 0:
+            inflation = "DISINFLATION"
+
+    # ---------------------------
+    # 3️⃣ USD Factor
+    # ---------------------------
+
+    usd = "NEUTRAL"
+    if dxy_pct is not None:
+        if dxy_pct > 0.3:
+            usd = "USD TIGHTENING"
+        elif dxy_pct < -0.3:
+            usd = "USD EASING"
+
+    # ---------------------------
+    # 4️⃣ Credit Factor
+    # ---------------------------
+
+    credit = "NEUTRAL"
+    if hy_level is not None:
+        if hy_level < 4:
+            credit = "CREDIT SUPPORTIVE"
+        elif hy_level > 5:
+            credit = "CREDIT STRESS"
+
+    # ---------------------------
+    # Output
+    # ---------------------------
+
+    lines = []
+    lines.append("### 🧩 17) Factor Layer (v1)")
+    lines.append("- **정의:** 시장을 움직이는 핵심 위험 요인 판별")
+    lines.append("- **추가 이유:** 자금이 무엇에 민감하게 반응하는지 파악")
+    lines.append("")
+    lines.append(f"- **Duration Factor:** {duration}")
+    lines.append(f"- **Inflation Factor:** {inflation}")
+    lines.append(f"- **USD Factor:** {usd}")
+    lines.append(f"- **Credit Factor:** {credit}")
+
+    return "\n".join(lines)    
+
+from typing import Dict, Any, List, Tuple, Optional
+
+
+def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
+    """
+    VIX 동적 임계값 판단
+    반환:
+      (score, label, detail)
+    """
+
+    state = market_data.get("FINAL_STATE", {}) or {}
+
+    def fetch_val(key: str, default: float) -> float:
+        val = state.get(key.upper())
+        if val is None:
+            val = state.get(key.lower())
+        if val is None:
+            node = market_data.get(key.upper(), {})
+            if isinstance(node, dict):
+                val = node.get("today")
+        try:
+            return float(val) if val is not None else default
+        except Exception:
+            return default
+
+    current_vix = fetch_val("VIX", 20.0)
+
+    history = (
+        market_data.get("_VIX_HISTORY")
+        or market_data.get("VIX_HISTORY")
+        or market_data.get("vix_history")
+    )
+
+    if isinstance(history, (list, tuple)):
+        clean_hist = []
+        for x in history:
+            try:
+                if x is not None:
+                    clean_hist.append(float(x))
+            except Exception:
+                pass
+
+        if len(clean_hist) >= 20:
+            recent20 = clean_hist[-20:]
+            avg20 = sum(recent20) / len(recent20)
+
+            if avg20 > 0:
+                ratio = current_vix / avg20
+
+                if ratio >= 1.25:
+                    return (3, "VOLATILITY SHOCK", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                elif ratio >= 1.10:
+                    return (2, "VOLATILITY ELEVATED", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                elif ratio <= 0.85:
+                    return (-2, "VOLATILITY CALM", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                else:
+                    return (0, "VOLATILITY NORMAL", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+
+    # fallback absolute mode
+    if current_vix >= 30:
+        return (3, "VOLATILITY SHOCK", f"absolute mode: VIX {current_vix:.1f}")
+    elif current_vix >= 25:
+        return (2, "VOLATILITY ELEVATED", f"absolute mode: VIX {current_vix:.1f}")
+    elif current_vix <= 15:
+        return (-2, "VOLATILITY CALM", f"absolute mode: VIX {current_vix:.1f}")
+    else:
+        return (0, "VOLATILITY NORMAL", f"absolute mode: VIX {current_vix:.1f}")
+
+from typing import Dict, Any, List, Tuple, Optional
+
+
+def dynamic_vix_threshold(market_data: Dict[str, Any]) -> Tuple[int, str, str]:
+    """
+    VIX 동적 임계값 판단
+    반환:
+      (score, label, detail)
+    """
+
+    state = market_data.get("FINAL_STATE", {}) or {}
+
+    def fetch_val(key: str, default: float) -> float:
+        val = state.get(key.upper())
+        if val is None:
+            val = state.get(key.lower())
+        if val is None:
+            node = market_data.get(key.upper(), {})
+            if isinstance(node, dict):
+                val = node.get("today")
+        try:
+            return float(val) if val is not None else default
+        except Exception:
+            return default
+
+    current_vix = fetch_val("VIX", 20.0)
+
+    history = (
+        market_data.get("_VIX_HISTORY")
+        or market_data.get("VIX_HISTORY")
+        or market_data.get("vix_history")
+    )
+
+    if isinstance(history, (list, tuple)):
+        clean_hist = []
+        for x in history:
+            try:
+                if x is not None:
+                    clean_hist.append(float(x))
+            except Exception:
+                pass
+
+        if len(clean_hist) >= 20:
+            recent20 = clean_hist[-20:]
+            avg20 = sum(recent20) / len(recent20)
+
+            if avg20 > 0:
+                ratio = current_vix / avg20
+
+                if ratio >= 1.25:
+                    return (3, "VOLATILITY SHOCK", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                elif ratio >= 1.10:
+                    return (2, "VOLATILITY ELEVATED", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                elif ratio <= 0.85:
+                    return (-2, "VOLATILITY CALM", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+                else:
+                    return (0, "VOLATILITY NORMAL", f"dynamic mode: VIX {current_vix:.1f} / 20D avg {avg20:.1f} = {ratio:.2f}x")
+
+    # fallback absolute mode
+    if current_vix >= 30:
+        return (3, "VOLATILITY SHOCK", f"absolute mode: VIX {current_vix:.1f}")
+    elif current_vix >= 25:
+        return (2, "VOLATILITY ELEVATED", f"absolute mode: VIX {current_vix:.1f}")
+    elif current_vix <= 15:
+        return (-2, "VOLATILITY CALM", f"absolute mode: VIX {current_vix:.1f}")
+    else:
+        return (0, "VOLATILITY NORMAL", f"absolute mode: VIX {current_vix:.1f}")
+
+
+def determine_cash_return_policy(
+    market_quality_context: Dict[str, Any],
+    participation_mode: str,
+) -> bool:
+    """
+    Decide whether capped residual equity budget should be returned to cash.
+    """
+
+    hard_cash_modes = {
+        "COMPRESSED_SQUEEZE",
+        "VOL_STRUCTURE_DEFENSE",
+        "FAILED_BREADTH_MODE",
+        "CAP_RESTRICTED",
+        "DEFENSIVE_SELECTIVE",
+    }
+
+    if participation_mode in hard_cash_modes:
+        return True
+
+    participation_signal = market_quality_context.get("participation_signal", "WEAK")
+    positioning_state = market_quality_context.get("positioning_state", "NORMAL")
+    vol_structure = market_quality_context.get("vol_structure", "NORMAL")
+
+    if participation_signal == "FAILED":
+        return True
+
+    if positioning_state in ["STRESSED", "SQUEEZE_RISK"]:
+        return True
+
+    if vol_structure in ["INVERTED_SHORT_TERM", "DISLOCATION"]:
+        return True
+
+    return False
+
+def build_tactical_allocation(
+    score: Dict[str, float],
+    ow_sorted: list,
+    divergence_flags: Dict[str, str],
+    total_exposure: float,
+    deleveraging_required: bool = False,
+    prev_exposure: float = None,
+    momentum_scores: Dict[str, float] = None,
+    sector_classification: Dict[str, str] = None,
+    macro_profile: str = "BALANCED",
+    market_quality_context: Dict[str, Any] = None,
+) -> Dict[str, Any]:
+    """
+    18.5) Tactical Asset Allocation Builder - v4.1
+    """
+
+    # -------------------------
+    # 0) Safe defaults
+    # -------------------------
+    sector_classification = sector_classification or {}
+    momentum_scores = momentum_scores or {}
+    macro_profile = str(macro_profile or "BALANCED").upper()
+    market_quality_context = market_quality_context or {}
+
+    quality_meta = classify_participation_quality(market_quality_context) if market_quality_context else {
+        "participation_quality": "NEUTRAL_PARTICIPATION",
+        "participation_quality_score": 0,
+        "participation_mode": "BALANCED",
+    }
+    
+	
+    participation_mode = quality_meta["participation_mode"]
+    policy = mode_policy.get(participation_mode, mode_policy["BALANCED"])
+
+    print("[DEBUG][18_PARTICIPATION_META]", quality_meta)
+    print("[DEBUG][18_POLICY]", participation_mode, policy)
+
+    cash_return_required = determine_cash_return_policy(
+        market_quality_context,
+        participation_mode,
+    )
+
+    print(
+        "[DEBUG][18_CASH_POLICY]",
+        participation_mode,
+        cash_return_required,
+    )
+    
+    sector_style_map = {
+        "Technology": "HIGH_BETA",
+        "Communication Services": "HIGH_BETA",
+        "Real Estate": "HIGH_BETA",
+
+        "Consumer Discretionary": "CYCLICAL",
+        "Industrials": "CYCLICAL",
+        "Materials": "CYCLICAL",
+        "Energy": "CYCLICAL",
+        "Financials": "CYCLICAL",
+
+        "Consumer Staples": "DEFENSIVE",
+        "Health Care": "DEFENSIVE",
+        "Utilities": "DEFENSIVE",
+    }
+
+    # 🔥 NameError 방지: 함수 전체 스코프 최상단
+    cap_applied = []
+
+    # -------------------------
+    # 1) Positive score universe
+    # -------------------------
+    positive_scores = {
+        sector: float(score[sector])
+        for sector in ow_sorted
+        if float(score.get(sector, 0)) > 0
+    }
+    if (
+        "Technology" not in positive_scores
+        and score.get("Technology", 0) > -1.0
+        and market_quality_context.get("leadership_state") in ["BROAD", "MODERATE"]
+        and market_quality_context.get("participation_signal") in ["PARTIAL", "CONFIRMED"]
+    ):
+        positive_scores["Technology"] = 0.3
+        print(
+            "[DEBUG][TECH_RESCUE]",
+            score.get("Technology", 0),
+            market_quality_context.get("leadership_state"),
+            market_quality_context.get("participation_signal"),
+
+        )
+
+
+    # -------------------------
+    # 2) Classification adjustment
+    # -------------------------
+    adjusted_scores = {}
+
+    for sector, raw_score in positive_scores.items():
+        classification = sector_classification.get(sector, "ALIGNED")
+        div_flag = divergence_flags.get(sector, "ALIGNED")
+
+        multiplier = 1.0
+
+        if classification == "HIGH_CONVICTION_ALIGNED":
+            multiplier *= 1.15
+        elif classification == "FLOW_WEAK":
+            if policy.get("flow_weak_penalty", False):
+                multiplier *= 0.60
+            else:
+                multiplier *= 1.00
+        elif classification == "THEORY_TRAP":
+            multiplier *= 0.40
+        elif classification == "POSITIVE_DIVERGENCE":
+            multiplier *= 1.10
+        elif classification == "AVOID":
+            multiplier *= 0.0
+
+        if div_flag == "NEGATIVE_DIVERGENCE":
+            multiplier *= 0.60
+        elif div_flag == "POSITIVE_DIVERGENCE":
+            multiplier *= 1.15
+
+        adjusted = raw_score * multiplier
+
+        if adjusted > 0:
+            adjusted_scores[sector] = adjusted
+
+    total_score_sum = sum(adjusted_scores.values())
+    weights = {}
+
+    # -------------------------
+    # Early Exit
+    # -------------------------
+    if total_score_sum <= 0:
+        return {
+            "weights": {},
+            "cash_weight": round(100.0 - total_exposure, 1),
+            "total_score_sum": 0,
+            "adjusted_scores": adjusted_scores,
+            "cap_applied": cap_applied,
+            "macro_profile": macro_profile,
+        }
+
+    # -------------------------
+    # 3) Base exposure
+    # -------------------------
+    if deleveraging_required and prev_exposure is not None:
+        base_exposure = float(prev_exposure)
+    else:
+        base_exposure = float(total_exposure)
+
+    # -------------------------
+    # 4) Initial weights
+    # -------------------------
+    for sector, adj_score in adjusted_scores.items():
+        weights[sector] = (adj_score / total_score_sum) * base_exposure
+
+    # -------------------------
+    # 5) Deleveraging
+    # -------------------------
+    if deleveraging_required and prev_exposure is not None:
+        reduction_needed = max(0.0, float(prev_exposure) - float(total_exposure))
+
+        priority_rows = rank_deleveraging_priority(
+            score=score,
+            weights=weights,
+            divergence_flags=divergence_flags,
+            momentum_scores=momentum_scores,
+            sector_classification=sector_classification,
+        )
+
+        MAX_CUT_RATIO = 0.5
+
+        for row in priority_rows:
+            if reduction_needed <= 0:
+                break
+
+            sector = row["sector"]
+            current_weight = weights.get(sector, 0.0)
+
+            if current_weight <= 0:
+                continue
+
+            max_cut = current_weight * MAX_CUT_RATIO
+            cut_amount = min(max_cut, reduction_needed)
+
+            weights[sector] = current_weight - cut_amount
+            reduction_needed -= cut_amount
+
+    # -------------------------
+    # 6) Regime Caps
+    # -------------------------
+    regime_caps = {
+        "SOFT_RISK_OFF_DISINFLATION": {
+            "Technology": 28.0,
+            "Health Care": 18.0,
+            "Consumer Staples": 15.0,
+            "Consumer Discretionary": 10.0,
+            "Industrials": 10.0,
+        },
+        "SOFT_RISK_ON_DISINFLATION": {
+            "Technology": 32.0,
+            "Consumer Discretionary": 16.0,
+            "Health Care": 16.0,
+            "Industrials": 14.0,
+        },
+        "DISINFLATION_RISK_ON": {
+            "Technology": 35.0,
+            "Consumer Discretionary": 20.0,
+            "Communication Services": 18.0,
+            "Industrials": 15.0,
+        },
+        "EARLY_RISK_ON": {
+            "Technology": 30.0,
+            "Industrials": 18.0,
+            "Consumer Discretionary": 16.0,
+            "Financials": 14.0,
+        },
+        "REFLATION_RISK_ON": {
+            "Industrials": 24.0,
+            "Financials": 22.0,
+            "Energy": 20.0,
+            "Materials": 18.0,
+        },
+        "STAGFLATION_STRESS": {
+            "Energy": 24.0,
+            "Materials": 18.0,
+            "Consumer Staples": 18.0,
+            "Health Care": 16.0,
+            "Technology": 12.0,
+        },
+        "DOLLAR_LIQUIDITY_STRESS": {
+            "Consumer Staples": 20.0,
+            "Health Care": 18.0,
+            "Utilities": 16.0,
+            "Technology": 12.0,
+            "Financials": 8.0,
+            "Real Estate": 6.0,
+        },
+        "GROWTH_SCARE": {
+            "Health Care": 22.0,
+            "Consumer Staples": 20.0,
+            "Utilities": 18.0,
+            "Technology": 14.0,
+            "Industrials": 8.0,
+            "Consumer Discretionary": 8.0,
+        },
+        "EVENT_TRANSITION": {
+            "Health Care": 18.0,
+            "Consumer Staples": 18.0,
+            "Technology": 18.0,
+            "Industrials": 10.0,
+            "Consumer Discretionary": 10.0,
+        },
+    }
+
+    caps = regime_caps.get(macro_profile, {})
+
+
+    # 6.1) Leadership Breadth Cap Relaxation
+    leadership_state = market_quality_context.get("leadership_state", "NARROW")
+    participation_signal = market_quality_context.get("participation_signal", "WEAK")
+
+    if (
+        macro_profile == "GROWTH_SCARE"
+        and leadership_state == "BROAD"
+        and participation_signal in ["PARTIAL", "CONFIRMED"]
+    ):
+        caps = dict(caps)
+        caps["Technology"] = max(caps.get("Technology", 14.0), 18.0)
+        caps["Industrials"] = max(caps.get("Industrials", 8.0), 12.0)
+        caps["Consumer Discretionary"] = max(caps.get("Consumer Discretionary", 8.0), 12.0)
+
+    for sector, cap in caps.items():
+        if sector in weights and weights[sector] > cap:
+            original_weight = weights[sector]
+            weights[sector] = cap
+
+            cap_applied.append(
+                {
+                    "sector": sector,
+                    "original": round(original_weight, 1),
+                    "cap": round(cap, 1),
+                    "reduced_by": round(original_weight - cap, 1),
+                }
+            )
+    # -------------------------
+    # -------------------------
+    # 6.5) Participation Quality Caps
+    # -------------------------
+    for sector in list(weights.keys()):
+        sector_style = sector_style_map.get(sector, "CORE")
+
+        participation_cap = None
+
+        if sector_style == "HIGH_BETA":
+            participation_cap = policy.get("high_beta_cap", 1.0) * 100.0
+        elif sector_style == "CYCLICAL":
+            participation_cap = policy.get("cyclical_cap", 1.0) * 100.0
+        elif sector_style == "SMALL_CAP":
+            participation_cap = policy.get("small_cap_cap", 1.0) * 100.0
+
+        if participation_cap is not None and weights[sector] > participation_cap:
+            original_weight = weights[sector]
+            weights[sector] = participation_cap
+
+            cap_applied.append(
+                {
+                    "sector": sector,
+                    "original": round(original_weight, 1),
+                    "cap": round(participation_cap, 1),
+                    "reduced_by": round(original_weight - participation_cap, 1),
+                    "reason": f"PARTICIPATION_CAP_{participation_mode}",
+                }
+            ) 
+    # -------------------------
+    # 6.6) Residual Reallocation Policy
+    # -------------------------
+    current_sum = sum(weights.values())
+    residual_budget = max(0.0, float(total_exposure) - current_sum)
+
+    can_redistribute = (
+        residual_budget > 0
+        and not cash_return_required
+        and market_quality_context.get("leadership_state") == "BROAD"
+        and market_quality_context.get("participation_signal") == "CONFIRMED"
+        and market_quality_context.get("vol_structure") == "NORMAL"
+        and market_quality_context.get("positioning_state") not in ["STRESSED", "SQUEEZE_RISK"]
+    )
+
+    if can_redistribute:
+        eligible_sectors = []
+
+        for sector in adjusted_scores.keys():
+            if sector not in weights:
+                continue
+
+            sector_style = sector_style_map.get(sector, "CORE")
+            classification = sector_classification.get(sector, "ALIGNED")
+            div_flag = divergence_flags.get(sector, "ALIGNED")
+
+            if classification in ["THEORY_TRAP", "AVOID"]:
+                continue
+
+            if div_flag == "NEGATIVE_DIVERGENCE":
+                continue
+
+            if (
+                sector_style == "CYCLICAL"
+                and not policy.get("allow_cyclical_expansion", False)
+            ):
+                continue
+
+            already_capped = any(
+                c.get("sector") == sector
+                for c in cap_applied
+            )
+
+            if already_capped:
+                continue
+
+            eligible_sectors.append(sector)
+
+        eligible_score_sum = sum(
+            adjusted_scores.get(sector, 0.0)
+            for sector in eligible_sectors
+        )
+
+        if eligible_score_sum > 0:
+            for sector in eligible_sectors:
+                add_weight = (
+                    adjusted_scores.get(sector, 0.0)
+                    / eligible_score_sum
+                    * residual_budget
+                )
+                weights[sector] = weights.get(sector, 0.0) + add_weight
+
+            residual_reallocation_action = "REALLOCATED_TO_ELIGIBLE_SECTORS"
+
+            print(
+                "[DEBUG][18_RESIDUAL_REALLOCATED]",
+                round(residual_budget, 1),
+                eligible_sectors,
+            )
+        else:
+            residual_reallocation_action = "REALLOCATION_SKIPPED_NO_ELIGIBLE_SECTOR"
+
+            print(
+                "[DEBUG][18_RESIDUAL_REALLOCATION_SKIPPED]",
+                round(residual_budget, 1),
+                "NO_ELIGIBLE_SECTOR",
+            )
+
+    else:
+        residual_reallocation_action = (
+            "RETURN_TO_CASH"
+            if cash_return_required
+            else "REALLOCATION_CONDITIONS_NOT_MET"
+        )
+
+        print(
+            "[DEBUG][18_RESIDUAL_REALLOCATION_BLOCKED]",
+            round(residual_budget, 1),
+            residual_reallocation_action,
+        )        
+
+    # -------------------------
+    # 7) Exposure compression
+    # -------------------------
+    current_sum = sum(weights.values())
+
+    if current_sum > total_exposure and current_sum > 0:
+        scale = total_exposure / current_sum
+
+        for sector in list(weights.keys()):
+            weights[sector] *= scale
+
+    # -------------------------
+    # 8) Rounding + Residual Cash Return
+    # -------------------------
+    for sector in list(weights.keys()):
+        weights[sector] = round(weights[sector], 1)
+
+    allocated_equity = round(sum(weights.values()), 1)
+
+    residual_cash_return = round(
+        max(0.0, float(total_exposure) - allocated_equity),
+        1
+    )
+
+    if cash_return_required:
+        residual_cash_action = "RETURN_TO_CASH"
+    elif residual_reallocation_action == "REALLOCATED_TO_ELIGIBLE_SECTORS":
+        residual_cash_action = "REALLOCATED"
+    else:
+        residual_cash_action = "UNALLOCATED_RESIDUAL_CASH"
+
+    cash_weight = round(100.0 - allocated_equity, 1)
+
+    print("[DEBUG][18_ALLOCATED_EQUITY]", allocated_equity)
+    print("[DEBUG][18_RESIDUAL_CASH_RETURN]", residual_cash_return)
+    print("[DEBUG][18_RESIDUAL_CASH_ACTION]", residual_cash_action)
+    print("[DEBUG][18_CASH_WEIGHT]", cash_weight)
+    print("[DEBUG][18_CAP_APPLIED]", cap_applied)
+    print("[DEBUG][18_FINAL_WEIGHTS]", weights)
+    # -------------------------
+    # Final Return
+    # -------------------------
+    return {
+        "weights": weights,
+        "cash_weight": cash_weight,
+        "allocated_equity": allocated_equity,
+        "residual_cash_return": residual_cash_return,
+        "residual_cash_action": residual_cash_action,
+        "total_score_sum": round(total_score_sum, 2),
+        "adjusted_scores": adjusted_scores,
+        "cap_applied": cap_applied,
+        "macro_profile": macro_profile,
+        "participation_quality": quality_meta["participation_quality"],
+        "participation_quality_score": quality_meta["participation_quality_score"],
+        "participation_mode": participation_mode,
+        "residual_reallocation_action": residual_reallocation_action,
+    }
+    
+def apply_rebalance_threshold(
+    weights: Dict[str, float],
+    prev_sector_weights: Dict[str, float],
+    hold_threshold: float = 2.0,
+    rebalance_threshold: float = 5.0,
+) -> tuple[Dict[str, float], Dict[str, str]]:
+    """
+    Rebalancing Threshold Engine
+    - 변화폭이 작으면 기존 비중 유지
+    - 큰 변화만 실제 리밸런싱
+    """
+
+    adjusted_weights = {}
+    rebalance_actions = {}
+
+    for sector, target_w in weights.items():
+        prev_w = prev_sector_weights.get(sector)
+
+        if prev_w is None:
+            adjusted_weights[sector] = target_w
+            rebalance_actions[sector] = "NEW"
+            continue
+
+        diff = target_w - prev_w
+        abs_diff = abs(diff)
+
+        if abs_diff < hold_threshold:
+            adjusted_weights[sector] = prev_w
+            rebalance_actions[sector] = "HOLD"
+
+        elif abs_diff < rebalance_threshold:
+            adjusted_weights[sector] = target_w
+            rebalance_actions[sector] = "SMALL ADJUST"
+
+        else:
+            adjusted_weights[sector] = target_w
+            rebalance_actions[sector] = "REBALANCE"
+
+    adjusted_weights = {
+        sector: round(weight, 1)
+        for sector, weight in adjusted_weights.items()
+    }
+
+    return adjusted_weights, rebalance_actions
+    
+
+def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
+    """
+    18) Sector Allocation Engine (v3.3)
+    반영:
+    1) Curve 구간 세분화
+    2) Signal priority hierarchy
+    3) Score 기반 정렬
+    4) Financials cap
+    5) rationale 중복 완화
+    6) sector별 score breakdown 추가
+    7) 🔥 Drift / Gamma / Institutional Flow overlay 추가
+       - 기존 이론 로직은 유지
+       - 실제 돈 흐름은 overlay 점수로만 반영
+    """
+
+    state = market_data.get("FINAL_STATE", {}) or {}
+
+    def fetch_val(key: str, default: float) -> float:
+        val = state.get(key.upper())
+        if val is None:
+            val = state.get(key.lower())
+
+        if val is None:
+            node = market_data.get(key.upper(), {})
+            if isinstance(node, dict):
+                val = node.get("today")
+
+        try:
+            return float(val) if val is not None else default
+        except Exception:
+            return default
+
+    def fetch_state_str(key: str, default: str) -> str:
+        val = state.get(key)
+        if val is None:
+            val = state.get(key.upper())
+        if val is None:
+            val = state.get(key.lower())
+        return str(val if val is not None else default).upper()
+
+    def infer_macro_regime_profile(
+        phase: str,
+        us10y_pct: float,
+        dxy_pct: float,
+        wti_pct: float,
+        vix: float,
+        credit_calm: Any,
+        liq_easy: bool,
+        liq_tight: bool,
+        flow_score: int,
+        drift_label: str,
+    ) -> str:
+        """
+        Macro Regime Profile Inference Layer
+        - 기존 FINAL_STATE phase를 덮어쓰지 않음
+        - Sector Allocation Engine의 PHASE 점수 보조용
+        """
+
+        phase_normalized = (
+            str(phase)
+            .upper()
+            .replace("–", "-")
+            .replace("—", "-")
+            .replace("−", "-")
+        )
+
+        # 1) Dollar liquidity stress는 phase보다 우선
+        if dxy_pct > 0 and liq_tight and credit_calm is False:
+            return "DOLLAR_LIQUIDITY_STRESS"
+
+        # 2) Stagflation / inflation shock
+        if us10y_pct > 0 and wti_pct > 0 and dxy_pct > 0 and vix >= 18:
+            return "STAGFLATION_STRESS"
+
+        # 3) Growth scare
+        if us10y_pct < 0 and wti_pct < 0 and vix >= 18:
+            return "GROWTH_SCARE"
+
+        # 4) Soft risk-off disinflation
+        if "RISK-OFF" in phase_normalized and credit_calm is True and vix < 20:
+            return "SOFT_RISK_OFF_DISINFLATION"
+
+        # 5) Disinflation risk-on
+        if "RISK-ON" in phase_normalized and dxy_pct <= 0 and vix < 24:
+            return "DISINFLATION_RISK_ON"
+
+        # 5.5) Soft risk-on disinflation
+        if (
+            "RISK-ON" in phase_normalized
+            and us10y_pct <= 0
+            and wti_pct <= 0
+            and vix < 20
+            and liq_easy
+            and credit_calm is True
+        ):
+            return "SOFT_RISK_ON_DISINFLATION"
+
+        # 6) Early risk-on
+        if "RISK-ON" in phase_normalized and flow_score >= 4 and vix < 24:
+            return "EARLY_RISK_ON"
+
+        # 7) Reflation risk-on
+        if "RISK-ON" in phase_normalized and us10y_pct > 0 and wti_pct > 0:
+            return "REFLATION_RISK_ON"
+
+        # 8) Event transition
+        if "EVENT-WATCHING" in phase_normalized or "WAITING" in phase_normalized:
+            return "EVENT_TRANSITION"
+
+        if "RISK-ON" in phase_normalized:
+            return "EARLY_RISK_ON"
+
+        if "RISK-OFF" in phase_normalized:
+            return "SOFT_RISK_OFF_DISINFLATION"
+
+        return "BALANCED"
+    # -------------------------
+    # 1) 핵심 변수
+    # -------------------------
+    t10y2y_raw = fetch_val("T10Y2Y", None)
+    t10y2y_missing = t10y2y_raw is None
+    t10y2y = 0.0 if t10y2y_missing else float(t10y2y_raw)
+    vix = fetch_val("VIX", 20.0)
+    us10y = market_data.get("US10Y", {}) or {}
+    dxy_data = market_data.get("DXY", {}) or {}
+    wti_data = market_data.get("WTI", {}) or {}
+
+    us10y_pct = float(us10y.get("pct_change", 0) or 0)
+    dxy_pct = float(dxy_data.get("pct_change", 0) or 0)
+    wti_pct = float(wti_data.get("pct_change", 0) or 0)
+
+
+
+    
+
+    phase = fetch_state_str("phase", "N/A")
+    liq_dir = fetch_state_str("liquidity_dir", "N/A")
+    liq_lvl = fetch_state_str("liquidity_level_bucket", "N/A")
+    credit_calm = state.get("credit_calm", None)
+
+    # 🔥 Flow / Gamma / Drift overlay inputs
+    inst_flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+    flow_score = inst_flow.get("score", 0)
+    try:
+        flow_score = int(flow_score)
+    except Exception:
+        flow_score = 0
+
+    flow_state = str(inst_flow.get("state", "N/A") or "N/A").upper()
+    drift_label = str(
+        inst_flow.get("drift_label")
+        or state.get("drift_label")
+        or market_data.get("DRIFT_LABEL")
+        or "N/A"
+    ).upper()
+    gamma_state = str(
+        inst_flow.get("gamma_state")
+        or market_data.get("GAMMA_STATE")
+        or "N/A"
+    ).upper()
+
+    vix_score, vix_label, vix_detail = dynamic_vix_threshold(market_data)
+
+    # -------------------------
+    # 2) Curve 구간 세분화
+    # -------------------------
+    if t10y2y_missing:
+        curve_segment = "N/A"
+    elif t10y2y < 0:
+        curve_segment = "INVERTED"
+    elif t10y2y < 0.25:
+        curve_segment = "FLAT / FRAGILE"
+    elif t10y2y < 0.75:
+        curve_segment = "MODERATE STEEP"
+    else:
+        curve_segment = "STEEP / REFLATION"
+
+    # -------------------------
+    # 3) 우선순위
+    # -------------------------
+    PRIORITY = {
+        "VOL": 7,
+        "LIQ": 6,
+        "CURVE": 5,
+        "CREDIT": 4,
+        "PHASE": 3,
+        "FLOW": 2,   # 🔥 새로 추가
+        "MOM": 1,
+    }
+
+    sectors = [
+        "Technology",
+        "Financials",
+        "Energy",
+        "Industrials",
+        "Materials",
+        "Consumer Discretionary",
+        "Consumer Staples",
+        "Health Care",
+        "Utilities",
+        "Real Estate",
+        "Communication Services",
+    ]
+
+    score = {s: 0 for s in sectors}
+    drivers = {s: [] for s in sectors}
+
+    def add_score(sector: str, pts: float, why: str, bucket: str):
+        if sector not in score:
+            return
+        score[sector] += pts
+        drivers[sector].append({
+            "pts": pts,
+            "why": why,
+            "bucket": bucket,
+            "priority": PRIORITY[bucket],
+        })
+
+    # -------------------------
+    # A) VOLATILITY
+    # -------------------------
+    if vix_score >= 3:
+        add_score("Utilities", 4, f"{vix_label} → 최우선 피난처 ({vix_detail})", "VOL")
+        add_score("Consumer Staples", 3, f"{vix_label} → 경기 비탄력적 섹터 선호 ({vix_detail})", "VOL")
+        add_score("Health Care", 2, f"{vix_label} → 방어/현금흐름 선호 ({vix_detail})", "VOL")
+        add_score("Technology", -4, f"{vix_label} → 고베타/멀티플 압박 ({vix_detail})", "VOL")
+        add_score("Consumer Discretionary", -2, f"{vix_label} → 경기민감 소비 부담 ({vix_detail})", "VOL")
+    elif vix_score == 2:
+        add_score("Utilities", 3, f"{vix_label} → 방어주 우위 ({vix_detail})", "VOL")
+        add_score("Consumer Staples", 2, f"{vix_label} → 필수소비 선호 ({vix_detail})", "VOL")
+        add_score("Technology", -3, f"{vix_label} → 위험자산 회피 ({vix_detail})", "VOL")
+    elif vix_score == -2:
+        add_score("Technology", 2, f"{vix_label} → 성장주 베팅 유효 ({vix_detail})", "VOL")
+        add_score("Consumer Discretionary", 1, f"{vix_label} → 경기민감 소비 회복 ({vix_detail})", "VOL")
+        add_score("Utilities", -1, f"{vix_label} → 방어주 상대매력 둔화 ({vix_detail})", "VOL")
+
+   
+    # -------------------------
+    # B) LIQUIDITY
+    # -------------------------
+    liq_tight = (liq_dir == "DOWN") or (liq_lvl == "LOW")
+    liq_easy = (liq_dir == "UP") and (liq_lvl in ("MID", "HIGH"))
+
+    # 🔧 v3.4: Liquidity는 중요하지만 단독으로 섹터를 지배하지 않도록 완화
+    if liq_tight:
+        add_score("Consumer Staples", 2, "유동성 긴축 → 방어적 필수소비 선호", "LIQ")
+        add_score("Health Care", 2, "유동성 긴축 → 안정적 현금흐름 선호", "LIQ")
+        add_score("Utilities", 1, "유동성 긴축 → 방어주 버퍼", "LIQ")
+        add_score("Technology", -2, "유동성 긴축 → 고밸류에이션 부담", "LIQ")
+        add_score("Real Estate", -1.5, "유동성 긴축 → 조달비용 상승 부담", "LIQ")
+        add_score("Consumer Discretionary", -1, "유동성 긴축 → 경기민감 소비 부담", "LIQ")
+
+    elif liq_easy:
+        add_score("Technology", 2, "유동성 완화 → 성장주/베타 우호", "LIQ")
+        add_score("Industrials", 1.5, "유동성 완화 → 경기민감 회복", "LIQ")
+        add_score("Consumer Discretionary", 1.5, "유동성 완화 → 소비 민감주 우호", "LIQ")
+        add_score("Financials", 1, "유동성 완화 → 위험선호 회복", "LIQ")
+        add_score("Utilities", -1, "유동성 완화 → 방어주 상대매력 저하", "LIQ")
+
+
+    # -------------------------
+    # C) CURVE
+    # -------------------------
+    if not t10y2y_missing:
+        if curve_segment == "INVERTED":
+            add_score("Financials", -3, f"수익률 곡선 역전({t10y2y:.2f}) → 은행 수익성 악화", "CURVE")
+            add_score("Utilities", 2, "역전 커브 → 침체 방어주 선호", "CURVE")
+            add_score("Consumer Staples", 1, "역전 커브 → 경기 방어 필요", "CURVE")
+
+        elif curve_segment == "FLAT / FRAGILE":
+            add_score("Health Care", 1, f"플랫 커브({t10y2y:.2f}) → 방어/퀄리티 선호", "CURVE")
+            add_score("Consumer Staples", 1, f"플랫 커브({t10y2y:.2f}) → 경기 민감도 낮은 섹터 선호", "CURVE")
+
+        elif curve_segment == "MODERATE STEEP":
+            add_score("Financials", 2, f"완만한 스티프닝({t10y2y:.2f}) → 예대마진 개선", "CURVE")
+            add_score("Industrials", 1, f"완만한 스티프닝({t10y2y:.2f}) → 성장 기대 반영", "CURVE")
+
+        elif curve_segment == "STEEP / REFLATION":
+            add_score("Financials", 3, f"가파른 스티프닝({t10y2y:.2f}) → 금융주 우호", "CURVE")
+            add_score("Energy", 1, f"가파른 스티프닝({t10y2y:.2f}) → 리플레이션 민감 섹터", "CURVE")
+            add_score("Materials", 1, f"가파른 스티프닝({t10y2y:.2f}) → 경기재개/실물 민감", "CURVE")
+    else:
+        print("[WARN][18_CURVE_MISSING] T10Y2Y missing → CURVE scores skipped")
+
+    # -------------------------
+    # D) CREDIT
+    # -------------------------
+    if credit_calm is False:
+        add_score("Financials", -2, "크레딧 리스크 감지 → 금융주 변동성 확대", "CREDIT")
+        add_score("Real Estate", -3, "크레딧 리스크 감지 → 부동산 금융 위축", "CREDIT")
+        add_score("Consumer Staples", 1, "크레딧 리스크 감지 → 방어주 선호", "CREDIT")
+        add_score("Health Care", 1, "크레딧 리스크 감지 → 퀄리티 선호", "CREDIT")
+    # -------------------------
+    # -------------------------
+    # E) PHASE + Macro Regime Profile
+    # -------------------------
+    macro_profile = infer_macro_regime_profile(
+        phase=phase,
+        us10y_pct=us10y_pct,
+        dxy_pct=dxy_pct,
+        wti_pct=wti_pct,
+        vix=vix,
+        credit_calm=credit_calm,
+        liq_easy=liq_easy,
+        liq_tight=liq_tight,
+        flow_score=flow_score,
+        drift_label=drift_label,
+    )
+
+    if macro_profile == "DOLLAR_LIQUIDITY_STRESS":
+        add_score("Consumer Staples", 1.5, "Dollar Liquidity Stress → 달러 강세/유동성 압박에서 방어주 선호", "PHASE")
+        add_score("Health Care", 1.0, "Dollar Liquidity Stress → 퀄리티/현금흐름 선호", "PHASE")
+        add_score("Utilities", 0.5, "Dollar Liquidity Stress → 방어적 버퍼", "PHASE")
+        add_score("Technology", -1.0, "Dollar Liquidity Stress → 고밸류 성장주 부담", "PHASE")
+        add_score("Financials", -1.0, "Dollar Liquidity Stress → 크레딧/달러 조달 부담", "PHASE")
+        add_score("Real Estate", -1.0, "Dollar Liquidity Stress → 조달비용 부담", "PHASE")
+
+    elif macro_profile == "STAGFLATION_STRESS":
+        add_score("Energy", 1.5, "Stagflation Stress → 유가/인플레 압력 수혜", "PHASE")
+        add_score("Materials", 0.5, "Stagflation Stress → 원자재 민감 섹터 일부 우호", "PHASE")
+        add_score("Utilities", -1.0, "Stagflation Stress → 금리 상승에 취약", "PHASE")
+        add_score("Real Estate", -1.0, "Stagflation Stress → 조달비용 부담", "PHASE")
+        add_score("Technology", -1.0, "Stagflation Stress → 장기금리 상승 부담", "PHASE")
+        add_score("Consumer Discretionary", -0.5, "Stagflation Stress → 소비 여력 압박", "PHASE")
+
+    elif macro_profile == "GROWTH_SCARE":
+        add_score("Consumer Staples", 1.5, "Growth Scare → 경기방어 필수소비 선호", "PHASE")
+        add_score("Health Care", 1.5, "Growth Scare → 퀄리티/방어 선호", "PHASE")
+        add_score("Utilities", 0.5, "Growth Scare → 금리 하락 시 방어주 일부 우호", "PHASE")
+        add_score("Industrials", -0.5, "Growth Scare → 경기민감 부담", "PHASE")
+        add_score("Consumer Discretionary", -0.5, "Growth Scare → 소비민감 부담", "PHASE")
+        add_score("Financials", -0.5, "Growth Scare → 성장 둔화 시 금융 베타 부담", "PHASE")
+
+    elif macro_profile == "SOFT_RISK_OFF_DISINFLATION":
+        add_score("Health Care", 1.2, "Soft Risk-Off Disinflation → 금리 안정/퀄리티 방어 우위", "PHASE")
+        add_score("Consumer Staples", 0.8, "Soft Risk-Off Disinflation → 필수소비 방어 보완", "PHASE")
+        add_score("Technology", 0.5, "Soft Risk-Off Disinflation → 금리 안정으로 리더 섹터 일부 유지", "PHASE")
+        add_score("Consumer Discretionary", -0.5, "Soft Risk-Off Disinflation → 소비 베타는 일부 제한", "PHASE")
+        add_score("Industrials", -0.5, "Soft Risk-Off Disinflation → 경기민감 과열 억제", "PHASE")
+
+    elif macro_profile == "SOFT_RISK_ON_DISINFLATION":
+        add_score("Technology", 1.0, "Soft Risk-On Disinflation → 금리 안정으로 성장주 일부 우호", "PHASE")
+        add_score("Health Care", 0.5, "Soft Risk-On Disinflation → 퀄리티 보완", "PHASE")
+        add_score("Consumer Discretionary", 0.5, "Soft Risk-On Disinflation → 낮은 변동성에서 소비 베타 일부 회복", "PHASE")
+        add_score("Utilities", -0.5, "Soft Risk-On Disinflation → 방어주 상대매력 일부 둔화", "PHASE")
+
+    elif macro_profile == "DISINFLATION_RISK_ON":
+        add_score("Technology", 1.5, "Disinflation Risk-On → 성장주/장기 듀레이션 우호", "PHASE")
+        add_score("Consumer Discretionary", 1.0, "Disinflation Risk-On → 소비 베타 우호", "PHASE")
+        add_score("Communication Services", 0.5, "Disinflation Risk-On → 플랫폼/성장 섹터 우호", "PHASE")
+        add_score("Utilities", -0.5, "Disinflation Risk-On → 방어주 상대매력 둔화", "PHASE")
+
+    elif macro_profile == "EARLY_RISK_ON":
+        add_score("Technology", 1.0, "Early Risk-On → 초기 리더 섹터 선호", "PHASE")
+        add_score("Industrials", 1.0, "Early Risk-On → 경기민감 회복 관찰", "PHASE")
+        add_score("Consumer Discretionary", 0.5, "Early Risk-On → 소비 베타 일부 회복", "PHASE")
+        add_score("Consumer Staples", -0.5, "Early Risk-On → 방어주 상대매력 둔화", "PHASE")
+
+    elif macro_profile == "REFLATION_RISK_ON":
+        add_score("Industrials", 1.5, "Reflation Risk-On → 경기민감 우호", "PHASE")
+        add_score("Financials", 1.0, "Reflation Risk-On → 커브/성장 기대 우호", "PHASE")
+        add_score("Energy", 1.0, "Reflation Risk-On → 에너지/실물자산 우호", "PHASE")
+        add_score("Materials", 0.5, "Reflation Risk-On → 원자재/산업재 우호", "PHASE")
+
+    elif macro_profile == "EVENT_TRANSITION":
+        add_score("Health Care", 1.0, f"{phase} → 관망 구간 방어/퀄리티 선호", "PHASE")
+        add_score("Consumer Staples", 1.0, f"{phase} → 관망 구간 필수소비 선호", "PHASE")
+        add_score("Technology", -0.5, f"{phase} → 이벤트 전 성장주 베타 일부 제한", "PHASE")
+        add_score("Industrials", -0.5, f"{phase} → 이벤트 전 경기민감 베팅 제한", "PHASE")
+
+    else:
+        add_score("Health Care", 0.5, "Balanced Macro Profile → 퀄리티 보완", "PHASE")
+        add_score("Consumer Staples", 0.5, "Balanced Macro Profile → 방어 보완", "PHASE")
+
+    # Store inferred macro profile for downstream layers
+    market_data["MACRO_REGIME_PROFILE"] = macro_profile
+    # -------------------------
+    # F) REAL-TIME MOMENTUM (Relative Strength)
+    # -------------------------
+    ticker_map = {
+        "Technology": "XLK",
+        "Financials": "XLF",
+        "Energy": "XLE",
+        "Industrials": "XLI",
+        "Materials": "XLB",
+        "Consumer Discretionary": "XLY",
+        "Consumer Staples": "XLP",
+        "Health Care": "XLV",
+        "Utilities": "XLU",
+        "Real Estate": "XLRE",
+        "Communication Services": "XLC"
+    }
+
+    momentum_data = market_data.get("MOMENTUM_SCORES", {})
+
+    for sector_name, ticker in ticker_map.items():
+        m_score = momentum_data.get(ticker, 0)
+        if m_score > 0:
+            add_score(sector_name, m_score, "Relative Strength 강세 (vs SPY) → 자금 유입 확인", "MOM")
+        elif m_score < 0:
+            add_score(sector_name, m_score, "Relative Strength 약세 (vs SPY) → 소외 섹터", "MOM")
+
+    # -------------------------
+    # G) 🔥 FLOW / GAMMA / DRIFT OVERLAY (ADD ONLY)
+    # -------------------------
+    flow_overlay_notes: List[str] = []
+
+    flow_active = flow_score >= 4
+    gamma_transition = "TRANSITION" in gamma_state
+    gamma_positive = "POSITIVE" in gamma_state
+
+    # 1) 디스인플레이션 + 리스크온 초기
+    if flow_active and drift_label == "DISINFLATION_RISK_ON":
+        add_score("Technology", 1.5, "Flow Overlay → DISINFLATION_RISK_ON 수혜", "FLOW")
+        add_score("Consumer Discretionary", 1.0, "Flow Overlay → 소비/성장 베타 우호", "FLOW")
+        add_score("Communication Services", 0.5, "Flow Overlay → 성장/플랫폼 수혜", "FLOW")
+        flow_overlay_notes.append("DISINFLATION_RISK_ON → XLK/XLY/XLC 가점")
+
+    # 2) 오일 쇼크 / 원자재 압력
+    elif flow_active and drift_label == "OIL_SHOCK":
+        add_score("Energy", 1.5, "Flow Overlay → OIL_SHOCK 수혜", "FLOW")
+        add_score("Materials", 1.0, "Flow Overlay → 원자재/실물 우호", "FLOW")
+        add_score("Consumer Discretionary", -1.0, "Flow Overlay → 유가 쇼크 시 소비 부담", "FLOW")
+        flow_overlay_notes.append("OIL_SHOCK → XLE/XLB 가점, XLY 감점")
+
+    # 3) 중립이지만 초기 흐름이 형성되는 경우
+    elif flow_active and drift_label == "NEUTRAL":
+        add_score("Technology", 0.5, "Flow Overlay → 초기 흐름에서 성장주 선행 반응", "FLOW")
+        add_score("Industrials", 0.5, "Flow Overlay → 경기민감 확인용 가점", "FLOW")
+        flow_overlay_notes.append("NEUTRAL + FLOW ACTIVE → XLK/XLI 소폭 가점")
+
+    # 4) Gamma 상태에 따른 집중도
+    if flow_active and gamma_positive:
+        add_score("Technology", 1.0, "Gamma Overlay → POSITIVE, 추세 지속 우호", "FLOW")
+        add_score("Industrials", 0.5, "Gamma Overlay → 경기민감 추세 확인", "FLOW")
+        flow_overlay_notes.append("Gamma POSITIVE → 리더 섹터 가점")
+    elif flow_active and gamma_transition:
+        add_score("Technology", 0.5, "Gamma Overlay → TRANSITION, 초기 리더 형성", "FLOW")
+        flow_overlay_notes.append("Gamma TRANSITION → 초기 리더 소폭 가점")
+
+
+    # -------------------------
+    # H) Theory vs Flow Divergence Adjustment
+    # -------------------------
+        # -------------------------
+    # H) Layer 2~5. Theory / Flow / Divergence / Final Score (v4.2)
+    # -------------------------
+    divergence_flags = {}
+    sector_classification = {}
+    theoretical_score = {}
+    flow_score_by_sector = {}
+    sector_divergence = {}
+    final_score = {}
+
+    THEORY_BUCKETS = {"VOL", "LIQ", "CURVE", "CREDIT", "PHASE"}
+    FLOW_BUCKETS = {"FLOW", "MOM"}
+
+    # -------------------------
+    # H-1) First Pass: Theory / Flow / Divergence 계산
+    # -------------------------
+    for s in sectors:
+        theo = 0.0
+
+        for d in drivers[s]:
+            bucket = d.get("bucket")
+            pts = float(d.get("pts", 0) or 0)
+
+            if bucket in THEORY_BUCKETS:
+                theo += pts
+
+        theoretical_score[s] = round(theo, 2)
+
+        momentum_component = 0.0
+        flow_component = 0.0
+        relative_component = 0.0
+        price_trend_component = 0.0
+
+        for d in drivers[s]:
+            bucket = d.get("bucket")
+            pts = float(d.get("pts", 0) or 0)
+
+            if bucket == "MOM":
+                momentum_component += pts
+                relative_component += pts
+            elif bucket == "FLOW":
+                flow_component += pts
+
+        price_trend_component = momentum_component
+
+        market_flow_score = (
+            (0.35 * momentum_component) +
+            (0.30 * flow_component) +
+            (0.20 * relative_component) +
+            (0.15 * price_trend_component)
+        )
+
+        flow_score_by_sector[s] = round(market_flow_score, 2)
+        sector_divergence[s] = round(market_flow_score - theo, 2)
+
+    # -------------------------
+    # H-2) Regime Controller
+    # -------------------------
+    div_values = list(sector_divergence.values())
+
+    if div_values:
+        avg_divergence = round(sum(div_values) / len(div_values), 2)
+        variance = sum((x - avg_divergence) ** 2 for x in div_values) / len(div_values)
+        divergence_dispersion = round(variance ** 0.5, 2)
+    else:
+        avg_divergence = 0.0
+        divergence_dispersion = 0.0
+
+    if divergence_dispersion > 1.5:
+        regime_controller = "DISLOCATION"
+    elif avg_divergence > 1.0:
+        regime_controller = "FLOW_MARKET"
+    elif avg_divergence < -1.0:
+        regime_controller = "THEORY_MARKET"
+    else:
+        regime_controller = "BALANCED"
+
+    # -------------------------
+    # H-3) Second Pass: Regime-aware Classification / Final Score
+    # -------------------------
+    for s in sectors:
+        theo = theoretical_score.get(s, 0.0)
+        flow = flow_score_by_sector.get(s, 0.0)
+
+        if regime_controller == "FLOW_MARKET":
+            aligned_theo_w = 0.45
+            aligned_flow_w = 0.55
+            trap_penalty_mult = 0.8
+
+        elif regime_controller == "THEORY_MARKET":
+            aligned_theo_w = 0.75
+            aligned_flow_w = 0.25
+            trap_penalty_mult = 1.2
+
+        elif regime_controller == "DISLOCATION":
+            aligned_theo_w = 0.50
+            aligned_flow_w = 0.50
+            trap_penalty_mult = 1.35
+
+        else:
+            aligned_theo_w = 0.65
+            aligned_flow_w = 0.35
+            trap_penalty_mult = 1.0
+
+        classification = "ALIGNED"
+        div_flag = "ALIGNED"
+
+        if theo >= 2.0 and flow >= 1.0:
+            classification = "HIGH_CONVICTION_ALIGNED"
+            div_flag = "ALIGNED"
+            final = (aligned_theo_w * theo) + (aligned_flow_w * flow) + 0.3
+
+        elif theo >= 2.0 and -0.5 <= flow < 1.0:
+            classification = "FLOW_WEAK"
+            div_flag = "NEGATIVE_DIVERGENCE"
+            final = ((aligned_theo_w + 0.10) * theo) + ((aligned_flow_w - 0.10) * flow) - 0.3
+
+        elif theo >= 1.0 and flow < -0.5:
+            classification = "THEORY_TRAP"
+            div_flag = "NEGATIVE_DIVERGENCE"
+            final = (aligned_theo_w * theo) + (aligned_flow_w * flow) - (1.8 * trap_penalty_mult)
+
+        elif theo < 1.0 and flow >= 1.5:
+            classification = "POSITIVE_DIVERGENCE"
+            div_flag = "POSITIVE_DIVERGENCE"
+            final = ((aligned_theo_w - 0.20) * theo) + ((aligned_flow_w + 0.20) * flow) + 0.4
+
+        elif -0.5 <= theo < 1.0 and 0.5 <= flow < 1.5:
+            classification = "TACTICAL_MOMENTUM_ONLY"
+            div_flag = "POSITIVE_DIVERGENCE"
+            final = ((aligned_theo_w - 0.10) * theo) + ((aligned_flow_w + 0.10) * flow)
+
+        elif theo < 0 and flow < 0:
+            classification = "AVOID"
+            div_flag = "ALIGNED"
+            final = (0.50 * theo) + (0.50 * flow) - (0.3 * trap_penalty_mult)
+
+        elif theo == 0 and flow == 0:
+            classification = "NEUTRAL"
+            div_flag = "ALIGNED"
+            final = 0.0
+
+        else:
+            classification = "ALIGNED"
+            div_flag = "ALIGNED"
+            final = (aligned_theo_w * theo) + (aligned_flow_w * flow)
+
+        if regime_controller == "DISLOCATION":
+            final *= 0.90
+
+        if classification == "THEORY_TRAP" and final > -0.3:
+            final = -0.3
+
+        sector_classification[s] = classification
+        divergence_flags[s] = div_flag
+        final_score[s] = round(final, 2)
+
+    score = final_score
+
+    market_data["SECTOR_THEORETICAL_SCORE"] = theoretical_score
+    market_data["SECTOR_FLOW_SCORE"] = flow_score_by_sector
+    market_data["SECTOR_DIVERGENCE"] = sector_divergence
+    market_data["SECTOR_CLASSIFICATION"] = sector_classification
+    market_data["SECTOR_DIVERGENCE_FLAGS"] = divergence_flags
+    market_data["SECTOR_FINAL_SCORE"] = final_score
+
+    market_data["REGIME_CONTROLLER"] = regime_controller
+    market_data["AVG_DIVERGENCE"] = avg_divergence
+    market_data["DIVERGENCE_DISPERSION"] = divergence_dispersion
+
+
+    # H-4) Correlation Break Integration
+    # -------------------------
+    corr_state = correlation_break_state(market_data)
+    sector_corr_state = sector_correlation_break_state(market_data)
+
+    is_corr_break = (
+        bool(corr_state.get("break"))
+        or bool(sector_corr_state.get("break"))
+    )
+
+    breakdown_type = sector_corr_state.get("breakdown_type", "NONE")
+
+    market_data["CORRELATION_BREAK_ACTIVE"] = is_corr_break
+    market_data["CORRELATION_BREAK_TYPE"] = breakdown_type
+    market_data["CORRELATION_BREAK_REASONS"] = (
+        corr_state.get("reasons", [])
+        + sector_corr_state.get("reasons", [])
+    )
+
+    if is_corr_break:
+        for s in final_score:
+            final_score[s] = round(final_score[s] * 0.90, 2)
+
+        if breakdown_type == "MACRO_TIGHTENING_TECH_RALLY":
+            if "Technology" in final_score:
+                final_score["Technology"] = round(final_score["Technology"] + 0.5, 2)
+            if "Communication Services" in final_score:
+                final_score["Communication Services"] = round(final_score["Communication Services"] + 0.3, 2)
+
+            for s in ["Financials", "Industrials", "Consumer Discretionary", "Real Estate"]:
+                if s in final_score:
+                    final_score[s] = round(final_score[s] - 0.5, 2)
+
+        elif breakdown_type == "XLF_BETRAYAL":
+            if "Financials" in final_score:
+                final_score["Financials"] = round(final_score["Financials"] - 0.8, 2)
+
+        elif breakdown_type == "ENERGY_BETRAYAL":
+            if "Energy" in final_score:
+                final_score["Energy"] = round(final_score["Energy"] - 0.8, 2)
+            if "Materials" in final_score:
+                final_score["Materials"] = round(final_score["Materials"] - 0.3, 2)
+
+        elif breakdown_type == "GROWTH_FAILED_ON_RATE_RELIEF":
+            if "Technology" in final_score:
+                final_score["Technology"] = round(final_score["Technology"] - 0.5, 2)
+            if "Communication Services" in final_score:
+                final_score["Communication Services"] = round(final_score["Communication Services"] - 0.3, 2)
+
+            for s in ["Consumer Staples", "Health Care", "Utilities"]:
+                if s in final_score:
+                    final_score[s] = round(final_score[s] + 0.3, 2)
+
+        elif breakdown_type == "FINANCIALS_WEAK_ON_RATE_RELIEF":
+            if "Financials" in final_score:
+                final_score["Financials"] = round(final_score["Financials"] - 0.5, 2)
+
+        elif breakdown_type == "FINANCIALS_RESILIENCE_UNDER_VOL":
+            if "Financials" in final_score:
+                final_score["Financials"] = round(final_score["Financials"] + 0.3, 2)
+
+            for s in ["Technology", "Consumer Discretionary"]:
+                if s in final_score:
+                    final_score[s] = round(final_score[s] - 0.3, 2)
+
+        else:
+            for s in ["Real Estate", "Consumer Discretionary", "Financials"]:
+                if s in final_score:
+                    final_score[s] = round(final_score[s] - 0.2, 2)
+
+    score = final_score
+    market_data["SECTOR_FINAL_SCORE"] = final_score
+    
+   
+    # -------------------------
+    # I) Conflict Resolver
+    # -------------------------
+    if vix >= 28 and liq_tight:
+        if score["Technology"] > 0:
+            score["Technology"] = 0
+            drivers["Technology"].append({
+                "pts": 0,
+                "why": "Conflict Resolver → VIX 고점 + 유동성 긴축으로 성장주 긍정점수 제거",
+                "bucket": "VOL",
+                "priority": PRIORITY["VOL"],
+            })
+
+        if score["Real Estate"] > -1:
+            add_score("Real Estate", -1, "Conflict Resolver → VIX 고점 + 유동성 긴축으로 RE 추가 감점", "VOL")
+
+    if score["Financials"] > 0 and vix >= 30 and liq_tight:
+        original = score["Financials"]
+        score["Financials"] = min(score["Financials"], 1)
+        if score["Financials"] != original:
+            drivers["Financials"].append({
+                "pts": score["Financials"] - original,
+                "why": "Financials Cap → VIX 고점 + 유동성 긴축으로 금융주 상단 제한",
+                "bucket": "VOL",
+                "priority": PRIORITY["VOL"],
+            })
+
+    if score["Financials"] > 0 and (credit_calm is False):
+        add_score("Financials", -1, "Conflict Resolver → 커브 우호보다 크레딧 리스크 우선", "CREDIT")
+
+    if ("EVENT-WATCHING" in phase or "WAITING" in phase):
+        if score["Industrials"] > 0:
+            add_score("Industrials", -1, "Conflict Resolver → 이벤트 관망으로 경기민감 가점 일부 축소", "PHASE")
+        if score["Energy"] > 0:
+            add_score("Energy", -1, "Conflict Resolver → 이벤트 관망으로 리플레이션 베팅 일부 축소", "PHASE")
+
+    # -------------------------
+    # 5) Score 기반 정렬
+    # -------------------------
+    ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
+    uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
+
+    for s in sectors:
+        positive = [d for d in drivers[s] if d["pts"] > 0]
+        negative = [d for d in drivers[s] if d["pts"] < 0]
+        zeroish = [d for d in drivers[s] if d["pts"] == 0]
+
+        positive = sorted(positive, key=lambda d: (-d["priority"], -abs(d["pts"]), d["why"]))
+        negative = sorted(negative, key=lambda d: (-d["priority"], -abs(d["pts"]), d["why"]))
+        zeroish = sorted(zeroish, key=lambda d: (-d["priority"], d["why"]))
+
+        drivers[s] = positive + negative + zeroish
+
+    def sector_breakdown(sector: str) -> str:
+        bucket_sum = {}
+        for d in drivers[sector]:
+            bucket_sum[d["bucket"]] = bucket_sum.get(d["bucket"], 0) + d["pts"]
+
+        ordered_buckets = ["VOL", "LIQ", "CURVE", "CREDIT", "PHASE", "FLOW", "MOM"]
+        parts = []
+        for b in ordered_buckets:
+            if b in bucket_sum and bucket_sum[b] != 0:
+                if float(bucket_sum[b]).is_integer():
+                    parts.append(f"{int(bucket_sum[b]):+d} {b}")
+                else:
+                    parts.append(f"{bucket_sum[b]:+,.1f} {b}")
+        if float(score[sector]).is_integer():
+            parts.append(f"= {int(score[sector]):+d}")
+        else:
+            parts.append(f"= {score[sector]:+,.1f}")
+        return ", ".join(parts)
+
+    top_rationales: List[str] = []
+    seen_text = set()
+
+    for s in ow_sorted[:4] + uw_sorted[:4]:
+        label = "OW" if score[s] > 0 else "UW"
+        used_bucket = set()
+        local_count = 0
+
+        classification = sector_classification.get(s, "ALIGNED")
+
+        # -------------------------
+        # Classification-first rationale
+        # -------------------------
+        if classification == "THEORY_TRAP":
+            text = (
+                f"{label} {s}: THEORY_TRAP → "
+                f"거시/이론 우호 대비 실제 자금흐름 및 상대강도 약세"
+            )
+            if text not in seen_text:
+                seen_text.add(text)
+                top_rationales.append(text)
+
+        elif classification == "FLOW_WEAK":
+            text = (
+                f"{label} {s}: FLOW_WEAK → "
+                f"이론상 우호하나 실제 자금 유입 확인 부족"
+            )
+            if text not in seen_text:
+                seen_text.add(text)
+                top_rationales.append(text)
+
+        elif classification == "POSITIVE_DIVERGENCE":
+            text = (
+                f"{label} {s}: POSITIVE_DIVERGENCE → "
+                f"거시 대비 실제 자금 선행 유입"
+            )
+            if text not in seen_text:
+                seen_text.add(text)
+                top_rationales.append(text)
+
+        elif classification == "TACTICAL_MOMENTUM_ONLY":
+            text = (
+                f"{label} {s}: TACTICAL_MOMENTUM_ONLY → "
+                f"거시 근거 약하지만 단기 리더십 존재"
+            )
+            if text not in seen_text:
+                seen_text.add(text)
+                top_rationales.append(text)
+
+        # -------------------------
+        # 기존 bucket rationale
+        # -------------------------
+        for d in drivers[s]:
+            if d["bucket"] in used_bucket:
+                continue
+
+            pts_display = (
+                f"{int(d['pts']):+d}"
+                if float(d["pts"]).is_integer()
+                else f"{d['pts']:+.1f}"
+            )
+
+            text = f"{label} {s}: {pts_display}: {d['why']}"
+
+            if text in seen_text:
+                continue
+
+            seen_text.add(text)
+            used_bucket.add(d["bucket"])
+            top_rationales.append(text)
+            local_count += 1
+
+            if local_count >= 2:
+                break
+
+        if len(top_rationales) >= 12:
+            break
+   
+    # -------------------------
+    # 6) 출력
+    # -------------------------
+    lines: List[str] = []
+    lines.append("### 🏭 18) Sector Allocation Engine (v3.3)")
+    lines.append("")
+    lines.append(
+        f"**Context:** phase={phase} / "
+        f"T10Y2Y={t10y2y:.2f} ({curve_segment}) / "
+        f"VIX={vix:.2f} ({vix_label}) / "
+        f"liquidity={liq_dir}-{liq_lvl} / "
+        f"credit={credit_calm}"
+    )
+    
+    lines.append("")
+    lines.append("**Signal Priority:** VOL > LIQ > CURVE > CREDIT > PHASE > FLOW > MOM")
+    lines.append("")
+    lines.append(f"**Macro Profile:** {macro_profile}")
+    lines.append(
+        f"**Macro Inputs Debug:** phase={phase} / "
+        f"us10y_pct={us10y_pct:+.2f}% / "
+        f"dxy_pct={dxy_pct:+.2f}% / "
+        f"wti_pct={wti_pct:+.2f}% / "
+        f"vix={vix:.2f} / "
+        f"liq_easy={liq_easy} / "
+        f"liq_tight={liq_tight} / "
+        f"credit_calm={credit_calm} / "
+        f"flow_score={flow_score}"
+    )
+    lines.append("")
+    lines.append(
+        f"**Flow Overlay:** flow_score={flow_score} / flow_state={flow_state} / "
+        f"drift_label={drift_label} / gamma={gamma_state}"
+    )
+    if flow_overlay_notes:
+        lines.append(f"**Flow Notes:** {' | '.join(flow_overlay_notes)}")
+    lines.append("")
+    lines.append(f"**Overweight:** {', '.join(ow_sorted) if ow_sorted else 'None'}")
+    lines.append("")
+    lines.append(f"**Underweight:** {', '.join(uw_sorted) if uw_sorted else 'None'}")
+    lines.append("")
+    lines.append("**Scoreboard:**")
+    for s in sorted(sectors, key=lambda x: (-score[x], x)):
+        if score[s] != 0:
+            score_display = f"{int(score[s]):+d}" if float(score[s]).is_integer() else f"{score[s]:+.1f}"
+            lines.append(f"- {s}: {score_display}  ({sector_breakdown(s)})")
+    lines.append("")
+    lines.append("**Rationale (Why the score exists: 섹터 점수의 핵심 드라이버)**")
+
+    for r in top_rationales:
+        lines.append(f"- {r}")
+    
+    lines.append("")
+    lines.append("**Regime Controller:**")
+    
+    macro_profile_upper = str(macro_profile or "BALANCED").upper()
+    
+    if regime_controller == "DISLOCATION":
+        controller_comment = "섹터별 괴리가 큰 불안정 장세 → 포지션 축소와 리더 섹터 검증 필요"
+    elif regime_controller == "FLOW_MARKET":
+        controller_comment = "실제 자금흐름이 시장을 주도하는 장세 → 리더 섹터 중심 베타 유지 가능"
+    elif regime_controller == "THEORY_MARKET":
+        controller_comment = "거시/이론 조건이 자금흐름보다 우세한 장세 → 보수적 해석과 방어적 배분 필요"
+    else:
+        if macro_profile_upper == "SOFT_RISK_OFF_DISINFLATION":
+            controller_comment = "소프트 리스크오프 / 디스인플레이션 / 선택적 성장 허용"
+        elif macro_profile_upper == "SOFT_RISK_ON_DISINFLATION":
+            controller_comment = "부드러운 위험선호 회복 / 금리 안정 / 성장주 일부 우호"
+        elif macro_profile_upper == "DISINFLATION_RISK_ON":
+            controller_comment = "디스인플레이션 리스크온 / 성장주·소비 베타 우호"
+        elif macro_profile_upper == "GROWTH_SCARE":
+            controller_comment = "성장 둔화 우려 / 방어주·퀄리티 우위"
+        elif macro_profile_upper == "STAGFLATION_STRESS":
+            controller_comment = "스태그플레이션 압력 / 에너지·원자재 우위, 장기 성장주 부담"
+        elif macro_profile_upper == "DOLLAR_LIQUIDITY_STRESS":
+            controller_comment = "달러 유동성 압박 / EM·크레딧·고베타 자산 주의"
+        else:
+            controller_comment = "균형 장세 / 강한 방향성보다 선별적 배분 필요"
+    
+    lines.append(
+        f"- {regime_controller} "
+        f"(avg_divergence={avg_divergence:+.2f}, dispersion={divergence_dispersion:.2f})"
+    )
+    corr_active = market_data.get("CORRELATION_BREAK_ACTIVE", False)
+    corr_type = market_data.get("CORRELATION_BREAK_TYPE", "NONE")
+    corr_reasons = market_data.get("CORRELATION_BREAK_REASONS", [])
+
+    lines.append(f"- Correlation Break: {corr_active} / Type={corr_type}")
+
+    if corr_reasons:
+        lines.append(f"- Break Reasons: {' | '.join(corr_reasons)}")
+
+    lines.append(f"- Interpretation: {controller_comment}")
+
+    lines.append("")
+    lines.append("**Divergence / Classification Monitor (Theory vs Flow alignment: 이론과 실제 자금흐름 정렬 여부)**")
+    has_divergence = False
+    
+    for s in sorted(sectors, key=lambda x: (-score[x], x)):
+        classification = sector_classification.get(s, "ALIGNED")
+        flag = divergence_flags.get(s, "ALIGNED")
+        theo = theoretical_score.get(s, 0)
+        flow = flow_score_by_sector.get(s, 0)
+    
+        if classification != "ALIGNED":
+            has_divergence = True
+            lines.append(
+                    f"- {s}: {classification} "
+                    f"(theory={theo:+.1f}, flow={flow:+.1f}, final={score[s]:+.1f})"
+                )
+    
+    if not has_divergence:
+        lines.append("- No major theory-vs-flow divergence detected.")
+    
+    # -------------------------
+    # -------------------------
+    # 18.5) Execution Weight Allocation Logic
+    # -------------------------
+    final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
+    #final_exposure = 70 # test only
+    # -------------------------
+    # 18.45) Regime Controller Exposure Override
+    # -------------------------
+
+    # -------------------------
+    # 18.45) Regime Controller
+    # 총노출 조정 금지 → Sector Weight Only
+    # -------------------------
+    base_final_exposure = final_exposure
+    
+    exposure_override_reason = (
+        f"{regime_controller} → Sector Weight Only (No Exposure Change)"
+    )
+     
+    final_exposure = round(max(0.0, min(final_exposure, 100.0)), 1)
+    
+    market_data["BASE_RECOMMENDED_EXPOSURE"] = base_final_exposure
+    market_data["REGIME_ADJUSTED_EXPOSURE"] = final_exposure
+    market_data["EXPOSURE_OVERRIDE_REASON"] = exposure_override_reason
+
+
+    
+    try:
+        from portfolio.save_portfolio import load_previous_exposure
+        prev_exposure = load_previous_exposure()
+    except Exception:
+        prev_exposure = final_exposure
+
+    deleveraging_required = final_exposure < prev_exposure
+    leveraging_required = final_exposure > prev_exposure
+    print("leveraging_required =", leveraging_required)
+
+    print("[DEBUG][18.5 DELEVERAGING]")
+    print("prev_exposure =", prev_exposure)
+    print("final_exposure =", final_exposure)
+    print("deleveraging_required =", deleveraging_required)
+    print(
+        "[DEBUG][18_CORR_BREAK]",
+        market_data.get("CORRELATION_BREAK_ACTIVE"),
+        market_data.get("CORRELATION_BREAK_TYPE"),
+    )
+
+       # score 조정 후 정렬 재계산
+    ow_sorted = sorted([s for s in sectors if score[s] > 0], key=lambda x: (-score[x], x))
+    uw_sorted = sorted([s for s in sectors if score[s] < 0], key=lambda x: (score[x], x))
+
+    # -------------------------
+    # Momentum 준비
+    # -------------------------
+    momentum_scores = market_data.get("MOMENTUM_SCORES", {}) or {}
+
+    sector_momentum = {
+        sector: momentum_scores.get(ticker_map.get(sector, ""), 0)
+        for sector in ow_sorted
+    }
+    # -------------------------
+    # 18.49) Market Quality Context
+    # 12.7 Leadership Breadth + 12.8 Positioning Stress
+    # -------------------------
+    market_quality_context = {
+        "leadership_state": market_data.get("LEADERSHIP_STATE", "NARROW"),
+        "breadth_score": market_data.get("BREADTH_SCORE_18", 0),
+        "leader_type": market_data.get("LEADER_TYPE", "NONE"),
+        "participation_signal": market_data.get("PARTICIPATION_SIGNAL", "WEAK"),
+
+        "positioning_state": market_data.get("POSITIONING_STATE", "ELEVATED"),
+        "positioning_score": market_data.get("POSITIONING_SCORE_18", -1),
+        "squeeze_risk": market_data.get("SQUEEZE_RISK", "MEDIUM"),
+        "gamma_signal": market_data.get("GAMMA_SIGNAL", "STABLE"),
+        "vol_structure": market_data.get("VOL_STRUCTURE", "COMPRESSION"),
+    }
+
+    print("[DEBUG][18_MARKET_QUALITY_CONTEXT]", market_quality_context)
+    
+
+    alloc_result = build_tactical_allocation(
+        score=score,
+        ow_sorted=ow_sorted,
+        divergence_flags=divergence_flags,
+        total_exposure=final_exposure,
+        deleveraging_required=deleveraging_required,
+        prev_exposure=prev_exposure,
+        momentum_scores=sector_momentum,
+        sector_classification=sector_classification,
+        macro_profile=macro_profile,
+        market_quality_context=market_quality_context,
+    )
+    weights = alloc_result["weights"]
+    cash_weight = alloc_result["cash_weight"]
+    total_score_sum = alloc_result["total_score_sum"]
+    cap_applied = alloc_result.get("cap_applied", [])
+    cap_macro_profile = alloc_result.get("macro_profile", macro_profile)
+    participation_quality = alloc_result.get("participation_quality", "NEUTRAL_PARTICIPATION")
+    participation_quality_score = alloc_result.get("participation_quality_score", 0)
+    participation_mode = alloc_result.get("participation_mode", "BALANCED")
+
+    # ========================================================
+    # Filter18 Rank Persistence 3D
+    #
+    # Production candidate validated in research:
+    # - normal days: changed sector rank must persist 3 trading days
+    # - deleveraging: ALWAYS bypass persistence immediately
+    # - existing 2% / 5% rebalance threshold remains downstream
+    #
+    # IMPORTANT:
+    # State is staged here but committed only after portfolio
+    # persistence succeeds later in the execution path.
+    # ========================================================
+
+    FILTER18_RANK_PERSISTENCE_ENABLED = True
+    FILTER18_RANK_CONFIRM_DAYS = 3
+
+    raw_target_weights = dict(weights)
+
+    # Research rank contract:
+    # positive sector score, descending by score then sector name.
+    _rank_rows = []
+
+    for _sector, _score in score.items():
+        try:
+            _score_float = float(_score)
+        except (TypeError, ValueError):
+            continue
+
+        if _score_float > 0:
+            _rank_rows.append(
+                (_sector, _score_float)
+            )
+
+    _rank_rows.sort(
+        key=lambda item: (
+            -item[1],
+            item[0],
+        )
+    )
+
+    raw_rank = "|".join(
+        sector
+        for sector, _
+        in _rank_rows
+    )
+
+    rank_state_next = None
+    rank_action = "DISABLED"
+    accepted_rank = raw_rank
+    pending_rank = ""
+    pending_count = 0
+
+    if FILTER18_RANK_PERSISTENCE_ENABLED:
+
+        try:
+            from portfolio.save_portfolio import (
+                load_filter18_rank_state,
+            )
+
+            rank_state = (
+                load_filter18_rank_state()
+                or {}
+            )
+
+        except Exception:
+            rank_state = {}
+
+        accepted_rank = str(
+            rank_state.get(
+                "accepted_rank",
+                "",
+            )
+            or ""
+        )
+
+        accepted_target_weights = (
+            rank_state.get(
+                "accepted_target_weights",
+                {},
+            )
+            or {}
+        )
+
+        if not isinstance(
+            accepted_target_weights,
+            dict,
+        ):
+            accepted_target_weights = {}
+
+        pending_rank = str(
+            rank_state.get(
+                "pending_rank",
+                "",
+            )
+            or ""
+        )
+
+        try:
+            pending_count = int(
+                rank_state.get(
+                    "pending_count",
+                    0,
+                )
+                or 0
+            )
+        except Exception:
+            pending_count = 0
+
+        last_processed_date = str(
+            rank_state.get(
+                "last_processed_date",
+                "",
+            )
+            or ""
+        )
+
+        today_rank_date = (
+            pd.Timestamp.now(
+                tz="Asia/Seoul"
+            )
+            .strftime("%Y-%m-%d")
+        )
+
+        # ----------------------------------------------------
+        # SAFETY OVERRIDE
+        # ----------------------------------------------------
+
+        # Research contract:
+        # first-ever state is reported as INITIAL_ACCEPT even
+        # when deleveraging is active. Execution safety remains
+        # unchanged: raw defensive target is accepted immediately
+        # and rebalance threshold is still bypassed downstream.
+        rank_state_was_uninitialized = not accepted_rank
+
+        if deleveraging_required:
+
+            accepted_rank = raw_rank
+            accepted_target_weights = dict(
+                raw_target_weights
+            )
+
+            pending_rank = ""
+            pending_count = 0
+
+            weights = dict(
+                raw_target_weights
+            )
+
+            rank_action = (
+                "INITIAL_ACCEPT"
+                if rank_state_was_uninitialized
+                else "FORCED_DELEVERAGE_ACCEPT"
+            )
+
+        # ----------------------------------------------------
+        # First initialization
+        # ----------------------------------------------------
+
+        elif not accepted_rank:
+
+            accepted_rank = raw_rank
+            accepted_target_weights = dict(
+                raw_target_weights
+            )
+
+            pending_rank = ""
+            pending_count = 0
+
+            weights = dict(
+                raw_target_weights
+            )
+
+            rank_action = "INITIAL_ACCEPT"
+
+        # ----------------------------------------------------
+        # Same accepted rank
+        #
+        # Rank is unchanged, so today's target weights are
+        # allowed to refresh normally.
+        # ----------------------------------------------------
+
+        elif raw_rank == accepted_rank:
+
+            accepted_target_weights = dict(
+                raw_target_weights
+            )
+
+            pending_rank = ""
+            pending_count = 0
+
+            weights = dict(
+                raw_target_weights
+            )
+
+            rank_action = (
+                "ACCEPTED_RANK_UPDATE"
+            )
+
+        # ----------------------------------------------------
+        # Rank changed
+        # ----------------------------------------------------
+
+        else:
+
+            # Same-day rerun must NOT increment confirmation.
+            same_day_rerun = (
+                last_processed_date
+                == today_rank_date
+            )
+
+            if not same_day_rerun:
+
+                if pending_rank == raw_rank:
+                    pending_count += 1
+
+                else:
+                    pending_rank = raw_rank
+                    pending_count = 1
+
+            if (
+                pending_rank == raw_rank
+                and pending_count
+                >= FILTER18_RANK_CONFIRM_DAYS
+            ):
+
+                accepted_rank = raw_rank
+                accepted_target_weights = dict(
+                    raw_target_weights
+                )
+
+                pending_rank = ""
+                pending_count = 0
+
+                weights = dict(
+                    raw_target_weights
+                )
+
+                rank_action = (
+                    "RANK_CONFIRMED"
+                )
+
+            else:
+
+                # Until confirmation, preserve the last
+                # accepted target portfolio.
+                weights = {
+                    str(sector): float(weight)
+                    for sector, weight
+                    in accepted_target_weights.items()
+                }
+
+                rank_action = (
+                    "RANK_CHANGE_SUPPRESSED"
+                )
+
+        cash_weight = round(
+            100.0
+            - sum(weights.values()),
+            1,
+        )
+
+        rank_state_next = {
+            "accepted_rank":
+                accepted_rank,
+
+            "accepted_target_weights":
+                dict(
+                    accepted_target_weights
+                ),
+
+            "pending_rank":
+                pending_rank,
+
+            "pending_count":
+                pending_count,
+
+            "last_processed_date":
+                today_rank_date,
+
+            "last_output_target_weights":
+                dict(weights),
+
+            "last_action":
+                rank_action,
+        }
+
+    # --------------------------------------------------------
+    # Filter18 audit lineage
+    # --------------------------------------------------------
+
+    market_data[
+        "FILTER18_RAW_RANK"
+    ] = raw_rank
+
+    market_data[
+        "FILTER18_ACCEPTED_RANK"
+    ] = accepted_rank
+
+    market_data[
+        "FILTER18_PENDING_RANK"
+    ] = pending_rank
+
+    market_data[
+        "FILTER18_PENDING_COUNT"
+    ] = pending_count
+
+    market_data[
+        "FILTER18_RANK_ACTION"
+    ] = rank_action
+
+    # -------------------------
+    # Rebalancing Threshold
+    # -------------------------
+    if not deleveraging_required:
+        try:
+            from portfolio.save_portfolio import load_previous_weights
+            prev_etf_weights = load_previous_weights()
+        except Exception:
+            prev_etf_weights = {}
+    
+        prev_sector_weights = {
+            sector: prev_etf_weights.get(ticker_map.get(sector, ""), None)
+            for sector in weights.keys()
+        }
+    
+        weights, rebalance_actions = apply_rebalance_threshold(
+            weights=weights,
+            prev_sector_weights=prev_sector_weights,
+            hold_threshold=2.0,
+            rebalance_threshold=5.0,
+        )
+    
+        cash_weight = round(100.0 - sum(weights.values()), 1)
+    
+    else:
+        rebalance_actions = {
+            sector: "DELEVERAGE"
+            for sector in weights.keys()
+        }
+    # -------------------------
+    # Deleveraging Priority
+    # -------------------------
+    delev_priority = rank_deleveraging_priority(
+        score=score,
+        weights=weights,
+        divergence_flags=divergence_flags,
+        momentum_scores=sector_momentum,
+        sector_classification=sector_classification,
+    )
+    # -------------------------
+    # Leveraging Priority Preview
+    # -------------------------
+    # -------------------------
+    # Leveraging Priority Preview
+    # -------------------------
+    lev_priority = sorted(
+        [
+            {
+                "sector": sector,
+                "priority_score": (
+                    score.get(sector, 0)
+                    + max(sector_momentum.get(sector, 0), 0) * 1.5
+                    + (2 if sector_classification.get(sector) == "HIGH_CONVICTION_ALIGNED" else 0)
+                    + (1 if divergence_flags.get(sector) == "POSITIVE_DIVERGENCE" else 0)
+                    - (2 if sector_classification.get(sector) == "FLOW_WEAK" else 0)
+                    - (3 if sector_classification.get(sector) == "THEORY_TRAP" else 0)
+                    - (5 if sector_classification.get(sector) == "AVOID" else 0)
+                    - (1 if divergence_flags.get(sector) == "NEGATIVE_DIVERGENCE" else 0)
+                ),
+                "score": score.get(sector, 0),
+                "weight": weights.get(sector, 0),
+                "classification": sector_classification.get(sector, "ALIGNED"),
+                "div": divergence_flags.get(sector, "ALIGNED"),
+                "mom": sector_momentum.get(sector, 0),
+            }
+            for sector in weights.keys()
+        ],
+        key=lambda x: x["priority_score"],
+        reverse=True,
+    )
+        
+    # -------------------------
+    # Report 출력
+    # -------------------------
+    allocation_lines = []
+    allocation_lines.append("### 💰 18.5) Tactical Asset Allocation (Execution Weight)")
+    allocation_lines.append(
+    f"- **Strategic Exposure (15):** **{base_final_exposure}%** "
+    f"→ **Regime Adjusted:** **{final_exposure}%**"
+    )
+    allocation_lines.append(f"- **Exposure Override:** {exposure_override_reason}")
+
+
+    allocation_lines.append("")
+
+    if total_score_sum > 0:
+        allocation_lines.append("| Sector | Score | Divergence | **Weight in Portfolio** | **Action** |")
+        allocation_lines.append("| :--- | :---: | :---: | :---: | :--- |")
+
+        for s in ow_sorted:
+            if s not in weights:
+                continue
+
+            s_score = score[s]
+            s_weight = weights[s]
+            flag = divergence_flags.get(s, "ALIGNED")
+
+            action = rebalance_actions.get(s, "HOLD")
+            score_display = f"+{int(s_score)}" if float(s_score).is_integer() else f"{s_score:+.1f}"
+
+            allocation_lines.append(
+                f"| {s} | {score_display} | {flag} | **{s_weight:.1f}%** | {action} |"
+            )
+
+        total_allocated = round(sum(weights.values()) + cash_weight, 1)
+
+        if total_allocated != 100:
+            diff = 100 - total_allocated
+            cash_weight += diff
+
+        total_allocated = round(sum(weights.values()) + cash_weight, 1)
+    
+        strategic_cash = round(100.0 - final_exposure, 1)
+        tactical_reserve = round(cash_weight - strategic_cash, 1)
+    
+        allocation_lines.append(f"| **Cash & Hedge** | - | - | **{cash_weight:.1f}%** | DEFENSIVE |")
+        allocation_lines.append("")
+        allocation_lines.append(f"- **Allocation Check:** Sector Weights + Cash = **{total_allocated:.1f}%**")
+        allocation_lines.append(f"- **Regime Cap Profile:** {cap_macro_profile}")
+    
+        if cap_applied:
+            allocation_lines.append("- **Participation / Quality Cap Applied:**")
+            for row in cap_applied:
+                allocation_lines.append(
+                    f"  - {row['sector']}: {row['original']:.1f}% → "
+                    f"{row['cap']:.1f}% (-{row['reduced_by']:.1f}%)"
+                )
+        else:
+            allocation_lines.append("- **Regime Cap Applied:** None")
+        
+        allocation_lines.append(f"- **Strategic Cash (15):** {strategic_cash:.1f}%")
+        allocation_lines.append(f"- **Tactical Reserve (Cap / Unallocated):** {tactical_reserve:.1f}%")
+        allocation_lines.append("")
+
+        # Priority 출력
+        allocation_lines.append("")
+        allocation_lines.append("**Deleveraging Priority Preview:**")
+        allocation_lines.append("- 기준: Divergence → Momentum → Score → Current Weight")
+
+        if delev_priority:
+            for i, row in enumerate(delev_priority[:5], start=1):
+                allocation_lines.append(
+                    f"{i}. {row['sector']} "
+                    f"(priority_score={row['priority_score']}, "
+                    f"score={row['score']}, "
+                    f"weight={row['weight']:.1f}%, "
+                    f"div={row['div']}, "
+                    f"mom={row['mom']})"
+                )
+        else:
+            allocation_lines.append("- No deleveraging priority data available.")
+
+        allocation_lines.append("")
+        allocation_lines.append("**Leveraging Priority Preview:**")
+        allocation_lines.append("- 기준: Score → Momentum → Positive Divergence")
+
+        if lev_priority:
+            for i, row in enumerate(lev_priority[:5], start=1):
+                allocation_lines.append(
+                    f"{i}. {row['sector']} "
+                    f"(priority_score={row['priority_score']:.2f}, "
+                    f"score={row['score']}, "
+                    f"weight={row['weight']:.1f}%, "
+                    f"div={row['div']}, "
+                    f"mom={row['mom']})"
+                )
+        else:
+            allocation_lines.append("- No leveraging priority data available.")
+
+        penalized = [s for s in ow_sorted if divergence_flags.get(s) == "NEGATIVE_DIVERGENCE"]
+        if penalized:
+            allocation_lines.append(
+                f"- **Divergence Adjustment:** {', '.join(penalized)} penalized in weight sizing"
+            )
+
+    else:
+        allocation_lines.append("⚠️ 양수 점수를 받은 섹터가 없습니다. 현금 비중을 확대하십시오.")
+
+    lines.append("\n" + "\n".join(allocation_lines))
+
+    # -------------------------
+    # -------------------------
+    # 19) Execution Layer (ETF Mapping)
+    # -------------------------
+    etf_plan = build_execution_etf_map(
+    weights=weights,
+    divergence_flags=divergence_flags,
+    market_regime=market_data.get("MARKET_REGIME", "N/A"),
+    macro_profile=macro_profile,
+    sector_classification=sector_classification,
+    )
+    # -------------------------
+    # Portfolio Logging (Paper Trading)
+    # -------------------------
+    try:
+        from portfolio.save_portfolio import (
+            save_paper_portfolio,
+            load_previous_weights,
+            save_trade_log,
+        )
+    
+        prev_etf_weights = load_previous_weights()
+        etf_weights = {item["etf"]: item["weight"] for item in etf_plan}
+    
+        # ✅ DEADMAN / NO ETF MAP 방어
+        # 실행 가능한 ETF가 없거나 최종 익스포저가 0이면
+        # 반드시 CASH 100% snapshot으로 저장
+        if final_exposure <= 0 or not etf_weights:
+            etf_weights = {}
+            cash_weight = 100.0
+            final_exposure = 0.0
+    
+        save_trade_log(
+            prev_weights=prev_etf_weights,
+            target_weights=etf_weights,
+            market_data=market_data,
+        )
+    
+        save_paper_portfolio(
+            weights=etf_weights,
+            cash_weight=cash_weight,
+            exposure=final_exposure,
+        )
+
+        # --------------------------------------------------
+        # Filter18 Rank Persistence State Commit
+        #
+        # Commit ONLY after portfolio persistence succeeds.
+        # A failed portfolio save must never advance Rank3D.
+        # --------------------------------------------------
+        if rank_state_next is not None:
+            try:
+                from portfolio.save_portfolio import (
+                    save_filter18_rank_state,
+                )
+
+                save_filter18_rank_state(
+                    rank_state_next
+                )
+
+            except Exception as rank_state_error:
+                print(
+                    "⚠️ Filter18 rank state save failed: "
+                    f"{rank_state_error}"
+                )
+    
+    except Exception as e:
+        print(f"⚠️ Portfolio save failed: {e}")
+
+    lines.append("")
+    lines.append("### 🧬 19) Execution Layer (ETF Mapping)")
+    lines.append("")
+
+    if etf_plan:
+        lines.append("| Sector | ETF | Weight | Action | Divergence | Classification |")
+        lines.append("| :--- | :---: | :---: | :--- | :--- | :--- |")
+
+        for item in etf_plan:
+            lines.append(
+                f"| {item['sector']} | {item['etf']} | "
+                f"{item['weight']}% | {item['action']} | "
+                f"{item.get('divergence', 'ALIGNED')} | "
+                f"{item.get('classification', 'ALIGNED')} |"
+            )
+    else:
+        lines.append("⚠️ 실행 가능한 ETF 매핑이 없습니다.")
+
+    return "\n".join(lines)
+
+def build_execution_etf_map(
+    weights: Dict[str, float],
+    divergence_flags: Dict[str, str] = None,
+    market_regime: str = "N/A",
+    macro_profile: str = "BALANCED",
+    sector_classification: Dict[str, str] = None,
+) -> List[Dict[str, Any]]:
+    """
+    19) Execution Layer (v2.1)
+
+    목적:
+    - 18.5 sector weight → 실제 ETF 실행안 변환
+    - Weight + Divergence + Macro Profile + Classification 반영
+    """
+
+    sector_to_etf = {
+        "Technology": "XLK",
+        "Financials": "XLF",
+        "Energy": "XLE",
+        "Industrials": "XLI",
+        "Materials": "XLB",
+        "Consumer Discretionary": "XLY",
+        "Consumer Staples": "XLP",
+        "Health Care": "XLV",
+        "Utilities": "XLU",
+        "Real Estate": "XLRE",
+        "Communication Services": "XLC",
+    }
+
+    divergence_flags = divergence_flags or {}
+    sector_classification = sector_classification or {}
+
+    regime_upper = str(market_regime or "N/A").upper()
+    macro_profile = str(macro_profile or "BALANCED").upper()
+
+    risk_off_mode = "RISK-OFF" in regime_upper or "RISK_OFF" in macro_profile
+    soft_risk_off_mode = "SOFT_RISK_OFF" in macro_profile or "SOFT RISK-OFF" in regime_upper
+
+    results: List[Dict[str, Any]] = []
+
+    for sector, weight in weights.items():
+        if weight <= 0:
+            continue
+
+        etf = sector_to_etf.get(sector)
+        if not etf:
+            continue
+
+        div_flag = divergence_flags.get(sector, "ALIGNED")
+        classification = sector_classification.get(sector, "ALIGNED")
+
+        # -------------------------
+        # Base action by weight
+        # -------------------------
+        if weight >= 20:
+            action = "PRIMARY"
+        elif weight >= 10:
+            action = "ADD"
+        elif weight >= 3:
+            action = "SMALL"
+        else:
+            action = "MICRO"
+
+        # -------------------------
+        # Classification override
+        # -------------------------
+        if classification == "HIGH_CONVICTION_ALIGNED":
+            if action == "PRIMARY":
+                action = "CORE_LEADER"
+            elif action in ("ADD", "SMALL"):
+                action = "ACCUMULATE"
+
+        elif classification == "FLOW_WEAK":
+            action = "WATCHLIST_SMALL"
+
+        elif classification == "THEORY_TRAP":
+            action = "AVOID_TRAP"
+
+        elif classification == "POSITIVE_DIVERGENCE":
+            if action in ("SMALL", "MICRO"):
+                action = "TACTICAL_ADD"
+            else:
+                action = "TACTICAL_LEADER"
+
+        elif classification == "TACTICAL_MOMENTUM_ONLY":
+            action = "TACTICAL_ONLY"
+
+        elif classification == "NEUTRAL":
+            action = "NO_ACTION"
+
+        # -------------------------
+        # Divergence override
+        # -------------------------
+        if div_flag == "NEGATIVE_DIVERGENCE":
+            if action in ("CORE_LEADER", "PRIMARY", "ADD", "ACCUMULATE"):
+                action = "PROBATION"
+            elif action in ("SMALL", "MICRO", "WATCHLIST_SMALL"):
+                action = "WATCHLIST_SMALL"
+
+        elif div_flag == "POSITIVE_DIVERGENCE":
+            if action in ("SMALL", "MICRO"):
+                action = "TACTICAL_ADD"
+
+        # -------------------------
+        # Macro Profile context override
+        # -------------------------
+        if soft_risk_off_mode:
+            if sector == "Technology" and action in ("CORE_LEADER", "PRIMARY", "ACCUMULATE"):
+                action = "CONTROLLED_LEADER"
+            elif sector == "Health Care":
+                action = "DEFENSIVE_QUALITY"
+            elif sector == "Consumer Staples":
+                action = "DEFENSIVE_BUFFER"
+            elif action == "ADD":
+                action = "CONTROLLED_ADD"
+
+        elif risk_off_mode:
+            if action in ("CORE_LEADER", "PRIMARY", "ADD", "ACCUMULATE"):
+                action = "DEFENSIVE_PRIMARY"
+            elif action in ("SMALL", "MICRO"):
+                action = "DEFENSIVE_SMALL"
+
+        results.append({
+            "sector": sector,
+            "etf": etf,
+            "weight": round(weight, 1),
+            "action": action,
+            "divergence": div_flag,
+            "classification": classification,
+        })
+
+    return results
+    
+
+# filters/execution_layer.py
+from typing import Dict, Any
+from filters.executive_layer import execution_layer_filter
+
+def executive_summary_filter(market_data: Dict[str, Any], debug: bool = False) -> str:
+    result = execution_layer_filter(market_data, debug=debug)
+    return result["report"]
+    
+
+def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Geo EW를 FINAL_STATE 위에 'overlay'로 반영.
+
+    - Narrative Engine이 만든 FINAL_STATE를 보수적으로 조정
+    - risk_budget / risk_action 조정
+    - 조정 내역을 market_data["GEO_OVERLAY"]에 기록
+    """
+
+    if market_data is None:
+        return market_data
+
+    state = market_data.get("FINAL_STATE", {}) or {}
+    geo = market_data.get("GEO_EW", {}) or {}
+
+    level = str(geo.get("level", "N/A")).upper()
+    score = geo.get("score", None)
+
+    # 주말 / 휴장 감지
+    is_stale = bool(market_data.get("_STALE", False))
+
+    base_budget = state.get("risk_budget", None)
+    base_action = str(state.get("risk_action", "HOLD"))
+
+    overlay = {
+        "level": level,
+        "score": score,
+        "stale": is_stale,
+        "base_budget": base_budget,
+        "base_action": base_action,
+        "budget_delta": 0,
+        "final_budget": base_budget,
+        "final_action": base_action,
+        "note": "",
+    }
+
+    # -------------------------
+    # Geo Penalty Rules
+    # -------------------------
+    penalty_map = {
+        "NORMAL": 0,
+        "ELEVATED": -10,
+        "HIGH": -20,
+        "CONFLICT": -25,
+    }
+
+    penalty = penalty_map.get(level, 0)
+
+    # 주말이면 신호 반감
+    if is_stale and penalty != 0:
+        penalty = int(penalty / 2)
+
+    # -------------------------
+    # Budget Adjustment
+    # -------------------------
+    if isinstance(base_budget, int):
+
+        new_budget = max(0, min(100, base_budget + penalty))
+
+        overlay["budget_delta"] = penalty
+        overlay["final_budget"] = new_budget
+
+        state["risk_budget"] = new_budget
+
+        # -------------------------
+        # Action Conservative Shift
+        # -------------------------
+        if level in ("ELEVATED", "HIGH", "CONFLICT"):
+
+            if base_action == "INCREASE":
+                state["risk_action"] = "HOLD"
+                overlay["final_action"] = "HOLD"
+
+            elif base_action == "HOLD" and level in ("HIGH", "CONFLICT"):
+                state["risk_action"] = "REDUCE"
+                overlay["final_action"] = "REDUCE"
+
+        overlay["note"] = f"GeoEW={level} overlay applied ({penalty}% budget adj)"
+
+    else:
+
+        overlay["note"] = (
+            f"GeoEW={level} detected but base_budget not int → no budget change"
+        )
+
+    market_data["FINAL_STATE"] = state
+    market_data["GEO_OVERLAY"] = overlay
+
+    return market_data
+
+
+from scripts.monitor_sew import load_previous_flow_state, classify_flow_transition 
+
+def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
+    """
+    Institutional Flow Engine (v2-minimal)
+
+    목적:
+    - 기관성 자금 축적 흔적을 점수화
+    - 뉴스/쇼크 이전의 방향성 흐름 탐지
+    - 기존 로직 유지 + breadth / validation 최소 추가
+    """
+
+    drift = market_data.get("DRIFT", {}) or {}
+    drift_score = drift.get("score", 0)
+    drift_state = str(drift.get("state", "N/A") or "N/A")
+    drift_label = str(drift.get("label", "N/A") or "N/A")
+    combo_signal = str(drift.get("combo_signal", "NONE") or "NONE")
+
+    gamma_state = str(market_data.get("GAMMA_STATE", "UNKNOWN") or "UNKNOWN")
+    gamma_combo = str(market_data.get("GAMMA_COMBO", "NONE") or "NONE")
+
+    sew_status = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
+    sew_event_type = str(market_data.get("SEW_EVENT_TYPE", "N/A") or "N/A").upper()
+
+    pos_z = market_data.get("SP500_POS_Z", 0.0)
+    try:
+        pos_z = float(pos_z)
+    except Exception:
+        pos_z = 0.0
+
+    drift_data = market_data.get("DRIFT_DATA", {}) or {}
+
+    def g(asset: str, key: str):
+        try:
+            return drift_data.get(asset, {}).get(key)
+        except Exception:
+            return None
+
+    # -----------------------------
+    # 기존 short-horizon inputs
+    # -----------------------------
+    spy_15m = g("SPY", "ret_15m")
+    spy_30m = g("SPY", "ret_30m")
+    wti_15m = g("WTI", "ret_15m")
+    wti_30m = g("WTI", "ret_30m")
+    gold_15m = g("GOLD", "ret_15m")
+    gold_30m = g("GOLD", "ret_30m")
+    dxy_15m = g("DXY", "ret_15m")
+    dxy_30m = g("DXY", "ret_30m")
+
+    flow_score = 0
+    reasons = []
+
+    # 1) Drift core
+    if drift_score >= 4:
+        flow_score += 3
+        reasons.append("Drift strong")
+    elif drift_score >= 3:
+        flow_score += 2
+        reasons.append("Drift building")
+    elif drift_score >= 2:
+        flow_score += 1
+        reasons.append("Drift early")
+
+    # 2) Label quality
+    if drift_label in ["DISINFLATION_RISK_ON", "SYSTEMIC_HEDGE", "TIGHTENING_PRESSURE", "OIL_SHOCK"]:
+        flow_score += 1
+        reasons.append(f"Clear flow label: {drift_label}")
+
+    # 3) Short-horizon pre-move cluster
+    short_hits = 0
+
+    if spy_15m is not None and spy_15m >= 0.25:
+        short_hits += 1
+    if spy_30m is not None and spy_30m >= 0.40:
+        short_hits += 1
+
+    if wti_15m is not None and abs(wti_15m) >= 0.60:
+        short_hits += 1
+    if wti_30m is not None and abs(wti_30m) >= 0.90:
+        short_hits += 1
+
+    if gold_15m is not None and abs(gold_15m) >= 0.30:
+        short_hits += 1
+    if gold_30m is not None and abs(gold_30m) >= 0.45:
+        short_hits += 1
+
+    if dxy_15m is not None and abs(dxy_15m) >= 0.10:
+        short_hits += 1
+    if dxy_30m is not None and abs(dxy_30m) >= 0.15:
+        short_hits += 1
+
+    if short_hits >= 3:
+        flow_score += 2
+        reasons.append("Short-horizon pre-move cluster")
+    elif short_hits >= 2:
+        flow_score += 1
+        reasons.append("Short-horizon pre-move")
+
+    # 4) Gamma context
+    if "TRANSITION" in gamma_state:
+        flow_score += 1
+        reasons.append("Gamma transition")
+    elif "NEGATIVE" in gamma_state:
+        flow_score += 1
+        reasons.append("Gamma acceleration regime")
+
+    # 5) SEW relationship
+    if sew_status == "STABLE":
+        flow_score += 1
+        reasons.append("No shock yet")
+    elif sew_status in ["WATCH", "ALERT"]:
+        flow_score -= 1
+        reasons.append("Shock already leaking into tape")
+
+    # 6) Positioning penalty
+    if pos_z >= 2.0:
+        flow_score -= 2
+        reasons.append("Positioning overheated")
+    elif pos_z >= 1.5:
+        flow_score -= 1
+        reasons.append("Positioning somewhat stretched")
+
+    # --------------------------------------------------
+    # 6.5) Validation Layer (NEW, minimal additive only)
+    # --------------------------------------------------
+    validation_score = 0
+
+    hyg_1d = g("HYG", "ret_1d")
+    lqd_1d = g("LQD", "ret_1d")
+    eem_1d = g("EEM", "ret_1d")
+    fxi_1d = g("FXI", "ret_1d")
+
+    xlk_1d = g("XLK", "ret_1d")
+    xli_1d = g("XLI", "ret_1d")
+    xlf_1d = g("XLF", "ret_1d")
+    xly_1d = g("XLY", "ret_1d")
+    xlp_1d = g("XLP", "ret_1d")
+    xlu_1d = g("XLU", "ret_1d")
+
+    # 6.5-1) Cross-asset risk participation
+    risk_participation_hits = 0
+
+    if hyg_1d is not None and hyg_1d > 0:
+        risk_participation_hits += 1
+    if eem_1d is not None and eem_1d > 0:
+        risk_participation_hits += 1
+    if fxi_1d is not None and fxi_1d > 0:
+        risk_participation_hits += 1
+
+    if risk_participation_hits >= 2:
+        validation_score += 1
+        reasons.append("Cross-asset risk participation")
+
+    # 6.5-2) Credit confirmation
+    if hyg_1d is not None and lqd_1d is not None and hyg_1d >= lqd_1d:
+        validation_score += 1
+        reasons.append("Credit confirms risk appetite")
+
+    # 6.5-3) Sector leadership breadth
+    leadership_hits = 0
+    for v in [xlk_1d, xli_1d, xlf_1d, xly_1d]:
+        if v is not None and v > 0:
+            leadership_hits += 1
+
+    if leadership_hits >= 2:
+        validation_score += 1
+        reasons.append("Leadership breadth expanding")
+
+    # 6.5-4) Cyclical vs defensive check
+    defensive_weak = 0
+    for v in [xlp_1d, xlu_1d]:
+        if v is not None and v <= 0:
+            defensive_weak += 1
+
+    cyclical_strong = 0
+    for v in [xli_1d, xly_1d, xlk_1d]:
+        if v is not None and v > 0:
+            cyclical_strong += 1
+
+    if cyclical_strong >= 2 and defensive_weak >= 1:
+        validation_score += 1
+        reasons.append("Cyclical leadership over defensives")
+
+    # Validation score는 최대 +2까지만 반영 (과적합 방지)
+    validation_boost = min(validation_score, 2)
+    flow_score += validation_boost
+
+        
+        # 7) Flow state
+    if flow_score >= 7:
+        flow_state = "🔥 BUILDING HARD"
+        confidence = "HIGH"
+        interpretation = "뉴스 전 방향성 자금 축적 가능성 높음"
+        action_bias = "EARLY PREP"
+    
+    elif flow_score >= 5:
+        flow_state = "⚡ BUILDING"
+        confidence = "MEDIUM-HIGH"
+        interpretation = "기관성 흐름 형성 가능성"
+        action_bias = "WATCHLIST"
+    
+    elif flow_score >= 3:
+        flow_state = "👀 EARLY TRACE"
+        confidence = "MEDIUM"
+        interpretation = "흔적은 있으나 확신은 이르다"
+        action_bias = "MONITOR"
+    
+    elif flow_score >= 1:
+        flow_state = "🌱 LIGHT TRACE"
+        confidence = "LOW-MEDIUM"
+        interpretation = "약한 초기 수급 흔적은 있으나 확정적 기관 흐름은 아님"
+        action_bias = "OBSERVE"
+    
+    else:
+        flow_state = "NO CLEAR FLOW"
+        confidence = "LOW"
+        interpretation = "기관성 축적 흔적 불충분"
+        action_bias = "IGNORE"
+    
+    prev_flow = load_previous_flow_state()
+
+    prev_flow_state = str(prev_flow.get("flow_state", "N/A") or "N/A")
+    try:
+        prev_flow_score = int(float(prev_flow.get("flow_score", 0) or 0))
+    except Exception:
+        prev_flow_score = 0
+    
+    prev_persistence_days = int(prev_flow.get("persistence_days", 0) or 0)
+    
+    transition_info = classify_flow_transition(
+        prev_flow_state=prev_flow_state,
+        prev_flow_score=prev_flow_score,
+        current_flow_state=flow_state,
+        current_flow_score=flow_score,
+        prev_persistence_days=prev_persistence_days,
+    )
+
+    market_data["INSTITUTIONAL_FLOW"] = {
+        "score": flow_score,
+        "state": flow_state,
+        "confidence": confidence,
+        "interpretation": interpretation,
+        "action_bias": action_bias,
+        "reasons": reasons,
+        "drift_label": drift_label,
+        "combo_signal": combo_signal,
+        "gamma_state": gamma_state,
+        "gamma_combo": gamma_combo,
+        "sew_status": sew_status,
+        "sew_event_type": sew_event_type,
+        "validation_score": validation_score,
+        "validation_boost": validation_boost,
+    }
+
+    print("[FLOW ENGINE FINAL]", market_data["INSTITUTIONAL_FLOW"])
+
+    lines = []
+    lines.append("### 🏦 Institutional Flow Engine (v2-minimal)")
+    lines.append("- **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지")
+    lines.append("")
+    lines.append(f"- **Raw Flow State:** **{flow_state}**")
+    lines.append(f"- **Transition State:** **{transition_info.get('flow_state', flow_state)}**")
+    lines.append(
+        f"- **Flow Delta:** {transition_info.get('flow_delta', 0):+d} "
+        f"(prev={prev_flow_score} → current={flow_score})"
+    )
+    lines.append(f"- **Persistence Days:** {transition_info.get('persistence_days', 0)}")
+    lines.append(f"- **Transition Note:** {transition_info.get('transition_note', interpretation)}")
+    lines.append(f"- **Confidence:** **{confidence}**")
+    lines.append(f"- **Action Bias:** **{action_bias}**")
+    lines.append("")
+    lines.append(f"- **Drift:** {drift_state} / {drift_label} / {combo_signal}")
+    lines.append(f"- **Gamma:** {gamma_state} / {gamma_combo}")
+    lines.append(f"- **SEW:** {sew_status} / {sew_event_type}")
+    lines.append(f"- **Positioning (POS_Z):** {pos_z}")
+    lines.append(f"- **Validation Score:** {validation_score} (boost applied: +{validation_boost})")
+
+    if reasons:
+        lines.append("")
+        lines.append("- **Drivers:**")
+        for r in reasons:
+            lines.append(f"  - {r}")
+
+    return "\n".join(lines)
+
+
+    
+    # -------------------------
+ 
+
+
+def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Final Action Engine v3.3
+    - FINAL_STATE + INSTITUTIONAL_FLOW + GAMMA + SEW 통합 판단
+    - EARLY TRACE를 institutional exit로 오해하지 않도록 수정
+    - Risk-On + Early Trace 구간은 REDUCE가 아니라 HOLD/MONITOR로 처리
+    """
+
+    final_state = market_data.get("FINAL_STATE", {}) or {}
+    inst_flow = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
+
+    raw_phase = str(final_state.get("phase", "N/A") or "N/A")
+    raw_gamma = str(market_data.get("GAMMA_STATE", "UNKNOWN") or "UNKNOWN")
+    raw_sew = str(market_data.get("SEW_STATUS", "N/A") or "N/A")
+
+    risk_budget = final_state.get("risk_budget", 50)
+    flow_score = inst_flow.get("score", 0)
+    flow_state = str(inst_flow.get("state", "N/A") or "N/A")
+    pos_z = market_data.get("SP500_POS_Z", 0)
+
+    try:
+        pos_z = float(pos_z)
+    except Exception:
+        pos_z = 0.0
+
+    try:
+        risk_budget = int(risk_budget)
+    except Exception:
+        risk_budget = 50
+
+    try:
+        flow_score = int(flow_score)
+    except Exception:
+        flow_score = 0
+
+    def normalize_text(x: str) -> str:
+        x = str(x).upper().strip()
+        x = x.replace("_", "-")
+        x = x.replace("–", "-")
+        x = x.replace("—", "-")
+        return x
+
+    phase_norm = normalize_text(raw_phase)
+    
+    sew_norm = normalize_text(raw_sew)
+    flow_norm = normalize_text(flow_state)
+
+    is_risk_on = "RISK-ON" in phase_norm or "RISK ON" in phase_norm
+    is_risk_off = "RISK-OFF" in phase_norm or "RISK OFF" in phase_norm
+
+    gamma_signal = str(market_data.get("GAMMA_SIGNAL", "STABLE")).upper()
+    dealer_gamma_bias = market_data.get("DEALER_GAMMA_BIAS", None)
+
+    is_gamma_positive = gamma_signal in ["STABLE", "CALL_OVERHEATED"]
+    is_gamma_transition = gamma_signal == "STABLE"
+    is_gamma_negative = gamma_signal == "SHORT_GAMMA"
+
+    gamma_norm = gamma_signal
+
+    print("[DEBUG][ACTION_ENGINE_GAMMA_SOURCE]")
+    print(" dealer_gamma_bias =", dealer_gamma_bias)
+    print(" gamma_signal =", gamma_signal)
+    print(" gamma_norm =", gamma_norm)
+
+    is_sew_stable = "STABLE" in sew_norm
+    is_sew_watch = "WATCH" in sew_norm
+    is_sew_alert = "ALERT" in sew_norm
+    is_sew_deadman = "DEADMAN" in sew_norm
+
+    is_early_trace = (
+        "EARLY" in flow_norm
+        or "TRACE" in flow_norm
+        or flow_score == 3
+    )
+
+    action = "HOLD"
+    size = "NONE"
+    confidence = "LOW"
+    reason = []
+
+    print("[DEBUG][ACTION ENGINE]")
+    print(" raw_phase =", raw_phase)
+    print(" raw_gamma =", raw_gamma)
+    print(" raw_sew =", raw_sew)
+    print(" phase_norm =", phase_norm)
+    print(" gamma_norm =", gamma_norm)
+    print(" sew_norm =", sew_norm)
+    print(" flow_norm =", flow_norm)
+    print(" is_risk_on =", is_risk_on)
+    print(" risk_budget =", risk_budget)
+    print(" flow_score =", flow_score)
+    print(" flow_state =", flow_state)
+    print(" is_early_trace =", is_early_trace)
+    print(" pos_z =", pos_z)
+
+    # 1) Shock 최우선
+    if is_sew_alert or is_sew_deadman:
+        action = "REDUCE"
+        size = "RISK CUT"
+        confidence = "HIGH"
+        reason.append("SEW shock → emergency risk cut")
+
+    # 2) 구조 붕괴 Exit
+    elif is_gamma_negative and flow_score <= 4:
+        action = "EXIT"
+        size = "FULL"
+        confidence = "HIGH"
+        reason.append("Gamma breakdown + flow weakening")
+
+    # 3) Risk-On but no confirmed flow
+    elif is_risk_on and flow_score <= 2:
+        action = "WAIT"
+        size = "0%"
+        confidence = "LOW"
+        reason.append("Risk-On environment but institutional flow not confirmed")
+
+    # 4) Risk-On early trace
+    elif (
+        is_risk_on
+        and is_early_trace
+        and (is_gamma_positive or is_gamma_transition)
+        and (is_sew_stable or is_sew_watch)
+    ):
+        action = "HOLD"
+        size = "MAINTAIN"
+        confidence = "MEDIUM"
+        reason.append("Early institutional trace → hold exposure, not exit")
+
+    # 5) 강한 확신 구간
+    elif (
+        is_risk_on
+        and flow_score >= 7
+        and is_gamma_positive
+        and (is_sew_stable or is_sew_watch)
+    ):
+        action = "ADD"
+        size = "MEDIUM (30~60%)"
+        confidence = "HIGH"
+        reason.append("Flow strong + structure aligned")
+
+    # 6) BUILDING 구간
+    elif (
+        is_risk_on
+        and flow_score >= 6
+        and (is_gamma_transition or is_gamma_positive)
+        and is_sew_stable
+    ):
+        action = "ADD"
+        size = "MEDIUM (20~40%)"
+        confidence = "MEDIUM-HIGH"
+        reason.append("Flow building confirmed + gamma turning + no shock")
+
+    # 7) 초기 진입 구간
+    elif (
+        is_risk_on
+        and flow_score >= 4
+        and (is_gamma_transition or is_gamma_positive)
+        and is_sew_stable
+    ):
+        action = "EARLY BUY"
+        size = "SMALL (10~20%)"
+        confidence = "MEDIUM"
+        reason.append("Flow building + gamma turning + no shock")
+
+    # 8) Risk-On인데 흐름 약함
+    elif is_risk_on and flow_score < 4 and is_sew_stable:
+        action = "WAIT"
+        size = "0%"
+        confidence = "LOW"
+        reason.append("Good environment but no strong flow yet")
+
+    # 9) Risk-Off 환경
+    elif is_risk_off:
+        action = "REDUCE"
+        size = "DEFENSIVE"
+        confidence = "MEDIUM"
+        reason.append("Risk-off environment")
+
+    # 10) 기본값
+    else:
+        action = "HOLD"
+        size = "NONE"
+        confidence = "LOW"
+        reason.append("No actionable alignment")
+
+    # 11) 과열 override
+    if pos_z >= 2.2 and flow_score < 5:
+        action = "REDUCE"
+        size = "TAKE PROFIT"
+        confidence = "MEDIUM"
+        reason.append("Positioning overheat")
+
+    return {
+        "action": action,
+        "size": size,
+        "confidence": confidence,
+        "reason": reason,
+        "phase": raw_phase,
+        "phase_norm": phase_norm,
+        "risk_budget": risk_budget,
+        "flow_score": flow_score,
+        "flow_state": flow_state,
+        "flow_norm": flow_norm,
+        "gamma_state": raw_gamma,
+        "gamma_norm": gamma_norm,
+        "sew_status": raw_sew,
+        "sew_norm": sew_norm,
+        "pos_z": pos_z,
+        "is_early_trace": is_early_trace,
+    }
+
+def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
+    sections = []
+
+    # 1. 예시/테스트용 코드
+
+    if market_data.get("some_key"):
+        sections.append(str({"key": "value"}))
+
+    # ---------------------------------------------------------
+    # 2. [데이터 전처리] 필터 실행 전 FRED EXTRA를 FINAL_STATE에 주입
+    # ---------------------------------------------------------
+    if "_FRED_EXTRA" in market_data:
+        fred_extra = market_data["_FRED_EXTRA"] or {}
+
+        if "FINAL_STATE" not in market_data or market_data["FINAL_STATE"] is None:
+            market_data["FINAL_STATE"] = {}
+
+        final_state = market_data["FINAL_STATE"]
+
+        # 숫자 default(0.0, 100.0) 절대 넣지 말고
+        # 값이 실제로 있을 때만 덮어쓰기
+        if fred_extra.get("T10Y2Y") is not None:
+            final_state["T10Y2Y"] = fred_extra.get("T10Y2Y")
+
+        if fred_extra.get("T10YIE") is not None:
+            final_state["T10YIE"] = fred_extra.get("T10YIE")
+
+        if fred_extra.get("VIX") is not None:
+            final_state["VIX"] = fred_extra.get("VIX")
+
+        if fred_extra.get("DFII10") is not None:
+            final_state["DFII10"] = fred_extra.get("DFII10")
+
+        if fred_extra.get("DXY") is not None:
+            final_state["DXY"] = fred_extra.get("DXY")
+
+        if fred_extra.get("DGS2") is not None:
+            final_state["DGS2"] = fred_extra.get("DGS2")
+
+        if fred_extra.get("FCI") is not None:
+            final_state["FCI"] = fred_extra.get("FCI")
+
+        if fred_extra.get("REAL_RATE") is not None:
+            final_state["REAL_RATE"] = fred_extra.get("REAL_RATE")
+
+        print(f"[DEBUG][PRE-FILTER] FINAL_STATE Prepared: {final_state}")
+
+    # ---------------------------------------------------------
+    # 3. [필터 호출 시작]
+    # ---------------------------------------------------------
+    sections.append("## 🧭 Strategist Commentary (Seyeon’s Filters)\n")
+
+    sections.append(market_regime_filter(market_data))
+    sections.append("")
+    sections.append(liquidity_filter(market_data))
+    sections.append("")
+    sections.append(policy_filter_with_expectations(market_data))
+    sections.append("")
+    sections.append(fed_plumbing_filter(market_data))
+    sections.append("")
+    sections.append(high_yield_spread_filter(market_data))
+    sections.append("")
+    sections.append(credit_stress_filter(market_data))
+    sections.append("")
+    sections.append(legacy_directional_filters(market_data))
+    sections.append("")
+    sections.append(cross_asset_filter(market_data))
+    sections.append("")
+    sections.append(drift_monitor_filter(market_data))
+    sections.append("")
+    sections.append(correlation_break_filter(market_data))
+    sections.append("")
+    sections.append(sector_correlation_break_filter(market_data))
+    sections.append("")
+    sections.append(risk_exposure_filter(market_data))
+    sections.append("")
+    sections.append(geopolitical_early_warning_filter(market_data))
+    sections.append("")
+    sections.append(pseudo_gamma_filter(market_data))
+    sections.append("")
+    sections.append(institutional_flow_engine_filter(market_data))
+    sections.append("")
+    # 8번 필터
+    sections.append(incentive_filter(market_data))
+    sections.append("")
+
+    # 나머지 필터
+    sections.append(cause_filter(market_data))
+    sections.append("")
+    sections.append(direction_filter(market_data))
+    sections.append("")
+    sections.append(timing_filter(market_data))
+    sections.append("")
+    sections.append(structural_filter(market_data))
+    sections.append("")
+    sections.append(growth_sustainability_filter(market_data))
+    sections.append("")
+    sections.append(positioning_stress_filter(market_data))
+    sections.append("")
+    sections.append(flow_authenticity_filter(market_data))
+    sections.append("")
+    sections.append(leadership_breadth_filter(market_data))
+    sections.append("")
+    sections.append(narrative_engine_filter(market_data))
+    sections.append("")
+    sections.append(divergence_monitor_filter(market_data))
+    sections.append("")
+    sections.append(volatility_controlled_exposure_filter(market_data))
+    sections.append("")
+    sections.append(style_tilt_filter(market_data))
+    sections.append("")
+    sections.append(factor_layer_filter(market_data))
+    sections.append("")
+    sections.append(sector_allocation_filter(market_data))
+    sections.append("")
+
+    return "\n".join(sections)

@@ -1,0 +1,46 @@
+# FILTER15 HARD DEADMAN EPISODE AUDIT
+
+Rows                  : 4645
+Hard Deadman Days     : 1391
+Classified Days       : 1391
+Unresolved Days       : 0
+Episode Days          : 1391
+Episode Reconciliation: PASS
+
+Deadman Episodes      : 124
+Mean Duration         : 11.22 rows
+Median Duration       : 1.00 rows
+P90 Duration          : 9.70 rows
+Max Duration          : 510 rows
+
+Release:
+- Immediate positive exposure: 124
+- Deadman released but exposure still zero: 0
+- End of sample: 0
+
+Primary Trigger Attribution:
+- HY_OAS_GE_6: days=1171, share=84.18%, zeroed_points=23374.00
+- MACRO_CREDIT_STRESS: days=154, share=11.07%, zeroed_points=4883.00
+- STAGFLATION_VIX_SHOCK: days=0, share=0.00%, zeroed_points=0.00
+- VIX_PANIC: days=66, share=4.74%, zeroed_points=3483.00
+- UNRESOLVED: days=0, share=0.00%, zeroed_points=0.00
+
+Input Mapping:
+- hard_deadman: hard_deadman
+- risk_budget: risk_budget_13
+- exposure_15: actual_exposure_15
+- hy_level: hy_oas_today
+- vix_today: vix_today
+- vix_z: cross_asset_vix_z
+- macro_narrative: macro_narrative
+- deadman_reason: hard_deadman_reason
+
+Production source modified: NO
+Existing parity code modified: NO
+Future-data backfill: NO
+
+RESULT: FILTER15 DEADMAN EPISODE AUDIT PASS
+
+Interpretation:
+This audit does NOT change the strategy.
+It measures why Hard Deadman activated, how long each episode lasted, and whether Filter15 returned to positive exposure on the first executable row after the Deadman condition disappeared.

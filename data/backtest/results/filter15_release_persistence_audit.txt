@@ -1,0 +1,59 @@
+==============================================================================
+FILTER15 RELEASE PERSISTENCE COUNTERFACTUAL
+==============================================================================
+
+Source Candidate       : HY_FALLING_VIX_LT_30
+Deadman Episodes       : 124
+Production Modified    : NO
+Future-data Backfill   : NO
+Exposure Sizing        : FULL / UNCHANGED
+Execution              : SIGNAL t -> RETURN t+1
+
+===== PERSISTENCE SUMMARY =====
+persistence  required_days  total_episodes  released_episodes  not_released_episodes  positive_episodes  negative_episodes  flat_episodes  avg_rows_released_early  median_rows_released_early  total_incremental_return  avg_incremental_return  avg_incremental_mdd  worst_incremental_mdd
+  PERSIST_1              1             124                 25                     99                 13                  3              9                41.560000                         5.0                  0.063578                0.002543            -0.010304              -0.127123
+  PERSIST_2              2             124                 15                    109                 13                  2              0                62.533333                        13.0                  0.074621                0.004975            -0.015041              -0.127123
+  PERSIST_3              3             124                 12                    112                  9                  2              1                64.000000                        16.5                  0.078155                0.006513            -0.015005              -0.127123
+
+===== EPISODE 1 / 2008 DIAGNOSTIC =====
+ episode_id persistence  required_days release_date  released  release_hy_oas  release_vix  rows_released_early  incremental_return  incremental_mdd
+          1   PERSIST_1              1   2008-01-10      True            6.63        23.45                  504           -0.019289        -0.127123
+          1   PERSIST_2              2   2008-01-25      True            6.99        29.08                  494           -0.007610        -0.127123
+          1   PERSIST_3              3   2008-04-03      True            7.78        23.21                  447           -0.015249        -0.127123
+
+===== WORST RELEASE CASES =====
+ episode_id persistence release_date  release_hy_oas  release_vix  rows_released_early  incremental_return  incremental_mdd
+          1   PERSIST_3   2008-04-03            7.78        23.21                  447           -0.015249        -0.127123
+          1   PERSIST_1   2008-01-10            6.63        23.45                  504           -0.019289        -0.127123
+          1   PERSIST_2   2008-01-25            6.99        29.08                  494           -0.007610        -0.127123
+         35   PERSIST_1   2015-11-17            6.19        18.84                  133            0.007812        -0.026212
+          6   PERSIST_1   2010-05-10            6.25        28.84                  110            0.006639        -0.025772
+         35   PERSIST_2   2015-12-03            6.32        18.11                  122            0.007620        -0.025282
+          6   PERSIST_2   2010-05-13            6.14        26.68                  107            0.006905        -0.023343
+         16   PERSIST_2   2011-10-27            6.83        25.46                   84            0.015781        -0.019448
+         16   PERSIST_1   2011-10-14            7.89        28.24                   93            0.025885        -0.019448
+          6   PERSIST_3   2010-06-16            6.97        25.92                   84            0.013436        -0.017538
+          2   PERSIST_1   2010-01-13            6.03        17.85                   45            0.004534        -0.016257
+         20   PERSIST_1   2012-05-10            6.00        18.83                   61            0.006811        -0.011784
+         35   PERSIST_3   2016-01-25            7.85        24.15                   88            0.024602        -0.011386
+         16   PERSIST_3   2011-12-02            7.65        27.52                   59            0.021186        -0.009020
+         69   PERSIST_1   2020-10-13            4.88        26.07                    6           -0.006757        -0.008148
+
+==============================================================================
+기관 관점 검증 질문
+==============================================================================
+
+1. PERSIST_2 또는 PERSIST_3가 2008년 false stabilization을 제거하거나 충분히 지연시키는가?
+
+2. Worst incremental MDD가 의미 있게 개선되는가?
+
+3. 기존 PERSIST_1에서 성공했던 recovery episode를 얼마나 유지하는가?
+
+4. Confirmation을 기다리느라 정상적인 recovery의 초기 수익을 지나치게 포기하지 않는가?
+
+5. Persistence만으로 tail problem이 해결된다면 다음 단계에서 staged re-risking을 별도로 검증한다.
+
+6. Persistence로도 2008형 failure가 남는다면 단순 confirmation 문제가 아니라 crisis severity / regime-state 문제를 별도로 검증한다.
+
+PRODUCTION DECISION: NO CHANGE
+본 결과는 Research Counterfactual이며 Production 변경 승인이 아니다.

@@ -1,0 +1,31 @@
+# FILTER15 DEADMAN ECONOMIC RELEASE AUDIT
+
+Episodes Expected      : 124
+Episodes Analyzed      : 124
+Episode Reconciliation : PASS
+Future-Date Violation  : NO
+
+5% Recovery Before Release  : 11
+10% Recovery Before Release : 7
+15% Recovery Before Release : 5
+
+Average Low -> Deadman End Return: 2.0550%
+Median Low -> Deadman End Return : 0.0000%
+Average Low -> Release Return    : 2.9431%
+
+HY_OAS Dominant Episodes: 20
+HY_OAS Avg Low -> Deadman End: 10.9537%
+HY_OAS Median Low -> Deadman End: 3.9481%
+HY_OAS Avg Deadman Rows After 5% Recovery: 46.75
+HY_OAS Avg Deadman Rows After 10% Recovery: 33.55
+
+Production source modified: NO
+Filter15 threshold modified: NO
+Counterfactual rule introduced: NO
+Future-data strategy backfill: NO
+
+IMPORTANT:
+5% / 10% / 15% recovery markers are descriptive audit markers only.
+They are NOT proposed trading thresholds.
+
+RESULT: FILTER15 DEADMAN ECONOMIC RELEASE AUDIT PASS

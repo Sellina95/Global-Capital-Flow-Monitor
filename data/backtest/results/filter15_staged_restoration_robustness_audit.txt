@@ -1,0 +1,85 @@
+==============================================================================
+FILTER15 STAGED RESTORATION ROBUSTNESS AUDIT
+==============================================================================
+
+Episodes                    : 25
+Compared                    : STATIC_FULL / RAMP_2 / RAMP_3
+Primary Candidate           : RAMP_3
+Production Modified         : NO
+New Indicator               : NO
+New Threshold               : NO
+Parameter Optimization      : NO
+Future Data Added           : NO
+
+===== OVERALL =====
+       path  episodes  positive_episodes  negative_episodes  total_episode_return  avg_episode_return  median_episode_return   avg_mdd  worst_mdd  return_win_rate_vs_static  mdd_win_rate_vs_static  joint_win_rate_vs_static  loo_return_pass_rate  loo_mdd_pass_rate
+STATIC_FULL        25                 12                 13             -0.026437           -0.001057              -0.000285 -0.005249  -0.054461                        NaN                     NaN                       NaN                   NaN                NaN
+     RAMP_2        25                 15                 10              0.002661            0.000106               0.000254 -0.003444  -0.033293                        NaN                     NaN                       NaN                   NaN                NaN
+     RAMP_3        25                 16                  9              0.016461            0.000658               0.000371 -0.002150  -0.018580                       0.56                    0.48                      0.36                   1.0                1.0
+
+===== RAMP_3 EPISODE-LEVEL ROBUSTNESS =====
+Return Win Rate vs STATIC : 56.00%
+MDD Win Rate vs STATIC    : 48.00%
+Joint Win Rate            : 36.00%
+Worst Return Delta        : -0.688%
+Best Return Delta         : 3.140%
+
+===== LEAVE-ONE-EPISODE-OUT =====
+Return Conclusion Survives : 100.00%
+MDD Conclusion Survives    : 100.00%
+
+===== ERA ROBUSTNESS =====
+      era  episodes  static_total_return  ramp2_total_return  ramp3_total_return  ramp3_return_delta_vs_static  static_worst_mdd  ramp2_worst_mdd  ramp3_worst_mdd  ramp3_return_win_rate  ramp3_mdd_win_rate  ramp3_joint_win_rate
+2008-2010         6            -0.033892           -0.007083            0.006080                      0.039971         -0.054461        -0.033293        -0.018580               0.666667            0.500000              0.500000
+2011-2013         4             0.012566            0.008503            0.004542                     -0.008024         -0.007634        -0.004810        -0.005687               0.250000            0.500000              0.250000
+2014-2016         5             0.003655            0.005540            0.007867                      0.004211         -0.012883        -0.008915        -0.006326               0.400000            0.600000              0.200000
+2020-2021         7            -0.002074           -0.000952           -0.000354                      0.001720         -0.007574        -0.005696        -0.002850               0.571429            0.571429              0.571429
+2022-2023         3            -0.006692           -0.003346           -0.001673                      0.005019          0.000000         0.000000         0.000000               1.000000            0.000000              0.000000
+
+===== DIAGNOSIS ROBUSTNESS =====
+         diagnosis  episodes  static_total_return  ramp3_total_return  ramp3_delta  static_worst_mdd  ramp3_worst_mdd  return_win_rate  mdd_win_rate
+ AMBIGUOUS_FAILURE        11            -0.003977           -0.000506     0.003471         -0.007574        -0.002655         0.545455      0.181818
+SUCCESSFUL_RELEASE        13             0.008674            0.016701     0.008027         -0.015560        -0.007038         0.538462      0.692308
+       TIMING_RISK         1            -0.031134            0.000267     0.031400         -0.054461        -0.018580         1.000000      1.000000
+
+===== EXCLUDING 2008 =====
+Episodes             : 24
+STATIC Total Return  : 0.470%
+RAMP_2 Total Return  : 1.315%
+RAMP_3 Total Return  : 1.619%
+RAMP_3 Return Delta  : 1.150%
+STATIC Worst MDD     : -1.556%
+RAMP_3 Worst MDD     : -0.704%
+MDD Improvement      : 0.852%
+
+===== WORST RAMP_3 TRADE-OFF EPISODES =====
+ episode_id release_date          diagnosis  total_return__STATIC_FULL  total_return__RAMP_3  return_delta_ramp3_vs_static  mdd__STATIC_FULL  mdd__RAMP_3  mdd_improvement_ramp3_vs_static
+         20   2012-05-10 SUCCESSFUL_RELEASE                   0.004205             -0.002674                     -0.006879         -0.004810    -0.005687                    -8.760274e-04
+         38   2016-06-28 SUCCESSFUL_RELEASE                   0.006442              0.002607                     -0.003835         -0.000124    -0.000031                     9.294142e-05
+         19   2012-04-11 SUCCESSFUL_RELEASE                   0.004223              0.000641                     -0.003582         -0.002378    -0.001207                     1.170689e-03
+         74   2020-12-14  AMBIGUOUS_FAILURE                   0.004732              0.001183                     -0.003549          0.000000     0.000000                     0.000000e+00
+         10   2010-12-01  AMBIGUOUS_FAILURE                   0.002562              0.000640                     -0.001921          0.000000     0.000000                     0.000000e+00
+         17   2012-03-07 SUCCESSFUL_RELEASE                   0.006395              0.004507                     -0.001887          0.000000     0.000000                     0.000000e+00
+         37   2016-06-15 SUCCESSFUL_RELEASE                   0.002454              0.000755                     -0.001699          0.000000     0.000000                     0.000000e+00
+         61   2020-08-27  AMBIGUOUS_FAILURE                   0.001486              0.000371                     -0.001114          0.000000     0.000000                     0.000000e+00
+         33   2015-10-05 SUCCESSFUL_RELEASE                   0.002576              0.001540                     -0.001037         -0.001496    -0.001496                     9.996344e-17
+         72   2020-11-18  AMBIGUOUS_FAILURE                   0.001305              0.000326                     -0.000979          0.000000     0.000000                     0.000000e+00
+
+==============================================================================
+판정 원칙
+==============================================================================
+
+1. 2008을 제거해도 RAMP_3의 방향성이 유지되어야 한다.
+
+2. Leave-One-Episode-Out에서 특정 episode 하나를 제거했을 때 결론이 뒤집히면 robustness가 부족하다.
+
+3. 전체 평균만 보지 않고 episode별 return/MDD win rate를 함께 본다.
+
+4. 일부 정상 recovery에서 수익을 희생하는 것은 가능하지만 손실이 소수 episode에 과도하게 집중되는지 확인한다.
+
+5. 이번 Audit에서는 25/50/100 parameter를 변경하지 않는다. Sensitivity는 별도 Gate다.
+
+6. Robustness를 통과해도 Production 변경은 아직 승인하지 않는다.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: PARAMETER SENSITIVITY

@@ -1,0 +1,42 @@
+==============================================================================
+FILTER15 STAGED RESTORATION PARAMETER SENSITIVITY AUDIT
+==============================================================================
+
+Episodes               : 25
+SPY Source Column      : SPY
+Candidate              : HY_FALLING_VIX_LT_30
+Execution              : SIGNAL t -> RETURN t+1
+Re-brake               : candidate breaks -> 0%
+Production Modified    : NO
+Future Data Backfill   : NO
+New Indicator          : NO
+Threshold Optimization : NO
+
+===== FULL SAMPLE =====
+            path  stage_1  stage_2  stage_3  episodes  positive_episodes  negative_episodes  total_episode_return  avg_episode_return  median_episode_return   avg_mdd  worst_mdd  avg_exposure  avg_rebrake_days  return_delta_vs_static  worst_mdd_improvement_vs_static  loo_return_pass_rate  loo_mdd_pass_rate
+     STATIC_FULL     1.00      1.0      1.0        25                 18                  7              0.080716            0.003229               0.002562 -0.009418  -0.112148     23.680000              0.00                0.000000                         0.000000                   NaN                NaN
+RAMP_3_20_50_100     0.20      0.5      1.0        25                 17                  8              0.028011            0.001120               0.000478 -0.002040  -0.017145      5.794253             25.72               -0.052705                         0.095003                   0.0                1.0
+RAMP_3_25_50_100     0.25      0.5      1.0        25                 17                  8              0.025167            0.001007               0.000637 -0.002153  -0.018580      6.479368             25.72               -0.055549                         0.093568                   0.0                1.0
+RAMP_3_30_60_100     0.30      0.6      1.0        25                 16                  9              0.023431            0.000937               0.000469 -0.002405  -0.021538      7.394030             25.72               -0.057285                         0.090610                   0.0                1.0
+RAMP_3_40_70_100     0.40      0.7      1.0        25                 15                 10              0.018857            0.000754               0.000522 -0.002793  -0.025915      8.993807             25.72               -0.061859                         0.086233                   0.0                1.0
+
+===== EXCLUDING 2008 =====
+            path  stage_1  stage_2  stage_3  episodes  positive_episodes  negative_episodes  total_episode_return  avg_episode_return  median_episode_return   avg_mdd  worst_mdd  avg_exposure  avg_rebrake_days  return_delta_vs_static  worst_mdd_improvement_vs_static
+     STATIC_FULL     1.00      1.0      1.0        24                 18                  6              0.092340            0.003848               0.003363 -0.005138  -0.023229     23.833333          0.000000                0.000000                         0.000000
+RAMP_3_20_50_100     0.20      0.5      1.0        24                 16                  8              0.024071            0.001003               0.000413 -0.001411  -0.006666      5.894077         11.916667               -0.068270                         0.016564
+RAMP_3_25_50_100     0.25      0.5      1.0        24                 16                  8              0.023212            0.000967               0.000588 -0.001468  -0.007038      6.602071         11.916667               -0.069128                         0.016191
+RAMP_3_30_60_100     0.30      0.6      1.0        24                 16                  8              0.023442            0.000977               0.000505 -0.001608  -0.007777      7.542951         11.916667               -0.068899                         0.015452
+RAMP_3_40_70_100     0.40      0.7      1.0        24                 15                  9              0.022810            0.000950               0.000558 -0.001830  -0.008888      9.191824         11.916667               -0.069530                         0.014341
+
+===== INTERPRETATION =====
+
+1. 목적은 최고 수익률 parameter를 고르는 것이 아니라 staged restoration 구조가 주변 parameter에서도 살아남는지 확인하는 것이다.
+
+2. 20/50/100, 25/50/100, 30/60/100, 40/70/100 중 여러 경로가 STATIC_FULL 대비 tail risk를 줄이면 구조적 robustness 근거가 된다.
+
+3. 특정 한 경로에서만 결과가 좋으면 parameter overfit 가능성이 있으므로 Production 후보로 승격하지 않는다.
+
+4. 2008 제외 및 Leave-One-Episode-Out에서도 방향이 유지되는지 함께 확인한다.
+
+PRODUCTION DECISION: NO CHANGE
+NEXT GATE: SENSITIVITY INTERPRETATION / PRODUCTION-CANDIDATE DECISION

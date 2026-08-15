@@ -1,0 +1,102 @@
+--- filters/strategist_filters.py
++++ filters/strategist_filters.py [FILTER15 STAGED CANDIDATE]
+@@ -4856,21 +4856,95 @@
+     confidence_multiplier = 1.00
+     
+     # --------------------------------------------------
+-    # 7️⃣ Final Override
++    # 7️⃣ Final Override + Deadman Recovery State
+     # --------------------------------------------------
++    # 기존 Hard Deadman trigger와 정상 exposure 계산은 그대로 둔다.
++    # 검증된 recovery candidate: HY_FALLING_VIX_LT_30
++    #
++    # Production caller가 전일 persistent state를 주입해야 한다:
++    # FILTER15_PREV_DEADMAN
++    # FILTER15_RECOVERY_ACTIVE
++    # FILTER15_RECOVERY_STREAK
++    # FILTER15_PREV_HY_OAS
++
++    prev_deadman = bool(market_data.get("FILTER15_PREV_DEADMAN", False))
++    recovery_active = bool(
++        market_data.get("FILTER15_RECOVERY_ACTIVE", False)
++    )
++
++    try:
++        recovery_streak = int(
++            market_data.get("FILTER15_RECOVERY_STREAK", 0) or 0
++        )
++    except Exception:
++        recovery_streak = 0
++
++    prev_hy_level = _to_float(
++        market_data.get("FILTER15_PREV_HY_OAS")
++    )
++
++    recovery_candidate = (
++        hy_level is not None
++        and prev_hy_level is not None
++        and hy_level < prev_hy_level
++        and vix_today is not None
++        and vix_today < 30
++    )
++
+     if hard_deadman:
+         exposure = 0
+         status = "HARD_DEADMAN"
+-    elif risk_compression:
+-        status = "RISK_COMPRESSION"
++        recovery_active = False
++        recovery_streak = 0
++
+     else:
+-        status = "NORMAL"
++        if prev_deadman or recovery_active:
++            if recovery_candidate:
++                recovery_active = True
++                recovery_streak += 1
++
++                if recovery_streak == 1:
++                    exposure *= 0.25
++                    status = "RECOVERY_STAGE_1"
++
++                elif recovery_streak == 2:
++                    exposure *= 0.50
++                    status = "RECOVERY_STAGE_2"
++
++                else:
++                    # 3회 연속 recovery 확인 후 정상 Filter15 exposure 복원.
++                    recovery_active = False
++                    recovery_streak = 0
++                    status = (
++                        "RISK_COMPRESSION"
++                        if risk_compression
++                        else "NORMAL"
++                    )
++
++            else:
++                # Recovery 조건이 깨지면 즉시 re-brake.
++                exposure = 0
++                recovery_active = True
++                recovery_streak = 0
++                status = "RECOVERY_REBRAKE"
++
++        elif risk_compression:
++            status = "RISK_COMPRESSION"
++
++        else:
++            status = "NORMAL"
+ 
+     exposure = _clamp(exposure)
+ 
+     market_data["RECOMMENDED_EXPOSURE"] = exposure
+     market_data["PREV_EXPOSURE"] = exposure
+     market_data["SEW_STATUS"] = status
++
++    # 다음 실행으로 넘길 Filter15 persistent state.
++    market_data["FILTER15_PREV_DEADMAN"] = bool(hard_deadman)
++    market_data["FILTER15_RECOVERY_ACTIVE"] = bool(recovery_active)
++    market_data["FILTER15_RECOVERY_STREAK"] = int(recovery_streak)
++    market_data["FILTER15_PREV_HY_OAS"] = hy_level
+     brake_drivers = _dedupe(brake_drivers)
+     pos_notes = _dedupe(pos_notes)
+ 

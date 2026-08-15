@@ -1,0 +1,51 @@
+==============================================================================
+FILTER15 DEADMAN RELEASE GATE COUNTERFACTUAL
+==============================================================================
+
+Episodes Analyzed : 124
+Daily Rows        : 8346
+
+Production source modified : NO
+Future-data backfill       : NO
+SPY recovery calculation   : POINT-IN-TIME RUNNING LOW
+Execution timing           : SIGNAL t -> RETURN t+1
+
+===== INPUT SOURCES =====
+Risk Budget : risk_budget_13
+Exposure    : actual_exposure_15
+HY OAS      : hy_oas_today
+VIX         : vix_today
+SPY         : master_panel:SPY
+
+===== ALL DEADMAN EPISODES =====
+                candidate  episodes  episodes_released_early  pct_released_early  avg_rows_released_early  avg_incremental_return  median_incremental_return  total_incremental_return  positive_incremental_episodes  negative_incremental_episodes  avg_incremental_mdd  worst_incremental_mdd
+                 BASELINE       124                        0            0.000000                 0.000000                0.000000                        0.0                  0.000000                              0                              0             0.000000               0.000000
+                HY_LT_5_5       124                       87           70.161290                 2.896552               -0.001337                        0.0                 -0.165745                             10                             29            -0.003201              -0.096875
+        HY_LT_5_VIX_LT_30       124                       39           31.451613                 1.717949               -0.000880                        0.0                 -0.109113                              1                             15            -0.000899              -0.033106
+     HY_FALLING_VIX_LT_30       124                       25           20.161290                41.560000                0.000513                        0.0                  0.063578                             13                              3            -0.002077              -0.127123
+HY_FALLING_SPY_RECOVERY_5       124                       11            8.870968                86.181818                0.000058                        0.0                  0.007132                              7                              4            -0.002546              -0.127123
+ VIX_LT_25_SPY_RECOVERY_5       124                        8            6.451613                99.250000                0.000435                        0.0                  0.053904                              6                              2            -0.001451              -0.127123
+
+===== HY_OAS DOMINANT EPISODES =====
+                candidate  hy_episodes  hy_released_early  hy_avg_rows_released_early  hy_avg_incremental_return  hy_total_incremental_return  hy_avg_incremental_mdd  hy_worst_incremental_mdd
+                 BASELINE           20                  0                    0.000000                   0.000000                     0.000000                0.000000                  0.000000
+                HY_LT_5_5           20                  1                   67.000000                  -0.001048                    -0.020956               -0.004844                 -0.096875
+        HY_LT_5_VIX_LT_30           20                  0                    0.000000                   0.000000                     0.000000                0.000000                  0.000000
+     HY_FALLING_VIX_LT_30           20                 17                   60.117647                   0.003521                     0.070413               -0.012224                 -0.127123
+HY_FALLING_SPY_RECOVERY_5           20                 10                   94.200000                   0.002229                     0.044578               -0.013916                 -0.127123
+ VIX_LT_25_SPY_RECOVERY_5           20                  8                   99.250000                   0.002695                     0.053904               -0.008995                 -0.127123
+
+==============================================================================
+INTERPRETATION RULE
+==============================================================================
+
+A candidate is NOT accepted merely because incremental return is positive.
+A release rule is economically interesting only if:
+1. recovery participation improves materially,
+2. incremental drawdown remains controlled,
+3. results are not driven by one crisis episode,
+4. performance survives episode-by-episode review,
+5. no future information is used.
+
+This audit does NOT authorize a Production change.
+Any candidate must pass a separate robustness / release gate before promotion.

@@ -1,0 +1,57 @@
+==============================================================================
+FILTER15 STAGED RESTORATION RECONCILIATION AUDIT
+==============================================================================
+
+Old Artifact : filter15_staged_restoration_episodes.csv
+New Artifact : filter15_staged_restoration_parameter_sensitivity_episodes.csv
+Production Modified : NO
+Strategy Modified   : NO
+Purpose             : FIND FIRST DIVERGENCE
+
+===== SUMMARY =====
+                comparison  episodes  exact_matches  mismatches  release_date_mismatches  return_mismatches  mdd_mismatches  exposure_mismatches  invested_days_mismatches  full_days_mismatches  rebrake_days_mismatches  max_abs_return_delta  max_abs_mdd_delta  max_abs_exposure_delta
+RAMP_3 vs RAMP_3_25_50_100        25             16           9                        0                  8               1                    9                         8                     3                        4              0.002652           0.000068                0.395817
+STATIC_FULL vs STATIC_FULL        25             10          15                        0                 15              12                   15                        15                    15                       15              0.023422           0.057687               14.007937
+
+===== DIVERGENCE TYPES =====
+                comparison            primary_divergence  rows
+RAMP_3 vs RAMP_3_25_50_100 WINDOW_OR_STATE_PATH_MISMATCH     9
+STATIC_FULL vs STATIC_FULL WINDOW_OR_STATE_PATH_MISMATCH    15
+
+===== FIRST 20 MISMATCHES =====
+                comparison  episode_id old_release_date new_release_date  old_total_return  new_total_return  total_return_delta   old_mdd   new_mdd  mdd_delta  old_avg_exposure  new_avg_exposure  avg_exposure_delta  old_invested_days  new_invested_days  old_full_days  new_full_days  old_rebrake_days  new_rebrake_days  new_rows            primary_divergence
+RAMP_3 vs RAMP_3_25_50_100           1       2008-01-10       2008-01-10          0.000267          0.001955            0.001688 -0.018580 -0.018580   0.000000          3.283730          3.534483            0.250753                151                165             48             55               353               357       522 WINDOW_OR_STATE_PATH_MISMATCH
+RAMP_3 vs RAMP_3_25_50_100           2       2010-01-13       2010-01-13          0.001420          0.000888           -0.000533 -0.004071 -0.004071   0.000000          5.111111          5.212766            0.101655                 17                 19              9              9                28                28        47 WINDOW_OR_STATE_PATH_MISMATCH
+RAMP_3 vs RAMP_3_25_50_100           6       2010-05-10       2010-05-10          0.003902          0.005299            0.001397 -0.007038 -0.007038   0.000000          5.090909          5.486726            0.395817                 48                 51             18             21                62                62       113 WINDOW_OR_STATE_PATH_MISMATCH
+RAMP_3 vs RAMP_3_25_50_100          16       2011-10-14       2011-10-14          0.002068          0.002150            0.000082 -0.001965 -0.001965   0.000000          3.870968          3.877551            0.006583                 38                 41              8              8                55                57        98 WINDOW_OR_STATE_PATH_MISMATCH
+RAMP_3 vs RAMP_3_25_50_100          20       2012-05-10       2012-05-10         -0.002674         -0.002077            0.000597 -0.005687 -0.005687   0.000000          5.000000          5.079365            0.079365                 28                 30              9              9                33                33        63 WINDOW_OR_STATE_PATH_MISMATCH
+RAMP_3 vs RAMP_3_25_50_100          35       2015-11-17       2015-11-17          0.003036          0.005688            0.002652 -0.006326 -0.006394  -0.000068          5.225564          5.395683            0.170120                 62                 66             21             23                71                73       139 WINDOW_OR_STATE_PATH_MISMATCH
+RAMP_3 vs RAMP_3_25_50_100          38       2016-06-28       2016-06-28          0.002607          0.004100            0.001493 -0.000031 -0.000031   0.000000          8.571429          8.750000            0.178571                  5                  6              2              2                 2                 2         8 WINDOW_OR_STATE_PATH_MISMATCH
+RAMP_3 vs RAMP_3_25_50_100          50       2020-05-08       2020-05-08         -0.000790          0.000540            0.001330 -0.002850 -0.002850   0.000000          5.588235          5.833333            0.245098                 10                 11              2              2                 7                 7        18 WINDOW_OR_STATE_PATH_MISMATCH
+RAMP_3 vs RAMP_3_25_50_100          53       2020-07-01       2020-07-01         -0.000240         -0.000240            0.000000 -0.000516 -0.000516   0.000000          2.222222          2.000000           -0.222222                  3                  3              0              0                 6                 7        10 WINDOW_OR_STATE_PATH_MISMATCH
+STATIC_FULL vs STATIC_FULL           1       2008-01-10       2008-01-10         -0.031134         -0.011624            0.019510 -0.054461 -0.112148  -0.057687          5.992063         20.000000           14.007937                151                522            151            522               353                 0       522 WINDOW_OR_STATE_PATH_MISMATCH
+STATIC_FULL vs STATIC_FULL           2       2010-01-13       2010-01-13         -0.003217         -0.002125            0.001092 -0.009517 -0.018466  -0.008948          7.555556         20.000000           12.444444                 17                 47             17             47                28                 0        47 WINDOW_OR_STATE_PATH_MISMATCH
+STATIC_FULL vs STATIC_FULL           6       2010-05-10       2010-05-10         -0.001504          0.010086            0.011591 -0.015560 -0.022483  -0.006923          8.727273         20.000000           11.272727                 48                113             48            113                62                 0       113 WINDOW_OR_STATE_PATH_MISMATCH
+STATIC_FULL vs STATIC_FULL          16       2011-10-14       2011-10-14         -0.002257          0.021164            0.023422 -0.007634 -0.019077  -0.011443          8.172043         20.000000           11.827957                 38                 98             38             98                55                 0        98 WINDOW_OR_STATE_PATH_MISMATCH
+STATIC_FULL vs STATIC_FULL          19       2012-04-11       2012-04-11          0.004223          0.005478            0.001255 -0.002378 -0.003305  -0.000927         11.428571         20.000000            8.571429                  8                 14              8             14                 6                 0        14 WINDOW_OR_STATE_PATH_MISMATCH
+STATIC_FULL vs STATIC_FULL          20       2012-05-10       2012-05-10          0.004205          0.006294            0.002088 -0.004810 -0.013578  -0.008767          9.180328         20.000000           10.819672                 28                 63             28             63                33                 0        63 WINDOW_OR_STATE_PATH_MISMATCH
+STATIC_FULL vs STATIC_FULL          33       2015-10-05       2015-10-05          0.002576          0.009022            0.006446 -0.001496 -0.002218  -0.000722         12.857143         20.000000            7.142857                  9                 14              9             14                 5                 0        14 WINDOW_OR_STATE_PATH_MISMATCH
+STATIC_FULL vs STATIC_FULL          35       2015-11-17       2015-11-17         -0.007532          0.007147            0.014680 -0.012883 -0.023229  -0.010347          9.323308         20.000000           10.676692                 62                139             62            139                71                 0       139 WINDOW_OR_STATE_PATH_MISMATCH
+STATIC_FULL vs STATIC_FULL          36       2016-06-02       2016-06-02         -0.000285          0.000732            0.001017  0.000000  0.000000   0.000000         13.333333         20.000000            6.666667                  2                  3              2              3                 1                 0         3 WINDOW_OR_STATE_PATH_MISMATCH
+STATIC_FULL vs STATIC_FULL          37       2016-06-15       2016-06-15          0.002454          0.001381           -0.001073  0.000000 -0.000745  -0.000745         12.000000         20.000000            8.000000                  3                  5              3              5                 2                 0         5 WINDOW_OR_STATE_PATH_MISMATCH
+STATIC_FULL vs STATIC_FULL          38       2016-06-28       2016-06-28          0.006442          0.010650            0.004208 -0.000124 -0.000124   0.000000         14.285714         20.000000            5.714286                  5                  8              5              8                 2                 0         8 WINDOW_OR_STATE_PATH_MISMATCH
+
+===== INTERPRETATION =====
+
+1. STATIC_FULL부터 맞지 않으면 parameter 문제가 아니라 baseline/window/return contract 문제다.
+
+2. invested/full/rebrake day가 다르면 먼저 simulation window 또는 state-transition 구현을 비교한다.
+
+3. exposure path는 같은데 return만 다르면 SPY return alignment 또는 t -> t+1 계산을 비교한다.
+
+4. STATIC_FULL은 맞고 25/50/100만 다르면 RAMP stage progression/re-brake 구현을 비교한다.
+
+5. reconciliation 완료 전 sensitivity 결과로 Production 결정을 내리지 않는다.
+
+PRODUCTION DECISION: HOLD
+NEXT GATE: FIX THE IDENTIFIED CONTRACT DIVERGENCE, THEN RE-RUN SENSITIVITY

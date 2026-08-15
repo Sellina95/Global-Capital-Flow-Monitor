@@ -1,0 +1,9 @@
+gate,status,decision
+FILTER15_PRODUCTION_PARITY_AND_ATTRIBUTION,PASS,기존 Filter15 실행/attribution 검증 유지
+DEADMAN_EPISODE_AUDIT,PASS,Deadman trigger/release episode contract 유지
+RELEASE_FAILURE_DIAGNOSIS,PASS_RESEARCH,즉시 full re-risking의 false-recovery tail risk 확인
+PERSISTENCE_COUNTERFACTUAL,INSUFFICIENT_ALONE,단순 2~3일 confirmation만으로 crisis tail 문제 해결 안 됨
+STAGED_RESTORATION,PASS_RESEARCH,단계적 exposure restoration + re-brake 구조 유효
+ROBUSTNESS,PASS_WITH_TRADEOFF,2008 단일 episode 의존 아님; 일부 recovery opportunity cost 존재
+CANONICAL_PARAMETER_SENSITIVITY,PASS,인접 parameter에서도 구조적 방향 유지
+FINAL_RELEASE_LOGIC,RESEARCH_VALIDATED_PRODUCTION_NOT_YET_MODIFIED,"Deadman 이후 즉시 full restoration보다 staged re-risking 구조를 Production 후보로 승격할 연구 근거가 충분함. 단, 특정 20/25/30/40 초기 sizing을 수익률 기준으로 최적화하여 선택하지 않음."
