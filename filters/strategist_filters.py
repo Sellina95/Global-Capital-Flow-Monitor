@@ -4212,40 +4212,95 @@ def narrative_engine_filter(market_data: Dict[str, Any]) -> str:
         budget = max(budget, 25)
 
     # --------------------------------------------------
-    # 3️⃣ Phase Cap
     # --------------------------------------------------
+    # 3️⃣ Phase Cap v2
+    # --------------------------------------------------
+    # 원칙:
+    # - Phase/Regime 라벨 하나만으로 극단적 cap을 강제하지 않는다.
+    # - 20% cap은 확인된 systemic/shock 또는 심각한 credit stress에 한정한다.
+    # - 일반 HARD RISK-OFF는 방어적으로 유지하되 20% 고정을 피한다.
+    # - 기존 Structural v2 cap은 독립적인 상위 안전장치로 유지한다.
+
     cap = 100
 
+    hy_status = str(
+        cross_asset_tape.get("HY_OAS_STATUS", "UNKNOWN") or "UNKNOWN"
+    ).upper()
+
+    # 1) 방향성 부재 / 관망
     if phase_upper.startswith("WAITING") or "RANGE" in phase_upper:
         cap = 60
 
-    elif phase_upper.startswith("HARD RISK-OFF"):
+    # 2) 확인된 시스템/쇼크 위기
+    elif (
+        phase_upper.startswith("SHOCK RISK-OFF")
+        or "SYSTEMIC" in phase_upper
+        or systemic_confirmed
+        or (
+            phase_upper.startswith("HARD RISK-OFF")
+            and hy_status == "FRACTURE"
+        )
+    ):
         cap = 20
 
+    elif phase_upper.startswith("HARD RISK-OFF"):
 
+        # Recovery Watch:
+        # 위기 진입 방어는 유지하되,
+        # Liquidity / Flow 개선 확인 시 cap을 단계적으로 해제한다.
+        recovery_watch = (
+            liq_dir_tag == "UP"
+            and flow_score >= 3
+        )
+
+        if recovery_watch and hy_status != "FRACTURE":
+            cap = 65
+
+        elif hy_status == "HOT":
+            cap = 35
+
+        else:
+            cap = 45
+
+    # 4) SOFT RISK-OFF
     elif phase_upper.startswith("SOFT RISK-OFF"):
         cap = 50 if flow_score >= 3 else 45
 
+    # 5) 기타 RISK-OFF
     elif "RISK-OFF" in phase_upper:
         cap = 35
 
+    # 6) 혼조 / 취약
     elif "MIXED / FRAGILE" in phase_upper:
         cap = 55
 
     elif phase_upper.startswith("TRANSITION") or "MIXED" in phase_upper:
         cap = 65
 
+    # 7) Risk-On
     elif phase_upper.startswith("RISK-ON"):
         cap = 85
 
-    if "SYSTEMIC" in struct_v2 or "STAGFLATION" in struct_v2:
+    # --------------------------------------------------
+    # Structural v2 independent safety cap
+    # --------------------------------------------------
+    # SYSTEMIC은 기존 crisis protection 유지.
+    # STAGFLATION은 이미 Structural v2에서
+    # budget penalty + v2_cap=40이 적용되므로
+    # 여기서 다시 무조건 30 cap을 중복 적용하지 않는다.
+    if "SYSTEMIC" in struct_v2:
         cap = min(cap, 30)
 
     final_cap = min(cap, v2_cap)
+
+    pre_cap_budget = budget
+
     budget = min(int(round(budget)), final_cap)
     budget = _clamp(budget, 0, 100)
-    market_data["RISK_BUDGET"] = budget
 
+    market_data["PRE_CAP_BUDGET"] = pre_cap_budget
+    market_data["PHASE_CAP"] = final_cap
+    market_data["RISK_BUDGET"] = budget
     # --------------------------------------------------
     # 4️⃣ Final Action
     # --------------------------------------------------
@@ -4801,13 +4856,95 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     confidence_multiplier = 1.00
     
     # --------------------------------------------------
-    # 7️⃣ Final Override
+    # 7️⃣ Final Override + Deadman Recovery State
     # --------------------------------------------------
-    if hard_deadman:
+    # 기존 hard_deadman trigger 계산은 변경하지 않는다.
+    # 검증된 release candidate: HY_FALLING_VIX_LT_30
+    #
+    # Contract:
+    # - 새 Deadman 최초 진입은 기존대로 0%.
+    # - 전일부터 Deadman 상태였거나 recovery 중이면,
+    #   hard_deadman이 현재도 True여도 recovery candidate를 평가한다.
+    # - candidate 연속 1/2/3회 -> 25% / 50% / 100%.
+    # - candidate break -> 즉시 0% re-brake.
+
+    prev_deadman = bool(
+        market_data.get("FILTER15_PREV_DEADMAN", False)
+    )
+    recovery_active = bool(
+        market_data.get("FILTER15_RECOVERY_ACTIVE", False)
+    )
+    recovery_completed = bool(
+        market_data.get("FILTER15_RECOVERY_COMPLETED", False)
+    )
+
+    try:
+        recovery_streak = int(
+            market_data.get("FILTER15_RECOVERY_STREAK", 0) or 0
+        )
+    except Exception:
+        recovery_streak = 0
+
+    prev_hy_level = _to_float(
+        market_data.get("FILTER15_PREV_HY_OAS")
+    )
+
+    recovery_candidate = (
+        hy_level is not None
+        and prev_hy_level is not None
+        and hy_level < prev_hy_level
+        and vix_today is not None
+        and vix_today < 30
+    )
+
+    in_recovery_contract = (
+        (prev_deadman or recovery_active)
+        and not recovery_completed
+    )
+
+    if in_recovery_contract:
+        if recovery_candidate:
+            recovery_active = True
+            recovery_streak += 1
+
+            if recovery_streak == 1:
+                exposure *= 0.25
+                status = "RECOVERY_STAGE_1"
+
+            elif recovery_streak == 2:
+                exposure *= 0.50
+                status = "RECOVERY_STAGE_2"
+
+            else:
+                # 3회 연속 recovery 확인 후 정상 Filter15 exposure 복원.
+                # 동일 Deadman episode에서는 recovery contract에 재진입하지 않는다.
+                recovery_active = False
+                recovery_completed = True
+                recovery_streak = 0
+                status = (
+                    "RISK_COMPRESSION"
+                    if risk_compression
+                    else "NORMAL"
+                )
+
+        else:
+            # Recovery 조건이 깨지면 즉시 re-brake.
+            exposure = 0
+            recovery_active = True
+            recovery_streak = 0
+            status = "RECOVERY_REBRAKE"
+
+    elif hard_deadman:
+        # 새 Deadman 최초 진입은 기존 Production contract 유지.
         exposure = 0
+        recovery_active = False
+        recovery_completed = False
+        recovery_streak = 0
         status = "HARD_DEADMAN"
+
     elif risk_compression:
         status = "RISK_COMPRESSION"
+
     else:
         status = "NORMAL"
 
@@ -4816,6 +4953,13 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     market_data["RECOMMENDED_EXPOSURE"] = exposure
     market_data["PREV_EXPOSURE"] = exposure
     market_data["SEW_STATUS"] = status
+
+    # 다음 실행으로 넘길 Filter15 persistent state.
+    market_data["FILTER15_PREV_DEADMAN"] = bool(hard_deadman)
+    market_data["FILTER15_RECOVERY_ACTIVE"] = bool(recovery_active)
+    market_data["FILTER15_RECOVERY_COMPLETED"] = bool(recovery_completed)
+    market_data["FILTER15_RECOVERY_STREAK"] = int(recovery_streak)
+    market_data["FILTER15_PREV_HY_OAS"] = hy_level
     brake_drivers = _dedupe(brake_drivers)
     pos_notes = _dedupe(pos_notes)
 
@@ -7587,7 +7731,7 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
     return market_data
 
 
-from monitor_sew import load_previous_flow_state, classify_flow_transition 
+from scripts.monitor_sew import load_previous_flow_state, classify_flow_transition 
 
 def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
     """

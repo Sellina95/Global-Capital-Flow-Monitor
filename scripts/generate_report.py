@@ -748,6 +748,94 @@ def get_flow_state(filepath: str = "insights/flow_state.json") -> dict:
         return default_state
 
 
+def get_filter15_state(
+    filepath: str = "insights/filter15_state.json",
+) -> dict:
+    # Filter15 staged re-risking 전일 상태를 로드한다.
+    default = {
+        "timestamp": None,
+        "prev_deadman": False,
+        "recovery_active": False,
+        "recovery_completed": False,
+        "recovery_streak": 0,
+        "prev_hy_oas": None,
+        "sew_status": "N/A",
+        "recommended_exposure": None,
+    }
+
+    if not os.path.exists(filepath):
+        return default
+
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        return {
+            "timestamp": data.get("timestamp"),
+            "prev_deadman": bool(data.get("prev_deadman", False)),
+            "recovery_active": bool(data.get("recovery_active", False)),
+            "recovery_completed": bool(
+                data.get("recovery_completed", False)
+            ),
+            "recovery_streak": int(data.get("recovery_streak", 0) or 0),
+            "prev_hy_oas": data.get("prev_hy_oas"),
+            "sew_status": data.get("sew_status", "N/A"),
+            "recommended_exposure": data.get("recommended_exposure"),
+        }
+
+    except Exception as e:
+        print(
+            "[WARNING][FILTER15 STATE LOAD] "
+            f"{type(e).__name__}: {e}"
+        )
+        return default
+
+
+def save_filter15_state(
+    market_data: Dict[str, Any],
+    timestamp: str,
+    filepath: str = "insights/filter15_state.json",
+) -> None:
+    # 다음 실행에 필요한 최소 state만 저장한다.
+    path = Path(filepath)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    payload = {
+        "timestamp": timestamp,
+        "prev_deadman": bool(
+            market_data.get("FILTER15_PREV_DEADMAN", False)
+        ),
+        "recovery_active": bool(
+            market_data.get("FILTER15_RECOVERY_ACTIVE", False)
+        ),
+        "recovery_completed": bool(
+            market_data.get("FILTER15_RECOVERY_COMPLETED", False)
+        ),
+        "recovery_streak": int(
+            market_data.get("FILTER15_RECOVERY_STREAK", 0) or 0
+        ),
+        "prev_hy_oas": market_data.get("FILTER15_PREV_HY_OAS"),
+        "sew_status": market_data.get("SEW_STATUS", "N/A"),
+        "recommended_exposure": market_data.get(
+            "RECOMMENDED_EXPOSURE"
+        ),
+    }
+
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(
+            payload,
+            f,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+
+    # 같은 filesystem 안에서 atomic replace.
+    os.replace(tmp_path, path)
+
+
 def get_sew_state(filepath: str = "insights/sew_state.json") -> dict:
     default = {
         "timestamp": None,
@@ -2534,9 +2622,70 @@ def generate_daily_report() -> None:
     market_data["PREV_FLOW_TIMESTAMP"] = flow_state.get("timestamp")
 
     # -------------------------
+    # 5.7) Filter15 persistent state 주입
+    # -------------------------
+    # Filter15 실행 직전에 전일 recovery state를 market_data에 넣는다.
+    filter15_state = get_filter15_state()
+
+    market_data["FILTER15_PREV_DEADMAN"] = filter15_state.get(
+        "prev_deadman", False
+    )
+    market_data["FILTER15_RECOVERY_ACTIVE"] = filter15_state.get(
+        "recovery_active", False
+    )
+    market_data["FILTER15_RECOVERY_COMPLETED"] = filter15_state.get(
+        "recovery_completed", False
+    )
+    market_data["FILTER15_RECOVERY_STREAK"] = filter15_state.get(
+        "recovery_streak", 0
+    )
+    market_data["FILTER15_PREV_HY_OAS"] = filter15_state.get(
+        "prev_hy_oas"
+    )
+
+    print(
+        "[DEBUG][FILTER15 STATE LOAD]",
+        {
+            "timestamp": filter15_state.get("timestamp"),
+            "prev_deadman": market_data.get("FILTER15_PREV_DEADMAN"),
+            "recovery_active": market_data.get(
+                "FILTER15_RECOVERY_ACTIVE"
+            ),
+            "recovery_streak": market_data.get(
+                "FILTER15_RECOVERY_STREAK"
+            ),
+            "prev_hy_oas": market_data.get("FILTER15_PREV_HY_OAS"),
+        },
+    )
+
+    # -------------------------
     # 6) Commentary block 생성
     # -------------------------
     commentary_block = build_strategist_commentary(market_data)
+
+    # Filter15 실행 후 갱신된 state를 다음 Production run용으로 저장.
+    save_filter15_state(
+        market_data=market_data,
+        timestamp=str(data_as_of_date),
+    )
+
+    print(
+        "[DEBUG][FILTER15 STATE SAVE]",
+        {
+            "prev_deadman": market_data.get("FILTER15_PREV_DEADMAN"),
+            "recovery_active": market_data.get(
+                "FILTER15_RECOVERY_ACTIVE"
+            ),
+            "recovery_streak": market_data.get(
+                "FILTER15_RECOVERY_STREAK"
+            ),
+            "prev_hy_oas": market_data.get("FILTER15_PREV_HY_OAS"),
+            "recommended_exposure": market_data.get(
+                "RECOMMENDED_EXPOSURE"
+            ),
+            "sew_status": market_data.get("SEW_STATUS"),
+        },
+    )
 
     flow_for_history = market_data.get("INSTITUTIONAL_FLOW", {}) or {}
 
