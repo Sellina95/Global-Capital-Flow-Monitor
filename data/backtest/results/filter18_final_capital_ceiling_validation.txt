@@ -1,0 +1,107 @@
+==============================================================================
+FILTER18 CAPITAL CEILING — FINAL VALIDATION
+==============================================================================
+
+Scope
+-----
+Filter13 -> Filter15 -> Filter18 -> ETF execution -> portfolio persistence
+
+Research Branch
+---------------
+institutional-backtest-v1
+
+Problem
+-------
+Filter18 Rank Persistence 3D could preserve previously accepted absolute
+sector weights above the current day's allowed exposure.
+
+Pre-Patch
+---------
+Rows                         : 4645
+Ceiling breaches             : 293
+Max breach                   : 5.1%p
+
+Root Cause
+----------
+Rank Persistence correctly preserved sector-selection persistence, but
+previously accepted absolute weights could survive after the current
+Filter18 exposure ceiling had fallen.
+
+This allowed stale absolute exposure to exceed the current risk ceiling
+before ETF execution.
+
+Research Patch
+--------------
+FILTER18_EXECUTION_CEILING_RECONCILIATION_V1
+
+Placement:
+After Filter18 / Rank Persistence decisions and immediately before
+build_execution_etf_map().
+
+Contract:
+- Rank Persistence logic preserved.
+- Sector ranking logic preserved.
+- Filter13 unchanged.
+- Filter15 unchanged.
+- build_tactical_allocation unchanged.
+- build_execution_etf_map unchanged.
+- No new indicator.
+- No parameter optimization.
+- Execution weights may not exceed current Filter18 allowed exposure.
+- Post-rounding residual exposure is reconciled before ETF execution.
+
+Post-Patch Capital Contract
+---------------------------
+Rows                         : 4645
+Execution errors             : 0
+Ceiling breaches             : 0
+Filter18 > Filter15          : 0
+Negative tactical reserve    : 0
+Max sector over allowed      : 0.0
+Max capital error            : 0.0
+
+Behavioral Regression
+---------------------
+Upstream 13/15/18 changes    : 0
+Pre-patch ceiling breaches   : 293
+Post-patch ceiling breaches  : 0
+Corrected breach rows        : 293
+New breaches                 : 0
+Normal-date capital changes  : 0
+Wrong-direction corrections  : 0
+
+Behavior Classes
+----------------
+UNCHANGED_NORMAL             : 4352
+EXPECTED_BREACH_CORRECTION   : 293
+
+Institutional Gate
+------------------
+STATUS                       : PASS
+
+Interpretation
+--------------
+The patch changes only observations that violated the execution capital
+ceiling. Previously valid observations preserve their capital behavior.
+
+The Filter18 Rank Persistence signal contract remains intact while the
+risk/execution hierarchy is restored:
+
+Filter13 Risk Budget
+        ->
+Filter15 Exposure Control
+        ->
+Filter18 Sector Allocation / Rank Persistence
+        ->
+Capital Ceiling Reconciliation
+        ->
+ETF Execution / Portfolio Persistence
+
+PRODUCTION STATUS
+-----------------
+NOT YET PROMOTED BY THIS COMMIT.
+
+NEXT GATE
+---------
+Promote only the validated minimal Production source patch to main.
+==============================================================================

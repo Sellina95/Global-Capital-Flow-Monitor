@@ -1,0 +1,28 @@
+========================================================================================
+FILTER18 FINAL BEHAVIORAL REGRESSION
+========================================================================================
+
+Rows                         : 4645
+Upstream 13/15/18 changes    : 0
+Pre-patch ceiling breaches   : 293
+Post-patch ceiling breaches  : 0
+Corrected breach rows        : 293
+New breaches                 : 0
+Normal-date capital changes  : 0
+Wrong-direction corrections  : 0
+
+===== BEHAVIOR CLASS =====
+UNCHANGED_NORMAL              : 4352
+EXPECTED_BREACH_CORRECTION    : 293
+
+===== INSTITUTIONAL GATE =====
+STATUS                       : PASS
+
+Interpretation:
+- Filter13/15/18 upstream decisions are unchanged.
+- Every pre-existing execution ceiling breach is corrected.
+- No new ceiling breach is introduced.
+- Previously normal dates preserve their capital behavior.
+- Changes are confined to dates requiring capital-contract correction.
+
+NEXT GATE: RESEARCH COMMIT / PROMOTION CANDIDATE
