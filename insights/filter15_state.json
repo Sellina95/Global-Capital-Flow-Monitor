@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-08-14",
+  "prev_deadman": false,
+  "recovery_active": false,
+  "recovery_completed": false,
+  "recovery_streak": 0,
+  "prev_hy_oas": 2.71,
+  "sew_status": "RISK_COMPRESSION",
+  "recommended_exposure": 57
+}
