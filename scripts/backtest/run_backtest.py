@@ -43,14 +43,38 @@ def run_engine(
     neutralize_all_side_effects(previous_exposure)
 
     captured: dict[str, Any] = {}
+
     original_builder = sf.build_tactical_allocation
+    original_etf_mapper = sf.build_execution_etf_map
 
     def capture_allocation(*args, **kwargs):
         result = original_builder(*args, **kwargs)
-        captured["allocation"] = result
+
+        # Intermediate allocation — diagnostics only.
+        captured["builder_allocation"] = result
+
         return result
 
+    def capture_execution_etf_map(*args, **kwargs):
+        # Canonical Filter18 Backtest boundary:
+        # Production reaches this point only AFTER
+        # FILTER18_EXECUTION_CEILING_RECONCILIATION_V1.
+
+        if "weights" in kwargs:
+            weights = kwargs["weights"]
+        elif args:
+            weights = args[0]
+        else:
+            weights = {}
+
+        captured["execution_sector_weights"] = dict(
+            weights or {}
+        )
+
+        return original_etf_mapper(*args, **kwargs)
+
     sf.build_tactical_allocation = capture_allocation
+    sf.build_execution_etf_map = capture_execution_etf_map
 
     try:
         # 수천 줄의 DEBUG 출력은 루프 중 숨긴다.
@@ -59,9 +83,40 @@ def run_engine(
             exposure_report = sf.volatility_controlled_exposure_filter(market_data)
             sf.sector_allocation_filter(market_data)
 
-        allocation = captured.get("allocation")
-        if allocation is None:
-            raise RuntimeError("18번 allocation 결과를 포착하지 못했습니다.")
+        builder_allocation = captured.get(
+            "builder_allocation"
+        )
+
+        execution_weights = captured.get(
+            "execution_sector_weights"
+        )
+
+        if builder_allocation is None:
+            raise RuntimeError(
+                "18번 builder allocation 결과를 포착하지 못했습니다."
+            )
+
+        if execution_weights is None:
+            raise RuntimeError(
+                "18번 final execution weights를 포착하지 못했습니다."
+            )
+
+        allocated_equity = round(
+            sum(float(v) for v in execution_weights.values()),
+            1,
+        )
+
+        cash_weight = round(
+            100.0 - allocated_equity,
+            1,
+        )
+
+        allocation = {
+            **builder_allocation,
+            "weights": execution_weights,
+            "allocated_equity": allocated_equity,
+            "cash_weight": cash_weight,
+        }
 
         deadman_reason = ""
         brake_drivers = ""
@@ -83,6 +138,7 @@ def run_engine(
 
     finally:
         sf.build_tactical_allocation = original_builder
+        sf.build_execution_etf_map = original_etf_mapper
 
 
 def main() -> None:
