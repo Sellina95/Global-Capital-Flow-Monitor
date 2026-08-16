@@ -1,0 +1,98 @@
+======================================================================================================================================================
+MACRO V4 — RESEARCH-ONLY CLASSIFIER VALIDATION
+======================================================================================================================================================
+
+===== FROZEN SPEC =====
+Expected SHA256 : cd7174ea8ec93115b4fc9902fd55fe2b9ba443199929b01eae2bc4db4fb70bf3
+Actual SHA256   : cd7174ea8ec93115b4fc9902fd55fe2b9ba443199929b01eae2bc4db4fb70bf3
+Identity        : PASS
+
+===== CLASSIFIER SCOPE =====
+Production UNKNOWN observations : 1328
+Candidate target observations   : 992
+V4 classified observations      : 992
+Remaining UNKNOWN               : 336
+FLAT_LOW_INFORMATION            : 336
+Collision rows                  : 0
+PIT rule failures               : 0
+
+===== EXPECTED CONTRACT =====
+UNKNOWN before      : 1328
+Candidate target    : 992
+UNKNOWN after       : 336
+
+===== FAMILY RESULT =====
+         structural_family  observations  v4_applied  remaining_unknown  collisions classification_rate
+      FLAT_LOW_INFORMATION           336           0                336           0               0.00%
+RATES_DOWN_USD_DOWN_VIX_UP           179         179                  0           0             100.00%
+RATES_DOWN_USD_UP_VIX_DOWN           277         277                  0           0             100.00%
+  RATES_DOWN_USD_UP_VIX_UP           335         335                  0           0             100.00%
+RATES_UP_USD_DOWN_VIX_DOWN           129         129                  0           0             100.00%
+  RATES_UP_USD_DOWN_VIX_UP            72          72                  0           0             100.00%
+
+===== RULE COUNTS =====
+ v4_rule_id                                    v4_state  observations
+         C1 V4_NOMINAL_EASING_WITH_VOL_INFLATION_STRESS           179
+         C2    V4_RATES_PRESSURE_WITH_BROAD_RISK_RELIEF           129
+         C3         V4_RATES_VOL_PRESSURE_WITH_WEAK_USD            72
+D1_WTI_DOWN   V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_DOWN           217
+  D1_WTI_UP     V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_UP           118
+D2_WTI_DOWN   V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_DOWN           136
+  D2_WTI_UP     V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_UP           141
+   FALLBACK                          UNKNOWN_TRANSITION           336
+
+===== VALIDATION GATES =====
+SPEC_HASH_IDENTITY                            : PASS
+UNKNOWN_TOTAL_IDENTITY                        : PASS
+TARGET_TOTAL_IDENTITY                         : PASS
+TARGET_CLASSIFIED_IDENTITY                    : PASS
+REMAINING_UNKNOWN_IDENTITY                    : PASS
+FLAT_LOW_INFORMATION_IDENTITY                 : PASS
+FLAT_LOW_INFORMATION_PRESERVED                : PASS
+CLASSIFIER_EXCLUSIVITY                        : PASS
+PIT_RULE_IDENTITY                             : PASS
+CREDIT_STRESS_OUTSIDE_V4_SCOPE                : PASS
+NO_UNAUTHORIZED_FAMILY_CLASSIFICATION         : PASS
+
+===== CAUSAL CONTRACT =====
+Classifier authority : Production UNKNOWN_TRANSITION only
+Future state used    : NO
+Returns used         : NO
+Filter13 executed    : NO
+Filter15 executed    : NO
+Filter18 executed    : NO
+New macro data       : NO
+VIX level backfill   : NO
+Parameter tuning     : NO
+
+===== CREDIT_STRESS =====
+Existing Production CREDIT_STRESS has precedence.
+V4 classifier receives only rows already classified
+by Production as UNKNOWN_TRANSITION.
+Therefore V4 cannot overwrite Production CREDIT_STRESS.
+
+===== ARTIFACTS =====
+Daily   : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_research_classifier_v1/macro_v4_classifier_daily.csv
+Summary : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_research_classifier_v1/macro_v4_classifier_summary.csv
+Rules   : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_research_classifier_v1/macro_v4_classifier_rule_counts.csv
+Audit   : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_research_classifier_v1/macro_v4_classifier_audit.txt
+
+PRODUCTION MODIFIED : NO
+FILTER13/15/18      : UNCHANGED / NOT EXECUTED
+RETURNS USED        : NO
+PERFORMANCE USED    : NO
+PARAMETER SELECTED  : NO
+COMMIT              : NO
+
+STATUS : PASS
+
+NEXT IF PASS:
+MACRO V4 RESEARCH-ONLY CAUSAL PROPAGATION HARNESS
+-> preserve canonical Production baseline
+-> replace RAW UNKNOWN only with frozen V4 candidate state
+-> derive strategic state causally
+-> map MARKET_REGIME
+-> propagate through unchanged 13 / 15 / 18
+-> STILL NO RETURNS / PERFORMANCE SELECTION
+
+======================================================================================================================================================

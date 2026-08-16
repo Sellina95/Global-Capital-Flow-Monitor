@@ -1,0 +1,111 @@
+================================================================================================================================================================
+MACRO UNKNOWN — CANDIDATE RESOLUTION GATE
+================================================================================================================================================================
+
+===== CONTRACT =====
+Target observations       : 992
+D-family observations     : 612
+C-family observations     : 380
+Identity                  : PASS
+Returns used              : NO
+Filter13/15/18 executed   : NO
+Future state classifier   : NO
+Production modified       : NO
+
+===== D FAMILY — WTI x HY SPLIT =====
+         structural_family  WTI_DIR HY_OAS_STATUS  observations  family_total share_within_family
+RATES_DOWN_USD_UP_VIX_DOWN        1         WATCH            70           277              25.27%
+RATES_DOWN_USD_UP_VIX_DOWN       -1         WATCH            63           277              22.74%
+RATES_DOWN_USD_UP_VIX_DOWN        1           HOT            62           277              22.38%
+RATES_DOWN_USD_UP_VIX_DOWN       -1           HOT            61           277              22.02%
+RATES_DOWN_USD_UP_VIX_DOWN       -1          COOL            12           277               4.33%
+RATES_DOWN_USD_UP_VIX_DOWN        1          COOL             9           277               3.25%
+  RATES_DOWN_USD_UP_VIX_UP       -1           HOT           122           335              36.42%
+  RATES_DOWN_USD_UP_VIX_UP       -1         WATCH            85           335              25.37%
+  RATES_DOWN_USD_UP_VIX_UP        1         WATCH            64           335              19.10%
+  RATES_DOWN_USD_UP_VIX_UP        1           HOT            45           335              13.43%
+  RATES_DOWN_USD_UP_VIX_UP       -1          COOL            10           335               2.99%
+  RATES_DOWN_USD_UP_VIX_UP        1          COOL             9           335               2.69%
+
+===== C FAMILY — EXISTING TAXONOMY COLLISION =====
+         structural_family  observations collision_share__STAGFLATION_RISK collision_share__INFLATION_PRESSURE collision_share__TIGHTENING_GROWTH_SCARE collision_share__DISINFLATION collision_share__REFLATION collision_share__POLICY_EASING credit_stress_exact_fracture_share credit_stress_potential_hot_vix_up_share exact_existing_state_collision_share outside_existing_exact_taxonomy_share
+RATES_DOWN_USD_DOWN_VIX_UP           179                             0.00%                               0.00%                                    0.00%                         0.00%                      0.00%                          0.00%                              0.00%                                   45.25%                                0.00%                               100.00%
+RATES_UP_USD_DOWN_VIX_DOWN           129                             0.00%                               0.00%                                    0.00%                         0.00%                      0.00%                          0.00%                              0.00%                                    0.00%                                0.00%                               100.00%
+  RATES_UP_USD_DOWN_VIX_UP            72                             0.00%                               0.00%                                    0.00%                         0.00%                      0.00%                          0.00%                              0.00%                                   45.83%                                0.00%                               100.00%
+
+===== PROVISIONAL RESOLUTION =====
+         structural_family prior_disposition  observations               resolution_test wti_up_share wti_down_share material_two_way_wti exact_existing_state_collision_share provisional_resolution
+  RATES_DOWN_USD_UP_VIX_UP                 D           335 CONTEMPORANEOUS_WTI_BRANCHING       35.22%         64.78%                 True                                  NaN      D_SPLIT_CONFIRMED
+RATES_DOWN_USD_UP_VIX_DOWN                 D           277 CONTEMPORANEOUS_WTI_BRANCHING       50.90%         49.10%                 True                                  NaN      D_SPLIT_CONFIRMED
+RATES_DOWN_USD_DOWN_VIX_UP                 C           179   EXISTING_TAXONOMY_COLLISION          NaN            NaN                 None                                0.00%    C_REMAINS_CANDIDATE
+RATES_UP_USD_DOWN_VIX_DOWN                 C           129   EXISTING_TAXONOMY_COLLISION          NaN            NaN                 None                                0.00%    C_REMAINS_CANDIDATE
+  RATES_UP_USD_DOWN_VIX_UP                 C            72   EXISTING_TAXONOMY_COLLISION          NaN            NaN                 None                                0.00%    C_REMAINS_CANDIDATE
+
+===== INTERPRETATION CONTRACT =====
+D_SPLIT_CONFIRMED means:
+
+The original family contains material contemporaneous WTI
+branches and must not be forced into one macro narrative.
+
+It does NOT mean both branches require new macro states.
+
+
+C_REMAINS_CANDIDATE means:
+
+The family is mostly outside exact existing Production
+narrative definitions.
+
+It does NOT authorize a new Production state.
+
+
+REVIEW_EXISTING_EXTENSION means:
+
+A material portion already collides with an existing exact
+Production narrative definition and should be reviewed before
+creating any new taxonomy.
+
+===== CREDIT_STRESS CAUTION =====
+CREDIT_STRESS cannot be fully collision-tested from directional
+family labels alone.
+
+Production also uses VIX_TODAY >= 22 when HY is HOT.
+
+This audit therefore reports:
+
+1. FRACTURE exact collision
+2. HOT + VIX_UP potential collision
+
+No VIX level is invented or backfilled.
+
+===== ANTI-OVERFIT =====
+NO returns.
+NO CAGR.
+NO Sharpe.
+NO portfolio PnL.
+NO Filter13/15/18 optimization.
+NO future state as classifier.
+NO parameter selection from performance.
+
+The next gate, if this audit is structurally coherent, is:
+
+MACRO V4 CANDIDATE TAXONOMY SPEC FREEZE
+
+That specification must be frozen BEFORE any downstream
+counterfactual performance evaluation.
+
+===== ARTIFACTS =====
+D Split    : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_unknown_candidate_resolution_v1/d_family_split_evidence.csv
+C Collision: /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_unknown_candidate_resolution_v1/c_family_collision_evidence.csv
+Resolution : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_unknown_candidate_resolution_v1/candidate_resolution_summary.csv
+Audit      : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_unknown_candidate_resolution_v1/candidate_resolution_audit.txt
+
+PRODUCTION MODIFIED : NO
+FILTER13/15/18      : UNCHANGED / NOT EXECUTED
+RETURNS USED        : NO
+PERFORMANCE USED    : NO
+V4 IMPLEMENTED      : NO
+COMMIT              : NO
+
+================================================================================================================================================================
+CANDIDATE RESOLUTION COMPLETE — DO NOT COMMIT
+================================================================================================================================================================

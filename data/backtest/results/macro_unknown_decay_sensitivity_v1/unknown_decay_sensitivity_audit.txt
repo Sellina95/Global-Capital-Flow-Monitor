@@ -1,0 +1,30 @@
+MACRO UNKNOWN DECAY SENSITIVITY V1
+
+DESIGN
+------
+Entry persistence       : P2
+UNKNOWN release         : finite grace then UNKNOWN_TRANSITION
+Sensitivity experiments : U1 / U2 / U3 / U5
+
+PURPOSE
+-------
+Test whether finite UNKNOWN grace can preserve the structural
+benefit of P2 while preventing the indefinite defensive-state
+persistence observed in Macro V3.
+
+SELECTION
+---------
+NO candidate selected.
+
+SAFETY
+------
+Production modified : NO
+Filter13 modified   : NO
+Filter15 modified   : NO
+Filter18 modified   : NO
+13/15/18 executed   : NO
+Returns used        : NO
+CAGR used           : NO
+Sharpe used         : NO
+Parameter tuning    : NO
+Commit              : NO

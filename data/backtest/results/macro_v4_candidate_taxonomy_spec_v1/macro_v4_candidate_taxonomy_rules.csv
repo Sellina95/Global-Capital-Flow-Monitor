@@ -1,0 +1,10 @@
+priority,rule_id,rule_type,family,us10y_dir,dxy_dir,vix_dir,wti_dir,hy_condition,candidate_state,production_authorized,notes
+10,P_EXISTING_CREDIT_STRESS,EXISTING_PRODUCTION_PRECEDENCE,*,*,*,*,*,FRACTURE OR (HOT AND VIX_DIR=1 AND VIX_TODAY>=22),CREDIT_STRESS,False,Existing Production CREDIT_STRESS precedence. V4 must never overwrite an observation already classified as CREDIT_STRESS.
+100,D1_WTI_DOWN,V4_CANDIDATE_SPLIT,RATES_DOWN_USD_UP_VIX_UP,-1,1,1,-1,NON_CREDIT_STRESS,V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_DOWN,False,Research-only candidate. Risk tightening via USD/VIX while rates and WTI fall.
+101,D1_WTI_UP,V4_CANDIDATE_SPLIT,RATES_DOWN_USD_UP_VIX_UP,-1,1,1,1,NON_CREDIT_STRESS,V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_UP,False,Research-only candidate. Rates relief conflicts with USD/VIX and WTI pressure.
+110,D2_WTI_DOWN,V4_CANDIDATE_SPLIT,RATES_DOWN_USD_UP_VIX_DOWN,-1,1,-1,-1,NON_CREDIT_STRESS,V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_DOWN,False,Research-only candidate. Rates/VIX relief with USD strength and WTI weakness.
+111,D2_WTI_UP,V4_CANDIDATE_SPLIT,RATES_DOWN_USD_UP_VIX_DOWN,-1,1,-1,1,NON_CREDIT_STRESS,V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_UP,False,Research-only candidate. Rates/VIX relief with USD strength and WTI pressure.
+120,C1,V4_CANDIDATE_NEW_TAXONOMY,RATES_DOWN_USD_DOWN_VIX_UP,-1,-1,1,1,NON_CREDIT_STRESS,V4_NOMINAL_EASING_WITH_VOL_INFLATION_STRESS,False,Research-only candidate. Nominal easing conflicts with rising volatility and WTI.
+130,C2,V4_CANDIDATE_NEW_TAXONOMY,RATES_UP_USD_DOWN_VIX_DOWN,1,-1,-1,-1,NON_CREDIT_STRESS,V4_RATES_PRESSURE_WITH_BROAD_RISK_RELIEF,False,"Research-only candidate. Rates pressure occurs alongside weaker USD, lower VIX and lower WTI."
+140,C3,V4_CANDIDATE_NEW_TAXONOMY,RATES_UP_USD_DOWN_VIX_UP,1,-1,1,-1,NON_CREDIT_STRESS,V4_RATES_VOL_PRESSURE_WITH_WEAK_USD,False,Research-only candidate. Rates and volatility pressure coexist with weaker USD and WTI.
+999,FALLBACK,FALLBACK,*,*,*,*,*,*,UNKNOWN_TRANSITION,False,Anything not explicitly covered remains UNKNOWN. No forced classification.

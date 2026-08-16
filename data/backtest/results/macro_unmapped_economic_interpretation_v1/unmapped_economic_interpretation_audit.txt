@@ -1,0 +1,60 @@
+MACRO UNMAPPED ECONOMIC INTERPRETATION AUDIT V1
+
+SCOPE
+-----
+Historical observations : 4645
+UNKNOWN observations    : 1328
+UNMAPPED valid region   : 992
+
+PURPOSE
+-------
+Determine whether the recurring valid evidence regions
+currently mapped to UNKNOWN_TRANSITION are:
+
+- narrow versions of existing Macro narratives,
+- genuine transition / mixed regions,
+- candidates for new taxonomy,
+- or internally heterogeneous regions requiring a split.
+
+INPUT CONTRACT
+--------------
+Uses only previously reconstructed historical PIT evidence:
+
+- US10Y direction
+- DXY direction
+- VIX direction
+- WTI direction
+- HY OAS status
+
+No new Macro data is introduced.
+
+LOW INFORMATION
+---------------
+FLAT_LOW_INFORMATION is excluded.
+
+That problem belongs to the separate UNKNOWN persistence /
+decay architecture.
+
+FUTURE INFORMATION
+------------------
+next_raw_state may appear in diagnostic neighbor tables only.
+
+It is explicitly forbidden as an input to any candidate
+classification rule.
+
+NO PERFORMANCE SELECTION
+------------------------
+Returns used       : NO
+CAGR used          : NO
+Sharpe used        : NO
+Filter13 executed  : NO
+Filter15 executed  : NO
+Filter18 executed  : NO
+
+DECISION STATUS
+---------------
+No Macro V4 state is authorized by this audit.
+
+Production modified : NO
+Parameter selected  : NO
+Commit              : NO

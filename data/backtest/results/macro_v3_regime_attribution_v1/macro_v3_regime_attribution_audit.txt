@@ -1,0 +1,59 @@
+MACRO V3 — REGIME ATTRIBUTION V1
+
+PURPOSE
+-------
+Explain why the frozen Macro V3 intervention materially
+changed the existing capital chain.
+
+This audit does NOT select a strategy and does NOT evaluate
+returns.
+
+CONTRACT
+--------
+Rows                        : 4644
+RAW macro identity          : PASS
+RAW market regime identity  : PASS
+
+OVERALL CAPITAL EFFECT
+----------------------
+Mean Risk Budget delta      : -3.3885
+Mean Exposure delta         : -4.0071
+
+DEFENSIVE REGIME
+----------------
+Baseline defensive days     : 2348
+V3 defensive days           : 3378
+New defensive days          : 1363
+Released defensive days     : 333
+
+INTERPRETATION GATE
+-------------------
+Do NOT promote Macro V3 to Production from transition
+reduction alone.
+
+Determine whether the negative exposure effect is caused by:
+
+1. economically justified strategic persistence,
+
+2. excessive persistence of defensive macro states,
+
+3. MARKET_REGIME remapping semantics,
+
+4. interaction with existing downstream Filter13/15/18
+   controls.
+
+Only after structural attribution is understood should
+performance evaluation be authorized.
+
+SAFETY
+------
+Production modified         : NO
+Filter13 modified           : NO
+Filter15 modified           : NO
+Filter18 modified           : NO
+13/15/18 recalculated       : NO
+Returns used                : NO
+CAGR used                   : NO
+Sharpe used                 : NO
+Parameter tuning            : NO
+Commit                      : NO

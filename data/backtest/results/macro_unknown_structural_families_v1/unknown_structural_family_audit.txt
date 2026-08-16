@@ -1,0 +1,59 @@
+MACRO UNKNOWN STRUCTURAL FAMILY AUDIT V1
+
+CONTRACT
+--------
+UNKNOWN observations : 1328
+Expected             : 1328
+Identity             : PASS
+
+PURPOSE
+-------
+Determine whether Production UNKNOWN_TRANSITION is:
+
+A) one coherent transition state,
+B) a heterogeneous residual bucket,
+C) a mixture of low-information and economically conflicting
+   cross-asset evidence.
+
+FAMILY CONSTRUCTION
+-------------------
+Families are defined only from contemporaneous PIT evidence:
+
+- US10Y direction
+- DXY direction
+- VIX direction
+- WTI direction
+- HY OAS status as context
+
+No returns are used.
+No future state is used to construct a family.
+No new macro regime is created.
+
+BROAD-HISTORY DESCRIPTIVE FLAG
+------------------------------
+Appears in >=10 calendar years and >=4 eras.
+
+Families meeting descriptive flag:
+['FLAT_LOW_INFORMATION', 'RATES_DOWN_USD_UP_VIX_UP', 'RATES_DOWN_USD_UP_VIX_DOWN', 'RATES_DOWN_USD_DOWN_VIX_UP', 'RATES_UP_USD_DOWN_VIX_DOWN', 'RATES_UP_USD_DOWN_VIX_UP']
+
+IMPORTANT
+---------
+The broad-history flag is descriptive only.
+It is NOT a Production selection criterion.
+
+Neighbor next-state data is retrospective diagnostic metadata
+and MUST NOT be used to generate a historical signal.
+
+SAFETY
+------
+Production modified : NO
+Filter13 modified   : NO
+Filter15 modified   : NO
+Filter18 modified   : NO
+Filter13 executed   : NO
+Filter15 executed   : NO
+Filter18 executed   : NO
+Returns used        : NO
+Performance used    : NO
+Parameter selected  : NO
+Commit              : NO

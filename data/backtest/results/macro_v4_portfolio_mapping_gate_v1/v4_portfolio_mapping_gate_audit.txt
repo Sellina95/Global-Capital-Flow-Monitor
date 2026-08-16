@@ -1,0 +1,76 @@
+======================================================================================================================================================
+MACRO V4 — PORTFOLIO MAPPING EVIDENCE GATE
+======================================================================================================================================================
+
+===== CONTRACT =====
+V4 observations       : 992
+V4 states             : 7
+Returns used          : NO
+Filter13 executed     : NO
+Filter15 executed     : NO
+Filter18 executed     : NO
+Production modified   : NO
+Portfolio mapping     : UNDECIDED
+
+===== STATE EVIDENCE =====
+                                   v4_state  observations hy_cool_share hy_watch_share hy_hot_share hy_fracture_share hy_watch_hot_fracture_share vix_up_share vix_down_share vix_ge_22_share vix_lt_18_share wti_up_share wti_down_share policy_easing_share policy_tightening_share policy_mixed_share                                                                    risk_semantic_constraint mapping_status
+V4_NOMINAL_EASING_WITH_VOL_INFLATION_STRESS           179         8.38%         46.37%       45.25%             0.00%                      91.62%      100.00%          0.00%           5.59%          74.30%      100.00%          0.00%               0.00%                   0.00%              0.00%                Mixed macro evidence; mapping must preserve contemporaneous risk information      UNDECIDED
+   V4_RATES_PRESSURE_WITH_BROAD_RISK_RELIEF           129         8.53%         41.09%       50.39%             0.00%                      91.47%        0.00%        100.00%          23.26%          58.14%        0.00%        100.00%               0.00%                   0.00%              0.00% Rates pressure conflicts with broad risk relief; directional mapping requires justification      UNDECIDED
+  V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_DOWN           217         4.61%         39.17%       56.22%             0.00%                      95.39%      100.00%          0.00%           5.99%          68.66%        0.00%        100.00%               0.00%                   0.00%              0.00%                  VIX pressure present; unconditional RISK-ON mapping requires justification      UNDECIDED
+    V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_UP           118         7.63%         54.24%       38.14%             0.00%                      92.37%      100.00%          0.00%           8.47%          70.34%      100.00%          0.00%               0.00%                   0.00%              0.00%                  VIX pressure present; unconditional RISK-ON mapping requires justification      UNDECIDED
+        V4_RATES_VOL_PRESSURE_WITH_WEAK_USD            72         6.94%         47.22%       45.83%             0.00%                      93.06%      100.00%          0.00%           8.33%          72.22%        0.00%        100.00%               0.00%                   0.00%              0.00%                  VIX pressure present; unconditional RISK-ON mapping requires justification      UNDECIDED
+  V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_DOWN           136         8.82%         46.32%       44.85%             0.00%                      91.18%        0.00%        100.00%          18.38%          63.97%        0.00%        100.00%               0.00%                   0.00%              0.00%    Vol relief supportive, but USD pressure remains; do not infer full RISK-ON automatically      UNDECIDED
+    V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_UP           141         6.38%         49.65%       43.97%             0.00%                      93.62%        0.00%        100.00%          12.06%          74.47%      100.00%          0.00%               0.00%                   0.00%              0.00%    Vol relief supportive, but USD pressure remains; do not infer full RISK-ON automatically      UNDECIDED
+
+===== EXISTING FILTER13 SEMANTICS =====
+GOLDILOCKS              -> macro tilt +8
+REFLATION               -> macro tilt +6
+LIQUIDITY               -> macro tilt +5
+TIGHTENING_GROWTH_SCARE -> macro tilt -8
+STAGFLATION             -> macro tilt -12
+INFLATION SHOCK         -> macro tilt -12
+INFLATION               -> macro tilt -6
+HARD RISK-OFF           -> macro tilt -20
+
+SHOCK / SYSTEMIC / confirmed severe credit
+                         -> Phase Cap may reach 20
+HARD RISK-OFF           -> defensive Phase Cap logic
+WAITING / RANGE         -> Phase Cap 60
+
+===== DECISION CONTRACT =====
+Do NOT choose mappings from returns.
+
+For each V4 state, choose an existing portfolio-regime
+semantic only if contemporaneous economic evidence
+supports the downstream risk action.
+
+A V4 taxonomy label describes the macro configuration.
+A portfolio regime determines risk treatment.
+They are deliberately separate contracts.
+
+TRANSITION / MIXED remains a valid mapping.
+There is no requirement that every V4 state become
+RISK-ON or RISK-OFF.
+
+===== ANTI-OVERFIT =====
+NO returns
+NO CAGR
+NO Sharpe
+NO PnL
+NO Filter13 optimization
+NO Filter15 optimization
+NO Filter18 optimization
+NO future-state classifier
+
+===== ARTIFACTS =====
+Detail   : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_portfolio_mapping_gate_v1/v4_portfolio_mapping_detail.csv
+Evidence : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_portfolio_mapping_gate_v1/v4_portfolio_mapping_evidence.csv
+Audit    : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_portfolio_mapping_gate_v1/v4_portfolio_mapping_gate_audit.txt
+
+STATUS : EVIDENCE READY / MAPPING UNDECIDED
+
+NEXT:
+Freeze V4 state -> portfolio regime mapping.
+Only after mapping freeze may the causal 13 -> 15 -> 18 harness run.
+
+======================================================================================================================================================

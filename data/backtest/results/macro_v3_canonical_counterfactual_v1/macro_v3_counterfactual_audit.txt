@@ -1,0 +1,36 @@
+MACRO V3 — CANONICAL COUNTERFACTUAL
+
+BASELINE IDENTITY GATE
+----------------------
+Status                  : PASS
+
+V3 EXECUTION
+------------
+Observations             : 4644
+P2 warm-up skipped       : 1
+RAW identity failures    : 0
+
+MACRO STRUCTURE
+---------------
+Baseline transitions     : 2675
+V3 transitions           : 189
+Transition reduction     : 92.93%
+
+SAFETY
+------
+Production modified      : NO
+Filter13 modified        : NO
+Filter15 modified        : NO
+Filter18 modified        : NO
+Returns used             : NO
+Performance used         : NO
+Parameter tuning         : NO
+
+INTERVENTION
+------------
+RAW_MACRO_NARRATIVE
+-> P2 + UNKNOWN HOLD
+-> STRATEGIC_MACRO_STATE
+-> map_to_portfolio_regime(existing policy, strategic state, current PIT tape)
+-> existing downstream generators
+-> unchanged 13 -> 15 -> 18

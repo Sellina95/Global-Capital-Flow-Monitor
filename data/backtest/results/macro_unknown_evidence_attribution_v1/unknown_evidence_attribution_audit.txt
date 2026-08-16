@@ -1,0 +1,53 @@
+MACRO UNKNOWN EVIDENCE ATTRIBUTION V1
+
+PURPOSE
+-------
+Explain why Production interpret_macro_narrative()
+returns UNKNOWN_TRANSITION.
+
+This audit does NOT redefine UNKNOWN and does NOT
+introduce a new macro classifier.
+
+CONTRACT
+--------
+Rows                    : 4645
+Expected UNKNOWN        : 1328
+Reconstructed UNKNOWN   : 1328
+UNKNOWN identity        : PASS
+
+REASON COUNTS
+-------------
+{'FLAT_OR_NO_DIRECTION': 2, 'EASING_AXES_BUT_VIX_RISING': 179, 'UNMAPPED_DIRECTION_COMBINATION': 5}
+
+IMPORTANT
+---------
+UNKNOWN_TRANSITION is the residual branch of the current
+Production decision tree.
+
+This audit separates:
+
+1. missing directional evidence,
+2. flat / no-direction evidence,
+3. easing axes blocked by rising VIX,
+4. valid but unmapped directional combinations.
+
+No candidate handling rule is selected here.
+
+Neighbor states and next-state fields are retrospective
+diagnostic metadata only. They are NOT used to generate
+historical signals.
+
+SAFETY
+------
+Production modified : NO
+Filter13 modified   : NO
+Filter15 modified   : NO
+Filter18 modified   : NO
+Filter13 executed   : NO
+Filter15 executed   : NO
+Filter18 executed   : NO
+Returns used        : NO
+CAGR used           : NO
+Sharpe used         : NO
+Parameter tuning    : NO
+Commit              : NO

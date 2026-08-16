@@ -1,0 +1,104 @@
+======================================================================================================================================================
+MACRO UNKNOWN — 5 FAMILY CLASSIFICATION GATE
+======================================================================================================================================================
+
+===== CONTRACT =====
+Target observations       : 992
+Expected observations     : 992
+Identity                  : PASS
+Returns used              : NO
+Filter13/15/18 executed   : NO
+Future state used in rule : NO
+Automatic A/B/C/D choice  : NO
+Production modified       : NO
+
+===== CLASSIFICATION EVIDENCE =====
+         structural_family  observations                 descriptive_pressure hy_watch_hot_fracture_share hy_hot_fracture_share wti_up_share wti_down_share wti_dominant_share  eras_present previous_state_mode previous_state_concentration next_state_mode_DIAGNOSTIC_ONLY next_state_concentration_DIAGNOSTIC_ONLY  evidence_hy_risk_dominant  evidence_wti_highly_concentrated  evidence_wti_materially_split classification
+  RATES_DOWN_USD_UP_VIX_UP           335    EASING_RATES_WITH_RISK_TIGHTENING                      94.33%                49.85%       35.22%         64.78%             64.78%             6  UNKNOWN_TRANSITION                       40.60%              UNKNOWN_TRANSITION                                   43.58%                       True                             False                           True      UNDECIDED
+RATES_DOWN_USD_UP_VIX_DOWN           277       RATES_RELIEF_WITH_USD_PRESSURE                      92.42%                44.40%       50.90%         49.10%             50.90%             6  UNKNOWN_TRANSITION                       36.46%              UNKNOWN_TRANSITION                                   37.32%                       True                             False                           True      UNDECIDED
+RATES_DOWN_USD_DOWN_VIX_UP           179       NOMINAL_EASING_WITH_VOL_STRESS                      91.62%                45.25%      100.00%          0.00%            100.00%             6  UNKNOWN_TRANSITION                       44.69%              UNKNOWN_TRANSITION                                   37.43%                       True                              True                          False      UNDECIDED
+RATES_UP_USD_DOWN_VIX_DOWN           129    RATES_PRESSURE_WITH_RISK_APPETITE                      91.47%                50.39%        0.00%        100.00%            100.00%             6  UNKNOWN_TRANSITION                       36.43%              UNKNOWN_TRANSITION                                   39.53%                       True                              True                          False      UNDECIDED
+  RATES_UP_USD_DOWN_VIX_UP            72 RATES_AND_VOL_PRESSURE_WITH_WEAK_USD                      93.06%                45.83%        0.00%        100.00%            100.00%             6  UNKNOWN_TRANSITION                       31.94%              UNKNOWN_TRANSITION                                   31.94%                       True                              True                          False      UNDECIDED
+
+===== DECISION CONTRACT =====
+A — EXISTING-STATE EXTENSION
+
+Use only if the family's contemporaneous economic evidence
+is a faithful extension of an existing Production narrative.
+
+The fact that the NEXT state often becomes an existing state
+is NOT sufficient evidence.
+
+
+B — TRANSITION / MIXED REGION
+
+Use if the family is economically real but contains opposing
+forces that should not be collapsed into a directional state.
+
+
+C — CANDIDATE NEW TAXONOMY
+
+Use only if the evidence is economically coherent, recurring
+across eras, and cannot be represented faithfully by an
+existing Production narrative.
+
+
+D — SPLIT REQUIRED
+
+Use if HY / WTI / magnitude materially changes the economic
+meaning inside the family.
+
+A split must be justified using contemporaneous PIT evidence.
+
+===== ANTI-OVERFIT GATE =====
+The following are forbidden for classification:
+
+- forward returns
+- CAGR
+- Sharpe
+- portfolio PnL
+- Filter13 budget improvement
+- Filter15 exposure improvement
+- Filter18 allocation improvement
+- next-state information as a classifier
+- choosing a taxonomy because it produces better performance
+
+Frequency alone does not authorize a macro state.
+
+This gate exists to establish economic taxonomy BEFORE
+portfolio-performance evaluation.
+
+===== REQUIRED NEXT DECISION =====
+Review the five families one by one.
+
+For each family assign exactly one provisional disposition:
+
+A = EXISTING-STATE EXTENSION
+B = TRANSITION / MIXED REGION
+C = CANDIDATE NEW TAXONOMY
+D = SPLIT REQUIRED
+
+Do not modify Production at this gate.
+
+After the provisional dispositions are economically justified,
+freeze a candidate Macro taxonomy specification.
+
+Only after that specification is frozen may a research-only
+counterfactual classifier be implemented.
+
+===== ARTIFACTS =====
+Evidence : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_unknown_family_classification_gate_v1/family_classification_evidence.csv
+Detail   : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_unknown_family_classification_gate_v1/family_classification_detail.csv
+Audit    : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_unknown_family_classification_gate_v1/family_classification_gate_audit.txt
+
+PRODUCTION MODIFIED : NO
+FILTER13/15/18      : UNCHANGED / NOT EXECUTED
+RETURNS USED        : NO
+PERFORMANCE USED    : NO
+NEW MACRO STATE     : NO
+CLASSIFICATION      : UNDECIDED
+COMMIT              : NO
+
+======================================================================================================================================================
+5 FAMILY CLASSIFICATION GATE COMPLETE — DO NOT COMMIT
+======================================================================================================================================================

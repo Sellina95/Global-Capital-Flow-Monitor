@@ -1,0 +1,5 @@
+experiment,unknown_grace,persistent_shocks,adopted,adoption_rate,mean_delay,median_delay,max_delay
+U1,1,25,25,1.0,0.52,1.0,1
+U2,2,25,25,1.0,0.4,0.0,1
+U3,3,25,25,1.0,0.36,0.0,1
+U5,5,25,25,1.0,0.32,0.0,1

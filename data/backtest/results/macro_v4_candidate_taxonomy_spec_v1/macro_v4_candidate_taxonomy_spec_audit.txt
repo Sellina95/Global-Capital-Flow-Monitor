@@ -1,0 +1,97 @@
+============================================================================================================================================
+MACRO V4 — CANDIDATE TAXONOMY SPEC FREEZE
+============================================================================================================================================
+
+===== UPSTREAM CONTRACT =====
+Target observations : 992
+D-family observations: 612
+C-family observations: 380
+Families            : 5
+
+===== FAMILY CONTRACT =====
+RATES_DOWN_USD_UP_VIX_UP           obs=335  resolution=D_SPLIT_CONFIRMED
+RATES_DOWN_USD_UP_VIX_DOWN         obs=277  resolution=D_SPLIT_CONFIRMED
+RATES_DOWN_USD_DOWN_VIX_UP         obs=179  resolution=C_REMAINS_CANDIDATE
+RATES_UP_USD_DOWN_VIX_DOWN         obs=129  resolution=C_REMAINS_CANDIDATE
+RATES_UP_USD_DOWN_VIX_UP           obs=72   resolution=C_REMAINS_CANDIDATE
+
+===== FROZEN PRECEDENCE =====
+1. Existing Production CREDIT_STRESS
+2. Existing Production named directional narratives
+3. V4 candidate taxonomy ONLY for unresolved UNKNOWN
+4. D families split using contemporaneous WTI_DIR
+5. Anything unresolved remains UNKNOWN_TRANSITION
+
+===== CREDIT_STRESS =====
+HY FRACTURE -> CREDIT_STRESS
+HY HOT + VIX_DIR=UP + VIX_TODAY>=22 -> CREDIT_STRESS
+VIX level invention/backfill -> FORBIDDEN
+
+===== CANDIDATE RULES =====
+ 10 | P_EXISTING_CREDIT_STRESS   | *                                | CREDIT_STRESS
+100 | D1_WTI_DOWN                | RATES_DOWN_USD_UP_VIX_UP         | V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_DOWN
+101 | D1_WTI_UP                  | RATES_DOWN_USD_UP_VIX_UP         | V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_UP
+110 | D2_WTI_DOWN                | RATES_DOWN_USD_UP_VIX_DOWN       | V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_DOWN
+111 | D2_WTI_UP                  | RATES_DOWN_USD_UP_VIX_DOWN       | V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_UP
+120 | C1                         | RATES_DOWN_USD_DOWN_VIX_UP       | V4_NOMINAL_EASING_WITH_VOL_INFLATION_STRESS
+130 | C2                         | RATES_UP_USD_DOWN_VIX_DOWN       | V4_RATES_PRESSURE_WITH_BROAD_RISK_RELIEF
+140 | C3                         | RATES_UP_USD_DOWN_VIX_UP         | V4_RATES_VOL_PRESSURE_WITH_WEAK_USD
+999 | FALLBACK                   | *                                | UNKNOWN_TRANSITION
+
+===== COVERAGE =====
+RATES_DOWN_USD_UP_VIX_UP           rules=2/2 coverage=PASS WTI_split=PASS
+RATES_DOWN_USD_UP_VIX_DOWN         rules=2/2 coverage=PASS WTI_split=PASS
+RATES_DOWN_USD_DOWN_VIX_UP         rules=1/1 coverage=PASS WTI_split=PASS
+RATES_UP_USD_DOWN_VIX_DOWN         rules=1/1 coverage=PASS WTI_split=PASS
+RATES_UP_USD_DOWN_VIX_UP           rules=1/1 coverage=PASS WTI_split=PASS
+
+===== FREEZE GATES =====
+UPSTREAM_TOTAL_IDENTITY                   : PASS
+D_FAMILY_TOTAL_IDENTITY                   : PASS
+C_FAMILY_TOTAL_IDENTITY                   : PASS
+FIVE_FAMILY_IDENTITY                      : PASS
+RULE_ID_UNIQUENESS                        : PASS
+PRIORITY_UNIQUENESS                       : PASS
+FAMILY_COVERAGE                           : PASS
+D_WTI_SPLIT_IDENTITY                      : PASS
+CREDIT_STRESS_PRECEDENCE                  : PASS
+UNKNOWN_FALLBACK_PRESENT                  : PASS
+PRODUCTION_AUTHORIZATION_FALSE            : PASS
+
+===== ANTI-OVERFIT CONTRACT =====
+Returns used          : NO
+CAGR / Sharpe used    : NO
+Filter13 optimized    : NO
+Filter15 optimized    : NO
+Filter18 optimized    : NO
+Future state classifier: NO
+New macro data        : NO
+Production modified   : NO
+Parameter tuning      : NO
+
+===== SHA256 =====
+cd7174ea8ec93115b4fc9902fd55fe2b9ba443199929b01eae2bc4db4fb70bf3
+
+===== ARTIFACTS =====
+JSON    : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_candidate_taxonomy_spec_v1/macro_v4_candidate_taxonomy_spec.json
+Rules   : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_candidate_taxonomy_spec_v1/macro_v4_candidate_taxonomy_rules.csv
+Coverage: /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_candidate_taxonomy_spec_v1/macro_v4_candidate_taxonomy_coverage.csv
+Audit   : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_candidate_taxonomy_spec_v1/macro_v4_candidate_taxonomy_spec_audit.txt
+
+STATUS : RESEARCH FROZEN
+
+PRODUCTION MODIFIED : NO
+FILTER13/15/18      : UNCHANGED
+RETURNS USED        : NO
+PERFORMANCE USED    : NO
+V4 CLASSIFIER RUN   : NO
+COMMIT              : NO
+
+NEXT IF PASS:
+MACRO V4 RESEARCH-ONLY CLASSIFIER
+-> apply only to Production UNKNOWN_TRANSITION
+-> preserve CREDIT_STRESS precedence
+-> verify PIT coverage / exclusivity / identity
+-> NO 13/15/18 and NO returns yet
+
+============================================================================================================================================

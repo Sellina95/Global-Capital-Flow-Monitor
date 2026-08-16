@@ -1,0 +1,178 @@
+{
+  "sha256": "cd7174ea8ec93115b4fc9902fd55fe2b9ba443199929b01eae2bc4db4fb70bf3",
+  "spec": {
+    "architecture": {
+      "credit_stress_precedence": "KEEP",
+      "d_family_split_variable": "WTI_DIR",
+      "existing_directional_states": "KEEP",
+      "existing_high_priority_states": "KEEP",
+      "fallback": "UNKNOWN_TRANSITION",
+      "raw_layer": "Existing Production interpret_macro_narrative",
+      "v4_candidate_layer": "APPLY ONLY TO CURRENT UNKNOWN_TRANSITION"
+    },
+    "candidate_rules": [
+      {
+        "candidate_state": "CREDIT_STRESS",
+        "dxy_dir": "*",
+        "family": "*",
+        "hy_condition": "FRACTURE OR (HOT AND VIX_DIR=1 AND VIX_TODAY>=22)",
+        "notes": "Existing Production CREDIT_STRESS precedence. V4 must never overwrite an observation already classified as CREDIT_STRESS.",
+        "priority": 10,
+        "production_authorized": false,
+        "rule_id": "P_EXISTING_CREDIT_STRESS",
+        "rule_type": "EXISTING_PRODUCTION_PRECEDENCE",
+        "us10y_dir": "*",
+        "vix_dir": "*",
+        "wti_dir": "*"
+      },
+      {
+        "candidate_state": "V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_DOWN",
+        "dxy_dir": 1,
+        "family": "RATES_DOWN_USD_UP_VIX_UP",
+        "hy_condition": "NON_CREDIT_STRESS",
+        "notes": "Research-only candidate. Risk tightening via USD/VIX while rates and WTI fall.",
+        "priority": 100,
+        "production_authorized": false,
+        "rule_id": "D1_WTI_DOWN",
+        "rule_type": "V4_CANDIDATE_SPLIT",
+        "us10y_dir": -1,
+        "vix_dir": 1,
+        "wti_dir": -1
+      },
+      {
+        "candidate_state": "V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_UP",
+        "dxy_dir": 1,
+        "family": "RATES_DOWN_USD_UP_VIX_UP",
+        "hy_condition": "NON_CREDIT_STRESS",
+        "notes": "Research-only candidate. Rates relief conflicts with USD/VIX and WTI pressure.",
+        "priority": 101,
+        "production_authorized": false,
+        "rule_id": "D1_WTI_UP",
+        "rule_type": "V4_CANDIDATE_SPLIT",
+        "us10y_dir": -1,
+        "vix_dir": 1,
+        "wti_dir": 1
+      },
+      {
+        "candidate_state": "V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_DOWN",
+        "dxy_dir": 1,
+        "family": "RATES_DOWN_USD_UP_VIX_DOWN",
+        "hy_condition": "NON_CREDIT_STRESS",
+        "notes": "Research-only candidate. Rates/VIX relief with USD strength and WTI weakness.",
+        "priority": 110,
+        "production_authorized": false,
+        "rule_id": "D2_WTI_DOWN",
+        "rule_type": "V4_CANDIDATE_SPLIT",
+        "us10y_dir": -1,
+        "vix_dir": -1,
+        "wti_dir": -1
+      },
+      {
+        "candidate_state": "V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_UP",
+        "dxy_dir": 1,
+        "family": "RATES_DOWN_USD_UP_VIX_DOWN",
+        "hy_condition": "NON_CREDIT_STRESS",
+        "notes": "Research-only candidate. Rates/VIX relief with USD strength and WTI pressure.",
+        "priority": 111,
+        "production_authorized": false,
+        "rule_id": "D2_WTI_UP",
+        "rule_type": "V4_CANDIDATE_SPLIT",
+        "us10y_dir": -1,
+        "vix_dir": -1,
+        "wti_dir": 1
+      },
+      {
+        "candidate_state": "V4_NOMINAL_EASING_WITH_VOL_INFLATION_STRESS",
+        "dxy_dir": -1,
+        "family": "RATES_DOWN_USD_DOWN_VIX_UP",
+        "hy_condition": "NON_CREDIT_STRESS",
+        "notes": "Research-only candidate. Nominal easing conflicts with rising volatility and WTI.",
+        "priority": 120,
+        "production_authorized": false,
+        "rule_id": "C1",
+        "rule_type": "V4_CANDIDATE_NEW_TAXONOMY",
+        "us10y_dir": -1,
+        "vix_dir": 1,
+        "wti_dir": 1
+      },
+      {
+        "candidate_state": "V4_RATES_PRESSURE_WITH_BROAD_RISK_RELIEF",
+        "dxy_dir": -1,
+        "family": "RATES_UP_USD_DOWN_VIX_DOWN",
+        "hy_condition": "NON_CREDIT_STRESS",
+        "notes": "Research-only candidate. Rates pressure occurs alongside weaker USD, lower VIX and lower WTI.",
+        "priority": 130,
+        "production_authorized": false,
+        "rule_id": "C2",
+        "rule_type": "V4_CANDIDATE_NEW_TAXONOMY",
+        "us10y_dir": 1,
+        "vix_dir": -1,
+        "wti_dir": -1
+      },
+      {
+        "candidate_state": "V4_RATES_VOL_PRESSURE_WITH_WEAK_USD",
+        "dxy_dir": -1,
+        "family": "RATES_UP_USD_DOWN_VIX_UP",
+        "hy_condition": "NON_CREDIT_STRESS",
+        "notes": "Research-only candidate. Rates and volatility pressure coexist with weaker USD and WTI.",
+        "priority": 140,
+        "production_authorized": false,
+        "rule_id": "C3",
+        "rule_type": "V4_CANDIDATE_NEW_TAXONOMY",
+        "us10y_dir": 1,
+        "vix_dir": 1,
+        "wti_dir": -1
+      },
+      {
+        "candidate_state": "UNKNOWN_TRANSITION",
+        "dxy_dir": "*",
+        "family": "*",
+        "hy_condition": "*",
+        "notes": "Anything not explicitly covered remains UNKNOWN. No forced classification.",
+        "priority": 999,
+        "production_authorized": false,
+        "rule_id": "FALLBACK",
+        "rule_type": "FALLBACK",
+        "us10y_dir": "*",
+        "vix_dir": "*",
+        "wti_dir": "*"
+      }
+    ],
+    "credit_stress_contract": {
+      "condition_1": "HY_OAS_STATUS == FRACTURE",
+      "condition_2": "HY_OAS_STATUS == HOT AND VIX_DIR == 1 AND VIX_TODAY >= 22",
+      "future_backfill": false,
+      "invent_vix_level": false,
+      "precedence": "BEFORE ALL V4 CANDIDATE RULES"
+    },
+    "next_gate": "MACRO V4 RESEARCH-ONLY CLASSIFIER COVERAGE + EXCLUSIVITY + PIT IDENTITY",
+    "purpose": "Freeze research-only candidate taxonomy before classifier implementation or portfolio evaluation.",
+    "research_constraints": {
+      "filter13_modified": false,
+      "filter15_modified": false,
+      "filter18_modified": false,
+      "future_state_classifier": false,
+      "new_macro_data_authorized": false,
+      "parameter_tuning": false,
+      "performance_used": false,
+      "production_authorized": false,
+      "production_modified": false,
+      "returns_used": false
+    },
+    "spec_name": "MACRO_V4_CANDIDATE_TAXONOMY",
+    "status": "RESEARCH_FROZEN",
+    "upstream_identity": {
+      "c_family_observations": 380,
+      "d_family_observations": 612,
+      "families": {
+        "RATES_DOWN_USD_DOWN_VIX_UP": 179,
+        "RATES_DOWN_USD_UP_VIX_DOWN": 277,
+        "RATES_DOWN_USD_UP_VIX_UP": 335,
+        "RATES_UP_USD_DOWN_VIX_DOWN": 129,
+        "RATES_UP_USD_DOWN_VIX_UP": 72
+      },
+      "target_observations": 992
+    },
+    "version": "v1"
+  }
+}

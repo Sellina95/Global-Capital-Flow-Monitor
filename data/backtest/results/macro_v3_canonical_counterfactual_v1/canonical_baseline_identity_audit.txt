@@ -1,0 +1,22 @@
+MACRO V3 — CANONICAL BASELINE IDENTITY GATE
+
+Rows replayed       : 4645
+Date-set identity   : PASS
+RAW macro identity  : PASS
+RAW macro mismatch  : 0
+
+risk_budget_13: PASS (mismatch=0)
+exposure_15: PASS (mismatch=0)
+allocated_equity_18: PASS (mismatch=0)
+cash_weight: PASS (mismatch=0)
+
+GATE 1 STATUS       : PASS
+
+PRODUCTION MODIFIED : NO
+FILTER13 MODIFIED   : NO
+FILTER15 MODIFIED   : NO
+FILTER18 MODIFIED   : NO
+MACRO V3 APPLIED    : NO
+RETURNS USED        : NO
+PERFORMANCE USED    : NO
+PARAMETER TUNING    : NO
