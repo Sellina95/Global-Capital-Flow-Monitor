@@ -7412,6 +7412,217 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # -------------------------
     # 19) Execution Layer (ETF Mapping)
     # -------------------------
+    # --------------------------------------------------
+    # FILTER18_EXECUTION_CEILING_RECONCILIATION_V1
+    #
+    # Capital-contract invariant:
+    #
+    # Rank Persistence may preserve previously accepted sector
+    # composition, but it must never preserve an absolute equity
+    # exposure above today's Filter18 allowed exposure.
+    #
+    # This reconciliation is intentionally placed AFTER all
+    # Filter18 / Rank3D weight decisions and immediately BEFORE
+    # ETF execution mapping.
+    #
+    # No new signal.
+    # No parameter optimization.
+    # No change to sector ranking.
+    # No change to Rank Persistence confirmation logic.
+    # --------------------------------------------------
+
+    try:
+        _execution_ceiling = max(
+            0.0,
+            float(final_exposure),
+        )
+    except Exception:
+        _execution_ceiling = 0.0
+
+    _execution_weights = {}
+
+    for _sector, _weight in (weights or {}).items():
+        try:
+            _w = float(_weight)
+        except Exception:
+            _w = 0.0
+
+        # Negative sector weights are not valid in this
+        # long-only execution contract.
+        _execution_weights[_sector] = max(
+            0.0,
+            _w,
+        )
+
+    _execution_sum = sum(
+        _execution_weights.values()
+    )
+
+    # --------------------------------------------------
+    # 1. Hard exposure ceiling
+    #
+    # If Rank Persistence restored stale absolute weights above
+    # today's allowed exposure, preserve relative composition
+    # but proportionally compress total equity exposure.
+    # --------------------------------------------------
+
+    if (
+        _execution_sum > _execution_ceiling
+        and _execution_sum > 0
+    ):
+        _execution_scale = (
+            _execution_ceiling
+            / _execution_sum
+        )
+
+        _execution_weights = {
+            _sector: (
+                _weight
+                * _execution_scale
+            )
+            for _sector, _weight
+            in _execution_weights.items()
+        }
+
+    # --------------------------------------------------
+    # 2. Execution rounding
+    #
+    # Production ETF weights operate at 0.1% precision.
+    # Round first, then reconcile once more because independent
+    # sector rounding can re-create a small ceiling breach.
+    # --------------------------------------------------
+
+    _execution_weights = {
+        _sector: round(
+            max(0.0, float(_weight)),
+            1,
+        )
+        for _sector, _weight
+        in _execution_weights.items()
+    }
+
+    _rounded_sum = sum(
+        _execution_weights.values()
+    )
+
+    # --------------------------------------------------
+    # 3. Post-rounding reconciliation
+    #
+    # Do NOT rescale everything repeatedly for a 0.1% residual.
+    # Remove only the residual amount from the largest position.
+    #
+    # This preserves:
+    # - sector ranking
+    # - Rank3D composition
+    # - turnover intent
+    # while enforcing the capital ceiling.
+    # --------------------------------------------------
+
+    _rounding_excess = (
+        _rounded_sum
+        - _execution_ceiling
+    )
+
+    if (
+        _rounding_excess > 1e-9
+        and _execution_weights
+    ):
+        _largest_sector = max(
+            _execution_weights,
+            key=_execution_weights.get,
+        )
+
+        _execution_weights[_largest_sector] = round(
+            max(
+                0.0,
+                _execution_weights[_largest_sector]
+                - _rounding_excess,
+            ),
+            1,
+        )
+
+    # --------------------------------------------------
+    # 4. Defensive final invariant
+    #
+    # Floating-point / rounding protection.
+    # --------------------------------------------------
+
+    _final_execution_sum = sum(
+        _execution_weights.values()
+    )
+
+    if (
+        _final_execution_sum
+        > _execution_ceiling + 1e-9
+        and _final_execution_sum > 0
+    ):
+        _final_scale = (
+            _execution_ceiling
+            / _final_execution_sum
+        )
+
+        _execution_weights = {
+            _sector: round(
+                _weight * _final_scale,
+                1,
+            )
+            for _sector, _weight
+            in _execution_weights.items()
+        }
+
+        # A final independent round can theoretically leave
+        # another 0.1 residual. Remove it deterministically.
+        _final_execution_sum = sum(
+            _execution_weights.values()
+        )
+
+        _final_excess = (
+            _final_execution_sum
+            - _execution_ceiling
+        )
+
+        if (
+            _final_excess > 1e-9
+            and _execution_weights
+        ):
+            _largest_sector = max(
+                _execution_weights,
+                key=_execution_weights.get,
+            )
+
+            _execution_weights[_largest_sector] = round(
+                max(
+                    0.0,
+                    _execution_weights[_largest_sector]
+                    - _final_excess,
+                ),
+                1,
+            )
+
+    weights = _execution_weights
+
+    # Reconcile execution-facing capital values with the
+    # weights that will actually be sent to the ETF mapper.
+    allocated_equity = round(
+        sum(weights.values()),
+        1,
+    )
+
+    tactical_reserve = max(
+        0.0,
+        round(
+            _execution_ceiling
+            - allocated_equity,
+            1,
+        ),
+    )
+
+    cash_weight = round(
+        100.0
+        - allocated_equity,
+        1,
+    )
+
     etf_plan = build_execution_etf_map(
     weights=weights,
     divergence_flags=divergence_flags,
