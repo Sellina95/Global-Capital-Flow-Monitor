@@ -45,8 +45,8 @@ CONTRACT_PATH = (
     / "data"
     / "backtest"
     / "results"
-    / "macro_v3_execution_contract_v1"
-    / "macro_v3_execution_contract_daily.csv"
+    / "macro_v4_research_classifier_v1"
+    / "macro_v4_classifier_daily.csv"
 )
 
 OUT_DIR = (
@@ -54,7 +54,7 @@ OUT_DIR = (
     / "data"
     / "backtest"
     / "results"
-    / "macro_v3_canonical_counterfactual_v1"
+    / "macro_v4_causal_propagation_v1"
 )
 
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -62,6 +62,21 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 BASELINE_REPLAY_PATH = OUT_DIR / "canonical_baseline_replay.csv"
 AUDIT_PATH = OUT_DIR / "canonical_baseline_identity_audit.txt"
 
+
+MAPPING_SPEC_PATH = (
+    ROOT / "data" / "backtest" / "results"
+    / "macro_v4_portfolio_mapping_spec_v1"
+    / "macro_v4_portfolio_mapping_spec.json"
+)
+
+EXPECTED_MAPPING_HASH = "6ef7cba1e196fbb067385a2acc20e193adfd357d98669d74c3a745907e47d225"
+
+mapping_artifact = json.loads(MAPPING_SPEC_PATH.read_text())
+
+if mapping_artifact.get("sha256") != EXPECTED_MAPPING_HASH:
+    raise RuntimeError("FROZEN V4 MAPPING HASH MISMATCH")
+
+V4_MAPPING = mapping_artifact["spec"]["mapping"]
 
 # ============================================================
 # HELPERS
@@ -126,52 +141,22 @@ required_contract = {
     "signal_date",
     "execution_date",
     "raw_macro_narrative",
-    "strategic_macro_state",
+    "v4_state",
+    "v4_applied",
 }
 
 missing = required_contract - set(contract.columns)
 
 if missing:
     raise RuntimeError(
-        f"Missing V3 contract columns: {sorted(missing)}"
+        f"Missing V4 contract columns: {sorted(missing)}"
     )
 
 
 # ============================================================
-# V3 WARM-UP CONTRACT
-# ============================================================
-
-missing_state = contract["strategic_macro_state"].isna()
-
-if missing_state.any():
-
-    missing_positions = [
-        contract.index.get_loc(idx)
-        for idx in contract.index[missing_state]
-    ]
-
-    expected_prefix = list(range(len(missing_positions)))
-
-    if missing_positions != expected_prefix:
-        raise RuntimeError(
-            "Strategic macro state contains non-initial missing rows."
-        )
-
-    print()
-    print("===== V3 P2 WARM-UP =====")
-    print("Unresolved rows :", int(missing_state.sum()))
-    print(
-        "Dates           :",
-        ", ".join(
-            contract.loc[
-                missing_state,
-                "signal_date",
-            ].dt.strftime("%Y-%m-%d")
-        ),
-    )
-    print("Future backfill : NO")
-    print("Treatment       : EXCLUDE FROM V3 EVALUATION")
-
+# V4 CONTRACT
+# Only rows explicitly classified with v4_applied=True
+# enter the V4 causal intervention universe.
 
 # ============================================================
 # CANONICAL DATE UNIVERSE
@@ -286,6 +271,27 @@ for count, idx in enumerate(indices, start=1):
         "exposure_15": exposure,
         "allocated_equity_18": allocated_equity,
         "cash_weight": cash_weight,
+
+        "sector_final_score": market_data.get(
+            "SECTOR_FINAL_SCORE",
+            {},
+        ),
+
+        "builder_allocation": engine_result.get(
+            "builder_allocation",
+            {},
+        ),
+
+        "rank_raw": market_data.get("FILTER18_RAW_RANK", ""),
+        "rank_accepted": market_data.get("FILTER18_ACCEPTED_RANK", ""),
+        "rank_pending": market_data.get("FILTER18_PENDING_RANK", ""),
+        "rank_pending_count": market_data.get("FILTER18_PENDING_COUNT", 0),
+        "rank_action": market_data.get("FILTER18_RANK_ACTION", ""),
+
+        "rebalance_input_weights": engine_result.get("rebalance_input_weights"),
+        "rebalance_prev_weights": engine_result.get("rebalance_prev_weights"),
+        "rebalance_output_weights": engine_result.get("rebalance_output_weights"),
+        "rebalance_actions": engine_result.get("rebalance_actions"),
 
         "flow_state": flow_memory.get(
             "flow_state"
@@ -586,28 +592,33 @@ print("=" * 126)
 # P2 + UNKNOWN-HOLD contract.
 # ---------------------------------------------------------------------
 
-v3_contract = contract[
+v4_contract = contract[
     [
         "signal_date",
         "raw_macro_narrative",
-        "strategic_macro_state",
+        "v4_state",
+        "v4_applied",
     ]
 ].copy()
 
-v3_contract["signal_date"] = pd.to_datetime(
-    v3_contract["signal_date"],
+v4_contract["signal_date"] = pd.to_datetime(
+    v4_contract["signal_date"],
     errors="coerce",
 )
 
-v3_lookup = (
-    v3_contract
+v4_contract = v4_contract[
+    v4_contract["v4_applied"] == True
+].copy()
+
+v4_lookup = (
+    v4_contract
     .set_index("signal_date")
-    ["strategic_macro_state"]
+    ["v4_state"]
     .to_dict()
 )
 
 raw_lookup = (
-    v3_contract
+    v4_contract
     .set_index("signal_date")
     ["raw_macro_narrative"]
     .to_dict()
@@ -640,7 +651,7 @@ for count, idx in enumerate(indices, start=1):
         panel.iloc[idx]["signal_date"]
     )
 
-    strategic_state = v3_lookup.get(signal_date)
+    v4_state = v4_lookup.get(signal_date)
 
     # --------------------------------------------------------------
     # P2 initial warm-up:
@@ -648,7 +659,7 @@ for count, idx in enumerate(indices, start=1):
     # Never future-backfill.
     # --------------------------------------------------------------
 
-    if pd.isna(strategic_state):
+    if pd.isna(v4_state):
         warmup_skipped += 1
         continue
 
@@ -712,35 +723,22 @@ for count, idx in enumerate(indices, start=1):
     market_data["RAW_MACRO_NARRATIVE"] = generated_raw
     market_data["RAW_MARKET_REGIME"] = raw_market_regime
 
-    market_data["STRATEGIC_MACRO_STATE"] = str(
-        strategic_state
-    )
+    v4_state = str(v4_state)
 
-    market_data["MACRO_NARRATIVE"] = str(
-        strategic_state
-    )
-
-    # Policy remains the existing PIT Production output.
-    #
-    # map_to_portfolio_regime only uses policy text for its
-    # existing easing check; no new policy model is introduced.
-    policy_state = str(
-        market_data.get(
-            "POLICY_BIAS_LINE",
-            "",
+    if v4_state not in V4_MAPPING:
+        raise RuntimeError(
+            f"V4 state missing from frozen mapping: {v4_state}"
         )
-        or ""
+
+    frozen_mapping = V4_MAPPING[v4_state]
+
+    strategic_market_regime = str(
+        frozen_mapping["portfolio_regime"]
     )
 
-    strategic_market_regime = sf.map_to_portfolio_regime(
-        policy_state=policy_state,
-        macro_narrative=str(strategic_state),
-        tape=current_tape,
-    )
-
-    market_data["MARKET_REGIME"] = (
-        strategic_market_regime
-    )
+    market_data["STRATEGIC_MACRO_STATE"] = v4_state
+    market_data["MACRO_NARRATIVE"] = strategic_market_regime
+    market_data["MARKET_REGIME"] = strategic_market_regime
 
     # --------------------------------------------------------------
     # IMPORTANT CAUSAL BOUNDARY
@@ -916,7 +914,7 @@ for count, idx in enumerate(indices, start=1):
         ),
 
         "raw_macro_narrative": generated_raw,
-        "strategic_macro_state": strategic_state,
+        "v4_state": v4_state,
 
         "raw_market_regime": raw_market_regime,
         "strategic_market_regime": strategic_market_regime,
@@ -925,6 +923,32 @@ for count, idx in enumerate(indices, start=1):
         "exposure_15": exposure,
         "allocated_equity_18": allocated_equity,
         "cash_weight": cash_weight,
+
+        "macro_profile": market_data.get(
+            "MACRO_REGIME_PROFILE",
+            "N/A",
+        ),
+
+        "sector_final_score": market_data.get(
+            "SECTOR_FINAL_SCORE",
+            {},
+        ),
+
+        "builder_allocation": engine_result.get(
+            "builder_allocation",
+            {},
+        ),
+
+        "rank_raw": market_data.get("FILTER18_RAW_RANK", ""),
+        "rank_accepted": market_data.get("FILTER18_ACCEPTED_RANK", ""),
+        "rank_pending": market_data.get("FILTER18_PENDING_RANK", ""),
+        "rank_pending_count": market_data.get("FILTER18_PENDING_COUNT", 0),
+        "rank_action": market_data.get("FILTER18_RANK_ACTION", ""),
+
+        "rebalance_input_weights": engine_result.get("rebalance_input_weights"),
+        "rebalance_prev_weights": engine_result.get("rebalance_prev_weights"),
+        "rebalance_output_weights": engine_result.get("rebalance_output_weights"),
+        "rebalance_actions": engine_result.get("rebalance_actions"),
 
         "flow_state": v3_flow_memory.get(
             "flow_state"
@@ -1050,7 +1074,7 @@ comparison["macro_changed"] = (
     ].astype(str)
     !=
     comparison[
-        "strategic_macro_state"
+        "v4_state"
     ].astype(str)
 )
 
@@ -1110,7 +1134,7 @@ baseline_macro = comparison[
 ].astype(str)
 
 v3_macro = comparison[
-    "strategic_macro_state"
+    "v4_state"
 ].astype(str)
 
 baseline_transitions = int(

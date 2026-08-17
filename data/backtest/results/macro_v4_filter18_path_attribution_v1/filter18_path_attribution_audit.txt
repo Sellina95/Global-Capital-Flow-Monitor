@@ -1,0 +1,30 @@
+==============================================================================================================
+MACRO V4 — FILTER18 CAUSAL PATH ATTRIBUTION
+==============================================================================================================
+
+===== CONTRACT =====
+V4 observations              : 992
+Filter13 changed days         : 460
+Filter15 changed days         : 430
+Filter18 changed days         : 790
+Cash changed days             : 790
+
+===== FILTER18 PATH ATTRIBUTION =====
+F13_AND_F15_CHANGED_BEFORE_F18              420 (53.16%)
+DIRECT_OR_OTHER_FILTER18_PATH               352 (44.56%)
+F13_CHANGED_F15_ABSORBED_F18_CHANGED         18 (2.28%)
+
+===== KEY DIAGNOSTIC =====
+13 unchanged + 15 unchanged + 18 changed : 352
+
+STATUS : REQUIRES DIRECT FILTER18 PATH INSPECTION
+
+Production modified : NO
+Returns used        : NO
+Performance used    : NO
+Parameter tuning    : NO
+Engine rerun        : NO
+
+Daily   : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_filter18_path_attribution_v1/filter18_path_attribution_daily.csv
+Summary : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_filter18_path_attribution_v1/filter18_path_attribution_summary.csv
+==============================================================================================================

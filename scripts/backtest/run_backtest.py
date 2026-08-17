@@ -46,12 +46,39 @@ def run_engine(
 
     original_builder = sf.build_tactical_allocation
     original_etf_mapper = sf.build_execution_etf_map
+    original_rebalance = sf.apply_rebalance_threshold
 
     def capture_allocation(*args, **kwargs):
         result = original_builder(*args, **kwargs)
 
         # Intermediate allocation — diagnostics only.
         captured["builder_allocation"] = result
+
+        return result
+
+    def capture_rebalance(*args, **kwargs):
+        if "weights" in kwargs:
+            input_weights = kwargs["weights"]
+        elif args:
+            input_weights = args[0]
+        else:
+            input_weights = {}
+
+        if "prev_sector_weights" in kwargs:
+            prev_weights = kwargs["prev_sector_weights"]
+        elif len(args) > 1:
+            prev_weights = args[1]
+        else:
+            prev_weights = {}
+
+        result = original_rebalance(*args, **kwargs)
+
+        captured["rebalance_input_weights"] = dict(input_weights or {})
+        captured["rebalance_prev_weights"] = dict(prev_weights or {})
+
+        if isinstance(result, tuple) and len(result) >= 2:
+            captured["rebalance_output_weights"] = dict(result[0] or {})
+            captured["rebalance_actions"] = dict(result[1] or {})
 
         return result
 
@@ -74,6 +101,7 @@ def run_engine(
         return original_etf_mapper(*args, **kwargs)
 
     sf.build_tactical_allocation = capture_allocation
+    sf.apply_rebalance_threshold = capture_rebalance
     sf.build_execution_etf_map = capture_execution_etf_map
 
     try:
@@ -132,12 +160,18 @@ def run_engine(
 
         return {
             "allocation": allocation,
+            "builder_allocation": builder_allocation,
+            "rebalance_input_weights": captured.get("rebalance_input_weights"),
+            "rebalance_prev_weights": captured.get("rebalance_prev_weights"),
+            "rebalance_output_weights": captured.get("rebalance_output_weights"),
+            "rebalance_actions": captured.get("rebalance_actions"),
             "deadman_reason": deadman_reason,
             "brake_drivers": brake_drivers,
         }
 
     finally:
         sf.build_tactical_allocation = original_builder
+        sf.apply_rebalance_threshold = original_rebalance
         sf.build_execution_etf_map = original_etf_mapper
 
 

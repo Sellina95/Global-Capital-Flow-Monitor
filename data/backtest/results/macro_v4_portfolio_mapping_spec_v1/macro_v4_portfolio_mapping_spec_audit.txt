@@ -1,0 +1,73 @@
+============================================================================================================================================
+MACRO V4 — PORTFOLIO MAPPING SPEC FREEZE
+============================================================================================================================================
+
+===== FROZEN MAPPING =====
+
+V4_NOMINAL_EASING_WITH_VOL_INFLATION_STRESS
+  -> EVENT-WATCHING / INFLATION
+  -> Filter13 Macro Tilt: -6
+  -> Phase Cap: NO LABEL-DRIVEN CAP
+
+V4_RATES_PRESSURE_WITH_BROAD_RISK_RELIEF
+  -> TRANSITION / MIXED
+  -> Filter13 Macro Tilt: +0
+  -> Phase Cap: NO LABEL-DRIVEN CAP
+
+V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_DOWN
+  -> TRANSITION / MIXED
+  -> Filter13 Macro Tilt: +0
+  -> Phase Cap: NO LABEL-DRIVEN CAP
+
+V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_UP
+  -> EVENT-WATCHING / INFLATION
+  -> Filter13 Macro Tilt: -6
+  -> Phase Cap: NO LABEL-DRIVEN CAP
+
+V4_RATES_VOL_PRESSURE_WITH_WEAK_USD
+  -> TRANSITION / MIXED
+  -> Filter13 Macro Tilt: +0
+  -> Phase Cap: NO LABEL-DRIVEN CAP
+
+V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_DOWN
+  -> TRANSITION / MIXED
+  -> Filter13 Macro Tilt: +0
+  -> Phase Cap: NO LABEL-DRIVEN CAP
+
+V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_UP
+  -> TRANSITION / MIXED
+  -> Filter13 Macro Tilt: +0
+  -> Phase Cap: NO LABEL-DRIVEN CAP
+
+===== FREEZE GATES =====
+7 V4 STATES                     : PASS
+2 INFLATION-RISK MAPPINGS       : PASS
+5 TRANSITION/MIXED MAPPINGS     : PASS
+FILTER13 SEMANTIC IDENTITY      : PASS
+NO LABEL-DRIVEN PHASE CAP       : PASS
+ANTI-OVERFIT CONTRACT           : PASS
+PRODUCTION AUTHORIZATION FALSE  : PASS
+
+===== ANTI-OVERFIT =====
+Returns used       : NO
+PnL used           : NO
+CAGR used          : NO
+Sharpe used        : NO
+Future info used   : NO
+Parameter tuning   : NO
+
+===== SHA256 =====
+6ef7cba1e196fbb067385a2acc20e193adfd357d98669d74c3a745907e47d225
+
+===== ARTIFACTS =====
+JSON  : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_portfolio_mapping_spec_v1/macro_v4_portfolio_mapping_spec.json
+Audit : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_portfolio_mapping_spec_v1/macro_v4_portfolio_mapping_spec_audit.txt
+
+STATUS : MACRO V4 PORTFOLIO MAPPING FROZEN
+
+NEXT   : MACRO V4 CAUSAL PROPAGATION
+         V4 -> Portfolio Regime -> Filter13 -> Filter15 -> Filter18
+
+PRODUCTION MODIFIED : NO
+COMMIT              : NO
+============================================================================================================================================

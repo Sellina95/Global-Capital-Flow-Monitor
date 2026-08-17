@@ -1,0 +1,71 @@
+{
+  "sha256": "6ef7cba1e196fbb067385a2acc20e193adfd357d98669d74c3a745907e47d225",
+  "spec": {
+    "architecture_contract": {
+      "macro_taxonomy_is_portfolio_action": false,
+      "mixed_mapping_allowed": true,
+      "next_gate": "MACRO_V4_CAUSAL_PROPAGATION",
+      "production_modification_authorized": false,
+      "research_branch_only": true
+    },
+    "freeze_date": "2026-08-17",
+    "mapping": {
+      "V4_NOMINAL_EASING_WITH_VOL_INFLATION_STRESS": {
+        "filter13_macro_tilt": -6,
+        "phase_cap_semantic": "NO LABEL-DRIVEN CAP",
+        "portfolio_regime": "EVENT-WATCHING / INFLATION",
+        "reason": "Nominal easing is offset by rising volatility and WTI, while contemporaneous credit is predominantly WATCH/HOT. Preserve inflation/risk stress rather than infer RISK-ON."
+      },
+      "V4_RATES_PRESSURE_WITH_BROAD_RISK_RELIEF": {
+        "filter13_macro_tilt": 0,
+        "phase_cap_semantic": "NO LABEL-DRIVEN CAP",
+        "portfolio_regime": "TRANSITION / MIXED",
+        "reason": "Rates pressure conflicts with broader risk relief. Evidence does not justify a directional portfolio regime."
+      },
+      "V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_DOWN": {
+        "filter13_macro_tilt": 0,
+        "phase_cap_semantic": "NO LABEL-DRIVEN CAP",
+        "portfolio_regime": "TRANSITION / MIXED",
+        "reason": "Rates and WTI relief conflict with USD and volatility pressure. Preserve mixed risk treatment."
+      },
+      "V4_RATES_RELIEF_USD_VOL_PRESSURE_WTI_UP": {
+        "filter13_macro_tilt": -6,
+        "phase_cap_semantic": "NO LABEL-DRIVEN CAP",
+        "portfolio_regime": "EVENT-WATCHING / INFLATION",
+        "reason": "Rates relief is offset by USD pressure, rising volatility, and rising WTI. Inflation/risk stress remains economically relevant."
+      },
+      "V4_RATES_VOL_PRESSURE_WITH_WEAK_USD": {
+        "filter13_macro_tilt": 0,
+        "phase_cap_semantic": "NO LABEL-DRIVEN CAP",
+        "portfolio_regime": "TRANSITION / MIXED",
+        "reason": "Weak USD is supportive but conflicts with rates and volatility pressure. Directional mapping is not justified."
+      },
+      "V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_DOWN": {
+        "filter13_macro_tilt": 0,
+        "phase_cap_semantic": "NO LABEL-DRIVEN CAP",
+        "portfolio_regime": "TRANSITION / MIXED",
+        "reason": "Volatility and WTI relief are supportive but USD pressure remains. Do not infer full RISK-ON."
+      },
+      "V4_RATES_VOL_RELIEF_USD_PRESSURE_WTI_UP": {
+        "filter13_macro_tilt": 0,
+        "phase_cap_semantic": "NO LABEL-DRIVEN CAP",
+        "portfolio_regime": "TRANSITION / MIXED",
+        "reason": "Volatility relief conflicts with USD and WTI pressure. Mixed portfolio treatment is retained."
+      }
+    },
+    "purpose": "Freeze Macro V4 state -> portfolio regime semantics before causal propagation and before performance evaluation.",
+    "selection_contract": {
+      "cagr_used": false,
+      "filter13_optimization_used": false,
+      "filter15_optimization_used": false,
+      "filter18_optimization_used": false,
+      "future_information_used": false,
+      "parameter_tuning_used": false,
+      "pnl_used": false,
+      "returns_used": false,
+      "sharpe_used": false
+    },
+    "spec_name": "MACRO_V4_PORTFOLIO_MAPPING_SPEC_V1",
+    "status": "FROZEN"
+  }
+}

@@ -1,0 +1,27 @@
+========================================================================================================================
+MACRO V4 — FILTER18 MACRO PROFILE DIRECT PATH AUDIT
+========================================================================================================================
+
+===== CONTRACT =====
+Direct/other Filter18 path days : 352
+Macro profile changed days      : 19
+Macro profile unchanged days    : 333
+Profile explanation share       : 5.40%
+
+===== PROFILE TRANSITIONS =====
+BALANCED -> EVENT_TRANSITION : 19
+
+===== INTERPRETATION =====
+PARTIAL — MACRO PROFILE EXPLAINS PART OF FILTER18 DIRECT PATH
+
+Production modified : NO
+Returns used        : NO
+Performance used    : NO
+Parameter tuning    : NO
+Future data used    : NO
+
+Daily   : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_filter18_macro_profile_path_v1/filter18_macro_profile_path_daily.csv
+Summary : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_filter18_macro_profile_path_v1/filter18_macro_profile_path_summary.csv
+Audit   : /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/macro_v4_filter18_macro_profile_path_v1/filter18_macro_profile_path_audit.txt
+
+========================================================================================================================
