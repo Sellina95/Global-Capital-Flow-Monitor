@@ -1,423 +1,559 @@
 # 🌍 Global Capital Flow Monitor
-### Strategy & Capital Flow Research Initiative
 
-Global Capital Flow Monitor is a macro-to-execution framework that converts:
-Structure → Flow → Risk Budget → Tactical Allocation → ETF Execution.
+### Macro Research · Capital Flow · Risk Budgeting · Portfolio Allocation
 
-It is designed not to predict markets,
-but to systematically interpret capital flow and translate it into disciplined positioning.
+**Global Capital Flow Monitor** is an independent research framework designed to translate global macro structure and cross-asset capital flows into systematic portfolio decisions.
 
----
+The core transmission chain is:
 
-# 🧠 Overview
+**Macro Structure  
+→ Capital Flow  
+→ Risk Budget  
+→ Volatility-Controlled Exposure  
+→ Tactical Allocation  
+→ ETF Execution**
 
-**Global Capital Flow Monitor** is a rule-based macro strategy engine designed to interpret **cross-asset capital flow dynamics** and translate them into a structured daily strategist framework.
+The objective is not to predict markets.
 
-The system integrates multiple layers of global market structure:
+The objective is to build a disciplined framework for interpreting market structure, controlling risk, and translating macro information into portfolio decisions.
 
-- Interest Rate Structure  
-- USD Liquidity Conditions  
-- Volatility Regimes  
-- Credit Market Stress  
-- Policy Bias & Expectations  
-- Factor Sensitivity  
-- Style Rotation  
-- Sector Allocation Logic  
-- Execution Translation Layer  
-
-The objective is not prediction.
-
-The objective is:
-- disciplined interpretation of market structure
-- systematic risk budgeting
-- tactical asset allocation
-- execution translation
+> **Research project — not investment advice.**
 
 ---
 
-# 💡 Strategic Genesis
+# 📌 Current Research Status
 
-This project is not merely a coding exercise — it represents a synthesis of professional experience and macro-structural thinking.
+The project has evolved from a daily macro monitoring engine into a historical research and validation framework.
 
-### The "Plumbing" Perspective
-My experience at **Bank of America (Global Markets Operations)** provided insight into the hidden mechanics of the financial system.
+### Production / Strategy Architecture
 
-Markets do not move purely because of narratives — they move because **liquidity flows through specific pipes**:
+Implemented components include:
+
+- Macro regime classification
+- Liquidity structure
+- Credit stress monitoring
+- Cross-asset confirmation
+- Institutional flow detection
+- Positioning and gamma context
+- Risk budgeting
+- Volatility-controlled exposure
+- Sector allocation
+- Tactical portfolio construction
+- ETF execution translation
+
+---
+
+### Historical Validation Framework
+
+The research environment now includes:
+
+- Historical backtesting
+- Point-in-time input validation
+- Production ↔ Backtest parity testing
+- Execution-chain audits
+- Filter-level attribution
+- Counterfactual testing
+- Causal propagation analysis
+- Portfolio allocation diagnostics
+
+Research and production logic are intentionally separated.
+
+Historical validation is designed to answer not only:
+
+> **“Did the strategy perform?”**
+
+but also:
+
+> **“Did the historical simulation use the information and decision process that would actually have been available at the time?”**
+
+---
+
+# 🧪 Current Research — Macro Regime V4
+
+Macro Regime V4 is currently under causal validation.
+
+The research sequence is:
+
+**Macro V4  
+→ Portfolio Regime  
+→ Filter 13 Risk Budget  
+→ Filter 15 Exposure  
+→ Filter 18 Allocation**
+
+Current validation principles:
+
+- Portfolio mapping was frozen before performance evaluation
+- Mapping selection did not use returns, PnL, CAGR, or Sharpe
+- No performance-based parameter tuning is used during causal validation
+- Production filters remain unchanged during counterfactual testing
+- Historical propagation is tested through the existing portfolio engine
+
+The objective of this stage is to determine whether changes in macro classification propagate through the portfolio architecture for structurally explainable reasons.
+
+**Causal attribution remains in progress.**
+
+Performance evaluation is intentionally deferred until the causal and execution contracts are closed.
+
+---
+
+# 🏗 System Architecture
+
+The framework follows a hierarchical market interpretation process.
+
+```text
+Macro Structure
+        ↓
+Liquidity & Credit Conditions
+        ↓
+Cross-Asset Confirmation
+        ↓
+Institutional Flow
+        ↓
+Macro / Market Regime
+        ↓
+Risk Budget
+        ↓
+Volatility-Controlled Exposure
+        ↓
+Sector & Factor Interpretation
+        ↓
+Tactical Allocation
+        ↓
+ETF Execution
+```
+
+This hierarchy separates:
+
+- structural macro information
+- market price reaction
+- liquidity conditions
+- credit conditions
+- positioning
+- capital flow
+- portfolio risk
+- execution
+
+The purpose is to prevent a single indicator or narrative from directly determining portfolio exposure.
+
+---
+
+# 🔬 Research & Validation Philosophy
+
+A major focus of the project is **decision-process integrity**.
+
+Backtest results are not treated as valid simply because a historical equity curve looks attractive.
+
+Before performance evaluation, the research process checks:
+
+### 1. Input Contract
+
+What information does each strategy component actually consume?
+
+Examples include:
+
+- rates
+- USD
+- volatility
+- oil
+- credit spreads
+- liquidity
+- positioning
+- institutional flow
+- market regime
+
+---
+
+### 2. Point-in-Time Integrity
+
+Historical simulations should use information that would have been available at the relevant decision date.
+
+The research process therefore considers:
+
+- historical availability
+- execution timing
+- signal date vs. execution date
+- lag structure
+- state carried from previous observations
+
+This is designed to reduce look-ahead bias and future-data leakage.
+
+---
+
+### 3. Production ↔ Backtest Parity
+
+Where possible, historical testing reuses the same decision logic used by the production research engine.
+
+Parity audits test whether:
+
+```text
+Historical Inputs
+        ↓
+Production Logic
+        ↓
+Backtest Replay
+```
+
+produce equivalent intermediate decisions.
+
+This prevents a backtest from silently becoming a different strategy from the live research system.
+
+---
+
+### 4. Causal Attribution
+
+When a model component changes, the research process traces where the change propagates.
+
+For example:
+
+```text
+Macro Classification Change
+        ↓
+Portfolio Regime
+        ↓
+Risk Budget
+        ↓
+Exposure
+        ↓
+Sector Allocation
+        ↓
+Executed Equity Allocation
+```
+
+The goal is to distinguish genuine causal transmission from unexplained downstream differences.
+
+---
+
+### 5. Performance Comes Last
+
+Returns, PnL, CAGR, Sharpe, and other performance statistics are intentionally separated from model-selection stages when necessary.
+
+The principle is:
+
+> **Understand why the system behaves differently before asking whether the difference made more money.**
+
+This reduces the risk of selecting rules simply because they improve historical performance.
+
+---
+
+# 🧠 Core Strategy Layers
+
+## Macro Structure
+
+The system monitors structural and market-based macro information including:
+
+- Interest-rate structure
+- USD conditions
+- Volatility
+- Credit spreads
+- Liquidity
+- Inflation-related signals
+- Cross-asset price behavior
+
+These inputs contribute to the system's macro and market regime interpretation.
+
+---
+
+## Liquidity Plumbing
+
+The framework incorporates financial-system liquidity indicators including:
 
 - Treasury General Account (TGA)
 - Reverse Repo Facility (RRP)
-- Collateral chains
-- Institutional funding channels
+- Federal Reserve balance sheet
+- Net Liquidity
 
-This project translates those **invisible liquidity mechanics into systematic signals.**
-
-### Cross-Border Intelligence
-Experience with **Industrial and Commercial Bank of China (ICBC)** exposed the structural interaction between **Western capital markets and Eastern financial systems**.
-
-Combined with:
-
-- English / Chinese financial literacy
-- Computer Science background
-
-the system is designed to interpret **multi-polar capital flow dynamics**.
-
-### Algorithmic Discipline
-Markets are complex, non-linear systems.
-
-This framework removes emotional interpretation and replaces it with **rule-based macro structure analysis**.
+The purpose is to evaluate changes in the liquidity environment rather than relying solely on asset-price momentum.
 
 ---
 
-# 🏗 Core Framework Philosophy
+## Credit
 
-Markets move in hierarchical layers:
+Credit conditions provide an important confirmation layer.
 
-1. Structure (Policy & Liquidity)
-2. Price Confirmation (Rates / USD / Volatility)
-3. Credit Conditions
-4. Drift Detection
-5. Institutional Flow Detection
-6. Risk Budget Construction
-7. Divergence / Fragility Monitoring
-8. Volatility-Controlled Exposure
-9. Tactical Sector Allocation
-10. ETF Execution Mapping
-11. Execution / Style Translation
+Inputs include:
 
-This engine replicates that hierarchy using rule-based macro logic.
+- High Yield OAS
+- HYG
+- LQD
+- credit-spread behavior
 
-It separates:
-
-- Structural bias
-- Price reaction
-- Liquidity plumbing
-- Risk appetite
-- Capital positioning
-- Execution interpretation
+Credit is used as a risk-transmission signal rather than as a standalone trading rule.
 
 ---
 
-# ⚙️ System Architecture
-Drift Monitor
-↓
-Institutional Flow Engine
-↓
-Narrative Engine
-↓
-Divergence Monitor
-↓
-Volatility-Controlled Exposure
-↓
-Sector Allocation Engine
-↓
-Tactical Allocation Builder
-↓
-ETF Execution Layer
-↓
-Execution / Style Translation Layer
+# 🏦 Institutional Flow Architecture
 
-Each filter operates independently but feeds into a structured **daily strategist report.**
+The Institutional Flow Engine attempts to distinguish short-term price movement from more persistent capital repositioning.
 
----
+Inputs include:
 
-# 📂 Project Structure
-.github/                CI automation workflows
-data/                   Raw & processed macro datasets
-filters/                Core strategist filter engine
-insights/               Regime change logs & risk alerts
-reports/                Daily generated macro reports
-scripts/                Data pipeline & report generation
+- multi-day drift
+- cross-asset confirmation
+- dealer gamma context
+- positioning stress
+- flow continuity
+- participation behavior
 
-fetch_macro_data.py     Macro data fetch module
-requirements.txt        Dependencies
-README.md
-Daily strategist outputs are automatically generated and stored in:
-/reports
+Conceptually:
 
-These outputs represent **interpreted capital flow narratives**, not raw data dumps.
+```text
+Price Movement
+        ↓
+Cross-Asset Confirmation
+        ↓
+Persistence
+        ↓
+Positioning / Gamma Context
+        ↓
+Flow Classification
+```
 
----
+Possible flow states include:
 
-# 🧠 Implemented Strategy Layers (19 Filters)
-
-## Core Macro Structure
-1. Market Regime Detection  
-2. Liquidity Structure (Enhanced)  
-3. Policy Bias Analysis  
-
-4. Fed Plumbing (TGA / RRP / Net Liquidity)  
-4.2 High Yield Spread (HY OAS)  
-4.5 Credit Stress (HYG vs LQD)
-
----
-
-## Cross-Asset & Risk Mapping
-
-6. Cross-Asset Interaction  
-6.5 Correlation Break Monitor (Macro-Level)  
-6.6 Sector Correlation Break Monitor  
-
-7. Risk Exposure Filter  
-7.2 Geopolitical Early Warning System (Geo Stress Composite)  
-7.5 Institutional Flow Architecture (Core Flow Engine)  
-
-8. Incentive Mapping  
-9. Cause Filter  
-10. Noise vs Signal Filter  
-11. Timing Framework  
-12. Structural Interpretation  
----
-
-## Narrative & Allocation Engine
-
-13. Narrative Engine (Risk Budget Core)
-14. Divergence / Fragility Monitor
-15. Volatility-Controlled Exposure & Dead Man's Switch
-
-16. Style Tilt
-17. Factor Layer
-18. Sector Allocation Engine
-
-18.5 Tactical Asset Allocation Builder
-19 ETF Execution Layer
-19.5 Execution / Style Translation Layer
-
----
-
-# 🏦 Institutional Flow Architecture (Filter 7.5 / Core Flow Engine)
-
-The Institutional Flow Engine is designed to detect whether capital is beginning to reposition before narrative consensus forms.
-
-Unlike price-only systems, this layer evaluates whether institutional behavior is leaving structural footprints through:
-
-### Core Inputs
-- Drift Score (multi-day directional persistence)
-- Cross-Asset Validation
-- Gamma Context (dealer positioning environment)
-- SEW Stability (shock filtering)
-- Positioning Stress (POS_Z)
-- Day-over-Day Flow Continuity
-
-### Flow Classification
 - NO CLEAR FLOW
 - EARLY TRACE
 - FLOW BUILDING
 - CONFIRMED FLOW
 
-### Purpose
-This engine answers:
-
-“Is this merely price movement —
-or is capital actually beginning to move?”
-
-### Strategic Use
-Flow signals do not replace macro regime.
-
-They modify conviction.
-
-Examples:
-- Risk-Off + No Flow → Defensive
-- Risk-Off + Flow Improving → Defensive but selective
-- Transition + Flow Building → Early positioning
-- Risk-On + Confirmed Flow → Expansion bias
-
-### Philosophy
-Price can bounce.
-
-Flow sustains.
-
-This layer exists to distinguish noise from institutional intent.
+Flow signals modify portfolio conviction rather than independently determining the macro regime.
 
 ---
 
-# 🛰️ Geopolitical Early Warning System (Filter 7.2)
+# 🧭 Risk Budget — Filter 13
 
-The **Geopolitical Early Warning Monitor** detects market stress associated with geopolitical disruptions.
+Filter 13 converts the broader market interpretation into a portfolio **Risk Budget**.
 
-Unlike simple news-driven models, the system observes **cross-asset market reactions** across multiple domains.
+The purpose is to answer:
 
-### Market Reaction Layer
+> **How much risk should the system be willing to take under the current environment?**
 
-- VIX (volatility shock)
-- WTI (energy supply risk)
-- GOLD (safe haven demand)
-- USDCNH (China capital flow proxy)
+Inputs may include:
 
-### Emerging Market Stress Layer
+- macro regime
+- liquidity
+- credit
+- structural conditions
+- institutional flow
+- positioning
+- event risk
+
+The resulting risk budget becomes an upstream constraint for portfolio exposure.
+
+---
+
+# ⚠️ Volatility-Controlled Exposure — Filter 15
+
+Filter 15 converts the Risk Budget into an executable exposure recommendation.
+
+It evaluates risk conditions including:
+
+- volatility
+- credit stress
+- positioning
+- dealer gamma
+- institutional flow
+- market participation
+
+The purpose is not to generate alpha independently.
+
+It acts as a **risk-control layer between strategic conviction and portfolio allocation.**
+
+---
+
+# 📊 Sector Allocation — Filter 18
+
+Filter 18 translates the allowed portfolio exposure into sector-level allocation.
+
+The process incorporates:
+
+- sector scores
+- relative strength
+- flow information
+- macro profile
+- market quality
+- sector classification
+- portfolio persistence rules
+
+The resulting allocation is reconciled against the exposure permitted by the upstream risk framework before ETF execution.
+
+---
+
+# 🔄 Stateful Portfolio Logic
+
+Not every portfolio decision is determined solely by today's signal.
+
+The framework also contains stateful mechanisms designed to reduce unnecessary portfolio churn.
+
+These include persistence and rebalance logic that can preserve previously accepted portfolio states until sufficient evidence exists for a transition.
+
+Because stateful logic can create downstream path dependence, historical validation explicitly audits these state transitions.
+
+---
+
+# 🛰️ Geopolitical Early Warning Monitor
+
+The geopolitical monitoring layer evaluates cross-asset reactions associated with geopolitical stress.
+
+Observed markets include:
+
+### Market Reaction
+
+- VIX
+- WTI
+- Gold
+- FX stress indicators
+
+### Emerging Markets
 
 - EEM
 - EMB
-- USDMXN
-- USDJPY
+- selected FX pairs
 
-### Supply Chain / Shipping Signals
+### Supply Chain / Shipping
 
-- SEA (shipping companies)
-- BDRY (dry bulk freight index)
+- shipping-related market indicators
 
-### Defense Sector Reaction
+### Defense
 
-- ITA (US Aerospace & Defense ETF)
-- XAR (Defense equal-weight ETF)
+- aerospace and defense ETFs
 
-### Sovereign Stress Proxy
+The objective is not to predict geopolitical events.
 
-Bond spread differentials used as **CDS proxies**:
-
-- KR10Y Spread
-- JP10Y Spread
-- CN10Y Spread
-- IL10Y Spread
-- TR10Y Spread
-
-These indicators collectively produce a **Geo Stress Score (z-score composite)**.
-
-### System Output
-
-Geo Stress Score
-↓
-Stress Level Classification
-(CALM / WATCH / ELEVATED / HIGH)
-↓
-Top Contributing Factors
-↓
-Strategic Interpretation
-
-### Example Event Backtest
-
-Tested on major geopolitical shocks:
-
-- 2022 Russia invasion of Ukraine
-- 2023 Gaza war outbreak
-- 2024 Red Sea shipping disruptions
-
-The system identifies:
-
-- dominant cross-asset reactions
-- stress propagation channels
-- sovereign spread responses
+It is to measure how geopolitical stress is being transmitted through financial markets.
 
 ---
 
-# 📊 Sample Daily Output Snapshot
+# 📊 Daily Strategist Output
 
-### Executive Summary (3 Lines)
+The system produces a structured daily market interpretation containing elements such as:
 
-Risk Budget: 45
-Final Exposure: 40
-Core Position: XLK (DEFENSIVE_PRIMARY)
-Cash Buffer: 60
-Flow State: NO CLEAR FLOW
+```text
+Macro Regime
+Liquidity Conditions
+Institutional Flow
+Credit Conditions
+Positioning Risk
+Risk Budget
+Final Exposure
+Sector Allocation
+Cash Allocation
+Execution Mapping
+```
 
-Sector Tilt:
-Core Position:
-Technology (XLK) as defensive primary
-Selective Financials / Industrials
-Elevated Cash Buffer
-
-Underweight:
-Energy / Real Estate / Utilities
-
-Execution Focus:
-High Free Cash Flow
-Low Leverage
-Defensive Bias
-
-Scenario Framework:
-Base: Liquidity mixed
-Bull: Liquidity recovery
-Bear: Credit stress breakout
-
-This output is **not a trading signal**.
-
-It is a **structured macro interpretation and risk allocation framework.**
+The daily output represents a **structured research interpretation**, not a trading signal.
 
 ---
 
-# 🎯 Strategic Differentiation
-The Global Capital Flow Monitor is not a conventional collection of technical indicators; it is a disciplined capital flow hierarchy model designed to navigate market complexity through structural rigor and real-time execution.
+# 📂 Repository Structure
 
-1. Execution-Layer Intelligence
-Real-time Market "Scream" Detection: Most systems react to official data releases. This engine captures the exact moment when the market starts to "scream"—detecting information leakage and price reflexivity via real-time rolling z-scores (2-Sigma) across cross-asset correlations before macro updates.
+```text
+.github/        CI / automation workflows
 
-Mechanical Fail-Safe (Dead Man’s Switch): To ensure algorithmic sustainability, the system implements a Fail-Safe Shutdown Protocol (Filter 15.0). If liquidity velocity (Slope) or positioning extremes (POS_Z) exceed safety thresholds, the system automatically triggers a Dead Man’s Switch, mandating a 0% exposure to preserve capital during tail-risk events.
+data/           Historical and processed market data
 
-Event-Driven Workflow: Integrated with the Resend API, the system bridges the gap between analysis and action by dispatching instant strategist alerts the moment a regime transition or liquidity spike is detected.
+filters/        Core strategist and portfolio logic
 
-2. Structural & Liquidity Plumbing
-Policy vs. Price Reaction: Explicitly separates structural policy shifts from noise-driven price reactions, ensuring the strategy remains anchored in "what the Fed does" rather than "what the market hopes."
+insights/       Regime and risk diagnostics
 
-Fed Plumbing Integration: Direct modeling of the financial system’s "pipes"—including the Treasury General Account (TGA), Reverse Repo Facility (RRP), and Net Liquidity—to track the actual movement of institutional funds.
+portfolio/      Portfolio state and execution utilities
 
-3. Risk & Allocation Hierarchy
-Macro-to-Execution Translation: A rigorous top-down framework that flows from Macro Regimes → Style Factors → Sector Allocation → Company Traits, ensuring that every position is a direct translation of a macro-structural view.
+reports/        Generated strategist reports
 
-Quantified Risk Budgeting: Replaces subjective "conviction" with a volatility-adjusted exposure framework, calculating risk budgets based on real-time stress levels and regime-specific caps.
+scripts/
+    backtest/   Historical replay, parity and audit framework
+```
 
-Scenario-Driven Framing: Moves beyond binary predictions by utilizing a dynamic scenario engine, allowing the strategist to prepare for Base, Bull, and Bear cases simultaneously within a structured transmission map.
-
-4. Adaptive Market Monitoring
-Correlation Break Detection: Monitors the breakdown of historical relationships between assets (e.g., Rates vs. Tech, USD vs. Emerging Markets) to identify regime shifts before they become consensus.
-
-Geopolitical Stress Mapping: Translates vague geopolitical fears into quantified Geo Stress Scores through pattern matching and sovereign spread differentials.
-
-5. Institutional Flow Architecture:
-Captures early-stage institutional repositioning before narrative consensus through drift persistence, cross-asset validation, gamma structure, and flow continuity.
-
-This system does not stop at interpretation —
-it translates macro structure into:
-Risk Budget → Tactical Allocation → ETF Execution → Style Translation.
+Research artifacts and diagnostic outputs are generated separately from production strategy logic.
 
 ---
 
-# 🧪 Intended Use Cases
+# 🧰 Research Stack
 
-- Macro research portfolio
-- Cross-asset regime monitoring
-- Risk management experimentation
-- Asset allocation framework development
-- Strategy / research interview demonstration
+The project is primarily built with:
+
+- Python
+- pandas
+- rule-based decision systems
+- historical market datasets
+- Git / GitHub
+- automated research pipelines
+
+The emphasis is on **transparent and auditable decision logic** rather than black-box prediction.
+
+---
+
+# 💡 Project Origin
+
+The project combines three areas of experience and interest:
+
+### Global Markets Operations
+
+Experience in global markets operations provided exposure to the operational infrastructure behind institutional financial markets.
+
+This created an interest in understanding not only where asset prices move, but how liquidity, settlement, funding, and institutional positioning interact beneath market narratives.
+
+### Computer Science
+
+A Computer Science background provides the technical foundation for converting market hypotheses into reproducible systems and validation pipelines.
+
+### Cross-Border Markets
+
+Experience across Korean, U.S., and Chinese financial environments contributed to an interest in global capital allocation and cross-border financial transmission.
+
+The project is therefore designed around a central question:
+
+> **Where is global capital moving, why is it moving, and how should portfolio risk respond?**
+
+---
+
+# 🎯 Research Objectives
+
+Global Capital Flow Monitor is being developed as a long-term research project in:
+
+- Global Macro
+- Quantitative Research
+- Cross-Asset Strategy
+- Portfolio Risk
+- Capital Flow Analysis
+- Tactical Asset Allocation
+
+The project is also an exercise in learning how institutional investment systems separate:
+
+**hypothesis → implementation → validation → risk control → execution**
 
 ---
 
 # 🔭 Ongoing Development
 
-Planned upgrades include:
+Current and future research areas include:
 
-- Event-driven Cause Filter (Economic Calendar Integration)
-- Structural Trend Overlay (PMI / 200DMA)
-- Cross-Asset Divergence Intensity Index
-- Allocation backtesting module
-- Paper Portfolio Performance Tracking
-- Flow Regime Persistence Scoring
-- Sector-to-ETF Rotation Backtesting
+- Macro Regime V4 causal validation
+- Macro-to-portfolio propagation attribution
+- Point-in-time historical data auditing
+- Portfolio state and persistence attribution
+- Capital availability vs. capital rotation research
+- AI infrastructure capital-flow monitoring
+- Sector and factor transmission analysis
+- Execution and portfolio diagnostics
+
+Research features are promoted only after their behavior and implementation contracts are validated.
 
 ---
 
-# 📜 Strategic Philosophy
+# 📜 Research Philosophy
 
-> "Capital flows reflect incentives.  
+> **Capital flows reflect incentives.  
 > Incentives reflect structure.  
-> Structure reflects the architecture of the global system."
+> Structure shapes risk.**
 
-In a world overwhelmed by information, the greatest asset is **not data — but interpretation.**
+Markets contain more information than any single narrative can capture.
 
-Understanding capital flow is ultimately a way of understanding how humanity allocates:
+The purpose of this project is therefore not to build a machine that claims to know the future.
 
-- risk
-- trust
-- belief
-
-This monitor represents a long-term commitment to decoding that language.
-
-It is designed to preserve **sovereignty over decision-making in an era of engineered narratives.**
+It is to build a system that asks better questions, applies consistent decision rules, and makes the path from information to portfolio risk auditable.
 
 ---
 
-**Strategy & Capital Flow Research Initiative**
+### Strategy & Capital Flow Research Initiative
 
-Developed by a strategist who believes in:
-
-- the power of logic  
-- the depth of macro history  
-- the resilience of the human spirit
+**Independent research project. Not investment advice.**
