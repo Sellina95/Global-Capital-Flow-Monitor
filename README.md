@@ -281,21 +281,32 @@ Rather than attempting to predict geopolitical events, the framework observes ho
 - VIX
 - WTI
 - Gold
-- FX stress indicators
+- USDCNH
+- FXI
+- EWJ
+- SPY
+- EIS
+- BND
+- VXX
+
+### Sovereign Spread
+
+- 10Y_SPREAD(KR,JP,IL,DE)
 
 ### Emerging Markets
 
 - EEM
 - EMB
-- selected FX pairs
 
 ### Supply Chain / Shipping
 
-- shipping-related market indicators
+- SEA
+- BDRY
 
 ### Defense
 
-- aerospace and defense ETFs
+- ITA
+- XAR
 
 The objective is to identify **market transmission patterns associated with geopolitical stress**, rather than convert news headlines directly into trading signals.
 
