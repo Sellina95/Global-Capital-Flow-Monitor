@@ -28,6 +28,67 @@ def generate_pm_final_brief(market_data):
     vix_dir = cross_asset.get("VIX_DIR", 0)
     wti_dir = cross_asset.get("WTI_DIR", 0)
 
+    hy_oas_status = str(
+        cross_asset.get("HY_OAS_STATUS", "UNKNOWN") or "UNKNOWN"
+    ).upper()
+
+    # --------------------------------------------------
+    # Reporting-only canonical renderers
+    # --------------------------------------------------
+    # IMPORTANT:
+    # - PM Brief must not create a second market-state engine.
+    # - +1 / 0 / -1 come directly from CROSS_ASSET_TAPE.
+    # - 0 may mean flat OR unavailable, so render conservatively.
+    def render_direction(
+        value,
+        up_label,
+        down_label,
+        neutral_label="⚪ Neutral / Unconfirmed",
+    ):
+        if value == 1:
+            return up_label
+        if value == -1:
+            return down_label
+        return neutral_label
+
+    if liquidity_dir == "DOWN":
+        liquidity_display = "🔻 Tightening"
+    elif liquidity_dir == "UP":
+        liquidity_display = "🟢 Improving"
+    else:
+        liquidity_display = "⚪ Neutral / Unconfirmed"
+
+    volatility_display = render_direction(
+        vix_dir,
+        "🔺 Rising",
+        "🔻 Falling",
+    )
+
+    usd_display = render_direction(
+        dxy_dir,
+        "🔺 Stronger",
+        "🔻 Weaker",
+    )
+
+    oil_display = render_direction(
+        wti_dir,
+        "🔺 Rising",
+        "🔻 Falling",
+    )
+
+    rates_display = render_direction(
+        us10y_dir,
+        "🔺 Rising",
+        "🔻 Falling",
+    )
+
+    if vix_dir == 1:
+        volatility_summary_phrase = "volatility pressures have increased"
+    elif vix_dir == -1:
+        volatility_summary_phrase = "volatility pressures have eased"
+    else:
+        volatility_summary_phrase = "volatility direction remains unconfirmed"
+
     thesis = ""
 
     if liquidity_dir == "DOWN" and pos_z >= 1.5:
@@ -99,8 +160,9 @@ def generate_pm_final_brief(market_data):
     lines.append("🧭 1. Executive Summary")
 
     summary = (
-        f"Markets are operating in a {phase} regime as liquidity conditions remain "
-        f"{liquidity_dir.lower()} and volatility pressures have increased. "
+        f"Markets are operating in a {phase} regime as liquidity conditions are "
+        f"{liquidity_display.replace('🔻 ', '').replace('🟢 ', '').replace('⚪ ', '').lower()} "
+        f"and {volatility_summary_phrase}. "
         f"Participation remains {flow_state}, while positioning risk sits at {pos_z:.1f}. "
         f"Maintain disciplined exposure and avoid adding marginal risk."
     )
@@ -139,13 +201,11 @@ def generate_pm_final_brief(market_data):
 
     lines.append("🌍 2. Macro Regime")
 
-    lines.append(f"Liquidity: {'🔻 Tightening' if liquidity_dir=='DOWN' else '🟢 Improving'}")
+    lines.append(f"Liquidity: {liquidity_display}")
     lines.append(
         f"Flow: {'🟡 Early Trace' if 'TRACE' in flow_state else flow_state}"
     )
-    lines.append(
-        f"Volatility: {'🔺 Rising' if 'RISK' in phase.upper() else '🟢 Stable'}"
-    )
+    lines.append(f"Volatility: {volatility_display}")
     lines.append(f"Structure: {structure}")
 
     credit_calm = final_state.get("credit_calm")
@@ -182,17 +242,14 @@ def generate_pm_final_brief(market_data):
     lines.append("")
     lines.append("📊 4. Cross Asset Summary")
 
-    equity_status = "🔴 Weakening" if vix_dir > 0 else "🟢 Stable"
-    bond_status = "🟡 Neutral"
-    usd_status = "🔺 Stronger" if dxy_dir > 0 else "🔻 Weaker"
-    oil_status = "🔺 Rising" if wti_dir > 0 else "🔻 Falling"
-    vol_status = "🔺 Rising" if vix_dir > 0 else "🟢 Stable"
-
-    lines.append(f"Equities: {equity_status}")
-    lines.append(f"Bonds: {bond_status}")
-    lines.append(f"USD: {usd_status}")
-    lines.append(f"Oil: {oil_status}")
-    lines.append(f"Volatility: {vol_status}")
+    # Equity/Bond states are not inferred here.
+    # There is currently no canonical FINAL_STATE equity/bond state contract.
+    lines.append("Equities: ⚪ N/A — no canonical PM state")
+    lines.append(f"US10Y Yield: {rates_display}")
+    lines.append(f"USD: {usd_display}")
+    lines.append(f"Oil: {oil_display}")
+    lines.append(f"Volatility: {volatility_display}")
+    lines.append(f"HY OAS: {hy_oas_status}")
 
     lines.append("")
     lines.append("Interpretation:")
@@ -316,7 +373,9 @@ def generate_pm_final_brief(market_data):
     else:
         geo_risk = "🟢 Low"
 
-    inflation_risk = "🟡 Moderate" #fred 복구직전
+    # No canonical inflation-risk state is currently exposed to PM Brief.
+    # Do not manufacture a risk label at the reporting layer.
+    inflation_risk = "⚪ N/A"
 
     lines.append(f"Inflation Risk      {inflation_risk}")
     lines.append(f"Liquidity Risk      {liq_risk}")
@@ -348,15 +407,26 @@ def generate_pm_final_brief(market_data):
     lines.append("")
     lines.append("🎯 8. Tactical Recommendation")
 
+    tactical_action = final_action.get("action", "N/A")
     final_action_size = final_action.get("size", "N/A")
     final_action_confidence = final_action.get("confidence", "N/A")
     final_action_reasons = final_action.get("reason", [])
 
-    lines.append(f"Recommendation: {action} / {final_action_size}")
-    lines.append(f"Confidence: {final_action_confidence}")
+    # FINAL_DECISION = execution / War Room result
+    lines.append(
+        f"Final Portfolio Decision: {action} / {exposure}%"
+    )
+
+    # FINAL_ACTION = tactical signal layer
+    lines.append(
+        f"Tactical Signal: {tactical_action} / {final_action_size}"
+    )
+    lines.append(
+        f"Tactical Confidence: {final_action_confidence}"
+    )
 
     if final_action_reasons:
-        lines.append("Rationale:")
+        lines.append("Tactical Rationale:")
         for reason in final_action_reasons:
             lines.append(f"- {reason}")
 
@@ -503,15 +573,15 @@ def generate_pm_final_brief(market_data):
     lines.append("")
     lines.append("🏁 10. Final PM View")
     lines.append(
-        f"Action: {action}"
+        f"Final Portfolio Action: {action}"
     )
 
     lines.append(
-        f"Exposure: {exposure}%"
+        f"Final Portfolio Exposure: {exposure}%"
     )
 
     lines.append(
-        f"Bias: {phase}"
+        f"Strategic Phase: {phase}"
     )
 
     lines.append(
