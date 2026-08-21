@@ -1,0 +1,14 @@
+F13/F15/F18 FULL VALUE + EXECUTION CLOSURE
+==============================================================================
+Historical rows: 4645
+Stage-contract pairs: 82
+PASS contracts: 82
+FAIL contracts: 0
+Failure observations: 0
+
+stage status  contracts
+  F13   PASS         22
+  F15   PASS         20
+  F18   PASS         40
+
+FULL VALUE / EXECUTION CONTRACT GATE: PASS

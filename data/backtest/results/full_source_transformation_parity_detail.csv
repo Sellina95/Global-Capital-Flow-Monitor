@@ -1,0 +1,19 @@
+contract,family,status,semantic_contract,evidence
+DXY,CORE_MARKET_SERIES,PASS_SOURCE_TRANSFORM,Same named market series with today/prev/pct_change contract.,required source/transform evidence found
+US10Y,CORE_MARKET_SERIES,PASS_SOURCE_TRANSFORM,Same named market series with today/prev/pct_change contract.,required source/transform evidence found
+VIX,CORE_MARKET_SERIES,PASS_SOURCE_TRANSFORM,Same named market series with today/prev/pct_change contract.,required source/transform evidence found
+WTI,CORE_MARKET_SERIES,PASS_SOURCE_TRANSFORM,Same named market series with today/prev/pct_change contract.,required source/transform evidence found
+HY_OAS,CREDIT,PASS_SOURCE_TRANSFORM,Historical HY OAS source feeds same HY_OAS contract.,required source/transform evidence found
+HY_OAS_STATUS,CREDIT_DERIVED_STATUS,PASS_EXPECTED_FALLBACK,HY_OAS_STATUS is intentionally not required as independent historical input.,required source/transform evidence found
+DRIFT_LABEL,DRIFT,PASS_DERIVED_FALLBACK,Drift information is reconstructed historically and consumed through derived flow/final-state fallback.,required source/transform evidence found
+BREADTH_SCORE_18,LEADERSHIP_BREADTH,PASS_SOURCE_TRANSFORM,Historical adapter rebuilds leadership inputs then calls the same Production scoring function.,required source/transform evidence found
+LEADERSHIP_BREADTH_SCORE,LEADERSHIP_BREADTH,PASS_SOURCE_TRANSFORM,Historical adapter rebuilds leadership inputs then calls the same Production scoring function.,required source/transform evidence found
+LEADERSHIP_STATE,LEADERSHIP_BREADTH,PASS_SOURCE_TRANSFORM,Historical adapter rebuilds leadership inputs then calls the same Production scoring function.,required source/transform evidence found
+LEADER_TYPE,LEADERSHIP_BREADTH,PASS_SOURCE_TRANSFORM,Historical adapter rebuilds leadership inputs then calls the same Production scoring function.,required source/transform evidence found
+PARTICIPATION_SIGNAL,LEADERSHIP_BREADTH,PASS_SOURCE_TRANSFORM,Historical adapter rebuilds leadership inputs then calls the same Production scoring function.,required source/transform evidence found
+NET_LIQ,LIQUIDITY,PASS_SOURCE_TRANSFORM,Historical adapter reconstructs Production liquidity contract.,required source/transform evidence found
+NET_LIQ_LEVEL_BUCKET,LIQUIDITY,PASS_SOURCE_TRANSFORM,Historical adapter reconstructs Production liquidity contract.,required source/transform evidence found
+CTA_MOMENTUM_SCORE,POSITIONING_RAW,PASS_SOURCE_TRANSFORM,Production positioning contract is represented by historical positioning columns.,required source/transform evidence found
+DEALER_GAMMA_BIAS,POSITIONING_RAW,PASS_SOURCE_TRANSFORM,Production positioning contract is represented by historical positioning columns.,required source/transform evidence found
+SP500_POS_Z,POSITIONING_RAW,PASS_SOURCE_TRANSFORM,Production positioning contract is represented by historical positioning columns.,required source/transform evidence found
+SENTIMENT,SENTIMENT,PASS_SOURCE_TRANSFORM,Historical sentiment proxy is loaded from canonical historical panel.,required source/transform evidence found

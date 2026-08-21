@@ -25,6 +25,11 @@ from scripts.backtest.institutional_backtest import (
 from scripts.backtest.filter13_execution_chain import (
     prepare_filter13_execution_state,
 )
+from scripts.backtest.historical_execution_contract import (
+    initial_filter15_memory,
+    prepare_historical_execution_contract,
+    capture_filter15_memory,
+)
 
 DATA_DIR = ROOT / "data" / "backtest"
 PANEL_PATH = DATA_DIR / "master_panel.csv"
@@ -199,10 +204,14 @@ def main() -> None:
     rows: list[dict[str, Any]] = []
     previous_exposure = 50.0
     flow_memory: dict[str, Any] = {
-    "flow_state": "N/A",
-    "flow_score": 0,
-    "persistence_days": 0,
+        "flow_state": "N/A",
+        "flow_score": 0,
+        "persistence_days": 0,
     }
+
+    # Historical equivalent of Production filter15_state.json.
+    # State generated on t becomes input on t+1.
+    filter15_memory = initial_filter15_memory()
 
     for count, idx in enumerate(indices, start=1):
         market_data = build_market_data(
@@ -215,6 +224,18 @@ def main() -> None:
             panel=panel,
             row_index=idx,
             previous_flow_memory=flow_memory,
+        )
+
+        # Reproduce Production runtime contracts that are not
+        # naturally available in historical replay:
+        #
+        # Filter15 t-1 state
+        # Filter18 momentum + positioning stress state
+        prepare_historical_execution_contract(
+            market_data=market_data,
+            panel=panel,
+            row_index=idx,
+            filter15_memory=filter15_memory,
         )
 
         try:
@@ -277,6 +298,13 @@ def main() -> None:
 
             if exposure is not None:
                 previous_exposure = float(exposure)
+
+            # Production saves Filter15 state after today's run.
+            # Historical replay keeps the exact same information
+            # in memory and feeds it only to the next signal date.
+            filter15_memory = capture_filter15_memory(
+                market_data
+            )
 
         except Exception as exc:
             rows.append({

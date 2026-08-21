@@ -1,0 +1,83 @@
+consumer,contract,status,runtime_presence,production_producers,backtest_producers,consumer_read_lines,consumer_write_lines,evidence
+F13,CROSS_ASSET_TAPE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,market_regime_filter,,3931,,Historical execution calls Production producer: market_regime_filter
+F13,DRIFT,PASS_SHARED_PRODUCTION_FUNCTION,50/50,drift_monitor_filter,,3953,,Historical execution calls Production producer: drift_monitor_filter
+F13,DRIFT_SCORE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,drift_monitor_filter,,3954,,Historical execution calls Production producer: drift_monitor_filter
+F13,DRIFT_STATE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,drift_monitor_filter,,3961,,Historical execution calls Production producer: drift_monitor_filter
+F13,FINAL_STATE,PASS_SHARED_PRODUCTION_FUNCTION,0/50,apply_geo_overlay_to_final_state;build_strategist_commentary;generate_daily_report;narrative_engine_filter,,"4352,4399",4399,Historical execution calls Production producer: narrative_engine_filter
+F13,GAMMA_STATE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,pseudo_gamma_filter,,4080,,Historical execution calls Production producer: pseudo_gamma_filter
+F13,HY_OAS,REVIEW_REQUIRED,50/50,attach_credit_spread_layer,build_market_data,3911,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F13,INSTITUTIONAL_FLOW,PASS_SHARED_PRODUCTION_FUNCTION,50/50,institutional_flow_engine_filter,,4079,,Historical execution calls Production producer: institutional_flow_engine_filter
+F13,MACRO_NARRATIVE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,market_regime_filter,,3930,,Historical execution calls Production producer: market_regime_filter
+F13,MARKET_REGIME,PASS_SHARED_PRODUCTION_FUNCTION,50/50,market_regime_filter,,3927,,Historical execution calls Production producer: market_regime_filter
+F13,NET_LIQ,REVIEW_REQUIRED,50/50,attach_liquidity_layer,build_historical_liquidity_level_contract,3917,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F13,NET_LIQ_LEVEL_BUCKET,REVIEW_REQUIRED,50/50,attach_liquidity_layer,build_historical_liquidity_level_contract,3922,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F13,PHASE_CAP,INTERNAL_STATE,0/50,narrative_engine_filter,,4302,4302,Consumer creates state before/at first read.
+F13,POLICY_BIAS_LINE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,policy_filter_with_expectations,,3905,,Historical execution calls Production producer: policy_filter_with_expectations
+F13,PREV_FLOW_SCORE,PASS_PERSISTENT_T_MINUS_1,50/50,generate_daily_report,prepare_filter13_execution_state,4106,,Persistent contract present at historical consumer boundary.
+F13,PREV_FLOW_STATE,PASS_PERSISTENT_T_MINUS_1,50/50,generate_daily_report,prepare_filter13_execution_state,4105,,Persistent contract present at historical consumer boundary.
+F13,PRE_CAP_BUDGET,INTERNAL_STATE,0/50,narrative_engine_filter,,4301,4301,Consumer creates state before/at first read.
+F13,RISK_BUDGET,INTERNAL_STATE,0/50,narrative_engine_filter,,4303,4303,Consumer creates state before/at first read.
+F13,SENTIMENT,REVIEW_REQUIRED,50/50,attach_sentiment_proxy_layer,build_market_data,3907,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F13,SP500_POS_Z,REVIEW_REQUIRED,50/50,,,3947,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F13,STRUCT_V2_STATE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,structural_filter,,3904,,Historical execution calls Production producer: structural_filter
+F13,VIX,REVIEW_REQUIRED,50/50,,,4012,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F15,CROSS_ASSET_TAPE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,market_regime_filter,,4680,,Historical execution calls Production producer: market_regime_filter
+F15,CTA_MOMENTUM_SCORE,REVIEW_REQUIRED,50/50,,,4660,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F15,DEALER_GAMMA_BIAS,REVIEW_REQUIRED,50/50,,,4656,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F15,FILTER15_PREV_DEADMAN,PASS_PERSISTENT_T_MINUS_1,50/50,generate_daily_report;volatility_controlled_exposure_filter,inject_filter15_memory,"4872,4958",4958,Historical adapter explicitly carries Filter15 state t -> t+1.
+F15,FILTER15_PREV_HY_OAS,PASS_PERSISTENT_T_MINUS_1,50/50,generate_daily_report;volatility_controlled_exposure_filter,inject_filter15_memory,"4889,4962",4962,Historical adapter explicitly carries Filter15 state t -> t+1.
+F15,FILTER15_RECOVERY_ACTIVE,PASS_PERSISTENT_T_MINUS_1,50/50,generate_daily_report;volatility_controlled_exposure_filter,inject_filter15_memory,"4875,4959",4959,Historical adapter explicitly carries Filter15 state t -> t+1.
+F15,FILTER15_RECOVERY_COMPLETED,PASS_PERSISTENT_T_MINUS_1,50/50,generate_daily_report;volatility_controlled_exposure_filter,inject_filter15_memory,"4878,4960",4960,Historical adapter explicitly carries Filter15 state t -> t+1.
+F15,FILTER15_RECOVERY_STREAK,PASS_PERSISTENT_T_MINUS_1,50/50,generate_daily_report;volatility_controlled_exposure_filter,inject_filter15_memory,"4883,4961",4961,Historical adapter explicitly carries Filter15 state t -> t+1.
+F15,HY_OAS,REVIEW_REQUIRED,50/50,attach_credit_spread_layer,build_market_data,4664,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F15,HY_OAS_STATUS,REVIEW_REQUIRED,0/50,,,4820,,Contract absent and producer unresolved.
+F15,INSTITUTIONAL_FLOW,PASS_SHARED_PRODUCTION_FUNCTION,50/50,institutional_flow_engine_filter,,4668,,Historical execution calls Production producer: institutional_flow_engine_filter
+F15,LEADERSHIP_BREADTH_SCORE,REVIEW_REQUIRED,50/50,,,4818,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F15,MACRO_NARRATIVE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,market_regime_filter,,4679,,Historical execution calls Production producer: market_regime_filter
+F15,POS_SLOPE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,generate_daily_report;volatility_controlled_exposure_filter,build_historical_pos_slope,"4650,4654",4654,Historical execution calls Production producer: volatility_controlled_exposure_filter
+F15,PREV_EXPOSURE,INTERNAL_STATE,50/50,volatility_controlled_exposure_filter,,4954,4954,Consumer creates state before/at first read.
+F15,RECOMMENDED_EXPOSURE,INTERNAL_STATE,0/50,generate_daily_report;volatility_controlled_exposure_filter,,4953,4953,Consumer creates state before/at first read.
+F15,RISK_BUDGET,PASS_SHARED_PRODUCTION_FUNCTION,50/50,narrative_engine_filter,,4638,,Historical execution calls Production producer: narrative_engine_filter
+F15,SEW_STATUS,INTERNAL_STATE,50/50,generate_daily_report;volatility_controlled_exposure_filter,prepare_filter13_execution_state,4955,4955,Consumer creates state before/at first read.
+F15,SP500_POS_Z,REVIEW_REQUIRED,50/50,,,4646,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F15,VIX,REVIEW_REQUIRED,50/50,,,4642,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F18,AVG_DIVERGENCE,INTERNAL_STATE,0/50,sector_allocation_filter,,6477,6477,Consumer creates state before/at first read.
+F18,BASE_RECOMMENDED_EXPOSURE,INTERNAL_STATE,0/50,sector_allocation_filter,,6841,6841,Consumer creates state before/at first read.
+F18,BREADTH_SCORE_18,REVIEW_REQUIRED,50/50,,,6886,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F18,CORRELATION_BREAK_ACTIVE,INTERNAL_STATE,0/50,sector_allocation_filter,,"6493,6788,6863",6493,Consumer creates state before/at first read.
+F18,CORRELATION_BREAK_REASONS,INTERNAL_STATE,0/50,sector_allocation_filter,,"6495,6790",6495,Consumer creates state before/at first read.
+F18,CORRELATION_BREAK_TYPE,INTERNAL_STATE,0/50,sector_allocation_filter,,"6494,6789,6864",6494,Consumer creates state before/at first read.
+F18,DIVERGENCE_DISPERSION,INTERNAL_STATE,0/50,sector_allocation_filter,,6478,6478,Consumer creates state before/at first read.
+F18,DRIFT_LABEL,REVIEW_REQUIRED,0/50,,,6018,,Contract absent and producer unresolved.
+F18,DXY,REVIEW_REQUIRED,50/50,,,5990,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F18,EXPOSURE_OVERRIDE_REASON,INTERNAL_STATE,0/50,sector_allocation_filter,,6843,6843,Consumer creates state before/at first read.
+F18,FILTER18_ACCEPTED_RANK,INTERNAL_STATE,0/50,sector_allocation_filter,,7215,7215,Consumer creates state before/at first read.
+F18,FILTER18_PENDING_COUNT,INTERNAL_STATE,0/50,sector_allocation_filter,,7223,7223,Consumer creates state before/at first read.
+F18,FILTER18_PENDING_RANK,INTERNAL_STATE,0/50,sector_allocation_filter,,7219,7219,Consumer creates state before/at first read.
+F18,FILTER18_RANK_ACTION,INTERNAL_STATE,0/50,sector_allocation_filter,,7227,7227,Consumer creates state before/at first read.
+F18,FILTER18_RAW_RANK,INTERNAL_STATE,0/50,sector_allocation_filter,,7211,7211,Consumer creates state before/at first read.
+F18,FINAL_STATE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,apply_geo_overlay_to_final_state;build_strategist_commentary;generate_daily_report;narrative_engine_filter,,5881,,Historical execution calls Production producer: narrative_engine_filter
+F18,GAMMA_SIGNAL,PASS_SHARED_PRODUCTION_FUNCTION,50/50,,,6893,,Historical adapter supplies PIT inputs and executes Production positioning_stress_filter.
+F18,GAMMA_STATE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,pseudo_gamma_filter,,6023,,Historical execution calls Production producer: pseudo_gamma_filter
+F18,INSTITUTIONAL_FLOW,PASS_SHARED_PRODUCTION_FUNCTION,50/50,institutional_flow_engine_filter,,6007,,Historical execution calls Production producer: institutional_flow_engine_filter
+F18,LEADERSHIP_STATE,REVIEW_REQUIRED,50/50,,,6885,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F18,LEADER_TYPE,REVIEW_REQUIRED,50/50,,,6887,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F18,MACRO_REGIME_PROFILE,INTERNAL_STATE,0/50,sector_allocation_filter,,6241,6241,Consumer creates state before/at first read.
+F18,MARKET_REGIME,PASS_SHARED_PRODUCTION_FUNCTION,50/50,market_regime_filter,,7629,,Historical execution calls Production producer: market_regime_filter
+F18,MOMENTUM_SCORES,PASS_EXACT_HISTORICAL_REPLICA,50/50,attach_sector_momentum_layer,build_historical_sector_momentum,"6259,6874",,Historical adapter reproduces Production 20d/60d SPY-relative momentum contract.
+F18,PARTICIPATION_SIGNAL,REVIEW_REQUIRED,50/50,,,6888,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F18,POSITIONING_SCORE_18,PASS_SHARED_PRODUCTION_FUNCTION,50/50,,,6891,,Historical adapter supplies PIT inputs and executes Production positioning_stress_filter.
+F18,POSITIONING_STATE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,,,6890,,Historical adapter supplies PIT inputs and executes Production positioning_stress_filter.
+F18,RECOMMENDED_EXPOSURE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,generate_daily_report;volatility_controlled_exposure_filter,,6823,,Historical execution calls Production producer: volatility_controlled_exposure_filter
+F18,REGIME_ADJUSTED_EXPOSURE,INTERNAL_STATE,0/50,sector_allocation_filter,,6842,6842,Consumer creates state before/at first read.
+F18,REGIME_CONTROLLER,INTERNAL_STATE,0/50,sector_allocation_filter,,6476,6476,Consumer creates state before/at first read.
+F18,SECTOR_CLASSIFICATION,INTERNAL_STATE,0/50,sector_allocation_filter,,6472,6472,Consumer creates state before/at first read.
+F18,SECTOR_DIVERGENCE,INTERNAL_STATE,0/50,sector_allocation_filter,,6471,6471,Consumer creates state before/at first read.
+F18,SECTOR_DIVERGENCE_FLAGS,INTERNAL_STATE,0/50,sector_allocation_filter,,6473,6473,Consumer creates state before/at first read.
+F18,SECTOR_FINAL_SCORE,INTERNAL_STATE,0/50,sector_allocation_filter,,"6474,6552","6474,6552",Consumer creates state before/at first read.
+F18,SECTOR_FLOW_SCORE,INTERNAL_STATE,0/50,sector_allocation_filter,,6470,6470,Consumer creates state before/at first read.
+F18,SECTOR_THEORETICAL_SCORE,INTERNAL_STATE,0/50,sector_allocation_filter,,6469,6469,Consumer creates state before/at first read.
+F18,SQUEEZE_RISK,PASS_SHARED_PRODUCTION_FUNCTION,50/50,,,6892,,Historical adapter supplies PIT inputs and executes Production positioning_stress_filter.
+F18,US10Y,REVIEW_REQUIRED,50/50,,,5989,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."
+F18,VOL_STRUCTURE,PASS_SHARED_PRODUCTION_FUNCTION,50/50,,,6894,,Historical adapter supplies PIT inputs and executes Production positioning_stress_filter.
+F18,WTI,REVIEW_REQUIRED,50/50,,,5991,,"Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics."

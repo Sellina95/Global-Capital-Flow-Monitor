@@ -1,0 +1,16 @@
+FULL SOURCE & TRANSFORMATION PARITY AUDIT
+==============================================================================
+
+               family                 status  count
+   CORE_MARKET_SERIES  PASS_SOURCE_TRANSFORM      4
+               CREDIT  PASS_SOURCE_TRANSFORM      1
+CREDIT_DERIVED_STATUS PASS_EXPECTED_FALLBACK      1
+                DRIFT  PASS_DERIVED_FALLBACK      1
+   LEADERSHIP_BREADTH  PASS_SOURCE_TRANSFORM      5
+            LIQUIDITY  PASS_SOURCE_TRANSFORM      2
+      POSITIONING_RAW  PASS_SOURCE_TRANSFORM      3
+            SENTIMENT  PASS_SOURCE_TRANSFORM      1
+
+REMAINING REVIEW
+==============================================================================
+NONE

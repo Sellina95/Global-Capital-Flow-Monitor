@@ -1,0 +1,41 @@
+FULL INPUT SEMANTIC PARITY AUDIT
+==============================================================================
+
+consumer                          status  count
+     F13                  INTERNAL_STATE      3
+     F13       PASS_PERSISTENT_T_MINUS_1      2
+     F13 PASS_SHARED_PRODUCTION_FUNCTION     11
+     F13                 REVIEW_REQUIRED      6
+     F15                  INTERNAL_STATE      3
+     F15       PASS_PERSISTENT_T_MINUS_1      5
+     F15 PASS_SHARED_PRODUCTION_FUNCTION      5
+     F15                 REVIEW_REQUIRED      7
+     F18                  INTERNAL_STATE     21
+     F18   PASS_EXACT_HISTORICAL_REPLICA      1
+     F18 PASS_SHARED_PRODUCTION_FUNCTION     10
+     F18                 REVIEW_REQUIRED      8
+
+UNRESOLVED / FAIL
+==============================================================================
+consumer                 contract          status runtime_presence         production_producers                        backtest_producers                                                                                                                    evidence
+     F13                   HY_OAS REVIEW_REQUIRED            50/50   attach_credit_spread_layer                         build_market_data Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F13                  NET_LIQ REVIEW_REQUIRED            50/50       attach_liquidity_layer build_historical_liquidity_level_contract Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F13     NET_LIQ_LEVEL_BUCKET REVIEW_REQUIRED            50/50       attach_liquidity_layer build_historical_liquidity_level_contract Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F13                SENTIMENT REVIEW_REQUIRED            50/50 attach_sentiment_proxy_layer                         build_market_data Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F13              SP500_POS_Z REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F13                      VIX REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F15       CTA_MOMENTUM_SCORE REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F15        DEALER_GAMMA_BIAS REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F15                   HY_OAS REVIEW_REQUIRED            50/50   attach_credit_spread_layer                         build_market_data Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F15            HY_OAS_STATUS REVIEW_REQUIRED             0/50                                                                                                                                                           Contract absent and producer unresolved.
+     F15 LEADERSHIP_BREADTH_SCORE REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F15              SP500_POS_Z REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F15                      VIX REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F18         BREADTH_SCORE_18 REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F18              DRIFT_LABEL REVIEW_REQUIRED             0/50                                                                                                                                                           Contract absent and producer unresolved.
+     F18                      DXY REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F18         LEADERSHIP_STATE REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F18              LEADER_TYPE REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F18     PARTICIPATION_SIGNAL REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F18                    US10Y REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.
+     F18                      WTI REVIEW_REQUIRED            50/50                                                                        Runtime presence confirmed, but static evidence does not prove identical source/transformation/lookback/fallback semantics.

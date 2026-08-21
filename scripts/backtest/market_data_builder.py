@@ -194,6 +194,12 @@ def build_market_data(
             if source_col not in panel.columns:
                 continue
 
+            # CORE_SERIES is the canonical Production contract.
+            # Namespaced series such as sovereign_yields__US10Y
+            # must never overwrite the already-built core US10Y.
+            if key in CORE_SERIES:
+                continue
+
             numeric = pd.to_numeric(
                 panel.loc[:row_index, source_col],
                 errors="coerce",
