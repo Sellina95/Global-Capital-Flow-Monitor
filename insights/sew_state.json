@@ -1,38 +1,38 @@
 {
-  "timestamp": "2026-08-20 02:15:08",
-  "status": "RISK_COMPRESSION",
+  "timestamp": "2026-08-21 02:21:49",
+  "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
   "extreme_count": 0,
-  "recommended_exposure": 55,
+  "recommended_exposure": 85,
   "deadman": false,
-  "summary": "⚠️ Risk Compression 발동 (권장 익스포저 55%)",
-  "deadman_reason": "⚠️ CROWDING RISK: POS_Z Extreme (2.02) → Risk Compression (55%)",
+  "summary": "✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)",
+  "deadman_reason": "Normal Operation",
   "assets": {
     "SPY": {
-      "zscore": 1.14,
+      "zscore": -0.89,
       "state": "NORMAL",
-      "pct_change": -0.01
+      "pct_change": -0.11
     },
     "QQQ": {
-      "zscore": 0.63,
+      "zscore": -0.15,
       "state": "NORMAL",
-      "pct_change": -0.06
+      "pct_change": -0.08
     },
     "VIX": {
-      "zscore": 0.76,
+      "zscore": -0.35,
       "state": "NORMAL",
-      "pct_change": -0.8
+      "pct_change": 0.38
     },
     "DXY": {
-      "zscore": -0.53,
+      "zscore": 1.4,
       "state": "NORMAL",
-      "pct_change": -0.04
+      "pct_change": -0.02
     },
     "WTI": {
-      "zscore": 0.58,
+      "zscore": 0.01,
       "state": "NORMAL",
-      "pct_change": 0.33
+      "pct_change": 0.04
     }
   }
 }
