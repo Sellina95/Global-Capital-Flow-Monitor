@@ -1,0 +1,17 @@
+source_family,status,series_count
+country_etf,PASS,9
+credit,PASS,1
+execution_mapping,PASS,1
+fred_extras,PASS,2
+fred_sector,PASS,7
+liquidity,PASS,4
+macro,NO_VALID_SOURCE_VALUES,6
+macro,PASS,27
+master_panel_builder,PASS,1
+positioning,PASS,7
+sentiment,NO_VALID_SOURCE_VALUES,1
+sentiment,PASS,4
+sovereign_spreads,NO_VALID_SOURCE_VALUES,2
+sovereign_spreads,PASS,6
+sovereign_yields,NO_VALID_SOURCE_VALUES,2
+sovereign_yields,PASS,7

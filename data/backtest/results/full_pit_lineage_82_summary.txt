@@ -1,0 +1,16 @@
+FULL F13/F15/F18 PIT LINEAGE AUDIT
+==============================================================================
+Frozen stage-contract pairs: 82
+Historical rows: 4645
+PASS series: 76
+FAIL series: 0
+Future observation failures: 0
+
+OBSERVATION-DATE PIT GATE: PASS
+
+Scope:
+No source observation date may exceed signal date.
+
+Not yet covered:
+Release / availability lag
+Historical vintage / revisions

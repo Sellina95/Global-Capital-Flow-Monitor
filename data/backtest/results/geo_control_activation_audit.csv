@@ -1,0 +1,3 @@
+﻿panel,rows,geo_score_non_null,geo_score_non_null_pct,sovereign_component_days,sovereign_component_pct,NORMAL,ELEVATED,HIGH,CONFLICT,NA
+CONTROL_OLD_DATA,100,100,100.0,100,100.0,90,6,0,0,4
+PIT_SAFE_DATA,100,100,100.0,72,72.0,93,2,1,0,4

@@ -1,0 +1,5 @@
+﻿contract,comparable_rows,mismatch_rows,max_abs_delta,status
+risk_budget_13,4414,0,0.0,PASS
+exposure_15,4414,0,0.0,PASS
+allocated_equity_18,4414,0,0.0,PASS
+cash_weight,4414,0,0.0,PASS

@@ -1,0 +1,13 @@
+F13/F15/F18 RELEASE TIMING CLOSURE
+==============================================================================
+Frozen universe: 82 stage-contract pairs
+Direct early-use series: 17
+Inherited timing fail series: 6
+Remaining review: 0
+
+RELEASE TIMING CLOSURE: FAIL — REPAIR REQUIRED
+
+No Production decision code modified.
+No strategy parameters modified.
+Monthly sovereign timing uses only a month-end lower bound;
+actual publication may be later.

@@ -1,0 +1,11 @@
+F13/F15/F18 PIT REPAIR INTEGRITY — FINAL CLOSURE
+========================================================================
+Overlapping dates: 4817
+Common columns checked: 81
+Expected changed/added columns: 16
+Unexpected changed/added columns: 0
+Unexpected removed columns: 0
+
+PIT REPAIR INTEGRITY GATE: PASS
+
+NOTE: 2008–2013 active sovereign vintage evidence remains historically unverified and must remain documented.

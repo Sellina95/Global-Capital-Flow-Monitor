@@ -1,0 +1,9 @@
+FULL F13/F15/F18 RELEASE / AVAILABILITY INVENTORY
+==============================================================================
+PASS BY CONSTRUCTION: 2
+RELEASE LAG REQUIRED: 5
+REVIEW REQUIRED: 80
+
+RELEASE / AVAILABILITY GATE: NOT CLOSED
+
+Scope remains frozen to the same 82 F13/F15/F18 stage-contract pairs.

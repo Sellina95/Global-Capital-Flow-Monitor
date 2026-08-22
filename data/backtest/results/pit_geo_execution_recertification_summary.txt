@@ -1,0 +1,14 @@
+PIT-SAFE + GEO EXECUTION RECERTIFICATION
+========================================================================
+
+Reference rows: 4414
+Rerun rows: 4414
+Reference-only dates: 0
+Rerun-only dates: 0
+
+risk_budget_13: PASS (mismatch=0, max_abs_delta=0.0)
+exposure_15: PASS (mismatch=0, max_abs_delta=0.0)
+allocated_equity_18: PASS (mismatch=0, max_abs_delta=0.0)
+cash_weight: PASS (mismatch=0, max_abs_delta=0.0)
+
+GEO-INCLUSIVE EXECUTION RECERTIFICATION: PASS

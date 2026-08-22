@@ -1,0 +1,18 @@
+ACTIVE SOVEREIGN PIT SCOPE
+========================================================================
+
+Frozen F13/F15/F18 decision scope:
+KR10Y
+JP10Y
+DE10Y
+IL10Y
+
+Excluded from PIT closure:
+GB10Y
+MX10Y
+
+Reason:
+GB10Y and MX10Y are not proven Production decision dependencies.
+
+Next gate:
+Historical release / availability / vintage verification for the 4 active series.

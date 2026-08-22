@@ -1,0 +1,5 @@
+﻿series,evidenced_observations,first_evidenced_observation,last_evidenced_observation,min_release_lag_days,median_release_lag_days,max_release_lag_days,revised_observations
+DE10Y,156,2013-07-01,2026-06-01,28,42.0,273,106
+IL10Y,156,2013-07-01,2026-06-01,28,44.0,306,5
+JP10Y,156,2013-07-01,2026-06-01,31,45.0,273,23
+KR10Y,156,2013-07-01,2026-06-01,28,43.0,306,28
