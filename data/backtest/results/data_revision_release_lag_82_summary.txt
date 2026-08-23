@@ -1,0 +1,21 @@
+INSTITUTIONAL GATE #3 — DATA REVISION / RELEASE LAG
+================================================================================
+Frozen universe: F13 22 + F15 20 + F18 40 = 82 stage-contract pairs
+Historical window: 2008-01-02 -> 2026-06-18
+
+Direct FRED upstreams audited: 10
+Revised FRED observations found: 1766
+Release-lag failures: 0
+PIT-value mismatches: 15432
+
+Revision by itself is NOT a failure.
+Failure means the backtest used information/value not yet historically available.
+
+Active sovereign evidence reused: KR10Y / JP10Y / DE10Y / IL10Y
+Repository evidence documents a pre-ALFRED sovereign evidence gap.
+
+FINAL DATA REVISION / RELEASE LAG GATE: FAIL_OR_UNVERIFIED
+
+No Production decision code modified.
+No Backtest decision logic modified.
+No strategy parameters modified.

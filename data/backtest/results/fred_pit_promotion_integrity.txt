@@ -1,0 +1,17 @@
+FRED PIT PROMOTION INTEGRITY GATE
+================================================================================
+Rows: 4817
+
+INTENDED FRED CHANGES
+--------------------------------------------------------------------------------
+liquidity__TGA: changed=4487
+liquidity__WALCL: changed=1373
+liquidity__NET_LIQ: changed=4718
+fred_sector__FCI: changed=4661
+fred_extras__FCI: changed=4458
+
+UNEXPECTED NON-INTERVENTION CHANGES
+--------------------------------------------------------------------------------
+0
+
+VERDICT: PASS

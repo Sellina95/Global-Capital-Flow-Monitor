@@ -1,0 +1,46 @@
+GATE #3 — FRED VINTAGE COUNTERFACTUAL CAUSAL PROPAGATION
+================================================================================
+
+AUDIT ONLY — Production / Backtest decision logic unchanged.
+
+Historical reference artifact: /workspaces/Global-Capital-Flow-Monitor/data/backtest/results/final_13_15_18_parity_closeout/final_13_15_18_parity_daily.csv
+Replay rows compared: 4645
+
+CONTROL DESIGN
+--------------------------------------------------------------------------------
+Control: current canonical master_panel.csv
+Treatment: controlled initial-release FRED panel
+Only the five audited FRED intervention fields differ.
+Historical frozen parity artifact is not used as the identity anchor
+because it predates the validated CORE_SERIES namespace fix.
+
+CURRENT CANONICAL CONTROL: READY
+
+CAPITAL CHAIN IMPACT
+--------------------------------------------------------------------------------
+              field  rows  changed_days  changed_pct  mean_delta_changed  median_abs_delta_changed  max_abs_delta
+     risk_budget_13  4645          2502    53.864370           -3.677058                      10.0           30.0
+        exposure_15  4645          2357    50.742734           -3.251591                       7.0           26.0
+allocated_equity_18  4645          2590    55.758881           -3.184440                       7.0           65.4
+        cash_weight  4645          2590    55.758881            3.184440                       7.0           65.4
+
+Any F13/F15/F18/Cash change: 2926/4645 (62.99%)
+
+STATE / ALLOCATION IMPACT
+--------------------------------------------------------------------------------
+macro_narrative: changed_days=0
+market_regime: changed_days=0
+sector_final_score: changed_days=2039
+weights: changed_days=3179
+rank_raw: changed_days=1868
+rank_accepted: changed_days=2173
+rank_action: changed_days=719
+
+VERDICT
+--------------------------------------------------------------------------------
+DECISION IMPACT CONFIRMED — revised-vintage inputs changed historical capital-chain decisions. Magnitude/materiality must now be evaluated.
+
+[OUTPUT]
+/workspaces/Global-Capital-Flow-Monitor/data/backtest/results/fred_vintage_counterfactual_propagation_daily.csv
+/workspaces/Global-Capital-Flow-Monitor/data/backtest/results/fred_vintage_counterfactual_propagation_summary.csv
+/workspaces/Global-Capital-Flow-Monitor/data/backtest/results/fred_vintage_counterfactual_propagation_summary.txt
