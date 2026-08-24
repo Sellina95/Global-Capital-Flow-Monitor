@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-23 02:22:02",
+  "timestamp": "2026-08-24 02:21:28",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -10,7 +10,7 @@
   "deadman_reason": "Normal Operation",
   "assets": {
     "SPY": {
-      "zscore": -1.03,
+      "zscore": -0.89,
       "state": "NORMAL",
       "pct_change": -0.08
     },
