@@ -1,0 +1,40 @@
+DASHBOARD #12 — RISK CONTROLS / INVARIANTS
+==========================================================================================
+
+CORRECT CAPITAL CONTRACT
+------------------------------------------------------------------------------------------
+F13 Risk Budget -> F15 Exposure transformation -> F18 hard execution ceiling -> Sector weights + Cash
+
+F15 <= F13 is NOT treated as an invariant.
+Production Filter15 intentionally permits positive multipliers above the F13 starting budget.
+
+The enforceable downstream capital ceiling is F18 <= F15.
+
+VALID INVARIANT RESULTS
+------------------------------------------------------------------------------------------
+f13_finite: PASS (failures=0)
+f15_finite: PASS (failures=0)
+f18_finite: PASS (failures=0)
+cash_finite: PASS (failures=0)
+f13_range: PASS (failures=0)
+f15_range: PASS (failures=0)
+f18_range: PASS (failures=0)
+cash_range: PASS (failures=0)
+f18_le_f15: PASS (failures=0)
+f18_plus_cash_eq_100: PASS (failures=0)
+weights_parse_ok: PASS (failures=0)
+sector_weights_finite: PASS (failures=0)
+sector_weights_nonnegative: PASS (failures=0)
+sector_sum_eq_f18: PASS (failures=0)
+single_sector_le_f18: PASS (failures=0)
+
+INFORMATIONAL
+------------------------------------------------------------------------------------------
+F15 > F13 observations: 143
+Classification: EXPECTED / PERMITTED BY FILTER15 CONTRACT
+
+FINAL
+------------------------------------------------------------------------------------------
+Any valid invariant failure days: 0/4645
+
+PASS — canonical historical replay satisfies the Production capital/risk-control invariants.
