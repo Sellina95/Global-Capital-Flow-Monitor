@@ -25,7 +25,7 @@ Liquidity conditions are deteriorating, but credit markets have not yet confirme
 Early-stage fragility signal rather than crisis.
 
 2) Positioning Crowding
-• POS_Z = 1.79
+• POS_Z = 1.78
 Interpretation:
 Positioning remains elevated. Main risk is an air-pocket correction rather than structural collapse.
 
@@ -143,13 +143,13 @@ Key focus: monitor liquidity, participation quality, and positioning risk.
 - **Flow:** ⚡ BUILDING / score=5
 - **Gamma:** 🟡 POSITIVE-TRANSITION
 - **Tactical Action:** REDUCE / DEFENSIVE / MEDIUM
-- **Positioning:** pos_z=1.79
+- **Positioning:** pos_z=1.78
 - **Warning Score:** 2 (6.6 섹터 상관관계 붕괴)
 - **Tactical Why:** Risk-off environment
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=REDUCE 반영 → Warning Score 2 → 섹터/상관관계 경고, 총노출 추가 감산 없이 배분 보수화 → Tactical=REDUCE / Flow=⚡ BUILDING(5) / Drift=👀 EARLY DRIFT(3) / Gamma=🟡 POSITIVE-TRANSITION → Tactical REDUCE → 방어 기조 유지 / 총노출 추가 감산 없이 배분 보수화
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **RISK-ON (완화 기대·리스크 선호)** → **SOFT RISK-OFF**
+- **Operational Phase:** ✅ **SOFT RISK-OFF**
 - **Structural Regime:** **TIGHTENING_GROWTH_SCARE**
 
 ---
@@ -251,9 +251,9 @@ Key focus: monitor liquidity, participation quality, and positioning risk.
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🟡 REBOUND | Short-term: SHORT DOWN | 1D=+0.01% / 5D=-0.40% | Strength: LOW
-- **WTI:** 🟡 REBOUND | Short-term: SHORT UP | 1D=+0.23% / 5D=-6.16% | Strength: MEDIUM
-- **DXY:** 🟢 UP | Short-term: MIXED | 1D=+0.07% / 5D=+0.34% | Strength: LOW
-- **GOLD:** 🟢 UP | Short-term: SHORT DOWN | 1D=+0.74% / 5D=+2.57% | Strength: LOW
+- **WTI:** 🔴 DOWN | Short-term: MIXED | 1D=-0.05% / 5D=-6.42% | Strength: MEDIUM
+- **DXY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.07% / 5D=+0.34% | Strength: LOW
+- **GOLD:** 🟢 UP | Short-term: SHORT UP | 1D=+0.86% / 5D=+2.69% | Strength: LOW
 
 - **Drift Score:** 3
 - **State:** **👀 EARLY DRIFT**
@@ -262,9 +262,9 @@ Key focus: monitor liquidity, participation quality, and positioning risk.
 
 - **Market Drift Summary:**
   - Equity (SPY): 🟡 REBOUND / SHORT DOWN
-  - Oil (WTI): 🟡 REBOUND / SHORT UP
-  - Dollar (DXY): 🟢 UP / MIXED
-  - Gold (GOLD): 🟢 UP / SHORT DOWN
+  - Oil (WTI): 🔴 DOWN / MIXED
+  - Dollar (DXY): 🟢 UP / SHORT UP
+  - Gold (GOLD): 🟢 UP / SHORT UP
 
 - **Drivers:**
   - Credit supports risk
@@ -322,7 +322,7 @@ So What?
 - **주의:** Dealer Gamma Bias 숫자와 Pseudo Gamma State는 서로 다른 레이어
 
 - **Pseudo Gamma State:** 🟡 POSITIVE-TRANSITION
-- **Dealer Gamma Bias:** 0.73 (NEUTRAL / transition zone)
+- **Dealer Gamma Bias:** 0.86 (NEUTRAL / transition zone)
 - **Bias:** VIX는 안정적이나 Drift가 형성 중
 - **Strategy:** 초기 방향성 관찰 / 과도한 추격 금지
 
@@ -336,17 +336,17 @@ So What?
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
 - **Raw Flow State:** **⚡ BUILDING**
-- **Transition State:** **FLOW_FADE**
-- **Flow Delta:** -1 (prev=6 → current=5)
-- **Persistence Days:** 4
-- **Transition Note:** 기관성 흐름은 남아 있으나 강도 약화
+- **Transition State:** **CONFIRMED_FLOW**
+- **Flow Delta:** +0 (prev=5 → current=5)
+- **Persistence Days:** 5
+- **Transition Note:** 기관성 흐름이 높은 강도로 확인
 - **Confidence:** **MEDIUM-HIGH**
 - **Action Bias:** **WATCHLIST**
 
 - **Drift:** 👀 EARLY DRIFT / NEUTRAL / 🟢 EARLY FLOW WITHOUT SHOCK
 - **Gamma:** 🟡 POSITIVE-TRANSITION / 🟢 EARLY FLOW WITHOUT SHOCK
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.79
+- **Positioning (POS_Z):** 1.78
 - **Validation Score:** 3 (boost applied: +2)
 
 - **Drivers:**
@@ -471,19 +471,19 @@ So What?
 - **Drift:** 👀 EARLY DRIFT / NEUTRAL / 🟢 EARLY FLOW WITHOUT SHOCK
 - **Drift Score:** 3
 - **Flow Score:** 5
-- **Flow Continuity:** TRACE_BUILDING → ⚡ BUILDING (FLOW_PERSISTENCE, tilt=+1)
+- **Flow Continuity:** FLOW_FADE → ⚡ BUILDING (FLOW_PERSISTENCE, tilt=+1)
 - **Flow Regime Tilt:** +4 / Flow-Gamma Tilt: +2
 
 - **🎯 Final Risk Action:** **REDUCE**
 - **Risk Budget (0~100):** **36**
-- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=감소/중간 / 크레딧=안정 / 드리프트=👀 EARLY DRIFT (NEUTRAL) / 수급=1.79 ⚠️ 수급 다소 과열 → Phase=SOFT RISK-OFF
+- **Narrative:** 구조=TIGHTENING / 심리=NEUTRAL / 유동성=감소/중간 / 크레딧=안정 / 드리프트=👀 EARLY DRIFT (NEUTRAL) / 수급=1.78 ⚠️ 수급 다소 과열 → Phase=SOFT RISK-OFF
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `TIGHTENING` | **Price(Regime):** `SOFT RISK-OFF` | **Bucket:** `RISK-OFF` | **VIX:** `15.21`
-- **Positioning Data:** Z-Score: `1.79` (>1.8 시 Run) | Gamma: `0.73` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.78` (>1.8 시 Run) | Gamma: `0.86` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -493,7 +493,7 @@ So What?
 
 - **Base Risk Budget (13):** 36
 - **VIX Level:** 15.21 (NORMAL) | **Change:** -1.55%
-- **Positioning Layer:** ⚠️ Elevated Positioning Heat(1.79)
+- **Positioning Layer:** ⚠️ Elevated Positioning Heat(1.78)
 - **Brake Drivers:** ⚠️ Elevated Positioning Heat
 
 - **📊 Recommended Exposure:** **32%**
@@ -660,7 +660,7 @@ So What?
 - **Crash?** False
 - **Risk Level:** NORMAL
 - **Z-Score (1d):** -0.49715192198480285
-- **Z-Score (5d):** 0.11943910706076218
+- **Z-Score (5d):** 0.11943902900657917
 
 ### EEM
 - **Crash?** False
@@ -677,8 +677,8 @@ So What?
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** -0.22116748661469554
-- **Z-Score (5d):** 0.3586623593591344
+- **Z-Score (1d):** -0.2211682856886239
+- **Z-Score (5d):** 0.3586633547203705
 
 ### EWJ
 - **Crash?** False
