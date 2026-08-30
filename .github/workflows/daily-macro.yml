@@ -278,6 +278,20 @@ jobs:
           echo "== macro_data first 5 rows =="
           head -n 6 data/macro_data.csv || true
 
+      - name: Update latest strategy brief
+        run: |
+          latest=$(ls -t reports/daily_report_*.md | head -n 1)
+
+          if [ -z "$latest" ]; then
+            echo "❌ No daily report found"
+            exit 1
+          fi
+
+          cp "$latest" reports/latest.md
+
+          echo "LATEST REPORT: $latest"
+          echo "UPDATED: reports/latest.md"
+
       - name: Commit and push report
         run: |
           git config user.name "github-actions[bot]"
