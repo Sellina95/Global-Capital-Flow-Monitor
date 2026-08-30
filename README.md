@@ -12,6 +12,8 @@ The core transmission chain is:
 → Tactical Allocation  
 → ETF Execution**
 
+🔗 **[Latest Strategy Brief](https://github.com/Sellina95/Global-Capital-Flow-Monitor/blob/main/reports/latest.md)**
+
 It is designed not to predict markets, but to systematically interpret capital flow, control portfolio risk, and translate macro information into disciplined positioning.
 
 > **Independent research project — not investment advice.**
