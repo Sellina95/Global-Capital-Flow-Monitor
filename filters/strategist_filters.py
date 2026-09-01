@@ -7623,6 +7623,27 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         1,
     )
 
+    # ========================================================
+    # PM PRESENTATION CONTRACT — FINAL F18 EXECUTION ALLOCATION
+    #
+    # Observability only.
+    # Captures the execution-facing allocation AFTER:
+    # - Filter18 allocation
+    # - Rank Persistence
+    # - Rebalance Threshold
+    # - Execution Ceiling Reconciliation
+    # - Final rounding
+    #
+    # This does NOT alter F13 / F15 / F18 decision logic.
+    # ========================================================
+    market_data["PM_FINAL_ALLOCATION"] = {
+        "exposure_ceiling": round(_execution_ceiling, 1),
+        "allocated_equity": allocated_equity,
+        "tactical_reserve": tactical_reserve,
+        "cash_weight": cash_weight,
+        "sector_weights": dict(weights),
+    }
+
     etf_plan = build_execution_etf_map(
     weights=weights,
     divergence_flags=divergence_flags,

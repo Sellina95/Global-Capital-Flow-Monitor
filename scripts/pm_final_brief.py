@@ -1,459 +1,488 @@
 def generate_pm_final_brief(market_data):
+    """
+    Daily PM View — presentation / observability layer only.
+
+    Contract:
+    - Does NOT create market states, portfolio rules, or trading signals.
+    - Does NOT modify F13 / F15 / F18 / FINAL_STATE / FINAL_DECISION.
+    - Canonical engine outputs are rendered as-is.
+    - Market observations may be calculated for display only.
+    - Missing != Neutral.
+    - Stale != Current.
+    """
 
     lines = []
+
+    # ==================================================
+    # Canonical contracts
+    # ==================================================
+
     final_state = market_data.get("FINAL_STATE", {}) or {}
     final_decision = market_data.get("FINAL_DECISION", {}) or {}
     final_action = market_data.get("FINAL_ACTION", {}) or {}
-    credit_calm = final_state.get("credit_calm", False)
-    geo_level = market_data.get("WARNING_SIGNALS", {}).get("geo_level", "NORMAL")
 
     phase = final_state.get("phase", "N/A")
     structure = final_state.get("structure_tag", "N/A")
-
     flow_state = final_state.get("flow_state", "N/A")
     drift_state = final_state.get("drift_state", "N/A")
-
     liquidity_dir = final_state.get("liquidity_dir", "N/A")
-    pos_z = final_state.get("pos_z", 0)
-
-    exposure = final_decision.get("exposure", "N/A")
-    action = final_decision.get("action", "N/A")
-
     macro_narrative = final_state.get("macro_narrative", "N/A")
+
+    pos_z = final_state.get("pos_z")
+    credit_calm = final_state.get("credit_calm")
+
+    action = final_decision.get("action", "N/A")
+    exposure = final_decision.get("exposure", "N/A")
+
+    tactical_action = final_action.get("action", "N/A")
+    tactical_size = final_action.get("size", "N/A")
+    tactical_confidence = final_action.get("confidence", "N/A")
+    tactical_reasons = final_action.get("reason", []) or []
+
+    geo_level = (
+        market_data.get("WARNING_SIGNALS", {}) or {}
+    ).get("geo_level", "N/A")
 
     cross_asset = final_state.get("cross_asset_tape", {}) or {}
 
-    us10y_dir = cross_asset.get("US10Y_DIR", 0)
-    dxy_dir = cross_asset.get("DXY_DIR", 0)
-    vix_dir = cross_asset.get("VIX_DIR", 0)
-    wti_dir = cross_asset.get("WTI_DIR", 0)
+    us10y_dir = cross_asset.get("US10Y_DIR")
+    dxy_dir = cross_asset.get("DXY_DIR")
+    vix_dir = cross_asset.get("VIX_DIR")
+    wti_dir = cross_asset.get("WTI_DIR")
 
-    hy_oas_status = str(
-        cross_asset.get("HY_OAS_STATUS", "UNKNOWN") or "UNKNOWN"
-    ).upper()
+    hy_oas_status = cross_asset.get("HY_OAS_STATUS")
+    if hy_oas_status is None:
+        hy_oas_status = "N/A"
+    else:
+        hy_oas_status = str(hy_oas_status).upper()
 
-    # --------------------------------------------------
-    # Reporting-only canonical renderers
-    # --------------------------------------------------
-    # IMPORTANT:
-    # - PM Brief must not create a second market-state engine.
-    # - +1 / 0 / -1 come directly from CROSS_ASSET_TAPE.
-    # - 0 may mean flat OR unavailable, so render conservatively.
-    def render_direction(
-        value,
-        up_label,
-        down_label,
-        neutral_label="⚪ Neutral / Unconfirmed",
-    ):
+    # ==================================================
+    # Helpers — rendering only
+    # ==================================================
+
+    def fmt_value(value, decimals=2):
+        if value is None:
+            return "N/A"
+        try:
+            return f"{float(value):.{decimals}f}"
+        except (TypeError, ValueError):
+            return str(value)
+
+    def fmt_pct(value):
+        if value is None:
+            return "N/A"
+        try:
+            return f"{float(value):+.2%}"
+        except (TypeError, ValueError):
+            return "N/A"
+
+    def render_direction(value, up_text, down_text):
         if value == 1:
-            return up_label
+            return f"↑ {up_text}"
         if value == -1:
-            return down_label
-        return neutral_label
+            return f"↓ {down_text}"
+        return "⚪ No canonical signal"
 
-    if liquidity_dir == "DOWN":
-        liquidity_display = "🔻 Tightening"
-    elif liquidity_dir == "UP":
-        liquidity_display = "🟢 Improving"
-    else:
-        liquidity_display = "⚪ Neutral / Unconfirmed"
+    def render_liquidity(value):
+        if value == "UP":
+            return "↑ Improving"
+        if value == "DOWN":
+            return "↓ Tightening"
+        return "⚪ No canonical signal"
 
-    volatility_display = render_direction(
-        vix_dir,
-        "🔺 Rising",
-        "🔻 Falling",
-    )
+    def render_credit(value):
+        if value is True:
+            return "Calm"
+        if value is False:
+            return "Not calm"
+        return "⚪ No canonical signal"
 
-    usd_display = render_direction(
-        dxy_dir,
-        "🔺 Stronger",
-        "🔻 Weaker",
-    )
+    def safe_relative(today_a, prev_a, today_b, prev_b):
+        values = (today_a, prev_a, today_b, prev_b)
 
-    oil_display = render_direction(
-        wti_dir,
-        "🔺 Rising",
-        "🔻 Falling",
-    )
+        if any(v is None for v in values):
+            return None
 
-    rates_display = render_direction(
-        us10y_dir,
-        "🔺 Rising",
-        "🔻 Falling",
-    )
+        try:
+            today_a = float(today_a)
+            prev_a = float(prev_a)
+            today_b = float(today_b)
+            prev_b = float(prev_b)
 
-    if vix_dir == 1:
-        volatility_summary_phrase = "volatility pressures have increased"
-    elif vix_dir == -1:
-        volatility_summary_phrase = "volatility pressures have eased"
-    else:
-        volatility_summary_phrase = "volatility direction remains unconfirmed"
+            if prev_a == 0 or prev_b == 0:
+                return None
 
-    thesis = ""
+            return (
+                (today_a / prev_a - 1.0)
+                - (today_b / prev_b - 1.0)
+            )
+        except (TypeError, ValueError, ZeroDivisionError):
+            return None
 
-    if liquidity_dir == "DOWN" and pos_z >= 1.5:
-
-        thesis = (
-            "Liquidity is tightening while positioning remains crowded. "
-            "Maintain defensive exposure and avoid marginal risk expansion."
+    def append_rotation_observation(
+        label,
+        today_a,
+        prev_a,
+        prev2_a,
+        today_b,
+        prev_b,
+        prev2_b,
+    ):
+        today_rel = safe_relative(
+            today_a, prev_a, today_b, prev_b
         )
 
-    elif "TRACE" in str(flow_state).upper():
-
-        thesis = (
-            "Participation is emerging but remains unconfirmed. "
-            "Stay selective and focus on capital preservation."
+        previous_rel = safe_relative(
+            prev_a, prev2_a, prev_b, prev2_b
         )
 
-    else:
+        if today_rel is None:
+            lines.append(f"{label:<18} N/A")
+            return
 
-        thesis = (
-            "Market conditions remain balanced. "
-            "Monitor liquidity, participation, and risk signals."
+        if previous_rel is None:
+            lines.append(
+                f"{label:<18} Today {fmt_pct(today_rel)} | Change N/A"
+            )
+            return
+
+        change = today_rel - previous_rel
+
+        lines.append(
+            f"{label:<18} "
+            f"Today {fmt_pct(today_rel)} | "
+            f"Prev {fmt_pct(previous_rel)} | "
+            f"Δ {fmt_pct(change)}"
         )
 
-    lines.append("🏦 GLOBAL MACRO DAILY — PM FINAL BRIEF")
+    # ==================================================
+    # Header
+    # ==================================================
+
+    lines.append("GLOBAL CAPITAL FLOW MONITOR")
+    lines.append("DAILY PM VIEW")
     lines.append("")
 
-    # Rally Confidence Assessment
+    # ==================================================
+    # Portfolio stance
+    # ==================================================
 
-    rally_score = 0
+    lines.append("PORTFOLIO STANCE")
+    lines.append(f"{action} · {exposure}%")
+    lines.append("")
 
-    # 12.6
-    flow_label = market_data.get("FLOW_AUTHENTICITY_LABEL", "")
+    lines.append("REGIME")
+    lines.append(str(phase))
+    lines.append("")
 
-    # 12.5
-    growth_label = market_data.get("GROWTH_SUSTAINABILITY_LABEL", "")
+    lines.append("CONVICTION")
+    lines.append(str(tactical_confidence))
+    lines.append("")
 
-    # 12.7
-    leadership_label = market_data.get("LEADERSHIP_BREADTH_LABEL", "")
+    # ==================================================
+    # Executive View
+    # ==================================================
 
-    # 12.8
-    positioning_label = (
-        market_data.get("POSITIONING_STRESS_LABEL")
-        or market_data.get("POSITIONING_LABEL")
-        or market_data.get("POSITIONING_STATE")
-        or ""
+    lines.append("1. EXECUTIVE VIEW")
+
+    liquidity_text = render_liquidity(liquidity_dir)
+    credit_text = render_credit(credit_calm)
+
+    lines.append(
+        f"The current strategic phase is {phase}. "
+        f"Liquidity is {liquidity_text}, while flow is {flow_state}. "
+        f"Positioning Z is {fmt_value(pos_z)} and credit is {credit_text}. "
+        f"The canonical portfolio decision is {action} with an "
+        f"{exposure}% exposure ceiling."
     )
-
-    if flow_label == "REAL_ACCUMULATION":
-        rally_score += 1
-
-    if growth_label == "STRUCTURAL_STRESS":
-        rally_score -= 1
-
-    if leadership_label == "BROAD_LEADERSHIP":
-        rally_score += 1
-    elif leadership_label == "MEGA_CAP_SQUEEZE_RISK":
-        rally_score -= 1
-
-    if positioning_label == "SQUEEZE_RISK":
-        rally_score -= 1
-
-    if rally_score >= 1:
-        rally_confidence = "HIGH"
-    elif rally_score == 0:
-        rally_confidence = "MEDIUM"
-    else:
-        rally_confidence = "LOW"
-
-    lines.append("🧭 1. Executive Summary")
-
-    summary = (
-        f"Markets are operating in a {phase} regime as liquidity conditions are "
-        f"{liquidity_display.replace('🔻 ', '').replace('🟢 ', '').replace('⚪ ', '').lower()} "
-        f"and {volatility_summary_phrase}. "
-        f"Participation remains {flow_state}, while positioning risk sits at {pos_z:.1f}. "
-        f"Maintain disciplined exposure and avoid adding marginal risk."
+    lines.append(
+        f"Macro Narrative      {macro_narrative}"
     )
+    lines.append(
+        f"Tactical Signal      {tactical_action} / {tactical_size}"
+    )
+    lines.append("")
 
-    lines.append(summary)
+    # ==================================================
+    # Market State
+    # ==================================================
 
-    if rally_confidence == "HIGH":
-        confidence_display = "🟢 HIGH"
-    elif rally_confidence == "MEDIUM":
-        confidence_display = "🟡 MEDIUM"
+    lines.append("2. MARKET STATE")
+    lines.append(f"Liquidity            {render_liquidity(liquidity_dir)}")
+    lines.append(f"Flow                 {flow_state}")
+    lines.append(f"Structure            {structure}")
+    lines.append(f"Drift                {drift_state}")
+    lines.append(f"Positioning Z        {fmt_value(pos_z)}")
+    lines.append(f"Credit               {render_credit(credit_calm)}")
+    lines.append("")
+
+    # ==================================================
+    # What Matters Today
+    #
+    # No renderer-generated thesis.
+    # This is a compact display of existing state.
+    # ==================================================
+
+    # ==================================================
+    # Cross-Asset Tape
+    # ==================================================
+
+    lines.append("3. CROSS-ASSET CONFIRMATION")
+
+    # --------------------------------------------------
+    # Factual market observations for PM display.
+    #
+    # Display bands below are PRESENTATION-ONLY.
+    # They do NOT feed F13 / F15 / F18 or alter any
+    # canonical engine state.
+    # --------------------------------------------------
+
+    def _obs(name):
+        obj = market_data.get(name, {}) or {}
+        if not isinstance(obj, dict):
+            return None, None
+        return obj.get("today"), obj.get("pct_change")
+
+    def _float_or_none(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _pct_display(value):
+        value = _float_or_none(value)
+        if value is None:
+            return "N/A"
+        return f"{value:+.2f}%"
+
+    def _us10y_band(value):
+        value = _float_or_none(value)
+        if value is None:
+            return "⚪"
+        if value > 4.5:
+            return "🔴"
+        if value >= 4.0:
+            return "🟡"
+        return "🟢"
+
+    def _dxy_band(value):
+        value = _float_or_none(value)
+        if value is None:
+            return "⚪"
+        if value > 105:
+            return "🔴"
+        if value >= 100:
+            return "🟡"
+        return "🟢"
+
+    def _vix_band(value):
+        value = _float_or_none(value)
+        if value is None:
+            return "⚪"
+        if value > 25:
+            return "🔴"
+        if value >= 20:
+            return "🟡"
+        return "🟢"
+
+    def _hy_band(value):
+        value = _float_or_none(value)
+        if value is None:
+            return "⚪"
+        if value > 5.0:
+            return "🔴"
+        if value >= 4.0:
+            return "🟡"
+        return "🟢"
+
+    us10y_today, us10y_change = _obs("US10Y")
+    dxy_today, dxy_change = _obs("DXY")
+    wti_today, wti_change = _obs("WTI")
+    vix_today, vix_change = _obs("VIX")
+    hy_today, hy_change = _obs("HY_OAS")
+
+    us10y_value = _float_or_none(us10y_today)
+    dxy_value = _float_or_none(dxy_today)
+    wti_value = _float_or_none(wti_today)
+    vix_value = _float_or_none(vix_today)
+    hy_value = _float_or_none(hy_today)
+
+    lines.append("Equities             ⚪ No canonical PM state")
+
+    if us10y_value is not None:
+        lines.append(
+            f"US10Y Yield          "
+            f"{_us10y_band(us10y_value)} {us10y_value:.2f}% · "
+            f"{render_direction(us10y_dir, 'Rising', 'Falling')} "
+            f"({_pct_display(us10y_change)})"
+        )
     else:
-        confidence_display = "🔴 LOW"
+        lines.append(
+            f"US10Y Yield          ⚪ N/A · "
+            f"{render_direction(us10y_dir, 'Rising', 'Falling')}"
+        )
 
-    lines.append(f"Rally Confidence: {confidence_display}")
+    if dxy_value is not None:
+        lines.append(
+            f"USD                  "
+            f"{_dxy_band(dxy_value)} {dxy_value:.2f} · "
+            f"{render_direction(dxy_dir, 'Stronger', 'Weaker')} "
+            f"({_pct_display(dxy_change)})"
+        )
+    else:
+        lines.append(
+            f"USD                  ⚪ N/A · "
+            f"{render_direction(dxy_dir, 'Stronger', 'Weaker')}"
+        )
 
-    rally_message_map = {
-        "LOW": (
-            "Participation is improving, but liquidity remains tight and positioning risk is elevated. "
-            "Treat the rally as low-confidence until flow persistence and leadership quality improve."
-        ),
-        "MEDIUM": (
-            "Participation is emerging, but confirmation remains limited. "
-            "Wait for stronger breadth and persistence before increasing risk exposure."
-        ),
-        "HIGH": (
-            "Participation and leadership support trend continuation. "
-            "Risk exposure may be maintained, subject to volatility and positioning controls."
-        ),
+    if wti_value is not None:
+        lines.append(
+            f"Oil                  "
+            f"${wti_value:.2f} · "
+            f"{render_direction(wti_dir, 'Rising', 'Falling')} "
+            f"({_pct_display(wti_change)})"
+        )
+    else:
+        lines.append(
+            f"Oil                  N/A · "
+            f"{render_direction(wti_dir, 'Rising', 'Falling')}"
+        )
+
+    if vix_value is not None:
+        lines.append(
+            f"Volatility           "
+            f"{_vix_band(vix_value)} {vix_value:.2f} · "
+            f"{render_direction(vix_dir, 'Rising', 'Falling')} "
+            f"({_pct_display(vix_change)})"
+        )
+    else:
+        lines.append(
+            f"Volatility           ⚪ N/A · "
+            f"{render_direction(vix_dir, 'Rising', 'Falling')}"
+        )
+
+    if hy_value is not None:
+        lines.append(
+            f"HY OAS               "
+            f"{_hy_band(hy_value)} {hy_value:.2f}% · "
+            f"{hy_oas_status} ({_pct_display(hy_change)})"
+        )
+    else:
+        lines.append(f"HY OAS               ⚪ N/A · {hy_oas_status}")
+
+    lines.append("")
+
+    # ==================================================
+    # Leadership & Rotation
+    # ==================================================
+
+    lines.append("4. LEADERSHIP & PARTICIPATION")
+    lines.append("")
+
+    # --------------------------------------------------
+    # Today's Sector Leaders
+    #
+    # PM_SECTOR_SNAPSHOT is factual observability only:
+    # 1D sector return and 1D relative return vs SPY.
+    #
+    # Missing sectors are NOT treated as neutral.
+    # --------------------------------------------------
+
+    lines.append("Today's Sector Leaders")
+
+    sector_snapshot = market_data.get("PM_SECTOR_SNAPSHOT", []) or []
+
+    sector_names = {
+        "XLK": "Technology",
+        "XLF": "Financials",
+        "XLE": "Energy",
+        "XLI": "Industrials",
+        "XLB": "Materials",
+        "XLY": "Consumer Discretionary",
+        "XLP": "Consumer Staples",
+        "XLV": "Health Care",
+        "XLU": "Utilities",
+        "XLRE": "Real Estate",
+        "XLC": "Communication Services",
     }
 
-    lines.append(rally_message_map.get(rally_confidence, rally_message_map["MEDIUM"]))
+    expected_sector_count = len(sector_names)
+    observed_sector_count = len(sector_snapshot)
 
-
-
-    lines.append("")
-
-    lines.append("🌍 2. Macro Regime")
-
-    lines.append(f"Liquidity: {liquidity_display}")
     lines.append(
-        f"Flow: {'🟡 Early Trace' if 'TRACE' in flow_state else flow_state}"
+        f"Coverage             "
+        f"{observed_sector_count}/{expected_sector_count} "
+        f"· same-date observations only"
     )
-    lines.append(f"Volatility: {volatility_display}")
-    lines.append(f"Structure: {structure}")
 
-    credit_calm = final_state.get("credit_calm")
-    lines.append("")
-    lines.append("⚠️ 3. Key Macro Conflict")
-
-    if liquidity_dir == "DOWN" and credit_calm:
-
-        lines.append("")
-        lines.append("1) Liquidity vs Credit")
-        lines.append("• Liquidity: Tightening")
-        lines.append("• Credit: Stable")
-
-        lines.append("Interpretation:")
-        lines.append(
-            "Liquidity conditions are deteriorating, "
-            "but credit markets have not yet confirmed stress."
-        )
-
-        lines.append(
-            "Early-stage fragility signal rather than crisis."
-        )
-    if pos_z >= 1.5:
-
-        lines.append("")
-        lines.append("2) Positioning Crowding")
-        lines.append(f"• POS_Z = {pos_z:.2f}")
-
-        lines.append("Interpretation:")
-        lines.append(
-            "Positioning remains elevated. "
-            "Main risk is an air-pocket correction rather than structural collapse."
-        )
-    lines.append("")
-    lines.append("📊 4. Cross Asset Summary")
-
-    # Equity/Bond states are not inferred here.
-    # There is currently no canonical FINAL_STATE equity/bond state contract.
-    lines.append("Equities: ⚪ N/A — no canonical PM state")
-    lines.append(f"US10Y Yield: {rates_display}")
-    lines.append(f"USD: {usd_display}")
-    lines.append(f"Oil: {oil_display}")
-    lines.append(f"Volatility: {volatility_display}")
-    lines.append(f"HY OAS: {hy_oas_status}")
-
-    lines.append("")
-    lines.append("Interpretation:")
-   
-
-    if dxy_dir > 0 and vix_dir > 0 and us10y_dir > 0:
-        lines.append(
-            "Rates, dollar, and volatility are rising together, signaling broad financial-condition tightening."
-        )
-        lines.append(
-            "Risk assets should be treated cautiously unless credit and breadth strongly confirm participation."
-        )
-
-    elif dxy_dir > 0 and vix_dir > 0:
-        lines.append(
-            "A stronger dollar and rising volatility are tightening risk appetite."
-        )
-        lines.append(
-            "This favors defensive exposure and discourages aggressive risk expansion."
-        )
-
-    elif dxy_dir < 0 and vix_dir < 0 and us10y_dir <= 0:
-        lines.append(
-            "A weaker dollar and lower volatility are easing financial conditions."
-        )
-        lines.append(
-            "This supports risk assets, provided breadth and credit remain stable."
-        )
-
-    elif dxy_dir < 0 and vix_dir < 0 and us10y_dir > 0:
-        lines.append(
-            "Dollar weakness and lower volatility are providing temporary breathing room for equities."
-        )
-        lines.append(
-            "However, rising yields limit the quality of the risk-on signal."
-        )
-
-    elif us10y_dir > 0 and wti_dir > 0:
-        lines.append(
-            "Rising yields and oil prices point to reflation pressure."
-        )
-        lines.append(
-            "This can support cyclicals in the short run but keeps inflation and duration risk elevated."
-        )
-
-    elif us10y_dir < 0 and wti_dir < 0:
-        lines.append(
-            "Falling yields and oil prices suggest growth-scare or disinflation pressure."
-        )
-        lines.append(
-            "Defensive assets may outperform unless risk participation broadens."
-        )
-
-    elif dxy_dir > 0 and wti_dir < 0:
-        lines.append(
-            "Dollar strength and falling oil suggest global demand caution."
-        )
-        lines.append(
-            "This is more consistent with defensive risk posture than broad risk expansion."
-        )
-
-    elif dxy_dir < 0 and wti_dir > 0:
-        lines.append(
-            "Dollar weakness and rising oil indicate reflationary risk appetite."
-        )
-        lines.append(
-            "Monitor whether equity leadership broadens beyond narrow growth exposure."
-        )
-
-    elif vix_dir > 0:
-        lines.append(
-            "Volatility is rising, indicating weaker risk appetite."
-        )
-        lines.append(
-            "Avoid chasing rallies until volatility pressure stabilizes."
-        )
-
-    elif vix_dir < 0:
-        lines.append(
-            "Volatility is easing, improving tactical risk conditions."
-        )
-        lines.append(
-            "Confirmation still depends on liquidity, credit, and market breadth."
-        )
+    if not sector_snapshot:
+        lines.append("⚪ No same-date sector observations available")
 
     else:
         lines.append(
-            "Cross-asset signals remain mixed and do not provide a clear directional confirmation."
+            "Rank  Sector                     "
+            "1D Return   vs SPY     Momentum"
         )
 
-    
-    lines.append("")
-    lines.append("🧠 5. Market Interpretation")
+        for row in sector_snapshot:
+            ticker = row.get("ticker", "N/A")
+            rank = row.get("rank", "-")
 
-    lines.append(
-        f"Current market is best described as '{macro_narrative}'."
-    )
+            sector_return = row.get(
+                "sector_return_1d",
+                row.get("return_1d"),
+            )
 
-    lines.append(
-        "Liquidity is slowing, but systemic stress remains contained."
-    )
+            relative_return = row.get(
+                "relative_return_1d",
+                row.get("relative_1d"),
+            )
 
-    lines.append(
-        "Credit markets remain stable, although participation quality requires monitoring."
-    )
+            momentum = row.get(
+                "momentum_score",
+                row.get("momentum"),
+            )
 
-    lines.append("")
-    lines.append("⚠️ 6. Risk Matrix")
-    liq_risk = "🔴 Elevated" if liquidity_dir == "DOWN" else "🟢 Low"
-    if pos_z >= 1.5:
-        pos_risk = "🔴 Elevated"
-    elif pos_z >= 1.0:
-        pos_risk = "🟡 Moderate"
-    else:
-        pos_risk = "🟢 Low"
+            name = sector_names.get(ticker, ticker)
 
-    credit_risk = "🟢 Low" if credit_calm else "🔴 Elevated"
+            momentum_display = (
+                "N/A"
+                if momentum is None
+                else str(momentum)
+            )
 
-    if geo_level in ["ELEVATED", "HIGH"]:
-        geo_risk = "🟡 Elevated"
-    else:
-        geo_risk = "🟢 Low"
-
-    # No canonical inflation-risk state is currently exposed to PM Brief.
-    # Do not manufacture a risk label at the reporting layer.
-    inflation_risk = "⚪ N/A"
-
-    lines.append(f"Inflation Risk      {inflation_risk}")
-    lines.append(f"Liquidity Risk      {liq_risk}")
-    lines.append(f"Positioning Risk    {pos_risk}")
-    lines.append(f"Credit Risk         {credit_risk}")
-    lines.append(f"Geopolitical Risk   {geo_risk}")
-
-    lines.append("")
-    lines.append("🏭 7. Sector Implication")
-
-    if action == "STRONG REDUCE" or "RISK-OFF" in str(phase).upper():
-        lines.append("🟢 Preferred:")
-        lines.append("- Health Care")
-        lines.append("- Consumer Staples")
-        lines.append("- Utilities")
-        lines.append("")
-        lines.append("🔴 Avoid:")
-        lines.append("- High-beta cyclicals")
-        lines.append("- Crowded growth leadership")
-        lines.append("- Rate-sensitive long-duration equities")
-    else:
-        lines.append("🟢 Preferred:")
-        lines.append("- Quality leaders")
-        lines.append("- Confirmed relative-strength sectors")
-        lines.append("")
-        lines.append("🔴 Avoid:")
-        lines.append("- Weak breadth / theory-only sector bets")
-    
-    lines.append("")
-    lines.append("🎯 8. Tactical Recommendation")
-
-    tactical_action = final_action.get("action", "N/A")
-    final_action_size = final_action.get("size", "N/A")
-    final_action_confidence = final_action.get("confidence", "N/A")
-    final_action_reasons = final_action.get("reason", [])
-
-    # FINAL_DECISION = execution / War Room result
-    lines.append(
-        f"Final Portfolio Decision: {action} / {exposure}%"
-    )
-
-    # FINAL_ACTION = tactical signal layer
-    lines.append(
-        f"Tactical Signal: {tactical_action} / {final_action_size}"
-    )
-    lines.append(
-        f"Tactical Confidence: {final_action_confidence}"
-    )
-
-    if final_action_reasons:
-        lines.append("Tactical Rationale:")
-        for reason in final_action_reasons:
-            lines.append(f"- {reason}")
-
-    lines.append(
-        "Maintain defensive discipline, avoid aggressive risk expansion, "
-        "and prioritize cash plus resilient sectors."
-    )
+            lines.append(
+                f"{str(rank):>4}  "
+                f"{name:<25} "
+                f"{fmt_pct(sector_return):>9}   "
+                f"{fmt_pct(relative_return):>9}   "
+                f"{momentum_display:>8}"
+            )
 
     lines.append("")
 
-    lines.append("📈 9. Internal Rotation Monitor")
+    # --------------------------------------------------
+    # Breadth & Leadership
+    # Raw relative-performance observations only.
+    # No BUY/SELL or rally-quality classification.
+    # --------------------------------------------------
+
+    lines.append("Breadth & Leadership")
+
     rsp = market_data.get("BREADTH_RSP")
     rsp_prev = market_data.get("BREADTH_RSP_PREV")
+    rsp_prev2 = market_data.get("BREADTH_RSP_PREV2")
 
     spy = market_data.get("BREADTH_SPY")
     spy_prev = market_data.get("BREADTH_SPY_PREV")
-
-    rsp_prev2 = market_data.get("BREADTH_RSP_PREV2")
     spy_prev2 = market_data.get("BREADTH_SPY_PREV2")
 
     qqqe = market_data.get("BREADTH_QQQE")
     qqqe_prev = market_data.get("BREADTH_QQQE_PREV")
+    qqqe_prev2 = market_data.get("BREADTH_QQQE_PREV2")
 
     qqq = market_data.get("BREADTH_QQQ")
     qqq_prev = market_data.get("BREADTH_QQQ_PREV")
-
-    qqqe_prev2 = market_data.get("BREADTH_QQQE_PREV2")
     qqq_prev2 = market_data.get("BREADTH_QQQ_PREV2")
 
     smh = market_data.get("LEAD_SMH")
@@ -464,128 +493,122 @@ def generate_pm_final_brief(market_data):
     iwm_prev = market_data.get("LEAD_IWM_PREV")
     iwm_prev2 = market_data.get("LEAD_IWM_PREV2")
 
-
-    rsp_rel = (
-        ((rsp / rsp_prev) - 1)
-        -
-        ((spy / spy_prev) - 1)
+    append_rotation_observation(
+        "RSP vs SPY",
+        rsp, rsp_prev, rsp_prev2,
+        spy, spy_prev, spy_prev2,
     )
 
-    qqqe_rel = (
-        ((qqqe / qqqe_prev) - 1)
-        -
-        ((qqq / qqq_prev) - 1)
+    append_rotation_observation(
+        "QQQE vs QQQ",
+        qqqe, qqqe_prev, qqqe_prev2,
+        qqq, qqq_prev, qqq_prev2,
     )
 
-
-    smh_rel = (
-        ((smh / smh_prev) - 1)
-        -
-        ((spy / spy_prev) - 1)
+    append_rotation_observation(
+        "SMH vs SPY",
+        smh, smh_prev, smh_prev2,
+        spy, spy_prev, spy_prev2,
     )
 
-    iwm_rel = (
-        ((iwm / iwm_prev) - 1)
-        -
-        ((spy / spy_prev) - 1)
-    )
-    rsp_rel_yesterday = (
-        ((rsp_prev / rsp_prev2) - 1)
-        -
-        ((spy_prev / spy_prev2) - 1)
+    append_rotation_observation(
+        "IWM vs SPY",
+        iwm, iwm_prev, iwm_prev2,
+        spy, spy_prev, spy_prev2,
     )
 
-    qqqe_rel_yesterday = (
-        ((qqqe_prev / qqqe_prev2) - 1)
-        -
-        ((qqq_prev / qqq_prev2) - 1)
-    )
+    lines.append("")
 
-    smh_rel_yesterday = (
-        ((smh_prev / smh_prev2) - 1)
-        -
-        ((spy_prev / spy_prev2) - 1)
-    )
+    # ==================================================
+    # Portfolio Implication
+    #
+    # Only existing FINAL_DECISION / FINAL_ACTION.
+    # --------------------------------------------------
+    # PORTFOLIO ALLOCATION
+    # Canonical execution-facing F18 allocation only.
+    # No presentation-generated allocation advice.
+    # --------------------------------------------------
+    pm_allocation = market_data.get("PM_FINAL_ALLOCATION", {}) or {}
 
-    iwm_rel_yesterday = (
-        ((iwm_prev / iwm_prev2) - 1)
-        -
-        ((spy_prev / spy_prev2) - 1)
-    )
+    lines.append("")
+    lines.append("5. PORTFOLIO ALLOCATION")
 
-    def append_rotation_line(label, today, yesterday):
-        change = today - yesterday
-        lines.append(f"{label}")
-        lines.append(f"Yesterday: {yesterday:+.2%}")
-        lines.append(f"Today: {today:+.2%}")
-        lines.append(f"Change: {change:+.2%}")
+    if pm_allocation:
+        exposure_ceiling = pm_allocation.get("exposure_ceiling", "N/A")
+        allocated_equity = pm_allocation.get("allocated_equity", "N/A")
+        tactical_reserve = pm_allocation.get("tactical_reserve", "N/A")
+        cash_weight = pm_allocation.get("cash_weight", "N/A")
+        sector_weights = pm_allocation.get("sector_weights", {}) or {}
+
+        lines.append(f"Exposure Ceiling      {exposure_ceiling}%")
+        lines.append(f"Allocated Equity      {allocated_equity}%")
+        lines.append(f"Tactical Reserve      {tactical_reserve}%")
+        lines.append(f"Cash                  {cash_weight}%")
         lines.append("")
+        lines.append("Sector Allocation")
 
-    append_rotation_line("RSP vs SPY", rsp_rel, rsp_rel_yesterday)
-    append_rotation_line("QQQE vs QQQ", qqqe_rel, qqqe_rel_yesterday)
-    append_rotation_line("SMH vs SPY", smh_rel, smh_rel_yesterday)
-    append_rotation_line("IWM vs SPY", iwm_rel, iwm_rel_yesterday)
+        positive_weights = []
+        for sector, weight in sector_weights.items():
+            try:
+                w = float(weight)
+            except (TypeError, ValueError):
+                continue
+            if w > 0:
+                positive_weights.append((sector, w))
 
-   
-    lines.append("")
-    lines.append("Interpretation:")
+        positive_weights.sort(key=lambda x: x[1], reverse=True)
 
-    # Threshold 변수화 (유지보수 용이성)
-    SMH_STRONG_LEADERSHIP = 3.0
+        if positive_weights:
+            for sector, weight in positive_weights:
+                lines.append(f"{sector:<24} {weight:.1f}%")
+        else:
+            lines.append("No positive sector allocation")
 
-    if rsp_rel > 0 and qqqe_rel > 0 and smh_rel > SMH_STRONG_LEADERSHIP and iwm_rel > 0:
-        lines.append("Participation is broadening across equal-weight, semiconductor, and small-cap segments.")
-        lines.append("This is consistent with healthy risk expansion and improving market breadth.")
-
-    elif rsp_rel > 0 and qqqe_rel > 0 and smh_rel > 0:
-        lines.append("Participation is broadening while semiconductor leadership remains supportive.")
-        lines.append("Market participation appears healthier than a pure mega-cap driven rally.")
-
-    elif rsp_rel > 0 and qqqe_rel > 0 and smh_rel <= 0:
-        lines.append("Breadth improved, but semiconductor leadership remains weak.")
-        lines.append("Rotation is expanding beyond AI leadership.")
-
-    # 💡 6월 8일 같은 'AI 독주/나머지 소외' 장세를 완벽히 포착하는 구간
-    elif rsp_rel <= 0 and qqqe_rel <= 0 and smh_rel > SMH_STRONG_LEADERSHIP:
-        lines.append("Broad participation weakened while semiconductor leadership became dominant.")
-        lines.append("Current strength appears concentrated in AI-linked leadership.")
-        lines.append("Rally quality should be treated cautiously.")
-
-    elif rsp_rel <= 0 and qqqe_rel <= 0 and smh_rel > 0:
-        lines.append("Leadership narrowed back toward mega-cap and semiconductor exposure.")
-        lines.append("Participation remains weak outside leadership groups.")
-
-    elif rsp_rel <= 0 and qqqe_rel <= 0 and smh_rel <= 0:
-        lines.append("Leadership narrowed and participation weakened simultaneously.")
-        lines.append("Market internals remain fragile.")
-
-    elif rsp_rel > 0 and qqqe_rel <= 0:
-        lines.append("S&P participation improved while Nasdaq breadth weakened.")
-        lines.append("Rotation appears uneven across sectors.")
-
-    elif rsp_rel <= 0 and qqqe_rel > 0:
-        lines.append("Nasdaq participation improved while broader market breadth lagged.")
-        lines.append("Leadership remains concentrated in growth-oriented segments.")
-
+        lines.append("")
+        lines.append(
+            "Note: Tactical Reserve is undeployed capacity within the "
+            "Exposure Ceiling and is included in Cash."
+        )
     else:
-        lines.append("Internal rotation remains mixed and inconclusive.")
+        lines.append("No canonical F18 allocation available.")
 
     lines.append("")
-    lines.append("🏁 10. Final PM View")
-    lines.append(
-        f"Final Portfolio Action: {action}"
-    )
 
-    lines.append(
-        f"Final Portfolio Exposure: {exposure}%"
-    )
+    # ==================================================
+    # Risk & Constraints
+    #
+    # Presentation of existing canonical / observed state.
+    # No renderer-generated risk thresholds.
+    # ==================================================
 
-    lines.append(
-        f"Strategic Phase: {phase}"
-    )
+    lines.append("6. RISK & CONSTRAINTS")
+    lines.append("Inflation            ⚪ No canonical PM risk state")
+    lines.append(f"Liquidity            {render_liquidity(liquidity_dir)}")
+    lines.append(f"Positioning Z        {fmt_value(pos_z)}")
+    lines.append(f"Credit               {render_credit(credit_calm)}")
+    lines.append(f"Geopolitical         {geo_level}")
+    lines.append("")
 
-    lines.append(
-        "Key focus: monitor liquidity, participation quality, and positioning risk."
-    )
+    # ==================================================
+    # Decision Rationale
+    #
+    # FINAL_DECISION / FINAL_ACTION only.
+    # ==================================================
+
+    lines.append("7. DECISION RATIONALE")
+    lines.append(f"Decision             {action}")
+    lines.append(f"Exposure Ceiling     {exposure}%")
+    lines.append(f"Tactical Signal      {tactical_action} / {tactical_size}")
+    lines.append(f"Conviction           {tactical_confidence}")
+
+    if tactical_reasons:
+        lines.append("Rationale")
+        for reason in tactical_reasons:
+            lines.append(f"- {reason}")
+    else:
+        lines.append("Rationale")
+        lines.append("- No canonical tactical rationale available")
+
+    lines.append("")
 
     return "\n".join(lines)

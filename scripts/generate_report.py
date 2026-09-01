@@ -1369,6 +1369,119 @@ def attach_sector_momentum_layer(market_data: Dict[str, Any], df: pd.DataFrame, 
     print("[DEBUG] MOMENTUM_SCORES:", market_data["MOMENTUM_SCORES"])
     return market_data
 
+def attach_pm_sector_snapshot(
+    market_data: Dict[str, Any],
+    df: pd.DataFrame,
+    today_idx: int,
+) -> Dict[str, Any]:
+    """
+    PM presentation / observability only.
+
+    Builds a factual 1-day sector leadership snapshot from existing
+    sector ETF price series.
+
+    IMPORTANT:
+    - Does not alter MOMENTUM_SCORES.
+    - Does not create trading signals.
+    - Must not be consumed by F13 / F15 / F18 or FINAL_STATE logic.
+    - SPY-relative return is used only to rank observed daily leadership.
+    """
+
+    if market_data is None:
+        market_data = {}
+
+    sector_names = {
+        "XLK": "Technology",
+        "XLF": "Financials",
+        "XLE": "Energy",
+        "XLI": "Industrials",
+        "XLB": "Materials",
+        "XLY": "Consumer Discretionary",
+        "XLP": "Consumer Staples",
+        "XLV": "Health Care",
+        "XLU": "Utilities",
+        "XLRE": "Real Estate",
+        "XLC": "Communication Services",
+    }
+
+    snapshot = []
+
+    if (
+        df is None
+        or df.empty
+        or today_idx is None
+        or today_idx <= 0
+        or today_idx >= len(df)
+        or "SPY" not in df.columns
+    ):
+        market_data["PM_SECTOR_SNAPSHOT"] = snapshot
+        return market_data
+
+    def one_day_return(column: str):
+        if column not in df.columns:
+            return None
+
+        try:
+            today = pd.to_numeric(df[column].iloc[today_idx], errors="coerce")
+            prev = pd.to_numeric(df[column].iloc[today_idx - 1], errors="coerce")
+
+            if pd.isna(today) or pd.isna(prev) or prev == 0:
+                return None
+
+            return float((today / prev) - 1.0)
+
+        except Exception:
+            return None
+
+    spy_return = one_day_return("SPY")
+
+    if spy_return is None:
+        market_data["PM_SECTOR_SNAPSHOT"] = snapshot
+        return market_data
+
+    momentum_scores = market_data.get("MOMENTUM_SCORES", {}) or {}
+
+    for ticker, sector_name in sector_names.items():
+        sector_return = one_day_return(ticker)
+
+        if sector_return is None:
+            continue
+
+        relative_return = sector_return - spy_return
+
+        snapshot.append(
+            {
+                "ticker": ticker,
+                "sector": sector_name,
+                "return_1d": sector_return,
+                "spy_return_1d": spy_return,
+                "relative_return_1d": relative_return,
+                "momentum_score": momentum_scores.get(ticker),
+            }
+        )
+
+    snapshot.sort(
+        key=lambda x: x["relative_return_1d"],
+        reverse=True,
+    )
+
+    for rank, item in enumerate(snapshot, start=1):
+        item["rank"] = rank
+
+    market_data["PM_SECTOR_SNAPSHOT"] = snapshot
+
+    print("[DEBUG][PM SECTOR SNAPSHOT]")
+    for item in snapshot:
+        print(
+            item["rank"],
+            item["ticker"],
+            f"1D={item['return_1d']:+.2%}",
+            f"RS={item['relative_return_1d']:+.2%}",
+            f"MOM={item['momentum_score']}",
+        )
+
+    return market_data
+
 def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     FRED extras layer.
@@ -2530,6 +2643,7 @@ def generate_daily_report() -> None:
     market_data = attach_country_risk_layer(market_data, df, today_idx) or market_data
     market_data = attach_sector_momentum_layer(market_data, df, today_idx) or market_data
     # Cosine Similarity는 country risk 이후
+    market_data = attach_pm_sector_snapshot(market_data, df, today_idx) or market_data
     market_data = attach_geo_similarity_layer(market_data) or market_data
 
     market_data = attach_sentiment_proxy_layer(market_data) or market_data
@@ -2897,16 +3011,27 @@ def generate_daily_report() -> None:
     # -------------------------
     # 15) Report assembly
     # -------------------------
+    # ==================================================
+    # DAILY PM VIEW — decision product
+    # ==================================================
+    pm_lines = []
+    pm_lines.append("# Global Capital Flow – Daily PM View")
+    pm_lines.append(f"**Date:** {report_date}")
+    pm_lines.append(f"**Data as of:** {data_as_of_date}")
+    pm_lines.append("")
+    pm_lines.append(pm_brief_block)
+
+    report_path = REPORTS_DIR / f"daily_report_{report_date}.md"
+    report_path.write_text("\n".join(pm_lines), encoding="utf-8")
+    print(f"[OK] PM Report written: {report_path}")
+
+    # ==================================================
+    # ENGINE DIAGNOSTICS — observability product
+    # ==================================================
     lines = []
-    lines.append("# 🌍 Global Capital Flow – Daily Brief")
+    lines.append("# ENGINE DIAGNOSTICS")
     lines.append(f"**Date:** {report_date}")
     lines.append(f"**Data as of:** {data_as_of_date}")
-    lines.append("")
-    lines.append(pm_brief_block)
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append("# 🔬 ENGINE DIAGNOSTICS")
     lines.append("")
     
     lines.append("## ⚡ Strategic War Room (통합 대응)")
@@ -3169,9 +3294,10 @@ def generate_daily_report() -> None:
         lines.append("")
         lines.extend(country_risk_lines)
 
-    report_path = REPORTS_DIR / f"daily_report_{report_date}.md"
-    report_path.write_text("\n".join(lines), encoding="utf-8")
-    print(f"[OK] Report written: {report_path}")
+    diagnostics_path = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+    diagnostics_path.write_text("\n".join(lines), encoding="utf-8")
+    print(f"[OK] Engine Diagnostics written: {diagnostics_path}")
+
     return market_data
 
     
