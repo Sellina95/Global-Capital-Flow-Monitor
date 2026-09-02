@@ -319,6 +319,16 @@ def build() -> None:
     SITE_DIR.mkdir(parents=True, exist_ok=True)
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Canonical site stylesheet.
+    # _site is generated output; always rebuild CSS from the tracked source asset.
+    css_source = ROOT / "assets" / "pm_site.css"
+    if not css_source.exists():
+        raise FileNotFoundError(f"Missing canonical PM site stylesheet: {css_source}")
+    (ASSETS_DIR / "style.css").write_text(
+        css_source.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
     page = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -333,7 +343,7 @@ def build() -> None:
     <header class="topbar">
       <div>
         <div class="eyebrow">INDEPENDENT MARKET RESEARCH</div>
-        <h1>Global Capital Flow Monitor</h1>
+        <h1>🌍 Global Capital Flow Monitor</h1>
       </div>
 
       <div class="asof">
@@ -491,6 +501,22 @@ def build() -> None:
       <ul class="rationale-list">
         {reasons_html}
       </ul>
+    </section>
+
+    <section class="panel diagnostics-cta">
+      <div class="panel-title">ENGINE TRANSPARENCY</div>
+      <div class="diagnostics-cta-content">
+        <div>
+          <h2>Want to see what drives this decision?</h2>
+          <p>
+            Inspect the signals, filters, constraints, and decision path
+            behind the current portfolio stance.
+          </p>
+        </div>
+        <div class="diagnostics-cta-link">
+          {diagnostics_link}
+        </div>
+      </div>
     </section>
 
     <footer class="site-footer">
