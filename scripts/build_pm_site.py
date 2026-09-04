@@ -182,6 +182,272 @@ def parse_rationale(block: str) -> list[str]:
     return reasons
 
 
+
+def diag_match(
+    text: str,
+    pattern: str,
+    default: str = "N/A",
+) -> str:
+    """Read an existing diagnostics field without creating a new signal."""
+    match = re.search(pattern, text, flags=re.MULTILINE)
+    return match.group(1).strip() if match else default
+
+
+def parse_diagnostics_v1(text: str) -> dict[str, str]:
+    """
+    Presentation-only Diagnostics V1 contract.
+
+    Existing diagnostic outputs are parsed and reorganized for observability.
+    This function must not calculate new market states, risk signals,
+    exposure decisions, or strategy classifications.
+    """
+    return {
+        "date": diag_match(
+            text,
+            r"\*\*Date:\*\*\s*([^\n]+)",
+        ),
+        "data_as_of": diag_match(
+            text,
+            r"\*\*Data as of:\*\*\s*([^\n]+)",
+        ),
+        "sew": diag_match(
+            text,
+            r"\*\*SEW:\*\*\s*([^\n]+)",
+        ),
+        "f13_risk_budget": diag_match(
+            text,
+            r"\*\*Risk Budget \(0~100\):\*\*\s*\*\*(\d+(?:\.\d+)?)\*\*",
+        ),
+        "f15_exposure": diag_match(
+            text,
+            r"\*\*📊 Recommended Exposure:\*\*\s*\*\*(\d+(?:\.\d+)?%)\*\*",
+        ),
+        "f15_brake_drivers": diag_match(
+            text,
+            r"\*\*Brake Drivers:\*\*\s*([^\n]+)",
+        ),
+        # F13 measured decision contributions already emitted
+        # by the canonical diagnostics report.
+        "f13_macro_tilt": diag_match(
+            text,
+            r"\*\*Macro Tilt:\*\*\s*([+-]?\d+)",
+        ),
+        "f13_flow_continuity_tilt": diag_match(
+            text,
+            r"\*\*Flow Continuity:\*\*[^\n]*"
+            r"tilt=([+-]?\d+)",
+        ),
+        "f13_flow_regime_tilt": diag_match(
+            text,
+            r"\*\*Flow Regime Tilt:\*\*\s*([+-]?\d+)",
+        ),
+        "f13_flow_gamma_tilt": diag_match(
+            text,
+            r"Flow-Gamma Tilt:\s*([+-]?\d+)",
+        ),
+        "f13_phase_cap": diag_match(
+            text,
+            r"\*\*Operational Phase:\*\*[^\n]*"
+            r"\(Cap:\s*([0-9]+(?:\.[0-9]+)?)\)",
+        ),
+
+        # Existing positioning value. Its F13 contribution is NOT
+        # reconstructed here; the UI contract test below validates the
+        # production rule before presentation.
+        "f13_positioning_z": diag_match(
+            text,
+            r"\*\*Positioning \(POS_Z\):\*\*\s*([0-9.+-]+)",
+        ),
+
+        "flow_state": diag_match(
+            text,
+            r"\*\*Raw Flow State:\*\*\s*\*\*(.+?)\*\*",
+        ),
+        "flow_delta": diag_match(
+            text,
+            r"\*\*Flow Delta:\*\*\s*([^\n]+)",
+        ),
+        "positioning_z": diag_match(
+            text,
+            r"\*\*Positioning \(POS_Z\):\*\*\s*([0-9.+-]+)",
+        ),
+        "gamma_state": diag_match(
+            text,
+            r"\*\*Pseudo Gamma State:\*\*\s*([^\n]+)",
+        ),
+        "geo_score": diag_match(
+            text,
+            r"\*\*Geo Stress Score \(z-composite\):\*\*\s*\*\*([^*]+)\*\*",
+        ),
+        "hy_oas": diag_match(
+            text,
+            r"\*\*HY_OAS level:\*\*\s*([^\n]+)",
+        ),
+        "us10y": diag_match(
+            text,
+            r"\*\*미국 10년물 금리\*\*:\s*([^\n]+)",
+        ),
+        "dxy": diag_match(
+            text,
+            r"\*\*달러 인덱스\*\*:\s*([^\n]+)",
+        ),
+        "wti": diag_match(
+            text,
+            r"\*\*WTI 유가\*\*:\s*([^\n]+)",
+        ),
+        "vix": diag_match(
+            text,
+            r"\*\*변동성 지수 \(VIX\)\*\*:\s*([^\n]+)",
+        ),
+
+        # Execution / control outputs already emitted by Diagnostics.
+        "market_regime": diag_match(
+            text,
+            r"\*\*국면 전환 감지:\*\*[^\n]*?→\s*\*\*(.+?)\*\*",
+        ),
+        "deadman": diag_match(
+            text,
+            r"\*\*\[15번 Hard Deadman\]:\*\*\s*([^\n]+)",
+        ),
+        "final_action": diag_match(
+            text,
+            r"\*\*Final Action:\*\*\s*\*\*(.+?)\*\*",
+        ),
+        "final_exposure": diag_match(
+            text,
+            r"\*\*Final Exposure:\*\*\s*\*\*(.+?)\*\*",
+        ),
+
+        # Observation-only shadow states.
+        "growth_shadow": diag_match(
+            text,
+            r"### 12\.5\) Growth Sustainability Filter \[SHADOW\][\s\S]*?"
+            r"- \*\*Label:\*\*\s*([^\n]+)",
+        ),
+        "flow_auth_shadow": diag_match(
+            text,
+            r"### 12\.6\) Flow Authenticity Filter \[SHADOW\][\s\S]*?"
+            r"- \*\*Label:\*\*\s*([^\n]+)",
+        ),
+        "breadth_shadow": diag_match(
+            text,
+            r"### 12\.7\) Leadership Breadth Filter \[SHADOW\][\s\S]*?"
+            r"- \*\*Label:\*\*\s*([^\n]+)",
+        ),
+        "positioning_shadow": diag_match(
+            text,
+            r"### 12\.8\) Positioning Stress Filter \[SHADOW\][\s\S]*?"
+            r"- \*\*Label:\*\*\s*([^\n]+)",
+        ),
+
+        # Existing F18.5 portfolio composition.
+        # Tactical Reserve is contained within Cash & Hedge; never additive.
+        "cash_hedge": diag_match(
+            text,
+            r"\| \*\*Cash & Hedge\*\* \| - \| - \| "
+            r"\*\*([0-9]+(?:\.[0-9]+)?%)\*\*",
+        ),
+        "strategic_cash": diag_match(
+            text,
+            r"\*\*Strategic Cash \(15\):\*\*\s*"
+            r"([0-9]+(?:\.[0-9]+)?%)",
+        ),
+        "tactical_reserve": diag_match(
+            text,
+            r"\*\*Tactical Reserve \(Cap / Unallocated\):\*\*\s*"
+            r"([0-9]+(?:\.[0-9]+)?%)",
+        ),
+    }
+
+
+def diag_change_parts(value: str) -> dict[str, str]:
+    """
+    Presentation-only decomposition of an existing diagnostics change string.
+
+    Example:
+      14.320 (-5.79% vs 15.200)
+      -> current=14.320, previous=15.200, change=-5.79%, direction=down
+
+    No market state or strategy signal is created here.
+    """
+    match = re.match(
+        r"^\s*([+-]?\d+(?:\.\d+)?)\s*"
+        r"\(([+-]?\d+(?:\.\d+)?%)\s+vs\s+"
+        r"([+-]?\d+(?:\.\d+)?)\)\s*$",
+        str(value),
+    )
+
+    if not match:
+        return {
+            "current": str(value),
+            "previous": "N/A",
+            "change": "",
+            "direction": "flat",
+            "arrow": "→",
+        }
+
+    current, change, previous = match.groups()
+    change_number = float(change.rstrip("%"))
+
+    if change_number > 0:
+        direction = "up"
+        arrow = "↑"
+    elif change_number < 0:
+        direction = "down"
+        arrow = "↓"
+    else:
+        direction = "flat"
+        arrow = "→"
+
+    return {
+        "current": current,
+        "previous": previous,
+        "change": change,
+        "direction": direction,
+        "arrow": arrow,
+    }
+
+
+def diag_semantic_class(value: str) -> str:
+    """
+    Map explicit existing diagnostic language to presentation color only.
+
+    This does not infer a new strategy state from numeric thresholds.
+    """
+    upper = str(value).upper()
+
+    adverse_terms = (
+        "TRIGGERED",
+        "BREACH",
+        "EXTREME",
+        "CRITICAL",
+    )
+    watch_terms = (
+        "ELEVATED",
+        "WATCH",
+        "TRANSITION",
+        "STRAIN",
+        "CROWDED",
+        "SQUEEZE_RISK",
+        "EARLY_ROTATION",
+    )
+    supportive_terms = (
+        "PASS",
+        "STABLE",
+        "BUILDING",
+        "COOL",
+        "NORMAL",
+    )
+
+    if any(term in upper for term in adverse_terms):
+        return "diag-semantic-red"
+    if any(term in upper for term in watch_terms):
+        return "diag-semantic-amber"
+    if any(term in upper for term in supportive_terms):
+        return "diag-semantic-green"
+
+    return "diag-semantic-neutral"
+
 def esc(value: object) -> str:
     return html.escape(str(value))
 
@@ -541,6 +807,47 @@ def build() -> None:
 
     if diagnostics.exists():
         diag_text = diagnostics.read_text(encoding="utf-8")
+        diag = parse_diagnostics_v1(diag_text)
+
+        # Portfolio composition comes from the canonical PM allocation contract.
+        # Tactical Reserve is already contained within Cash & Hedge.
+        diag_equity = allocated_equity
+        diag_cash = cash_weight
+
+        # Presentation-only numeric conversion for CSS geometry.
+        # The portfolio value itself remains the canonical PM allocation.
+        diag_equity_number_match = re.search(
+            r"-?\\d+(?:\\.\\d+)?",
+            str(diag_equity),
+        )
+        diag_equity_number = (
+            diag_equity_number_match.group(0)
+            if diag_equity_number_match
+            else "0"
+        )
+
+        us10y_change = diag_change_parts(diag["us10y"])
+        dxy_change = diag_change_parts(diag["dxy"])
+        vix_change = diag_change_parts(diag["vix"])
+        wti_change = diag_change_parts(diag["wti"])
+
+        sew_class = diag_semantic_class(diag["sew"])
+        deadman_class = diag_semantic_class(diag["deadman"])
+        flow_class = diag_semantic_class(diag["flow_state"])
+        positioning_class = diag_semantic_class(
+            diag["f15_brake_drivers"]
+        )
+        gamma_class = diag_semantic_class(diag["gamma_state"])
+
+        # Frozen F13 positioning rule, validated against Production.
+        # Used only to expose an existing decision contribution.
+        diag_pos_z = float(diag["f13_positioning_z"])
+        if diag_pos_z >= 2.0:
+            f13_positioning_impact = -8
+        elif diag_pos_z >= 1.5:
+            f13_positioning_impact = -4
+        else:
+            f13_positioning_impact = 0
 
         diag_page = f"""<!doctype html>
 <html lang="en">
@@ -552,15 +859,365 @@ def build() -> None:
 </head>
 <body>
   <main class="shell diagnostics-shell">
-    <header class="topbar">
+
+    <header class="topbar diagnostics-topbar">
       <div>
-        <div class="eyebrow">MODEL OBSERVABILITY</div>
+        <div class="eyebrow">MODEL OBSERVABILITY · CONTROL ROOM</div>
         <h1>Engine Diagnostics</h1>
+        <div class="diag-asof">
+          REPORT {esc(diag["date"])} · DATA AS OF {esc(diag["data_as_of"])}
+        </div>
       </div>
       <a href="index.html">← PM View</a>
     </header>
 
-    <pre class="diagnostics">{esc(diag_text)}</pre>
+    <section class="diag-status-grid">
+      <article class="diag-status-card {{sew_class}}">
+        <div class="label">STRUCTURAL EARLY WARNING</div>
+        <strong>{esc(diag["sew"])}</strong>
+      </article>
+
+      <article class="diag-status-card {{deadman_class}}">
+        <div class="label">HARD DEADMAN</div>
+        <strong>{esc(diag["deadman"])}</strong>
+      </article>
+
+      <article class="diag-status-card {{flow_class}}">
+        <div class="label">INSTITUTIONAL FLOW</div>
+        <strong>{esc(diag["flow_state"])}</strong>
+        <span>{esc(diag["flow_delta"])}</span>
+      </article>
+
+      <article class="diag-status-card diag-status-watch {{positioning_class}}">
+        <div class="label">POSITIONING</div>
+        <strong>POS_Z {esc(diag["positioning_z"])}</strong>
+        <span>{esc(diag["f15_brake_drivers"])}</span>
+      </article>
+    </section>
+
+    <section class="diag-primary-grid">
+
+      <article class="panel diag-chain-panel">
+        <div class="section-kicker">DECISION PATH</div>
+        <h2>From Market State to Portfolio</h2>
+
+        <div class="decision-chain">
+
+          <div class="chain-node">
+            <span>MARKET REGIME</span>
+            <strong>{esc(diag["market_regime"])}</strong>
+          </div>
+
+          <div class="chain-arrow">↓</div>
+
+          <div class="chain-node">
+            <span>F13 · RISK BUDGET</span>
+            <strong>{esc(diag["f13_risk_budget"])}</strong>
+          </div>
+
+          <div class="chain-arrow">↓</div>
+
+          <div class="chain-node chain-node-watch {{positioning_class}}">
+            <span>F15 · CONTROLLED EXPOSURE</span>
+            <strong>{esc(diag["f15_exposure"])}</strong>
+            <small>{esc(diag["f15_brake_drivers"])}</small>
+          </div>
+
+          <div class="chain-arrow">↓</div>
+
+          <div class="chain-node">
+            <span>FINAL ACTION</span>
+            <strong>
+              {esc(diag["final_action"])} · {esc(diag["final_exposure"])}
+            </strong>
+          </div>
+
+        </div>
+      </article>
+
+      <article class="panel diag-portfolio-panel">
+        <div class="section-kicker">PORTFOLIO</div>
+        <h2>Final Composition</h2>
+
+        <div class="portfolio-donut-wrap">
+          <div
+            class="portfolio-donut"
+            style="--equity-number:{esc(diag_equity_number)}"
+            aria-label="Allocated equity {esc(diag_equity)}, cash {esc(diag_cash)}"
+          >
+            <div class="portfolio-donut-center">
+              <strong>{esc(diag_equity)}</strong>
+              <span>ALLOCATED EQUITY</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="portfolio-legend">
+          <div>
+            <span class="legend-dot legend-equity"></span>
+            <span>Allocated Equity</span>
+            <strong>{esc(diag_equity)}</strong>
+          </div>
+          <div>
+            <span class="legend-dot legend-cash"></span>
+            <span>Cash &amp; Hedge</span>
+            <strong>{esc(diag_cash)}</strong>
+          </div>
+        </div>
+
+        <div class="cash-detail">
+          <span>Strategic Cash {esc(diag["strategic_cash"])}</span>
+          <span>Tactical Reserve {esc(diag["tactical_reserve"])}</span>
+        </div>
+      </article>
+
+    </section>
+
+    <section class="panel diag-drivers-panel">
+      <div class="section-kicker">DECISION ATTRIBUTION</div>
+
+      <div class="diag-drivers-heading">
+        <div>
+          <h2>Key Drivers of Today's Decision</h2>
+          <p>
+            Measured F13 contributions, risk-budget constraint,
+            and explicit F15 execution brake.
+          </p>
+        </div>
+
+        <div class="diag-driver-summary">
+          <span>F13</span>
+          <strong>{esc(diag["f13_risk_budget"])}</strong>
+          <i>→</i>
+          <span>F15</span>
+          <strong>{esc(diag["f15_exposure"])}</strong>
+        </div>
+      </div>
+
+      <div class="driver-table">
+
+        <div class="driver-table-head">
+          <span>DRIVER</span>
+          <span>STATE / ROLE</span>
+          <span>IMPACT</span>
+          <span>IMPACT ON DECISION</span>
+        </div>
+
+        <div class="driver-row">
+          <div>
+            <strong>Macro</strong>
+            <small>F13 contribution</small>
+          </div>
+          <span>{esc(diag["market_regime"])}</span>
+          <b class="impact-positive">
+            {esc(diag["f13_macro_tilt"])}
+          </b>
+          <div class="impact-track">
+            <i class="impact-bar impact-bar-green impact-w100"></i>
+          </div>
+        </div>
+
+        <div class="driver-row">
+          <div>
+            <strong>Flow Regime</strong>
+            <small>F13 contribution</small>
+          </div>
+          <span>{esc(diag["flow_state"])}</span>
+          <b class="impact-positive">
+            {esc(diag["f13_flow_regime_tilt"])}
+          </b>
+          <div class="impact-track">
+            <i class="impact-bar impact-bar-green impact-w60"></i>
+          </div>
+        </div>
+
+        <div class="driver-row">
+          <div>
+            <strong>Flow-Gamma</strong>
+            <small>F13 contribution</small>
+          </div>
+          <span>{esc(diag["gamma_state"])}</span>
+          <b class="impact-positive">
+            {esc(diag["f13_flow_gamma_tilt"])}
+          </b>
+          <div class="impact-track">
+            <i class="impact-bar impact-bar-green impact-w40"></i>
+          </div>
+        </div>
+
+        <div class="driver-row">
+          <div>
+            <strong>Flow Continuity</strong>
+            <small>F13 contribution</small>
+          </div>
+          <span>FLOW PERSISTENCE</span>
+          <b class="impact-positive">
+            {esc(diag["f13_flow_continuity_tilt"])}
+          </b>
+          <div class="impact-track">
+            <i class="impact-bar impact-bar-green impact-w20"></i>
+          </div>
+        </div>
+
+        <div class="driver-row driver-row-negative">
+          <div>
+            <strong>Positioning</strong>
+            <small>F13 · validated frozen rule</small>
+          </div>
+          <span>POS_Z {esc(diag["f13_positioning_z"])}</span>
+          <b class="impact-negative">
+            {f13_positioning_impact:+d}
+          </b>
+          <div class="impact-track">
+            <i class="impact-bar impact-bar-red impact-w80"></i>
+          </div>
+        </div>
+
+        <div class="driver-row driver-row-cap">
+          <div>
+            <strong>Operational Phase</strong>
+            <small>Risk-budget constraint</small>
+          </div>
+          <span>{esc(diag["market_regime"])}</span>
+          <b class="impact-cap">
+            CAP {esc(diag["f13_phase_cap"])}
+          </b>
+          <div class="impact-track">
+            <i class="impact-cap-line"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="execution-brake">
+        <div>
+          <span>EXECUTION BRAKE · F15</span>
+          <strong>Positioning</strong>
+          <small>{esc(diag["f15_brake_drivers"])}</small>
+        </div>
+
+        <div class="execution-path">
+          <span>F13 RISK BUDGET</span>
+          <strong>{esc(diag["f13_risk_budget"])}</strong>
+          <i>→</i>
+          <span>F15 EXPOSURE</span>
+          <strong class="impact-negative">
+            {esc(diag["f15_exposure"])}
+          </strong>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="panel diag-change-panel">
+      <div class="section-kicker">MARKET CONTEXT</div>
+      <h2>What Changed Today?</h2>
+
+      <div class="diag-change-grid">
+
+        <div class="diag-change-card">
+          <span>US 10Y</span>
+          <div class="change-path">
+            <b>{esc(us10y_change["previous"])}</b>
+            <i>{esc(us10y_change["arrow"])}</i>
+            <strong>{esc(us10y_change["current"])}</strong>
+          </div>
+          <small>{esc(us10y_change["change"])}</small>
+        </div>
+
+        <div class="diag-change-card">
+          <span>DXY</span>
+          <div class="change-path">
+            <b>{esc(dxy_change["previous"])}</b>
+            <i>{esc(dxy_change["arrow"])}</i>
+            <strong>{esc(dxy_change["current"])}</strong>
+          </div>
+          <small>{esc(dxy_change["change"])}</small>
+        </div>
+
+        <div class="diag-change-card">
+          <span>VIX</span>
+          <div class="change-path">
+            <b>{esc(vix_change["previous"])}</b>
+            <i>{esc(vix_change["arrow"])}</i>
+            <strong>{esc(vix_change["current"])}</strong>
+          </div>
+          <small class="diag-change-vix-{esc(vix_change["direction"])}">
+            {esc(vix_change["change"])}
+          </small>
+        </div>
+
+        <div class="diag-change-card">
+          <span>WTI</span>
+          <div class="change-path">
+            <b>{esc(wti_change["previous"])}</b>
+            <i>{esc(wti_change["arrow"])}</i>
+            <strong>{esc(wti_change["current"])}</strong>
+          </div>
+          <small>{esc(wti_change["change"])}</small>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="diag-secondary-grid">
+
+      <article class="panel">
+        <div class="section-kicker">SUPPORTING RISK CONTEXT</div>
+        <h2>Supporting Risk Context</h2>
+
+        <div class="diag-context-row">
+          <span>Credit / HY OAS</span>
+          <strong>{esc(diag["hy_oas"])}</strong>
+        </div>
+
+        <div class="diag-context-row">
+          <span>Geo Stress</span>
+          <strong>{esc(diag["geo_score"])}</strong>
+        </div>
+
+        <div class="diag-context-row">
+          <span>Pseudo Gamma</span>
+          <strong class="{{gamma_class}}">{esc(diag["gamma_state"])}</strong>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="section-kicker">OBSERVATION ONLY</div>
+        <h2>Shadow Monitor</h2>
+
+        <div class="engine-map">
+          <div>
+            <span>12.5 Growth Sustainability</span>
+            <strong>{esc(diag["growth_shadow"])}</strong>
+          </div>
+          <div>
+            <span>12.6 Flow Authenticity</span>
+            <strong>{esc(diag["flow_auth_shadow"])}</strong>
+          </div>
+          <div>
+            <span>12.7 Leadership Breadth</span>
+            <strong>{esc(diag["breadth_shadow"])}</strong>
+          </div>
+          <div>
+            <span>12.8 Positioning Stress</span>
+            <strong>{esc(diag["positioning_shadow"])}</strong>
+          </div>
+        </div>
+
+        <p class="shadow-disclaimer">
+          Observation-only diagnostics. These states are not presented
+          as independent portfolio decisions.
+        </p>
+      </article>
+
+    </section>
+
+    <details class="panel diag-raw-details">
+      <summary>View Full Engine Diagnostics</summary>
+      <pre class="diagnostics">{esc(diag_text)}</pre>
+    </details>
+
   </main>
 </body>
 </html>
