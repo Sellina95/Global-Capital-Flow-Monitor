@@ -620,6 +620,14 @@ def build(
     is_latest_page = output_path == SITE_DIR / "index.html"
     latest_date = available_dates[-1] if available_dates else report_date
 
+    # Historical PM pages live under _site/history/.
+    # Resolve the canonical stylesheet relative to each rendered page.
+    asset_href = (
+        "assets/style.css"
+        if is_latest_page
+        else "../assets/style.css"
+    )
+
     def report_href(target_date: str) -> str:
         if is_latest_page:
             if target_date == latest_date:
@@ -681,7 +689,7 @@ def build(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Global Capital Flow Monitor</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="{asset_href}">
 </head>
 <body>
   <main class="shell">
