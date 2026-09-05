@@ -452,8 +452,23 @@ def esc(value: object) -> str:
     return html.escape(str(value))
 
 
-def build() -> None:
-    source = latest_pm_report()
+def build(
+    source: Path | None = None,
+    output_path: Path | None = None,
+    build_diagnostics: bool = True,
+) -> None:
+    """
+    Build one PM view from an already-persisted daily report artifact.
+
+    Historical rendering reads the stored report for that date.
+    It must not recalculate Production signals or engine state.
+    """
+    if source is None:
+        source = latest_pm_report()
+
+    if output_path is None:
+        output_path = SITE_DIR / "index.html"
+
     text = source.read_text(encoding="utf-8")
 
     report_date = metadata(text, "Date")
@@ -575,12 +590,77 @@ def build() -> None:
     if not reasons_html:
         reasons_html = "<li>No canonical tactical rationale available.</li>"
 
+    # ---------------------------------------------------------
+    # Report Date Navigator
+    # ---------------------------------------------------------
+    persisted_reports = sorted(
+        REPORTS_DIR.glob("daily_report_????-??-??.md")
+    )
+    available_dates = [
+        item.stem.removeprefix("daily_report_")
+        for item in persisted_reports
+    ]
+
+    try:
+        current_index = available_dates.index(report_date)
+    except ValueError:
+        current_index = -1
+
+    previous_date = (
+        available_dates[current_index - 1]
+        if current_index > 0
+        else None
+    )
+    next_date = (
+        available_dates[current_index + 1]
+        if current_index >= 0 and current_index < len(available_dates) - 1
+        else None
+    )
+
+    is_latest_page = output_path == SITE_DIR / "index.html"
+    latest_date = available_dates[-1] if available_dates else report_date
+
+    def report_href(target_date: str) -> str:
+        if is_latest_page:
+            if target_date == latest_date:
+                return "index.html"
+            return f"history/{target_date}.html"
+
+        if target_date == latest_date:
+            return "../index.html"
+        return f"{target_date}.html"
+
+    previous_href = report_href(previous_date) if previous_date else None
+    next_href = report_href(next_date) if next_date else None
+
+    previous_control = (
+        f'<a class="report-nav-arrow" href="{esc(previous_href)}" '
+        f'aria-label="Previous report">‹</a>'
+        if previous_href
+        else '<span class="report-nav-arrow disabled" '
+             'aria-hidden="true">‹</span>'
+    )
+
+    next_control = (
+        f'<a class="report-nav-arrow" href="{esc(next_href)}" '
+        f'aria-label="Next report">›</a>'
+        if next_href
+        else '<span class="report-nav-arrow disabled" '
+             'aria-hidden="true">›</span>'
+    )
+
+    # Only the latest PM page may point at the canonical latest
+    # diagnostics page. Historical PM pages must never fall through
+    # to a different report date's diagnostics.
     diagnostics = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
     diagnostics_link = (
         '<a href="diagnostics.html">Engine Diagnostics</a>'
-        if diagnostics.exists()
+        if is_latest_page and diagnostics.exists()
         else '<span>Engine Diagnostics unavailable</span>'
     )
+
+    import json
+    available_dates_json = json.dumps(available_dates)
 
     SITE_DIR.mkdir(parents=True, exist_ok=True)
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
@@ -612,9 +692,66 @@ def build() -> None:
         <h1>🌍 Global Capital Flow Monitor</h1>
       </div>
 
-      <div class="asof">
-        <span>REPORT {esc(report_date)}</span>
+      <div class="asof report-date-navigator">
+        <span class="report-label">REPORT</span>
+
+        <div class="report-date-row">
+          {previous_control}
+
+          <button
+            class="report-date-trigger"
+            id="report-date-trigger"
+            type="button"
+            aria-expanded="false"
+            aria-controls="report-calendar"
+          >
+            <span>{esc(report_date)}</span>
+            <span class="report-date-caret">▾</span>
+          </button>
+
+          {next_control}
+        </div>
+
         <strong>DATA AS OF {esc(data_as_of)}</strong>
+
+        <div
+          class="report-calendar"
+          id="report-calendar"
+          hidden
+        >
+          <div class="calendar-header">
+            <button
+              type="button"
+              class="calendar-month-nav"
+              id="calendar-prev-month"
+              aria-label="Previous month"
+            >‹</button>
+
+            <strong id="calendar-month-label"></strong>
+
+            <button
+              type="button"
+              class="calendar-month-nav"
+              id="calendar-next-month"
+              aria-label="Next month"
+            >›</button>
+          </div>
+
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>Su</span>
+            <span>Mo</span>
+            <span>Tu</span>
+            <span>We</span>
+            <span>Th</span>
+            <span>Fr</span>
+            <span>Sa</span>
+          </div>
+
+          <div
+            class="calendar-grid"
+            id="calendar-grid"
+          ></div>
+        </div>
       </div>
     </header>
 
@@ -799,13 +936,161 @@ def build() -> None:
     </footer>
 
   </main>
+
+<script>
+(() => {{
+  const availableDates = {available_dates_json};
+  const available = new Set(availableDates);
+  const currentDate = "{esc(report_date)}";
+  const latestDate = availableDates[availableDates.length - 1];
+
+  const trigger = document.getElementById("report-date-trigger");
+  const calendar = document.getElementById("report-calendar");
+  const grid = document.getElementById("calendar-grid");
+  const label = document.getElementById("calendar-month-label");
+  const prevMonth = document.getElementById("calendar-prev-month");
+  const nextMonth = document.getElementById("calendar-next-month");
+
+  if (!trigger || !calendar || !grid || !label) return;
+
+  const parts = currentDate.split("-").map(Number);
+  let visibleYear = parts[0];
+  let visibleMonth = parts[1] - 1;
+
+  function targetHref(date) {{
+    if (date === latestDate) {{
+      return {str(is_latest_page).lower()}
+        ? "index.html"
+        : "../index.html";
+    }}
+
+    return {str(is_latest_page).lower()}
+      ? `history/${{date}}.html`
+      : `${{date}}.html`;
+  }}
+
+  function isoDate(year, month, day) {{
+    return (
+      String(year).padStart(4, "0") + "-" +
+      String(month + 1).padStart(2, "0") + "-" +
+      String(day).padStart(2, "0")
+    );
+  }}
+
+  function renderCalendar() {{
+    grid.innerHTML = "";
+
+    const monthName = new Intl.DateTimeFormat(
+      "en-US",
+      {{ month: "long", year: "numeric" }}
+    ).format(new Date(visibleYear, visibleMonth, 1));
+
+    label.textContent = monthName;
+
+    const firstWeekday = new Date(
+      visibleYear,
+      visibleMonth,
+      1
+    ).getDay();
+
+    const daysInMonth = new Date(
+      visibleYear,
+      visibleMonth + 1,
+      0
+    ).getDate();
+
+    for (let i = 0; i < firstWeekday; i += 1) {{
+      const spacer = document.createElement("span");
+      spacer.className = "calendar-day spacer";
+      grid.appendChild(spacer);
+    }}
+
+    for (let day = 1; day <= daysInMonth; day += 1) {{
+      const date = isoDate(visibleYear, visibleMonth, day);
+
+      if (available.has(date)) {{
+        const link = document.createElement("a");
+        link.className = "calendar-day available";
+        link.href = targetHref(date);
+        link.textContent = String(day);
+        link.setAttribute("aria-label", `Open report ${{date}}`);
+
+        if (date === currentDate) {{
+          link.classList.add("selected");
+          link.setAttribute("aria-current", "date");
+        }}
+
+        grid.appendChild(link);
+      }} else {{
+        const disabled = document.createElement("span");
+        disabled.className = "calendar-day unavailable";
+        disabled.textContent = String(day);
+        grid.appendChild(disabled);
+      }}
+    }}
+  }}
+
+  trigger.addEventListener("click", (event) => {{
+    event.stopPropagation();
+
+    const opening = calendar.hidden;
+    calendar.hidden = !opening;
+    trigger.setAttribute("aria-expanded", String(opening));
+
+    if (opening) renderCalendar();
+  }});
+
+  prevMonth.addEventListener("click", (event) => {{
+    event.stopPropagation();
+    visibleMonth -= 1;
+
+    if (visibleMonth < 0) {{
+      visibleMonth = 11;
+      visibleYear -= 1;
+    }}
+
+    renderCalendar();
+  }});
+
+  nextMonth.addEventListener("click", (event) => {{
+    event.stopPropagation();
+    visibleMonth += 1;
+
+    if (visibleMonth > 11) {{
+      visibleMonth = 0;
+      visibleYear += 1;
+    }}
+
+    renderCalendar();
+  }});
+
+  calendar.addEventListener("click", (event) => {{
+    event.stopPropagation();
+  }});
+
+  document.addEventListener("click", () => {{
+    calendar.hidden = true;
+    trigger.setAttribute("aria-expanded", "false");
+  }});
+
+  document.addEventListener("keydown", (event) => {{
+    if (event.key === "Escape") {{
+      calendar.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+      trigger.focus();
+    }}
+  }});
+}})();
+</script>
+
 </body>
 </html>
 """
 
-    (SITE_DIR / "index.html").write_text(page, encoding="utf-8")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(page, encoding="utf-8")
 
-    if diagnostics.exists():
+    if build_diagnostics and diagnostics.exists():
         diag_text = diagnostics.read_text(encoding="utf-8")
         diag = parse_diagnostics_v1(diag_text)
 
@@ -1228,11 +1513,36 @@ def build() -> None:
         )
 
     print(f"[OK] Source: {source}")
-    print(f"[OK] Site:   {SITE_DIR / 'index.html'}")
+    print(f"[OK] Site:   {output_path}")
     print(f"[OK] Sectors rendered: {len(sectors)}")
     print(f"[OK] Breadth rows rendered: {len(breadth_rows)}")
     print(f"[OK] Allocation rows rendered: {len(allocation_rows)}")
 
 
+def build_historical_pm_pages() -> int:
+    """
+    Render persisted PM reports as static historical pages.
+
+    Availability is defined strictly by the existence of a persisted
+    daily_report_YYYY-MM-DD.md artifact. Historical rendering never
+    recalculates Production state and never writes Diagnostics.
+    """
+    reports = sorted(REPORTS_DIR.glob("daily_report_????-??-??.md"))
+    history_dir = SITE_DIR / "history"
+    history_dir.mkdir(parents=True, exist_ok=True)
+
+    for source in reports:
+        report_date = source.stem.removeprefix("daily_report_")
+        build(
+            source=source,
+            output_path=history_dir / f"{report_date}.html",
+            build_diagnostics=False,
+        )
+
+    return len(reports)
+
+
 if __name__ == "__main__":
     build()
+    historical_count = build_historical_pm_pages()
+    print(f"[OK] Historical PM pages: {historical_count}")
