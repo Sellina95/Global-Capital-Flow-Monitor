@@ -1,0 +1,3 @@
+path,classification,decision_impact,authorized,evidence
+filters/strategist_filters.py,ALLOWLISTED_OBSERVABILITY_ONLY,NONE,True,AST identity after removing only the explicitly allowlisted market_data presentation/diagnostic assignments.
+portfolio/save_portfolio.py,IDENTICAL,NONE,True,Byte-identical Git content.

@@ -1,0 +1,99 @@
+{
+  "claim_applicability": [
+    {
+      "claim": "#1 Point-in-Time / Look-ahead Integrity",
+      "reason": "Pinned to this panel and subject to the sovereign-vintage exception.",
+      "status": "CONDITIONAL"
+    },
+    {
+      "claim": "#2 Production <-> Backtest Parity",
+      "reason": "Valid only for the pinned decision surfaces, adapters, data, and artifacts.",
+      "status": "CONDITIONAL"
+    },
+    {
+      "claim": "#3 Data Revision / Release Lag",
+      "reason": "Pinned PIT repair remains subject to the documented sovereign exception.",
+      "status": "CONDITIONAL"
+    },
+    {
+      "claim": "#4 Historical Universe / Survivorship",
+      "reason": "Pinned to the recorded historical panel and parity population.",
+      "status": "CONDITIONAL"
+    },
+    {
+      "claim": "#5 Signal -> Risk -> Exposure -> Allocation Causality",
+      "reason": "G4 state/clock integrity must close before causal results are reusable.",
+      "status": "STALE_PENDING_RERUN"
+    },
+    {
+      "claim": "#12 Risk Controls / Invariants",
+      "reason": "The arithmetic result remains pinned to the recorded 4,645-row replay.",
+      "status": "CONDITIONAL"
+    },
+    {
+      "claim": "#14 Research <-> Production Separation",
+      "reason": "Separate branches and minimal promotion records are present.",
+      "status": "CURRENT"
+    }
+  ],
+  "failures": [],
+  "frozen_spec_checks": [
+    {
+      "embedded_hash": "cd7174ea8ec93115b4fc9902fd55fe2b9ba443199929b01eae2bc4db4fb70bf3",
+      "expected_hash": "cd7174ea8ec93115b4fc9902fd55fe2b9ba443199929b01eae2bc4db4fb70bf3",
+      "expected_hash_verified": true,
+      "path": "data/backtest/results/macro_v4_candidate_taxonomy_spec_v1/macro_v4_candidate_taxonomy_spec.json",
+      "semantic_hash_verified": true,
+      "status": "PASS"
+    },
+    {
+      "embedded_hash": "6ef7cba1e196fbb067385a2acc20e193adfd357d98669d74c3a745907e47d225",
+      "expected_hash": "6ef7cba1e196fbb067385a2acc20e193adfd357d98669d74c3a745907e47d225",
+      "expected_hash_verified": true,
+      "path": "data/backtest/results/macro_v4_portfolio_mapping_spec_v1/macro_v4_portfolio_mapping_spec.json",
+      "semantic_hash_verified": true,
+      "status": "PASS"
+    }
+  ],
+  "gate": "G1_CANONICAL_RELEASE_BASELINE",
+  "known_exceptions": [
+    {
+      "description": "Historical vintage availability remains unverified where the authoritative ALFRED vintage evidence is unavailable.",
+      "exception_id": "SOVEREIGN_VINTAGE_2008_2013",
+      "period": "2008-01-01 through pre-2013 ALFRED availability",
+      "scope": [
+        "KR10Y",
+        "JP10Y",
+        "DE10Y",
+        "IL10Y"
+      ],
+      "status": "DOCUMENTED_LIMITATION"
+    }
+  ],
+  "next_gate": "G4_HISTORICAL_STATE_AND_CLOCK_INTEGRITY",
+  "population": {
+    "expected_parity_rows_4645": true,
+    "expected_v4_applied_rows_992": true,
+    "parity_dates_in_pit_panel": true,
+    "parity_rows": 4645,
+    "parity_unique_signal_dates": true,
+    "pit_panel_rows": 4817,
+    "v4_applied_rows": 992,
+    "v4_contract_rows": 1328
+  },
+  "production": {
+    "commit_sha": "58f270267bba502b5831a60d8e8a2a375f55f7ef",
+    "ref": "58f270267bba502b5831a60d8e8a2a375f55f7ef"
+  },
+  "release_id": "gcfm-g1-58f2702-7b4c324-pit-v1",
+  "research": {
+    "commit_sha": "7b4c324b27d6a19af3ef61852020da70cc7fe8c2",
+    "ref": "7b4c324b27d6a19af3ef61852020da70cc7fe8c2"
+  },
+  "runtime_policy": {
+    "status": "NOT_PINNED_IN_G1",
+    "validation_gate": "G9_DEPENDENCY_ENVIRONMENT_REPRODUCIBILITY"
+  },
+  "schema_version": 1,
+  "status": "PASS"
+}

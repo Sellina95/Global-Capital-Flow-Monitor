@@ -1,0 +1,38 @@
+G1 — CANONICAL RELEASE BASELINE
+========================================================================================
+Release ID       : gcfm-g1-58f2702-7b4c324-pit-v1
+Production SHA   : 58f270267bba502b5831a60d8e8a2a375f55f7ef
+Research SHA     : 7b4c324b27d6a19af3ef61852020da70cc7fe8c2
+Surface entries  : 20
+Parity rows      : 4645
+V4 applied rows  : 992
+
+DECISION SURFACE
+----------------------------------------------------------------------------------------
+filters/strategist_filters.py: ALLOWLISTED_OBSERVABILITY_ONLY (authorized=True)
+portfolio/save_portfolio.py: IDENTICAL (authorized=True)
+
+FROZEN SPECS
+----------------------------------------------------------------------------------------
+data/backtest/results/macro_v4_candidate_taxonomy_spec_v1/macro_v4_candidate_taxonomy_spec.json: PASS
+data/backtest/results/macro_v4_portfolio_mapping_spec_v1/macro_v4_portfolio_mapping_spec.json: PASS
+
+KNOWN EXCEPTION
+----------------------------------------------------------------------------------------
+SOVEREIGN_VINTAGE_2008_2013: DOCUMENTED_LIMITATION (KR10Y/JP10Y/DE10Y/IL10Y)
+
+CLAIM APPLICABILITY
+----------------------------------------------------------------------------------------
+#1 Point-in-Time / Look-ahead Integrity: CONDITIONAL
+#2 Production <-> Backtest Parity: CONDITIONAL
+#3 Data Revision / Release Lag: CONDITIONAL
+#4 Historical Universe / Survivorship: CONDITIONAL
+#5 Signal -> Risk -> Exposure -> Allocation Causality: STALE_PENDING_RERUN
+#12 Risk Controls / Invariants: CONDITIONAL
+#14 Research <-> Production Separation: CURRENT
+
+FINAL
+----------------------------------------------------------------------------------------
+G1 STATUS: PASS
+The code/data/spec comparison boundary is pinned and has no unclassified decision-surface difference.
+This gate does not certify causal validity; G4 remains mandatory.
