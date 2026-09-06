@@ -1,0 +1,56 @@
+{
+  "checks": {
+    "canonical_date_order_exact": true,
+    "canonical_population_4645": true,
+    "core_us10y_provenance_all_rows": true,
+    "date_diff_reconciles": true,
+    "existing_contract_and_specs_unchanged": true,
+    "intervention_core_us10y_provenance": true,
+    "intervention_raw_identity_all_unknown": true,
+    "intervention_rule_collision_zero": true,
+    "intervention_states_all_mapped": true,
+    "mapping_semantic_hash_frozen": true,
+    "raw_replay_deterministic": true,
+    "taxonomy_rules_unchanged": true,
+    "taxonomy_semantic_hash_frozen": true
+  },
+  "constraints": {
+    "f13_f15_f18_modified": false,
+    "production_modified": false,
+    "returns_pnl_performance_used": false,
+    "threshold_or_mapping_modified": false
+  },
+  "downstream_status_at_contract_freeze": {
+    "claim_5": "STALE_PENDING_RERUN",
+    "current_authority": "data/backtest/results/claim5_validated_causal_propagation_v1/claim5_validated_causal_manifest_v1.json",
+    "temporal_scope": "BEFORE_VALIDATED_CAUSAL_REPLAY"
+  },
+  "g1_release_id": "gcfm-g1-58f2702-7b4c324-pit-v1",
+  "g4_status": "PASS",
+  "gate": "VALIDATED_RAW_MACRO_AND_INTERVENTION_CONTRACT_REFREEZE",
+  "population": {
+    "added_intervention_dates": 121,
+    "canonical_rows": 4645,
+    "new_intervention_rows": 1068,
+    "old_intervention_rows": 992,
+    "reassigned_intervention_dates": 1,
+    "removed_intervention_dates": 45,
+    "unchanged_intervention_dates": 947,
+    "unchanged_rule_and_state_assignments": 946,
+    "validated_unknown_rows": 1173
+  },
+  "production_sha": "58f270267bba502b5831a60d8e8a2a375f55f7ef",
+  "provenance": {
+    "canonical_dates_sha256": "4f9858dee9f80b8fde6fab8565b27add5788a3057fcd7cec25605f7088bf8acf",
+    "filter13_execution_chain_sha256": "e256bd27148481e6640cf6c62fbbfe579edc1cbdc4aa2c00c401a1ba045b2693",
+    "mapping_semantic_sha256": "6ef7cba1e196fbb067385a2acc20e193adfd357d98669d74c3a745907e47d225",
+    "market_data_builder_sha256": "c64f778f12394012a2d307cc319a3304c3933e48de29ee4a4dca7cce25a31b8a",
+    "master_panel_sha256": "106921c2b608b6a9056434d8fbc93d2784c85845793598f88179cd45d16895c1",
+    "taxonomy_semantic_sha256": "cd7174ea8ec93115b4fc9902fd55fe2b9ba443199929b01eae2bc4db4fb70bf3",
+    "us10y_contract": "CANONICAL_CORE_SERIES_NO_NAMESPACE_OVERWRITE",
+    "us10y_source": "master_panel.csv::US10Y"
+  },
+  "research_sha": "7b4c324b27d6a19af3ef61852020da70cc7fe8c2",
+  "schema_version": 1,
+  "status": "PASS"
+}

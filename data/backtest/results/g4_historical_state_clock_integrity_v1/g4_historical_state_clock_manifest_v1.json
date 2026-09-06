@@ -1,0 +1,65 @@
+{
+  "checks": {
+    "arm_state_objects_independent": true,
+    "baseline_carry_exact": true,
+    "baseline_chronological": true,
+    "baseline_deterministic": true,
+    "baseline_full_replay": true,
+    "canonical_pair_order_exact": true,
+    "canonical_population_4645": true,
+    "canonical_unique_dates": true,
+    "historical_adapter_all_rows": true,
+    "historical_clock_only": true,
+    "intervention_boundary_exact": true,
+    "intervention_population_992": true,
+    "live_files_unchanged": true,
+    "live_state_access_zero": true,
+    "negative_controls_all_detected": true,
+    "nonintervention_progression_3653": true,
+    "treatment_carry_exact": true,
+    "treatment_chronological": true,
+    "treatment_deterministic": true,
+    "treatment_full_replay": true
+  },
+  "claim_5": "STALE_PENDING_RERUN",
+  "determinism": {
+    "baseline_final_state_hash": "e114c163c2a07ce127a211760b4344af5c222e77044b3019a0887cff5b6cb368",
+    "treatment_final_state_hash": "e114c163c2a07ce127a211760b4344af5c222e77044b3019a0887cff5b6cb368"
+  },
+  "diagnostics_not_g4_acceptance": {
+    "interpretation": "Legacy outputs and the pre-G4 V4 daily contract are stale after historical state/clock repair; resolve before claim #5 rerun.",
+    "legacy_frozen_output_identity_failures": 6330,
+    "v4_contract_raw_macro_identity_failures": 28
+  },
+  "g1_release_id": "gcfm-g1-58f2702-7b4c324-pit-v1",
+  "gate": "G4_HISTORICAL_STATE_AND_CLOCK_INTEGRITY",
+  "live_files_after": {
+    "data/filter18_rank_state.json": null,
+    "data/paper_portfolio_log.csv": "707adefcc95343d3a4caabdaf8fc79eddcc5e03dbb4241f9ac745c2dbecdecc8",
+    "data/trade_log.csv": "529b02e73316fe15b7778e56949636da5c9de86f8987a568e8abb9641dd60ca9",
+    "insights/filter15_state.json": null,
+    "insights/flow_state.json": "42f798c35d6d570665240cf15c9df2dc547dad8f4f6f91c933335e0dacc7c78a",
+    "insights/sew_state.json": "585b45dacd1c325f6e0b4b262a912208b27e91af0b04d5f4434fc2ad00e123eb"
+  },
+  "live_files_before": {
+    "data/filter18_rank_state.json": null,
+    "data/paper_portfolio_log.csv": "707adefcc95343d3a4caabdaf8fc79eddcc5e03dbb4241f9ac745c2dbecdecc8",
+    "data/trade_log.csv": "529b02e73316fe15b7778e56949636da5c9de86f8987a568e8abb9641dd60ca9",
+    "insights/filter15_state.json": null,
+    "insights/flow_state.json": "42f798c35d6d570665240cf15c9df2dc547dad8f4f6f91c933335e0dacc7c78a",
+    "insights/sew_state.json": "585b45dacd1c325f6e0b4b262a912208b27e91af0b04d5f4434fc2ad00e123eb"
+  },
+  "population": {
+    "baseline_rows": 4645,
+    "canonical_rows_per_arm": 4645,
+    "intervention_rows": 992,
+    "nonintervention_rows": 3653,
+    "treatment_rows": 4645
+  },
+  "production_logic_modified": false,
+  "production_sha": "58f270267bba502b5831a60d8e8a2a375f55f7ef",
+  "research_sha": "7b4c324b27d6a19af3ef61852020da70cc7fe8c2",
+  "returns_or_performance_used": false,
+  "schema_version": 1,
+  "status": "PASS"
+}
