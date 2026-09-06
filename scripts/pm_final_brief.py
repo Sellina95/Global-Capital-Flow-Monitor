@@ -31,6 +31,15 @@ def generate_pm_final_brief(market_data):
     pos_z = final_state.get("pos_z")
     credit_calm = final_state.get("credit_calm")
 
+    # --------------------------------------------------
+    # PM Decision Path — canonical engine outputs only.
+    # Presentation layer MUST NOT recalculate F13/F15/F18.
+    # --------------------------------------------------
+    risk_budget = final_state.get("risk_budget")
+    recommended_exposure = market_data.get("RECOMMENDED_EXPOSURE")
+    exposure_control = market_data.get("SEW_STATUS")
+    macro_allocation_profile = market_data.get("MACRO_REGIME_PROFILE")
+
     action = final_decision.get("action", "N/A")
     exposure = final_decision.get("exposure", "N/A")
 
@@ -180,10 +189,77 @@ def generate_pm_final_brief(market_data):
     lines.append("")
 
     # ==================================================
+    # Decision Path
+    #
+    # Canonical F13 -> F15 -> F18 decision chain.
+    # No presentation-generated portfolio logic.
+    # ==================================================
+
+    pm_allocation_contract = market_data.get("PM_FINAL_ALLOCATION", {}) or {}
+
+    lines.append("1. DECISION PATH")
+
+    if risk_budget is not None:
+        lines.append(f"Strategic Risk Budget {fmt_value(risk_budget, 1)}%")
+
+    if recommended_exposure is not None:
+        lines.append(
+            f"Recommended Exposure  {fmt_value(recommended_exposure, 1)}%"
+        )
+
+    if pm_allocation_contract:
+        decision_exposure_ceiling = pm_allocation_contract.get(
+            "exposure_ceiling"
+        )
+        decision_allocated_equity = pm_allocation_contract.get(
+            "allocated_equity"
+        )
+        decision_tactical_reserve = pm_allocation_contract.get(
+            "tactical_reserve"
+        )
+        decision_cash_weight = pm_allocation_contract.get(
+            "cash_weight"
+        )
+
+        if decision_exposure_ceiling is not None:
+            lines.append(
+                f"Exposure Ceiling      "
+                f"{fmt_value(decision_exposure_ceiling, 1)}%"
+            )
+
+        if decision_allocated_equity is not None:
+            lines.append(
+                f"Allocated Equity      "
+                f"{fmt_value(decision_allocated_equity, 1)}%"
+            )
+
+        if decision_tactical_reserve is not None:
+            lines.append(
+                f"Tactical Reserve      "
+                f"{fmt_value(decision_tactical_reserve, 1)}%"
+            )
+
+        if decision_cash_weight is not None:
+            lines.append(
+                f"Cash                  "
+                f"{fmt_value(decision_cash_weight, 1)}%"
+            )
+
+    if exposure_control not in (None, "", "N/A"):
+        lines.append(f"Exposure Control      {exposure_control}")
+
+    if macro_allocation_profile not in (None, "", "N/A"):
+        lines.append(
+            f"Macro Allocation      {macro_allocation_profile}"
+        )
+
+    lines.append("")
+
+    # ==================================================
     # Executive View
     # ==================================================
 
-    lines.append("1. EXECUTIVE VIEW")
+    lines.append("2. EXECUTIVE VIEW")
 
     liquidity_text = render_liquidity(liquidity_dir)
     credit_text = render_credit(credit_calm)
@@ -207,13 +283,49 @@ def generate_pm_final_brief(market_data):
     # Market State
     # ==================================================
 
-    lines.append("2. MARKET STATE")
-    lines.append(f"Liquidity            {render_liquidity(liquidity_dir)}")
-    lines.append(f"Flow                 {flow_state}")
-    lines.append(f"Structure            {structure}")
-    lines.append(f"Drift                {drift_state}")
-    lines.append(f"Positioning Z        {fmt_value(pos_z)}")
-    lines.append(f"Credit               {render_credit(credit_calm)}")
+    lines.append("3. MARKET STATE")
+
+    policy_bias = market_data.get("POLICY_BIAS_LINE", "N/A")
+    liquidity_level = final_state.get("liquidity_level", "N/A")
+
+    growth_state = market_data.get(
+        "GROWTH_SUSTAINABILITY_LABEL", "N/A"
+    )
+    flow_authenticity = market_data.get(
+        "FLOW_AUTHENTICITY_LABEL", "N/A"
+    )
+    participation_quality = market_data.get(
+        "PARTICIPATION_QUALITY", "N/A"
+    )
+    participation_mode = market_data.get(
+        "PARTICIPATION_MODE", "N/A"
+    )
+    leadership_state = market_data.get(
+        "LEADERSHIP_STATE", "N/A"
+    )
+    positioning_state = market_data.get(
+        "POSITIONING_STATE", "N/A"
+    )
+    squeeze_risk = market_data.get("SQUEEZE_RISK", "N/A")
+    vol_structure = market_data.get("VOL_STRUCTURE", "N/A")
+
+    lines.append(f"Macro Narrative       {macro_narrative}")
+    lines.append(f"Policy Bias           {policy_bias}")
+    lines.append(f"Liquidity             {render_liquidity(liquidity_dir)}")
+    lines.append(f"Liquidity Level       {liquidity_level}")
+    lines.append(f"Structure             {structure}")
+    lines.append(f"Growth Sustainability {growth_state}")
+    lines.append(f"Institutional Flow    {flow_state}")
+    lines.append(f"Flow Authenticity     {flow_authenticity}")
+    lines.append(f"Participation Quality {participation_quality}")
+    lines.append(f"Participation Mode    {participation_mode}")
+    lines.append(f"Leadership            {leadership_state}")
+    lines.append(f"Positioning           {positioning_state}")
+    lines.append(f"Squeeze Risk          {squeeze_risk}")
+    lines.append(f"Vol Structure         {vol_structure}")
+    lines.append(f"Positioning Z         {fmt_value(pos_z)}")
+    lines.append(f"Credit                {render_credit(credit_calm)}")
+    lines.append(f"Drift                 {drift_state}")
     lines.append("")
 
     # ==================================================
@@ -227,7 +339,7 @@ def generate_pm_final_brief(market_data):
     # Cross-Asset Tape
     # ==================================================
 
-    lines.append("3. CROSS-ASSET CONFIRMATION")
+    lines.append("4. CROSS-ASSET CONFIRMATION")
 
     # --------------------------------------------------
     # Factual market observations for PM display.
@@ -376,7 +488,7 @@ def generate_pm_final_brief(market_data):
     # Leadership & Rotation
     # ==================================================
 
-    lines.append("4. LEADERSHIP & PARTICIPATION")
+    lines.append("5. LEADERSHIP & PARTICIPATION")
     lines.append("")
 
     # --------------------------------------------------
@@ -531,7 +643,7 @@ def generate_pm_final_brief(market_data):
     pm_allocation = market_data.get("PM_FINAL_ALLOCATION", {}) or {}
 
     lines.append("")
-    lines.append("5. PORTFOLIO ALLOCATION")
+    lines.append("6. PORTFOLIO ALLOCATION")
 
     if pm_allocation:
         exposure_ceiling = pm_allocation.get("exposure_ceiling", "N/A")
@@ -581,12 +693,46 @@ def generate_pm_final_brief(market_data):
     # No renderer-generated risk thresholds.
     # ==================================================
 
-    lines.append("6. RISK & CONSTRAINTS")
-    lines.append("Inflation            ⚪ No canonical PM risk state")
-    lines.append(f"Liquidity            {render_liquidity(liquidity_dir)}")
-    lines.append(f"Positioning Z        {fmt_value(pos_z)}")
-    lines.append(f"Credit               {render_credit(credit_calm)}")
-    lines.append(f"Geopolitical         {geo_level}")
+    lines.append("7. ACTIVE CONSTRAINTS")
+
+    constraints = []
+
+    if exposure_control not in (None, "", "N/A", "NORMAL"):
+        constraints.append(f"Exposure Control     {exposure_control}")
+
+    if squeeze_risk not in (None, "", "N/A", "LOW"):
+        constraints.append(f"Squeeze Risk         {squeeze_risk}")
+
+    if vol_structure not in (None, "", "N/A", "NORMAL"):
+        constraints.append(f"Vol Structure        {vol_structure}")
+
+    if credit_calm is False:
+        constraints.append("Credit               NOT CALM")
+
+    if geo_level not in (None, "", "N/A", "NORMAL", "LOW"):
+        constraints.append(f"Geopolitical         {geo_level}")
+
+    correlation_break = market_data.get("CORRELATION_BREAK_STATE")
+    if correlation_break not in (None, "", "N/A", "NORMAL", "NONE", False):
+        constraints.append(
+            f"Correlation Break    {correlation_break}"
+        )
+
+    sector_break = market_data.get("SECTOR_CORRELATION_BREAK_STATE")
+    if sector_break not in (None, "", "N/A", "NORMAL", "NONE", False):
+        constraints.append(
+            f"Sector Corr Break    {sector_break}"
+        )
+
+    rank_action = market_data.get("RANK_ACTION")
+    if rank_action not in (None, "", "N/A", "NONE", "HOLD"):
+        constraints.append(f"Rank Control         {rank_action}")
+
+    if constraints:
+        lines.extend(constraints)
+    else:
+        lines.append("No active canonical constraint")
+
     lines.append("")
 
     # ==================================================
@@ -595,7 +741,7 @@ def generate_pm_final_brief(market_data):
     # FINAL_DECISION / FINAL_ACTION only.
     # ==================================================
 
-    lines.append("7. DECISION RATIONALE")
+    lines.append("8. DECISION RATIONALE")
     lines.append(f"Decision             {action}")
     lines.append(f"Exposure Ceiling     {exposure}%")
     lines.append(f"Tactical Signal      {tactical_action} / {tactical_size}")

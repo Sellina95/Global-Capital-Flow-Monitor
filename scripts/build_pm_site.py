@@ -46,13 +46,17 @@ def top_value(text: str, label: str, default: str = "N/A") -> str:
 
 
 def section(text: str, number: int, title: str) -> str:
-    start_marker = f"{number}. {title}"
-    start = text.find(start_marker)
+    # Title is canonical; section number may change across PM contract versions.
+    match = re.search(
+        rf"^\d+\.\s+{re.escape(title)}\s*$",
+        text,
+        flags=re.MULTILINE,
+    )
 
-    if start == -1:
+    if not match:
         return ""
 
-    start += len(start_marker)
+    start = match.end()
 
     next_section = re.search(
         r"^\d+\.\s+[A-Z][A-Z &\-]+$",
@@ -63,6 +67,8 @@ def section(text: str, number: int, title: str) -> str:
     if next_section:
         end = start + next_section.start()
         return text[start:end].strip()
+
+    return text[start:].strip()
 
     return text[start:].strip()
 
@@ -478,22 +484,66 @@ def build(
     regime = top_value(text, "REGIME")
     conviction = top_value(text, "CONVICTION")
 
-    executive = section(text, 1, "EXECUTIVE VIEW")
-    market = section(text, 2, "MARKET STATE")
-    cross_asset = section(text, 3, "CROSS-ASSET CONFIRMATION")
-    leadership = section(text, 4, "LEADERSHIP & PARTICIPATION")
-    allocation = section(text, 5, "PORTFOLIO ALLOCATION")
-    risk = section(text, 6, "RISK & CONSTRAINTS")
-    rationale = section(text, 7, "DECISION RATIONALE")
+    # PM Contract V2
+    # Persisted canonical F13 -> F15 -> F18 outputs only.
+    # No production state is recalculated in the renderer.
+    decision_path = section(text, 1, "DECISION PATH")
+
+    strategic_risk_budget = field(
+        decision_path,
+        "Strategic Risk Budget",
+    )
+    recommended_exposure = field(
+        decision_path,
+        "Recommended Exposure",
+    )
+    exposure_control = field(
+        decision_path,
+        "Exposure Control",
+    )
+    macro_allocation_profile = field(
+        decision_path,
+        "Macro Allocation",
+    )
+
+    executive = section(text, 0, "EXECUTIVE VIEW")
+    market = section(text, 0, "MARKET STATE")
+    cross_asset = section(text, 0, "CROSS-ASSET CONFIRMATION")
+    leadership = section(text, 0, "LEADERSHIP & PARTICIPATION")
+    allocation = section(text, 0, "PORTFOLIO ALLOCATION")
+
+    risk = section(text, 0, "ACTIVE CONSTRAINTS")
+    if not risk:
+        risk = section(text, 0, "RISK & CONSTRAINTS")
+
+    rationale = section(text, 0, "DECISION RATIONALE")
 
     executive_summary = first_prose_line(executive)
 
     macro_narrative = field(executive, "Macro Narrative")
     tactical_signal = field(executive, "Tactical Signal")
 
+    # PM Contract V2 — canonical 1~19 state inventory.
+    macro_state_narrative = field(market, "Macro Narrative")
+    policy_bias = field(market, "Policy Bias")
     liquidity = field(market, "Liquidity")
-    flow = field(market, "Flow")
+    liquidity_level = field(market, "Liquidity Level")
     structure = field(market, "Structure")
+    growth_sustainability = field(market, "Growth Sustainability")
+
+    flow = field(market, "Institutional Flow")
+    if flow == "N/A":
+        # V1 historical compatibility.
+        flow = field(market, "Flow")
+
+    flow_authenticity = field(market, "Flow Authenticity")
+    participation_quality = field(market, "Participation Quality")
+    participation_mode = field(market, "Participation Mode")
+    leadership_state = field(market, "Leadership")
+    positioning_state = field(market, "Positioning")
+    squeeze_risk = field(market, "Squeeze Risk")
+    vol_structure = field(market, "Vol Structure")
+
     drift = field(market, "Drift")
     positioning = field(market, "Positioning Z")
     credit = field(market, "Credit")
@@ -514,10 +564,19 @@ def build(
     cash_weight = field(allocation, "Cash")
     allocation_rows = parse_allocation_rows(allocation)
 
+    # ACTIVE CONSTRAINTS — canonical controls only.
+    # Legacy fields remain readable for historical V1 reports.
     inflation = field(risk, "Inflation")
     risk_liquidity = field(risk, "Liquidity")
     risk_positioning = field(risk, "Positioning Z")
     risk_credit = field(risk, "Credit")
+
+    exposure_constraint = field(risk, "Exposure Control")
+    constraint_squeeze = field(risk, "Squeeze Risk")
+    constraint_vol_structure = field(risk, "Vol Structure")
+    correlation_break = field(risk, "Correlation Break")
+    sector_corr_break = field(risk, "Sector Corr Break")
+    rank_control = field(risk, "Rank Control")
     geopolitical = field(risk, "Geopolitical")
 
     decision = field(rationale, "Decision")
@@ -763,102 +822,266 @@ def build(
       </div>
     </header>
 
-    <section class="decision-grid decision-grid-three">
-      <article class="hero-card">
-        <div class="label">PORTFOLIO STANCE</div>
-        <div class="hero-value">{esc(stance)}</div>
-      </article>
+    <!-- =========================================================
+         PM DASHBOARD V2 — C-HYBRID
+         Presentation only. No strategy / engine calculations here.
+         ========================================================= -->
 
-      <article class="hero-card">
-        <div class="label">REGIME</div>
-        <div class="hero-value">{esc(regime)}</div>
-      </article>
+    <section class="pm-decision-hero">
+      <div class="section-kicker">TODAY'S PORTFOLIO DECISION</div>
 
-      <article class="hero-card">
-        <div class="label">CONVICTION</div>
-        <div class="hero-value">{esc(conviction)}</div>
-      </article>
-    </section>
-
-    <section class="panel executive-panel">
-      <div class="panel-title">EXECUTIVE VIEW</div>
-      <p class="executive-copy">{esc(executive_summary)}</p>
-
-      <div class="executive-meta">
-        <div>
-          <span>Macro Narrative</span>
-          <strong>{esc(macro_narrative)}</strong>
+      <div class="pm-decision-grid">
+        <div class="pm-decision-primary">
+          <span class="label">ACTION</span>
+          <strong class="pm-action">{esc(decision)}</strong>
         </div>
-        <div>
-          <span>Tactical Signal</span>
-          <strong>{esc(tactical_signal)}</strong>
+
+        <div class="pm-decision-primary">
+          <span class="label">EXPOSURE CEILING</span>
+          <strong class="pm-exposure">{esc(exposure_ceiling)}</strong>
+        </div>
+
+        <div class="pm-decision-context">
+          <span class="label">REGIME</span>
+          <strong>{esc(regime)}</strong>
+        </div>
+
+        <div class="pm-decision-context">
+          <span class="label">CONVICTION</span>
+          <strong>{esc(conviction)}</strong>
         </div>
       </div>
     </section>
 
-    <section class="panel">
-      <div class="panel-title">MARKET STATE</div>
-      <div class="metric-grid">
-        <div><span>Liquidity</span><strong>{esc(liquidity)}</strong></div>
-        <div><span>Flow</span><strong>{esc(flow)}</strong></div>
-        <div><span>Structure</span><strong>{esc(structure)}</strong></div>
-        <div><span>Drift</span><strong>{esc(drift)}</strong></div>
-        <div><span>Positioning Z</span><strong>{esc(positioning)}</strong></div>
-        <div><span>Credit</span><strong>{esc(credit)}</strong></div>
-      </div>
-    </section>
 
-    <section class="panel">
-      <div class="panel-title">CROSS-ASSET CONFIRMATION</div>
-      <div class="metric-grid">
-        <div><span>US10Y</span><strong>{esc(us10y)}</strong></div>
-        <div><span>USD</span><strong>{esc(usd)}</strong></div>
-        <div><span>Oil</span><strong>{esc(oil)}</strong></div>
-        <div><span>Volatility</span><strong>{esc(volatility)}</strong></div>
-        <div><span>HY OAS</span><strong>{esc(hy_oas)}</strong></div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-header">
-        <div class="panel-title">LEADERSHIP & PARTICIPATION</div>
-        <div class="coverage">{esc(coverage)}</div>
-      </div>
-
-      <div class="subpanel-label">TODAY'S SECTOR LEADERS</div>
-
-      <div class="sector-table">
-        {sector_html}
-      </div>
-
-      <div class="subpanel-label subpanel-spaced">
-        BREADTH & LEADERSHIP
-      </div>
-
-      <div class="breadth-table">
-        {breadth_html}
-      </div>
-    </section>
-
-    <section class="panel allocation-panel">
-      <div class="panel-title">PORTFOLIO ALLOCATION</div>
-
-      <div class="allocation-summary">
+        <section class="panel pm-decision-path">
+      <div class="pm-path-header">
         <div>
-          <span>Exposure Ceiling</span>
+          <div class="section-kicker">PORTFOLIO CONSTRUCTION</div>
+          <h2>Decision Path</h2>
+          <p>
+            Strategic risk allowance → execution control → final deployment
+          </p>
+        </div>
+        <span class="pm-path-engine">F13 → F15 → F18</span>
+      </div>
+
+      <div class="pm-path-chain">
+
+        <div class="pm-path-stage">
+          <span class="pm-path-id">F13</span>
+          <span class="pm-path-label">STRATEGIC RISK BUDGET</span>
+          <strong>{esc(strategic_risk_budget)}</strong>
+          <small>Risk allowed by strategic regime</small>
+        </div>
+
+        <div class="pm-path-arrow">→</div>
+
+        <div class="pm-path-stage">
+          <span class="pm-path-id">F15</span>
+          <span class="pm-path-label">RECOMMENDED EXPOSURE</span>
+          <strong>{esc(recommended_exposure)}</strong>
+          <small>After execution risk controls</small>
+        </div>
+
+        <div class="pm-path-arrow">→</div>
+
+        <div class="pm-path-stage">
+          <span class="pm-path-id">F18</span>
+          <span class="pm-path-label">EXPOSURE CEILING</span>
           <strong>{esc(exposure_ceiling)}</strong>
+          <small>Final portfolio deployment ceiling</small>
         </div>
+
+      </div>
+
+      <div class="pm-path-allocation">
         <div>
-          <span>Allocated Equity</span>
+          <span>ALLOCATED EQUITY</span>
           <strong>{esc(allocated_equity)}</strong>
         </div>
+
         <div>
-          <span>Tactical Reserve</span>
+          <span>TACTICAL RESERVE</span>
           <strong>{esc(tactical_reserve)}</strong>
         </div>
+
         <div>
-          <span>Cash</span>
+          <span>CASH</span>
           <strong>{esc(cash_weight)}</strong>
+        </div>
+
+        <div>
+          <span>EXPOSURE CONTROL</span>
+          <strong>{esc(exposure_control)}</strong>
+        </div>
+
+        <div>
+          <span>MACRO ALLOCATION PROFILE</span>
+          <strong>{esc(macro_allocation_profile)}</strong>
+        </div>
+      </div>
+    </section>
+
+<section class="pm-state-grid">
+
+      <article class="panel pm-state-panel">
+        <div class="panel-title">MACRO &amp; LIQUIDITY</div>
+
+        <div class="pm-state-list">
+          <div>
+            <span>Macro Narrative</span>
+            <strong>{esc(macro_state_narrative)}</strong>
+          </div>
+
+          <div>
+            <span>Policy Bias</span>
+            <strong>{esc(policy_bias)}</strong>
+          </div>
+
+          <div>
+            <span>Liquidity</span>
+            <strong>{esc(liquidity)}</strong>
+          </div>
+
+          <div>
+            <span>Liquidity Level</span>
+            <strong>{esc(liquidity_level)}</strong>
+          </div>
+
+          <div>
+            <span>Structure</span>
+            <strong>{esc(structure)}</strong>
+          </div>
+
+          <div>
+            <span>Growth Sustainability</span>
+            <strong>{esc(growth_sustainability)}</strong>
+          </div>
+        </div>
+      </article>
+
+
+      <article class="panel pm-state-panel">
+        <div class="panel-title">MARKET QUALITY</div>
+
+        <div class="pm-state-list">
+          <div>
+            <span>Institutional Flow</span>
+            <strong>{esc(flow)}</strong>
+          </div>
+
+          <div>
+            <span>Flow Authenticity</span>
+            <strong>{esc(flow_authenticity)}</strong>
+          </div>
+
+          <div>
+            <span>Participation Quality</span>
+            <strong>{esc(participation_quality)}</strong>
+          </div>
+
+          <div>
+            <span>Participation Mode</span>
+            <strong>{esc(participation_mode)}</strong>
+          </div>
+
+          <div>
+            <span>Leadership</span>
+            <strong>{esc(leadership_state)}</strong>
+          </div>
+
+          <div>
+            <span>Positioning</span>
+            <strong>{esc(positioning_state)}</strong>
+          </div>
+
+          <div>
+            <span>Squeeze Risk</span>
+            <strong>{esc(squeeze_risk)}</strong>
+          </div>
+
+          <div>
+            <span>Vol Structure</span>
+            <strong>{esc(vol_structure)}</strong>
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+
+    <section class="panel pm-active-constraints">
+      <div class="panel-title">ACTIVE CONSTRAINTS</div>
+
+      <div class="pm-constraint-grid">
+        <div>
+          <span>Exposure Control</span>
+          <strong>{esc(exposure_constraint)}</strong>
+        </div>
+
+        <div>
+          <span>Credit</span>
+          <strong>{esc(risk_credit)}</strong>
+        </div>
+
+        <div>
+          <span>Squeeze Risk</span>
+          <strong>{esc(constraint_squeeze)}</strong>
+        </div>
+
+        <div>
+          <span>Vol Structure</span>
+          <strong>{esc(constraint_vol_structure)}</strong>
+        </div>
+
+        <div>
+          <span>Correlation Break</span>
+          <strong>{esc(correlation_break)}</strong>
+        </div>
+
+        <div>
+          <span>Sector Corr Break</span>
+          <strong>{esc(sector_corr_break)}</strong>
+        </div>
+
+        <div>
+          <span>Rank Control</span>
+          <strong>{esc(rank_control)}</strong>
+        </div>
+
+        <div>
+          <span>Geopolitical</span>
+          <strong>{esc(geopolitical)}</strong>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="panel pm-portfolio-panel">
+      <div class="panel-title">PORTFOLIO</div>
+
+      <div class="pm-portfolio-summary">
+        <div class="pm-allocation-focus">
+          <span>ALLOCATED EQUITY</span>
+          <strong>{esc(allocated_equity)}</strong>
+        </div>
+
+        <div class="pm-portfolio-metrics">
+          <div>
+            <span>Exposure Ceiling</span>
+            <strong>{esc(exposure_ceiling)}</strong>
+          </div>
+
+          <div>
+            <span>Cash</span>
+            <strong>{esc(cash_weight)}</strong>
+          </div>
+
+          <div>
+            <span>Tactical Reserve</span>
+            <strong>{esc(tactical_reserve)}</strong>
+          </div>
         </div>
       </div>
 
@@ -866,9 +1089,69 @@ def build(
         Tactical Reserve is undeployed capacity within the Exposure Ceiling
         and is already included in Cash.
       </div>
+    </section>
 
-      <div class="subpanel-label subpanel-spaced">
-        FINAL F18 SECTOR ALLOCATION
+
+    <section class="panel pm-confirmation-panel">
+      <div class="panel-title">MARKET CONFIRMATION</div>
+
+      <div class="pm-confirmation-grid">
+        <div>
+          <span>US10Y</span>
+          <strong>{esc(us10y)}</strong>
+        </div>
+
+        <div>
+          <span>USD</span>
+          <strong>{esc(usd)}</strong>
+        </div>
+
+        <div>
+          <span>VIX</span>
+          <strong>{esc(volatility)}</strong>
+        </div>
+
+        <div>
+          <span>HY OAS</span>
+          <strong>{esc(hy_oas)}</strong>
+        </div>
+
+        <div>
+          <span>WTI</span>
+          <strong>{esc(oil)}</strong>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="panel pm-leadership-panel">
+      <div class="panel-header">
+        <div class="panel-title">LEADERSHIP &amp; PARTICIPATION</div>
+        <div class="coverage">{esc(coverage)}</div>
+      </div>
+
+      <div class="pm-leadership-layout">
+        <div>
+          <div class="subpanel-label">TODAY'S SECTOR LEADERS</div>
+          <div class="sector-table">
+            {sector_html}
+          </div>
+        </div>
+
+        <div>
+          <div class="subpanel-label">BREADTH &amp; LEADERSHIP</div>
+          <div class="breadth-table">
+            {breadth_html}
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="panel pm-sector-allocation">
+      <div class="panel-header">
+        <div class="panel-title">SECTOR ALLOCATION</div>
+        <div class="coverage">FINAL F18 ALLOCATION</div>
       </div>
 
       <div class="allocation-table">
@@ -876,43 +1159,25 @@ def build(
       </div>
     </section>
 
-    <section class="panel">
-      <div class="panel-title">RISK & CONSTRAINTS</div>
-      <div class="metric-grid">
-        <div><span>Inflation</span><strong>{esc(inflation)}</strong></div>
-        <div><span>Liquidity</span><strong>{esc(risk_liquidity)}</strong></div>
-        <div><span>Positioning Z</span><strong>{esc(risk_positioning)}</strong></div>
-        <div><span>Credit</span><strong>{esc(risk_credit)}</strong></div>
-        <div><span>Geopolitical</span><strong>{esc(geopolitical)}</strong></div>
-      </div>
-    </section>
 
-    <section class="panel rationale-panel">
+    <section class="panel rationale-panel pm-rationale-panel">
       <div class="panel-title">DECISION RATIONALE</div>
 
-      <div class="decision-rationale-grid">
-        <div>
-          <span>Decision</span>
-          <strong>{esc(decision)}</strong>
-        </div>
-        <div>
-          <span>Exposure Ceiling</span>
-          <strong>{esc(decision_exposure)}</strong>
-        </div>
-        <div>
+      <div class="pm-rationale-layout">
+        <div class="pm-rationale-signal">
           <span>Tactical Signal</span>
           <strong>{esc(decision_signal)}</strong>
         </div>
-        <div>
-          <span>Conviction</span>
-          <strong>{esc(decision_conviction)}</strong>
+
+        <div class="pm-rationale-reasons">
+          <div class="subpanel-label">CANONICAL RATIONALE</div>
+          <ul class="rationale-list">
+            {reasons_html}
+          </ul>
         </div>
       </div>
-
-      <ul class="rationale-list">
-        {reasons_html}
-      </ul>
     </section>
+
 
     <section class="panel diagnostics-cta">
       <div class="panel-title">ENGINE TRANSPARENCY</div>
