@@ -313,6 +313,50 @@ def generate_pm_final_brief(market_data):
     lines.append(f"Policy Bias           {policy_bias}")
     lines.append(f"Liquidity             {render_liquidity(liquidity_dir)}")
     lines.append(f"Liquidity Level       {liquidity_level}")
+
+    # --------------------------------------------------
+    # Fed Plumbing / Dollar Liquidity
+    # Canonical production data only.
+    # WALCL - TGA - RRP = NET_LIQ is calculated upstream.
+    # Presentation layer does not recalculate engine state.
+    # --------------------------------------------------
+    tga = market_data.get("TGA", {}) or {}
+    rrp = market_data.get("RRP", {}) or {}
+    net_liq = market_data.get("NET_LIQ", {}) or {}
+
+    net_liq_dir = market_data.get(
+        "NET_LIQ_DIR",
+        net_liq.get("dir", liquidity_dir),
+    )
+    net_liq_level = (
+        net_liq.get("level_bucket")
+        or market_data.get("NET_LIQ_LEVEL_BUCKET")
+        or liquidity_level
+        or "N/A"
+    )
+
+    net_liq_slope = net_liq.get("slope_label", "N/A")
+    tga_slope = tga.get("slope_label", "N/A")
+    rrp_slope = rrp.get("slope_label", "N/A")
+
+    if net_liq_dir == "UP":
+        dollar_liquidity = "SUPPORTIVE"
+    elif net_liq_dir == "DOWN":
+        dollar_liquidity = "DRAINING"
+    elif net_liq_dir == "FLAT":
+        dollar_liquidity = "NEUTRAL"
+    else:
+        dollar_liquidity = "N/A"
+
+    lines.append(
+        f"Dollar Liquidity     {dollar_liquidity} "
+        f"· {net_liq_dir} / {net_liq_level}"
+    )
+    lines.append(
+        f"Fed Plumbing         "
+        f"NET_LIQ {net_liq_slope} · "
+        f"TGA {tga_slope} · RRP {rrp_slope}"
+    )
     lines.append(f"Structure             {structure}")
     lines.append(f"Growth Sustainability {growth_state}")
     lines.append(f"Institutional Flow    {flow_state}")
