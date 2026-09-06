@@ -510,7 +510,9 @@ def build(
     market = section(text, 0, "MARKET STATE")
     cross_asset = section(text, 0, "CROSS-ASSET CONFIRMATION")
     leadership = section(text, 0, "LEADERSHIP & PARTICIPATION")
+    allocation_context = section(text, 0, "ALLOCATION CONTEXT")
     allocation = section(text, 0, "PORTFOLIO ALLOCATION")
+    execution = section(text, 0, "EXECUTION")
 
     risk = section(text, 0, "ACTIVE CONSTRAINTS")
     if not risk:
@@ -557,6 +559,34 @@ def build(
     coverage = field(leadership, "Coverage")
     sectors = parse_sector_rows(leadership)
     breadth_rows = parse_breadth_rows(leadership)
+
+    growth_value_tilt = field(
+        allocation_context, "Growth vs Value"
+    )
+    duration_tilt = field(
+        allocation_context, "Duration Tilt"
+    )
+    cyclical_defensive = field(
+        allocation_context, "Cyclical Defensive"
+    )
+    duration_factor = field(
+        allocation_context, "Duration Factor"
+    )
+    inflation_factor = field(
+        allocation_context, "Inflation Factor"
+    )
+    usd_factor = field(
+        allocation_context, "USD Factor"
+    )
+    credit_factor = field(
+        allocation_context, "Credit Factor"
+    )
+    regime_controller = field(
+        allocation_context, "Regime Controller"
+    )
+    exposure_override = field(
+        allocation_context, "Exposure Override"
+    )
 
     exposure_ceiling = field(allocation, "Exposure Ceiling")
     allocated_equity = field(allocation, "Allocated Equity")
@@ -640,6 +670,37 @@ def build(
           No positive sector allocation.
         </div>
         """
+
+    constraint_rows = []
+
+    for raw in risk.splitlines():
+        raw = raw.strip()
+
+        if not raw or raw == "No active canonical constraint":
+            continue
+
+        match = re.match(r"^(.+?)\\s{2,}(.+)$", raw)
+
+        if match:
+            constraint_rows.append(
+                (
+                    match.group(1).strip(),
+                    match.group(2).strip(),
+                )
+            )
+
+    if constraint_rows:
+        constraints_html = "\n".join(
+            f"<div><span>{esc(label)}</span>"
+            f"<strong>{esc(value)}</strong></div>"
+            for label, value in constraint_rows
+        )
+    else:
+        constraints_html = (
+            '<div class="empty-state">'
+            'No active canonical constraint'
+            '</div>'
+        )
 
     reasons_html = "\n".join(
         f"<li>{esc(reason)}</li>"
@@ -1015,44 +1076,58 @@ def build(
       <div class="panel-title">ACTIVE CONSTRAINTS</div>
 
       <div class="pm-constraint-grid">
+        {constraints_html}
+      </div>
+    </section>
+
+
+    <section class="panel pm-state-panel">
+      <div class="panel-title">ALLOCATION CONTEXT</div>
+
+      <div class="pm-state-list">
         <div>
-          <span>Exposure Control</span>
-          <strong>{esc(exposure_constraint)}</strong>
+          <span>Growth vs Value</span>
+          <strong>{esc(growth_value_tilt)}</strong>
         </div>
 
         <div>
-          <span>Credit</span>
-          <strong>{esc(risk_credit)}</strong>
+          <span>Duration Tilt</span>
+          <strong>{esc(duration_tilt)}</strong>
         </div>
 
         <div>
-          <span>Squeeze Risk</span>
-          <strong>{esc(constraint_squeeze)}</strong>
+          <span>Cyclical / Defensive</span>
+          <strong>{esc(cyclical_defensive)}</strong>
         </div>
 
         <div>
-          <span>Vol Structure</span>
-          <strong>{esc(constraint_vol_structure)}</strong>
+          <span>Duration Factor</span>
+          <strong>{esc(duration_factor)}</strong>
         </div>
 
         <div>
-          <span>Correlation Break</span>
-          <strong>{esc(correlation_break)}</strong>
+          <span>Inflation Factor</span>
+          <strong>{esc(inflation_factor)}</strong>
         </div>
 
         <div>
-          <span>Sector Corr Break</span>
-          <strong>{esc(sector_corr_break)}</strong>
+          <span>USD Factor</span>
+          <strong>{esc(usd_factor)}</strong>
         </div>
 
         <div>
-          <span>Rank Control</span>
-          <strong>{esc(rank_control)}</strong>
+          <span>Credit Factor</span>
+          <strong>{esc(credit_factor)}</strong>
         </div>
 
         <div>
-          <span>Geopolitical</span>
-          <strong>{esc(geopolitical)}</strong>
+          <span>Regime Controller</span>
+          <strong>{esc(regime_controller)}</strong>
+        </div>
+
+        <div>
+          <span>Exposure Override</span>
+          <strong>{esc(exposure_override)}</strong>
         </div>
       </div>
     </section>
@@ -1160,7 +1235,20 @@ def build(
     </section>
 
 
-    <section class="panel rationale-panel pm-rationale-panel">
+        <section class="panel pm-execution-panel">
+      <div class="panel-header">
+        <div class="panel-title">EXECUTION</div>
+        <div class="coverage">F19 ETF MAPPING</div>
+      </div>
+
+      <pre class="pm-execution-pre">{esc(
+          execution or
+          "No canonical F19 execution plan available."
+      )}</pre>
+    </section>
+
+
+<section class="panel rationale-panel pm-rationale-panel">
       <div class="panel-title">DECISION RATIONALE</div>
 
       <div class="pm-rationale-layout">

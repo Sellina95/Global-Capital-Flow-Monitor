@@ -295,10 +295,12 @@ def generate_pm_final_brief(market_data):
         "FLOW_AUTHENTICITY_LABEL", "N/A"
     )
     participation_quality = market_data.get(
-        "PARTICIPATION_QUALITY", "N/A"
+        "FILTER18_PARTICIPATION_QUALITY",
+        market_data.get("PARTICIPATION_QUALITY", "N/A"),
     )
     participation_mode = market_data.get(
-        "PARTICIPATION_MODE", "N/A"
+        "FILTER18_PARTICIPATION_MODE",
+        market_data.get("PARTICIPATION_MODE", "N/A"),
     )
     leadership_state = market_data.get(
         "LEADERSHIP_STATE", "N/A"
@@ -676,6 +678,49 @@ def generate_pm_final_brief(market_data):
     lines.append("")
 
     # ==================================================
+    # Allocation Context — F16 / F17 / F18
+    # ==================================================
+
+    lines.append("")
+    lines.append("6. ALLOCATION CONTEXT")
+
+    style_tilt = market_data.get("STYLE_TILT", {}) or {}
+    factor_layer = market_data.get("FACTOR_LAYER", {}) or {}
+
+    lines.append(
+        f"Growth vs Value       {style_tilt.get('growth_value', 'N/A')}"
+    )
+    lines.append(
+        f"Duration Tilt         {style_tilt.get('duration', 'N/A')}"
+    )
+    lines.append(
+        f"Cyclical Defensive    "
+        f"{style_tilt.get('cyclical_defensive', 'N/A')}"
+    )
+
+    lines.append(
+        f"Duration Factor       {factor_layer.get('duration', 'N/A')}"
+    )
+    lines.append(
+        f"Inflation Factor      {factor_layer.get('inflation', 'N/A')}"
+    )
+    lines.append(
+        f"USD Factor            {factor_layer.get('usd', 'N/A')}"
+    )
+    lines.append(
+        f"Credit Factor         {factor_layer.get('credit', 'N/A')}"
+    )
+
+    lines.append(
+        f"Regime Controller     "
+        f"{market_data.get('REGIME_CONTROLLER', 'N/A')}"
+    )
+    lines.append(
+        f"Exposure Override     "
+        f"{market_data.get('FILTER18_EXPOSURE_OVERRIDE', 'N/A')}"
+    )
+
+    # ==================================================
     # Portfolio Implication
     #
     # Only existing FINAL_DECISION / FINAL_ACTION.
@@ -740,6 +785,41 @@ def generate_pm_final_brief(market_data):
     lines.append("7. ACTIVE CONSTRAINTS")
 
     constraints = []
+    f14_status = market_data.get("FILTER14_STATUS", "N/A")
+    f14_action = market_data.get("FILTER14_ACTION", "N/A")
+
+    if f14_status not in ("N/A", "ALIGNED", "", None):
+        constraints.append(f"F14 Divergence       {f14_status}")
+        if f14_action not in ("N/A", "", None):
+            constraints.append(f"F14 Action           {f14_action}")
+
+    brake_drivers = market_data.get(
+        "FILTER15_BRAKE_DRIVERS", []
+    ) or []
+
+    if brake_drivers:
+        constraints.append(
+            f"F15 Brake Drivers    {', '.join(map(str, brake_drivers))}"
+        )
+
+    if market_data.get("FILTER15_HARD_DEADMAN") is True:
+        constraints.append(
+            f"F15 Deadman          "
+            f"{market_data.get('FILTER15_HARD_DEADMAN_REASON', 'ACTIVE')}"
+        )
+
+    if market_data.get("FILTER15_RISK_COMPRESSION") is True:
+        constraints.append(
+            f"F15 Compression      "
+            f"{market_data.get('FILTER15_COMPRESSION_REASON', 'ACTIVE')}"
+        )
+
+    if market_data.get("FILTER15_RECOVERY_ACTIVE") is True:
+        constraints.append(
+            f"F15 Recovery         ACTIVE · "
+            f"streak={market_data.get('FILTER15_RECOVERY_STREAK', 0)}"
+        )
+
 
     if exposure_control not in (None, "", "N/A", "NORMAL"):
         constraints.append(f"Exposure Control     {exposure_control}")
@@ -778,6 +858,32 @@ def generate_pm_final_brief(market_data):
         lines.append("No active canonical constraint")
 
     lines.append("")
+
+    # ==================================================
+    # F19 Execution
+    # ==================================================
+
+    lines.append("")
+    lines.append("9. EXECUTION")
+
+    etf_plan = market_data.get("FILTER19_ETF_PLAN", []) or []
+
+    if etf_plan:
+        lines.append(
+            "Sector | ETF | Weight | Action | Classification | Divergence"
+        )
+
+        for item in etf_plan:
+            lines.append(
+                f"{item.get('sector', 'N/A')} | "
+                f"{item.get('etf', 'N/A')} | "
+                f"{item.get('weight', 'N/A')}% | "
+                f"{item.get('action', 'N/A')} | "
+                f"{item.get('classification', 'N/A')} | "
+                f"{item.get('divergence', 'N/A')}"
+            )
+    else:
+        lines.append("No canonical F19 execution plan available.")
 
     # ==================================================
     # Decision Rationale

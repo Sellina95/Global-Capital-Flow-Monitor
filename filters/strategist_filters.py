@@ -4602,6 +4602,11 @@ def divergence_monitor_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Status:** **{status}** -> **해석:** {explanation}")
     lines.append(f"- **Action Signal:** 🚨 **{action_signal}**")
 
+    # PM observability only — existing F14 outputs.
+    market_data["FILTER14_STATUS"] = status
+    market_data["FILTER14_ACTION"] = action_signal
+    market_data["FILTER14_EXPLANATION"] = explanation
+
     return "\n".join(lines)
 
 def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
@@ -5001,6 +5006,15 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
     lines.append("")
     lines.append(f"- **📊 Recommended Exposure:** **{exposure}%**")
 
+    # PM observability only — existing F15 outputs.
+    market_data["FILTER15_BRAKE_DRIVERS"] = list(brake_drivers)
+    market_data["FILTER15_POSITIONING_NOTES"] = list(pos_notes)
+    market_data["FILTER15_HARD_DEADMAN"] = bool(hard_deadman)
+    market_data["FILTER15_HARD_DEADMAN_REASON"] = hard_deadman_reason
+    market_data["FILTER15_RISK_COMPRESSION"] = bool(risk_compression)
+    market_data["FILTER15_COMPRESSION_REASON"] = compression_reason
+    market_data["FILTER15_VOL_STATE"] = vol_state
+
     return "\n".join(lines)
 
         
@@ -5087,6 +5101,13 @@ def style_tilt_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Growth vs Value:** **{style}**")
     lines.append(f"- **Duration Tilt:** **{duration}**")
     lines.append(f"- **Cyclical vs Defensive:** **{cyclical}**")
+    # PM observability only — existing F16 outputs.
+    market_data["STYLE_TILT"] = {
+        "growth_value": style,
+        "duration": duration,
+        "cyclical_defensive": cyclical,
+    }
+
     return "\n".join(lines)
 
 
@@ -5180,6 +5201,14 @@ def factor_layer_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **Inflation Factor:** {inflation}")
     lines.append(f"- **USD Factor:** {usd}")
     lines.append(f"- **Credit Factor:** {credit}")
+
+    # PM observability only — existing F17 outputs.
+    market_data["FACTOR_LAYER"] = {
+        "duration": duration,
+        "inflation": inflation,
+        "usd": usd,
+        "credit": credit,
+    }
 
     return "\n".join(lines)    
 
@@ -7651,6 +7680,16 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     macro_profile=macro_profile,
     sector_classification=sector_classification,
     )
+
+    # PM observability only — existing final F18/F19 outputs.
+    market_data["FILTER18_PARTICIPATION_QUALITY"] = participation_quality
+    market_data["FILTER18_PARTICIPATION_MODE"] = participation_mode
+    market_data["FILTER18_EXPOSURE_OVERRIDE"] = exposure_override_reason
+    market_data["FILTER18_REBALANCE_ACTIONS"] = dict(rebalance_actions)
+    market_data["FILTER19_ETF_PLAN"] = [
+        dict(item) for item in etf_plan
+    ]
+
     # -------------------------
     # Portfolio Logging (Paper Trading)
     # -------------------------
