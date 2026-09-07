@@ -19,6 +19,34 @@ for path in (ROOT, SCRIPTS_DIR):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
+from scripts.backtest.audit_canonical_panel_identity_provenance_v1 import (
+    CANONICAL_REL,
+    resolve_and_validate_panel_authority,
+    run_consumer_authority_startup_controls,
+)
+
+CONSUMER_ID = "G4_HISTORICAL_STATE_CLOCK_INTEGRITY"
+PANEL_MODE = "CANONICAL"
+PANEL_PATH = ROOT / CANONICAL_REL
+
+
+def _run_authority_only_before_strategy_imports() -> None:
+    if "--panel-authority-self-test" in sys.argv:
+        result = run_consumer_authority_startup_controls(CONSUMER_ID)
+        print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+        raise SystemExit(0 if result["status"] == "PASS" else 1)
+    if "--validate-panel-authority-only" in sys.argv:
+        result = resolve_and_validate_panel_authority(
+            PANEL_PATH, PANEL_MODE, consumer=CONSUMER_ID
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+        print("REPLAY_STARTED: NO")
+        raise SystemExit(0)
+
+
+if __name__ == "__main__":
+    _run_authority_only_before_strategy_imports()
+
 import filters.strategist_filters as sf
 import portfolio.save_portfolio as portfolio_store
 
@@ -31,9 +59,6 @@ from scripts.backtest.historical_execution_contract import (
     prepare_historical_execution_contract,
 )
 from scripts.backtest.market_data_builder import build_market_data
-
-
-PANEL_PATH = ROOT / "data/backtest/master_panel.csv"
 FROZEN_BASELINE_PATH = (
     ROOT
     / "data/backtest/results/final_13_15_18_parity_closeout"
@@ -480,6 +505,11 @@ def detect_fault(kind: str, ledger: pd.DataFrame, expected_dates: list[str]) -> 
 
 
 def main() -> int:
+    panel_authority = resolve_and_validate_panel_authority(
+        PANEL_PATH,
+        PANEL_MODE,
+        consumer=CONSUMER_ID,
+    )
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     live_before = {str(path.relative_to(ROOT)): file_digest(path) for path in LIVE_PATHS}
 
@@ -603,6 +633,7 @@ def main() -> int:
         "schema_version": 1,
         "gate": "G4_HISTORICAL_STATE_AND_CLOCK_INTEGRITY",
         "status": status,
+        "panel_authority": panel_authority,
         "g1_release_id": G1_RELEASE_ID,
         "production_sha": PRODUCTION_SHA,
         "research_sha": RESEARCH_SHA,

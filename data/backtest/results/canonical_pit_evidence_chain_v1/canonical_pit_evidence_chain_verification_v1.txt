@@ -1,0 +1,42 @@
+CANONICAL PIT EVIDENCE CHAIN FREEZE VERIFICATION
+==============================================================================
+STATUS: PASS
+AUTHORITY: GCFM_CANONICAL_PIT_G4_CONTRACT_CLAIM5_V1
+
+hash::data/backtest/results/canonical_panel_identity_provenance_v1/canonical_panel_identity_negative_controls_v1.csv: PASS
+hash::data/backtest/results/canonical_panel_identity_provenance_v1/canonical_panel_identity_provenance_audit_v1.txt: PASS
+hash::data/backtest/results/canonical_panel_identity_provenance_v1/canonical_panel_identity_provenance_manifest_v1.json: PASS
+hash::data/backtest/results/g4_historical_state_clock_integrity_canonical_pit_v1/g4_historical_state_clock_audit_v1.txt: PASS
+hash::data/backtest/results/g4_historical_state_clock_integrity_canonical_pit_v1/g4_historical_state_clock_manifest_v1.json: PASS
+hash::data/backtest/results/g4_historical_state_clock_integrity_canonical_pit_v1/g4_historical_state_transition_ledger_v1.csv: PASS
+hash::data/backtest/results/g4_historical_state_clock_integrity_canonical_pit_v1/g4_negative_controls_v1.csv: PASS
+hash::data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_intervention_contract_audit_v1.txt: PASS
+hash::data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_intervention_contract_daily_v1.csv: PASS
+hash::data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_intervention_contract_manifest_v1.json: PASS
+hash::data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_intervention_date_diff_v1.csv: PASS
+hash::data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_raw_macro_contract_daily_v1.csv: PASS
+hash::data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_filter18_direct_residual_daily_v1.csv: PASS
+hash::data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_filter18_direct_residual_summary_v1.csv: PASS
+hash::data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_full_history_causal_daily_v1.csv: PASS
+hash::data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_propagation_summary_v1.csv: PASS
+hash::data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_validated_causal_audit_v1.txt: PASS
+hash::data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_validated_causal_manifest_v1.json: PASS
+hash::scripts/backtest/audit_canonical_panel_identity_provenance_v1.py: PASS
+hash::scripts/backtest/audit_g4_historical_state_clock_integrity_v1.py: PASS
+hash::scripts/backtest/refreeze_validated_raw_macro_intervention_contract_v1.py: PASS
+hash::scripts/backtest/audit_claim5_validated_causal_propagation_v1.py: PASS
+legacy_immutable::G4_HISTORICAL_STATE_CLOCK: PASS
+legacy_immutable::VALIDATED_RAW_MACRO_INTERVENTION_CONTRACT: PASS
+legacy_immutable::CLAIM5_CAUSAL_PROPAGATION: PASS
+canonical_panel_identity: PASS
+regeneration_provenance_not_overstated: PASS
+g1_release_is_ancestor: PASS
+canonical_stage_statuses_pass: PASS
+g4_uses_canonical_panel: PASS
+contract_uses_canonical_panel: PASS
+claim5_uses_canonical_panel: PASS
+claim5_uses_registered_contract: PASS
+intervention_population_1068: PASS
+frozen_mapping_consistent: PASS
+legacy_is_non_promotable: PASS
+non_pit_is_non_promotable: PASS

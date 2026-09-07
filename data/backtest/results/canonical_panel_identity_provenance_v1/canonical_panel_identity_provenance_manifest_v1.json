@@ -1,0 +1,410 @@
+{
+  "canonical_authority": {
+    "classification": "G1_CANONICAL_HISTORICAL_INPUT",
+    "git_blob_sha": "341a0dc53c99008c1dbb4aa1fd86355deda9affe",
+    "path": "data/backtest/pit_safe/master_panel_pit_safe_final.csv",
+    "sha256": "56b6732948254526bda76749a0e975c40c50d8fc8c3df0660151103aec12a39a"
+  },
+  "constraints": {
+    "canonical_panel_modified_or_regenerated": false,
+    "existing_g1_g4_claim5_artifacts_modified": false,
+    "g4_or_claim5_rerun": false,
+    "internet_vintage_data_acquired": false,
+    "production_or_strategy_logic_modified": false
+  },
+  "consumer_authority": {
+    "checks": {
+      "canonical_request_accepted": true,
+      "explicit_non_pit_control_accepted": true,
+      "implicit_legacy_substitution_rejected": true,
+      "required_consumers_use_gate": true
+    },
+    "policy": {
+      "CANONICAL": "data/backtest/pit_safe/master_panel_pit_safe_final.csv",
+      "NON_PIT_CONTROL": "data/backtest/master_panel.csv",
+      "other_paths": "REJECT"
+    },
+    "required_consumers": [
+      {
+        "hardcodes_legacy_panel": false,
+        "path": "scripts/backtest/audit_g4_historical_state_clock_integrity_v1.py",
+        "status": "PASS",
+        "uses_canonical_authority_gate": true
+      },
+      {
+        "hardcodes_legacy_panel": false,
+        "path": "scripts/backtest/refreeze_validated_raw_macro_intervention_contract_v1.py",
+        "status": "PASS",
+        "uses_canonical_authority_gate": true
+      },
+      {
+        "hardcodes_legacy_panel": false,
+        "path": "scripts/backtest/audit_claim5_validated_causal_propagation_v1.py",
+        "status": "PASS",
+        "uses_canonical_authority_gate": true
+      }
+    ],
+    "status": "PASS"
+  },
+  "downstream_readiness": {
+    "g4_claim5_canonical_rerun_safe": true,
+    "reason": "Canonical identity and consumer authority are enforced."
+  },
+  "gate": "P0_CANONICAL_PANEL_IDENTITY_AND_PROVENANCE",
+  "identity": {
+    "checks": {
+      "canonical_mapping": true,
+      "canonical_path": true,
+      "canonical_sha256": true,
+      "canonical_worktree_blob": true,
+      "date_ranges": true,
+      "g1": true,
+      "population_schema": true,
+      "promotion_composition": true,
+      "sovereign_schema_allowlist": true
+    },
+    "dates": {
+      "date": {
+        "first": "2008-01-01",
+        "last": "2026-06-23",
+        "status": "PASS",
+        "valid_rows": 4817
+      },
+      "execution_date": {
+        "first": "2008-01-03",
+        "last": "2026-06-22",
+        "status": "PASS",
+        "valid_rows": 4645
+      },
+      "signal_date": {
+        "first": "2008-01-01",
+        "last": "2026-06-23",
+        "status": "PASS",
+        "valid_rows": 4817
+      }
+    },
+    "g1": {
+      "checks": {
+        "evidence_freeze_is_ancestor": true,
+        "g1_freeze_is_ancestor": true,
+        "g1_status_pass": true,
+        "manifest_hash_match": true,
+        "panel_blob_at_g1_match": true,
+        "panel_blob_at_research_ref_match": true,
+        "release_id_match": true,
+        "research_ref_match": true
+      },
+      "g1_freeze_commit": "54698c576b1ce17c6604e8c9df1a07659c98f342",
+      "release_id": "gcfm-g1-58f2702-7b4c324-pit-v1",
+      "research_ref": "7b4c324b27d6a19af3ef61852020da70cc7fe8c2",
+      "status": "PASS"
+    },
+    "git_blob_sha": "341a0dc53c99008c1dbb4aa1fd86355deda9affe",
+    "mapping": {
+      "artifact_sha256": "4f9858dee9f80b8fde6fab8565b27add5788a3057fcd7cec25605f7088bf8acf",
+      "pair_semantic_sha256": "77dc09b2fa8e6d9d95f6076804c63b78bd7c814cd3c32b7f62d8f778bd491d2f",
+      "panel_pairs_exact": true,
+      "rows": 4645,
+      "status": "PASS"
+    },
+    "path": "data/backtest/pit_safe/master_panel_pit_safe_final.csv",
+    "promotion_composition": {
+      "controlled_columns": [
+        "fred_extras__FCI",
+        "fred_sector__FCI",
+        "liquidity__NET_LIQ",
+        "liquidity__TGA",
+        "liquidity__WALCL"
+      ],
+      "mismatches": [],
+      "numeric_atol": 1e-12,
+      "remaining_columns_source": "data/backtest/pit_safe/master_panel_pit_safe_with_sovereign.csv",
+      "status": "PASS"
+    },
+    "schema": {
+      "columns": 88,
+      "columns_match": true,
+      "rows": 4817,
+      "rows_match": true,
+      "schema_match": true,
+      "schema_sha256": "c8385ccd3647096eb5eacb38a316ecc0ecc52a2f2d2efed46fba7e2e4f9641bc"
+    },
+    "sha256": "56b6732948254526bda76749a0e975c40c50d8fc8c3df0660151103aec12a39a",
+    "sovereign_schema": {
+      "expected_added": [
+        "DE10Y_SPREAD",
+        "IL10Y_SPREAD",
+        "JP10Y_SPREAD",
+        "KR10Y_SPREAD"
+      ],
+      "expected_removed": [
+        "sovereign_spreads__DE_US_SPREAD",
+        "sovereign_spreads__IL_US_SPREAD",
+        "sovereign_spreads__JP_US_SPREAD",
+        "sovereign_spreads__KR_US_SPREAD"
+      ],
+      "observed_added": [
+        "DE10Y_SPREAD",
+        "IL10Y_SPREAD",
+        "JP10Y_SPREAD",
+        "KR10Y_SPREAD"
+      ],
+      "observed_removed": [
+        "sovereign_spreads__DE_US_SPREAD",
+        "sovereign_spreads__IL_US_SPREAD",
+        "sovereign_spreads__JP_US_SPREAD",
+        "sovereign_spreads__KR_US_SPREAD"
+      ],
+      "status": "PASS"
+    },
+    "status": "PASS"
+  },
+  "legacy_control": {
+    "canonical_promotion_eligible": false,
+    "canonical_replacement_candidate": false,
+    "classification": "NON_PIT_CONTROL_LEGACY",
+    "path": "data/backtest/master_panel.csv",
+    "sha256": "106921c2b608b6a9056434d8fbc93d2784c85845793598f88179cd45d16895c1"
+  },
+  "lineage": {
+    "edges": [
+      {
+        "from": "raw source files",
+        "status": "AMBIGUOUS_DUPLICATE_OUTPUT_AUTHORITY",
+        "to": "data/backtest/master_panel.csv",
+        "transformation": "build_master_panel.py or build_master_panel_fg.py; both declare the same output path"
+      },
+      {
+        "from": "data/backtest/master_panel.csv",
+        "status": "CODE_CONFIRMED_OUTPUT_ABSENT",
+        "to": "data/backtest/pit_safe/master_panel_pit_safe.csv",
+        "transformation": "repair_release_timing_82.py availability-date transforms"
+      },
+      {
+        "from": "data/backtest/pit_safe/master_panel_pit_safe.csv",
+        "status": "CODE_CONFIRMED_INPUT_ABSENT",
+        "to": "data/backtest/pit_safe/master_panel_pit_safe_with_sovereign.csv",
+        "transformation": "merge_sovereign_spreads_into_pit_panel.py"
+      },
+      {
+        "from": "data/backtest/alfred_vintage_82",
+        "status": "UNKNOWN_EXACT_RECIPE_AND_RAW_HASHES",
+        "to": "data/backtest/pit_safe/master_panel_fred_initial_release_controlled.csv",
+        "transformation": "initial-release replacement for NFCI/WTREGEN/WALCL"
+      },
+      {
+        "from": [
+          "data/backtest/pit_safe/master_panel_pit_safe_with_sovereign.csv",
+          "data/backtest/pit_safe/master_panel_fred_initial_release_controlled.csv"
+        ],
+        "status": "CONTENT_VERIFIED_RECIPE_UNKNOWN",
+        "to": "data/backtest/pit_safe/master_panel_pit_safe_final.csv",
+        "transformation": "five controlled columns plus all remaining with-sovereign columns"
+      },
+      {
+        "from": "data/backtest/pit_safe/master_panel_pit_safe_final.csv",
+        "status": "G1_PINNED",
+        "to": "54698c576b1ce17c6604e8c9df1a07659c98f342",
+        "transformation": "G1 immutable path/hash/blob freeze"
+      }
+    ],
+    "nodes": [
+      {
+        "generation_commit": null,
+        "git_blob_sha": "781baaaebea7032aa5b4670eec23bc561910ff32",
+        "introduced_commit": "8a25b5c61b8adb14950ca56264469d7fd7b3d2e3",
+        "path": "data/backtest/macro_data.csv",
+        "role": "RAW_BASE_CALENDAR",
+        "sha256": "9518159c7775bf7a7df713443bf6c75780003dbdb366d69fdd359ed7241a5fa1",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": null,
+        "git_blob_sha": "91c1e5def02585fc7c62a1cce1cce089b9a6f539",
+        "introduced_commit": "8a25b5c61b8adb14950ca56264469d7fd7b3d2e3",
+        "path": "data/backtest/fred_macro_extras.csv",
+        "role": "RAW_FRED_FCI",
+        "sha256": "3c16003bed6a055abc10de89048c6d34ae4df622047dc3c7998d4281e2eea4ed",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": null,
+        "git_blob_sha": "ac55dde0ac1fd4730fda99b4a1f060a0ec4b846d",
+        "introduced_commit": "83ea336b259638d75acab69c7cde2abed840ed88",
+        "path": "data/backtest/fred_macro_sctorallo.csv",
+        "role": "RAW_FRED_RATES",
+        "sha256": "9e13f43718430ac1e05a00c61559456091186b3903f9621c1cbd3caf69782067",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": null,
+        "git_blob_sha": "c2bed5d6f5378ed691ca20b45bdeb047bef43477",
+        "introduced_commit": "8a25b5c61b8adb14950ca56264469d7fd7b3d2e3",
+        "path": "data/backtest/liquidity_data.csv",
+        "role": "RAW_LIQUIDITY",
+        "sha256": "eb3273a3caf333c2edc3878816a21ccde83c219f560511007a0adaeca17a19b7",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": null,
+        "git_blob_sha": "db67805d53ea81871467697b305a8b3a83fcd67c",
+        "introduced_commit": "83ea336b259638d75acab69c7cde2abed840ed88",
+        "path": "data/backtest/sovereign_yields.csv",
+        "role": "RAW_SOVEREIGN",
+        "sha256": "72d6d69be2699933152ad8e712503d00d39547cd8e298567e110bcf0abaa4d07",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": null,
+        "git_blob_sha": "34c67b49620515b7784fa25331ae469cde6ef780",
+        "introduced_commit": "4646b8517642297c20925b96dc897de59db9b634",
+        "path": "scripts/backtest/build_master_panel.py",
+        "role": "BASE_BUILDER_CANDIDATE",
+        "sha256": "0c4893376394f98242ca2b0fefae1a7add5490ef80fdb7400f562c4496f62db4",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": null,
+        "git_blob_sha": "cf2c8fd576aa386859dc76a5e46ce3925ab31762",
+        "introduced_commit": "b9b1a78d586b487ec811dd03950fe7e96247366c",
+        "path": "scripts/backtest/build_master_panel_fg.py",
+        "role": "BASE_BUILDER_CANDIDATE_DUPLICATE_OUTPUT",
+        "sha256": "66b98d73a5aa49c5071783f387b1976ca6f2b03f6919f762c4390ba1c20b1db6",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": "e3569ad4d43c93a779d3778e91252f76652a9543",
+        "git_blob_sha": "f13574585ed894d103e147bc59cefd451ce4af3d",
+        "introduced_commit": "4646b8517642297c20925b96dc897de59db9b634",
+        "path": "data/backtest/master_panel.csv",
+        "role": "NON_PIT_CONTROL",
+        "sha256": "106921c2b608b6a9056434d8fbc93d2784c85845793598f88179cd45d16895c1",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": "cb94094c4561b523edd03eddb89d48816525e890",
+        "git_blob_sha": "d90aee8512979f2e28fbddc3f6ced12062a540a6",
+        "introduced_commit": "cb94094c4561b523edd03eddb89d48816525e890",
+        "path": "scripts/backtest/repair_release_timing_82.py",
+        "role": "PIT_TIMING_TRANSFORMATION",
+        "sha256": "86487c2de97f78b7c96852edcc6e70150db1dfa16f2ccf5eb8ee551ab486d7a8",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": null,
+        "git_blob_sha": null,
+        "introduced_commit": null,
+        "path": "data/backtest/pit_safe/master_panel_pit_safe.csv",
+        "role": "MISSING_INTERMEDIATE",
+        "sha256": null,
+        "status": "UNKNOWN"
+      },
+      {
+        "generation_commit": "cb94094c4561b523edd03eddb89d48816525e890",
+        "git_blob_sha": "52ac9015d17b68e31f4e5ebe731f321c94b9181e",
+        "introduced_commit": "cb94094c4561b523edd03eddb89d48816525e890",
+        "path": "data/backtest/pit_safe/sovereign_yields_pit_4.csv",
+        "role": "SOVEREIGN_PIT_INTERMEDIATE",
+        "sha256": "1b7dff389811899aa4dc035622714d551a914361112cbe0b7cb95758c902c128",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": "cb94094c4561b523edd03eddb89d48816525e890",
+        "git_blob_sha": "eb4efa81a5cde576cc5d6eac40c6c2e136a9557b",
+        "introduced_commit": "cb94094c4561b523edd03eddb89d48816525e890",
+        "path": "data/backtest/pit_safe/sovereign_spreads_pit_safe_4.csv",
+        "role": "SOVEREIGN_SPREAD_INTERMEDIATE",
+        "sha256": "a440b4775c462b75afcaf3d58c53639d6ec762e13e2b3ba0fc39436051420e31",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": "9f7102a17ba12baf8fc2807186e00b011fe7f85c",
+        "git_blob_sha": "d52d98cde4220db3b507411eae7bd03e8f00a626",
+        "introduced_commit": "9f7102a17ba12baf8fc2807186e00b011fe7f85c",
+        "path": "data/backtest/pit_safe/master_panel_pit_safe_with_sovereign.csv",
+        "role": "PIT_WITH_SOVEREIGN",
+        "sha256": "dd5c558275bc5161be1e72b74ab81c61027bf02cd6c21c8176322a0282e1a652",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": null,
+        "git_blob_sha": null,
+        "introduced_commit": null,
+        "path": "data/backtest/alfred_vintage_82",
+        "role": "ALFRED_INITIAL_RELEASE_RAW",
+        "sha256": null,
+        "status": "UNKNOWN"
+      },
+      {
+        "generation_commit": "9f7102a17ba12baf8fc2807186e00b011fe7f85c",
+        "git_blob_sha": "cd467428d093f6ae617c0fa0d77904284dc759fb",
+        "introduced_commit": "9f7102a17ba12baf8fc2807186e00b011fe7f85c",
+        "path": "data/backtest/pit_safe/master_panel_fred_initial_release_controlled.csv",
+        "role": "INITIAL_RELEASE_CONTROLLED",
+        "sha256": "4c3ade173b231885266e3a0241f785d5f1ea523c363158679a01b3cb4cb3e272",
+        "status": "PRESENT"
+      },
+      {
+        "generation_commit": "9f7102a17ba12baf8fc2807186e00b011fe7f85c",
+        "git_blob_sha": "341a0dc53c99008c1dbb4aa1fd86355deda9affe",
+        "introduced_commit": "9f7102a17ba12baf8fc2807186e00b011fe7f85c",
+        "path": "data/backtest/pit_safe/master_panel_pit_safe_final.csv",
+        "role": "G1_CANONICAL_HISTORICAL_INPUT",
+        "sha256": "56b6732948254526bda76749a0e975c40c50d8fc8c3df0660151103aec12a39a",
+        "status": "PRESENT"
+      }
+    ]
+  },
+  "negative_controls": {
+    "all_detected": true,
+    "count": 4,
+    "status": "PASS"
+  },
+  "overall_status": "OPEN",
+  "regeneration_provenance": {
+    "checks": {
+      "alfred_raw_sources_present_and_hashable": false,
+      "base_master_present": true,
+      "controlled_artifact_present": true,
+      "exact_base_builder_authority": false,
+      "exact_final_promotion_recipe_present": false,
+      "final_composition_observationally_verified": true,
+      "release_repair_generator_present": true,
+      "release_repair_intermediate_present": false,
+      "sovereign_intermediates_present": true
+    },
+    "status": "NON_REGENERABLE_FROZEN_INPUT",
+    "unresolved": [
+      {
+        "item": "exact_base_builder_authority",
+        "path": "scripts/backtest/build_master_panel*.py",
+        "reason": "Two builders declare master_panel.csv as output; Git evidence does not identify the exact invocation that produced its blob.",
+        "status": "UNKNOWN"
+      },
+      {
+        "item": "release_repair_intermediate",
+        "path": "data/backtest/pit_safe/master_panel_pit_safe.csv",
+        "reason": "Generator-declared intermediate is absent from the repository.",
+        "status": "UNKNOWN"
+      },
+      {
+        "item": "alfred_initial_release_raw_sources",
+        "path": "data/backtest/alfred_vintage_82",
+        "reason": "Raw ALFRED JSON inputs and their frozen hashes are absent.",
+        "status": "UNKNOWN"
+      },
+      {
+        "item": "exact_final_promotion_recipe",
+        "path": null,
+        "reason": "Final composition is observationally verified, but no executable recipe in the repository declares the exact final output.",
+        "status": "UNKNOWN"
+      }
+    ]
+  },
+  "schema_version": 1,
+  "statuses": {
+    "CONSUMER_AUTHORITY": "PASS",
+    "IDENTITY": "PASS",
+    "REGENERATION_PROVENANCE": "NON_REGENERABLE_FROZEN_INPUT"
+  }
+}

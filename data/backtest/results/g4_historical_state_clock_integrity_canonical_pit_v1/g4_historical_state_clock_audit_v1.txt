@@ -1,0 +1,44 @@
+G4 — HISTORICAL STATE & CLOCK INTEGRITY
+========================================================================
+STATUS: PASS
+G1 release: gcfm-g1-58f2702-7b4c324-pit-v1
+Rows per arm: baseline=4645, treatment=4645
+Intervention: 992
+Non-intervention progression: 3653
+Baseline frozen identity failures: 11705
+V4 contract raw identity failures: 28
+
+ACCEPTANCE CHECKS
+------------------------------------------------------------------------
+canonical_population_4645: PASS
+canonical_pair_order_exact: PASS
+canonical_unique_dates: PASS
+baseline_full_replay: PASS
+treatment_full_replay: PASS
+baseline_chronological: PASS
+treatment_chronological: PASS
+intervention_population_992: PASS
+intervention_boundary_exact: PASS
+nonintervention_progression_3653: PASS
+baseline_carry_exact: PASS
+treatment_carry_exact: PASS
+arm_state_objects_independent: PASS
+historical_clock_only: PASS
+live_state_access_zero: PASS
+live_files_unchanged: PASS
+historical_adapter_all_rows: PASS
+baseline_deterministic: PASS
+treatment_deterministic: PASS
+negative_controls_all_detected: PASS
+
+POST-G4 BLOCKERS FOR CLAIM #5
+------------------------------------------------------------------------
+Legacy frozen output identity failures: 11705
+V4 daily-contract raw identity failures: 28
+These diagnostics do not fail G4 apparatus integrity, but must be resolved before #5 rerun.
+
+BOUNDARIES
+------------------------------------------------------------------------
+Production/F13/F15/F18 logic modified: NO
+Returns/PnL/CAGR/Sharpe used: NO
+#5 causal result: STALE_PENDING_RERUN

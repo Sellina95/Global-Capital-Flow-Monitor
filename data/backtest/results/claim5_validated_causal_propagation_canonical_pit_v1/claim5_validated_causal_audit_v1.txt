@@ -1,0 +1,54 @@
+INSTITUTIONAL INVENTORY #5 — VALIDATED CAUSAL PROPAGATION
+==================================================================================
+STATUS: PASS
+Full-history rows per arm: 4645
+Intervention / non-intervention: 1068 / 3577
+
+PROPAGATION
+----------------------------------------------------------------------------------
+FILTER13_RISK_BUDGET: changed=306, intervention_day=306, carryover_day=0
+FILTER15_EXPOSURE: changed=292, intervention_day=292, carryover_day=0
+FILTER18_ALLOCATED_EQUITY: changed=527, intervention_day=289, carryover_day=238
+CASH_WEIGHT: changed=527, intervention_day=289, carryover_day=238
+FILTER18_WEIGHTS: changed=600, intervention_day=309, carryover_day=291
+
+FILTER18 DIRECT / RESIDUAL
+----------------------------------------------------------------------------------
+DIRECT_FILTER18_PATH: 322
+DIRECT_MACRO_PROFILE_PATH: 8
+DIRECT_RANK_STATE_PATH: 320
+DIRECT_BUILDER_REBALANCE_PATH: 322
+DIRECT_PREVIOUS_PORTFOLIO_PATH: 299
+RESIDUAL_UNEXPLAINED_FILTER18_PATH: 0
+
+CHECKS
+----------------------------------------------------------------------------------
+g4_pass: PASS
+validated_contract_pass: PASS
+validated_intervention_population_1068: PASS
+canonical_population_4645: PASS
+canonical_date_order_exact: PASS
+baseline_full_replay: PASS
+treatment_full_replay: PASS
+treatment_intervention_exact: PASS
+treatment_nonintervention_progression_3577: PASS
+intervention_boundary_exact: PASS
+baseline_state_carry: PASS
+treatment_state_carry: PASS
+arm_state_isolation: PASS
+historical_clock_only: PASS
+live_state_access_zero: PASS
+protected_and_live_files_unchanged: PASS
+baseline_deterministic: PASS
+treatment_deterministic: PASS
+comparison_one_to_one: PASS
+capital_identity_baseline: PASS
+capital_identity_treatment: PASS
+filter18_residual_zero: PASS
+
+BOUNDARIES
+----------------------------------------------------------------------------------
+Old 992-day evidence: SUPERSEDED_PRE_G4_ONLY
+Old causal counts used as targets: NO
+Production/F13/F15/F18/taxonomy/mapping/threshold changed: NO
+Returns/PnL/CAGR/Sharpe used: NO

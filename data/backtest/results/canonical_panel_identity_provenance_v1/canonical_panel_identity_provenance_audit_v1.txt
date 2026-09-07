@@ -1,0 +1,43 @@
+P0 CANONICAL PANEL IDENTITY & PROVENANCE GATE
+==============================================================================
+OVERALL: OPEN
+IDENTITY: PASS
+CONSUMER_AUTHORITY: PASS
+REGENERATION_PROVENANCE: NON_REGENERABLE_FROZEN_INPUT
+
+CANONICAL AUTHORITY
+------------------------------------------------------------------------------
+Path: data/backtest/pit_safe/master_panel_pit_safe_final.csv
+SHA256: 56b6732948254526bda76749a0e975c40c50d8fc8c3df0660151103aec12a39a
+Git blob: 341a0dc53c99008c1dbb4aa1fd86355deda9affe
+Rows x columns: 4817 x 88
+Canonical signal/execution pairs: 4645
+Numeric comparison tolerance: atol=1e-12, rtol=0
+
+CONSUMER AUTHORITY
+------------------------------------------------------------------------------
+PASS: scripts/backtest/audit_g4_historical_state_clock_integrity_v1.py
+PASS: scripts/backtest/refreeze_validated_raw_macro_intervention_contract_v1.py
+PASS: scripts/backtest/audit_claim5_validated_causal_propagation_v1.py
+
+UNRESOLVED REGENERATION LINEAGE
+------------------------------------------------------------------------------
+UNKNOWN: exact_base_builder_authority — Two builders declare master_panel.csv as output; Git evidence does not identify the exact invocation that produced its blob.
+UNKNOWN: release_repair_intermediate — Generator-declared intermediate is absent from the repository.
+UNKNOWN: alfred_initial_release_raw_sources — Raw ALFRED JSON inputs and their frozen hashes are absent.
+UNKNOWN: exact_final_promotion_recipe — Final composition is observationally verified, but no executable recipe in the repository declares the exact final output.
+
+NEGATIVE CONTROLS
+------------------------------------------------------------------------------
+PASS: legacy_panel_substitution -> DETECTED
+PASS: hash_mutation -> DETECTED
+PASS: unauthorized_path -> DETECTED
+PASS: schema_mutation -> DETECTED
+
+DOWNSTREAM
+------------------------------------------------------------------------------
+G4/#5 canonical rerun safe: YES
+Canonical identity and consumer authority are enforced.
+
+No canonical panel, existing canonical evidence, Production logic,
+strategy logic, taxonomy, mapping, or threshold was modified.

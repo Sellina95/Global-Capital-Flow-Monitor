@@ -17,6 +17,34 @@ for path in (ROOT, ROOT / "scripts"):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
+from scripts.backtest.audit_canonical_panel_identity_provenance_v1 import (
+    CANONICAL_REL,
+    resolve_and_validate_panel_authority,
+    run_consumer_authority_startup_controls,
+)
+
+CONSUMER_ID = "CLAIM5_VALIDATED_CAUSAL_PROPAGATION"
+PANEL_MODE = "CANONICAL"
+PANEL_PATH = ROOT / CANONICAL_REL
+
+
+def _run_authority_only_before_strategy_imports() -> None:
+    if "--panel-authority-self-test" in sys.argv:
+        result = run_consumer_authority_startup_controls(CONSUMER_ID)
+        print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+        raise SystemExit(0 if result["status"] == "PASS" else 1)
+    if "--validate-panel-authority-only" in sys.argv:
+        result = resolve_and_validate_panel_authority(
+            PANEL_PATH, PANEL_MODE, consumer=CONSUMER_ID
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+        print("REPLAY_STARTED: NO")
+        raise SystemExit(0)
+
+
+if __name__ == "__main__":
+    _run_authority_only_before_strategy_imports()
+
 from scripts.backtest.audit_g4_historical_state_clock_integrity_v1 import (
     ArmState,
     LIVE_PATHS,
@@ -33,9 +61,6 @@ from scripts.backtest.historical_execution_contract import (
     prepare_historical_execution_contract,
 )
 from scripts.backtest.market_data_builder import build_market_data
-
-
-PANEL_PATH = ROOT / "data/backtest/master_panel.csv"
 CANONICAL_PATH = (
     ROOT / "data/backtest/results/final_13_15_18_parity_closeout"
     / "final_13_15_18_parity_daily.csv"
@@ -365,6 +390,11 @@ def compare_arms(baseline: pd.DataFrame, treatment: pd.DataFrame) -> pd.DataFram
 
 
 def main() -> int:
+    panel_authority = resolve_and_validate_panel_authority(
+        PANEL_PATH,
+        PANEL_MODE,
+        consumer=CONSUMER_ID,
+    )
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     g4_manifest = json.loads(G4_MANIFEST_PATH.read_text(encoding="utf-8"))
     contract_manifest = json.loads(
@@ -504,6 +534,7 @@ def main() -> int:
         "schema_version": 1,
         "claim": "#5_SIGNAL_RISK_EXPOSURE_ALLOCATION_CAUSALITY",
         "status": status,
+        "panel_authority": panel_authority,
         "g1_release_id": G1_RELEASE_ID,
         "g4_status": "PASS",
         "production_sha": PRODUCTION_SHA,

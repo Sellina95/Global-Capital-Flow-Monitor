@@ -1,0 +1,35 @@
+VALIDATED RAW MACRO & INTERVENTION CONTRACT RE-FREEZE
+==============================================================================
+STATUS: PASS
+Canonical raw rows: 4645
+Validated UNKNOWN rows: 1173
+Old intervention rows: 992
+New intervention rows: 1068
+Added / Removed / Unchanged: 121 / 45 / 947
+Unchanged assignment / Reassigned: 946 / 1
+
+CHECKS
+------------------------------------------------------------------------------
+canonical_population_4645: PASS
+canonical_date_order_exact: PASS
+raw_replay_deterministic: PASS
+taxonomy_semantic_hash_frozen: PASS
+mapping_semantic_hash_frozen: PASS
+taxonomy_rules_unchanged: PASS
+core_us10y_provenance_all_rows: PASS
+intervention_raw_identity_all_unknown: PASS
+intervention_core_us10y_provenance: PASS
+intervention_rule_collision_zero: PASS
+intervention_states_all_mapped: PASS
+date_diff_reconciles: PASS
+existing_contract_and_specs_unchanged: PASS
+
+BOUNDARIES
+------------------------------------------------------------------------------
+Frozen taxonomy changed: NO
+Frozen V4 mapping changed: NO
+Production/F13/F15/F18/threshold changed: NO
+Returns/PnL/performance used: NO
+#5 downstream status at contract freeze: STALE_PENDING_RERUN
+Temporal scope: BEFORE_VALIDATED_CAUSAL_REPLAY
+Current #5 authority: claim5_validated_causal_manifest_v1.json

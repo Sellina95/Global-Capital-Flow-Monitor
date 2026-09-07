@@ -1,0 +1,5 @@
+negative_control,injected_defect,expected,observed,status
+legacy_panel_substitution,master_panel.csv in CANONICAL mode,DETECTED,DETECTED,PASS
+hash_mutation,one-byte canonical payload mutation,DETECTED,DETECTED,PASS
+unauthorized_path,non-allowlisted canonical path,DETECTED,DETECTED,PASS
+schema_mutation,drop final canonical schema column,DETECTED,DETECTED,PASS
