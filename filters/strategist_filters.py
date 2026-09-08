@@ -1529,6 +1529,12 @@ def liquidity_filter(market_data: Dict[str, Any]) -> str:
     fci_level = fci_level_label(_to_float(fci.get("today")))
     rr_level  = rr_level_label(_to_float(rr.get("today")))
 
+    # PM observability only — no decision logic change.
+    market_data["FCI_LEVEL"] = fci_level
+    market_data["FCI_VALUE"] = _to_float(fci.get("today"))
+    market_data["REAL_RATE_LEVEL"] = rr_level
+    market_data["REAL_RATE_VALUE"] = _to_float(rr.get("today"))
+
     exp_easing = (us10y_dir == -1 and dxy_dir == -1 and vix_dir in (-1, 0))
     exp_tight  = (us10y_dir == 1 and dxy_dir == 1)
 
@@ -1925,6 +1931,9 @@ def credit_stress_filter(market_data: Dict[str, Any]) -> str:
     lines.append(f"- **방향(전일 대비):** HYG({_dir_str(hyg_dir)}) / LQD({_dir_str(lqd_dir)})")
     lines.append(f"- **HYG:** today {_fmt_num(hyg['today'], 3)} / prev {_fmt_num(hyg['prev'], 3)} / pct {_fmt_num(hyg['pct_change'], 2)}%")
     lines.append(f"- **LQD:** today {_fmt_num(lqd['today'], 3)} / prev {_fmt_num(lqd['prev'], 3)} / pct {_fmt_num(lqd['pct_change'], 2)}%")
+    # PM observability only — no decision logic change.
+    market_data["CREDIT_STRUCTURE_STATE"] = state
+
     lines.append(f"- **판정:** **{state}**")
     lines.append(f"- **근거:** {rationale}")
     return "\n".join(lines)

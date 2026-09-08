@@ -286,7 +286,17 @@ def generate_pm_final_brief(market_data):
     lines.append("3. MARKET STATE")
 
     policy_bias = market_data.get("POLICY_BIAS_LINE", "N/A")
-    liquidity_level = final_state.get("liquidity_level", "N/A")
+
+    liquidity_level = final_state.get("liquidity_level")
+
+    if liquidity_level in (None, "", "N/A"):
+        net_liq_contract = market_data.get("NET_LIQ", {}) or {}
+
+        liquidity_level = (
+            net_liq_contract.get("level_bucket")
+            or market_data.get("NET_LIQ_LEVEL_BUCKET")
+            or "N/A"
+        )
 
     growth_state = market_data.get(
         "GROWTH_SUSTAINABILITY_LABEL", "N/A"
@@ -311,8 +321,28 @@ def generate_pm_final_brief(market_data):
     squeeze_risk = market_data.get("SQUEEZE_RISK", "N/A")
     vol_structure = market_data.get("VOL_STRUCTURE", "N/A")
 
+    financial_conditions = market_data.get("FCI_LEVEL", "N/A")
+    real_rate_level = market_data.get("REAL_RATE_LEVEL", "N/A")
+    real_rate_value = market_data.get("REAL_RATE_VALUE")
+    credit_structure = market_data.get(
+        "CREDIT_STRUCTURE_STATE", "N/A"
+    )
+    gamma_state = market_data.get("GAMMA_STATE", "N/A")
+
+    if real_rate_value is not None:
+        try:
+            real_rate_display = (
+                f"{real_rate_level} · {float(real_rate_value):.2f}%"
+            )
+        except (TypeError, ValueError):
+            real_rate_display = str(real_rate_level)
+    else:
+        real_rate_display = str(real_rate_level)
+
     lines.append(f"Macro Narrative       {macro_narrative}")
     lines.append(f"Policy Bias           {policy_bias}")
+    lines.append(f"Financial Conditions  {financial_conditions}")
+    lines.append(f"Real Rate             {real_rate_display}")
     lines.append(f"Liquidity             {render_liquidity(liquidity_dir)}")
     lines.append(f"Liquidity Level       {liquidity_level}")
 
@@ -371,6 +401,8 @@ def generate_pm_final_brief(market_data):
     lines.append(f"Vol Structure         {vol_structure}")
     lines.append(f"Positioning Z         {fmt_value(pos_z)}")
     lines.append(f"Credit                {render_credit(credit_calm)}")
+    lines.append(f"Credit Structure      {credit_structure}")
+    lines.append(f"Dealer Gamma          {gamma_state}")
     lines.append(f"Drift                 {drift_state}")
     lines.append("")
 
@@ -464,8 +496,6 @@ def generate_pm_final_brief(market_data):
     wti_value = _float_or_none(wti_today)
     vix_value = _float_or_none(vix_today)
     hy_value = _float_or_none(hy_today)
-
-    lines.append("Equities             ⚪ No canonical PM state")
 
     if us10y_value is not None:
         lines.append(

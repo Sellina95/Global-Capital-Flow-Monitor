@@ -31,19 +31,23 @@ Tactical Signal      HOLD / NONE
 
 3. MARKET STATE
 Macro Narrative       INFLATION_PRESSURE
-Policy Bias           Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCI value=-0.558 (low-frequency) / DXYΔ +0.160 / US10YΔ +0.022
+Policy Bias           TIGHTENING
+Financial Conditions  EASY
+Real Rate             RESTRICTIVE · 2.42%
 Liquidity             ↓ Tightening
-Liquidity Level       N/A
+Liquidity Level       MID
 Dollar Liquidity     DRAINING · DOWN / MID
 Fed Plumbing         NET_LIQ FLAT · TGA UP · RRP ACCEL_UP
 Structure             TIGHTENING
 Growth Sustainability LATE_CYCLE_STRAIN
+Credit Structure      NEUTRAL
 Institutional Flow    👀 EARLY TRACE
 Flow Authenticity     REAL_ACCUMULATION
 Participation Quality BROAD_BUT_WATCH
 Participation Mode    SELECTIVE_EXPANSION
 Leadership            BROAD
 Positioning           ELEVATED
+Dealer Gamma          POSITIVE-TRANSITION
 Squeeze Risk          MEDIUM
 Vol Structure         NORMAL
 Positioning Z         1.68

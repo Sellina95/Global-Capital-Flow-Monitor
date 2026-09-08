@@ -11,6 +11,56 @@ SITE_DIR = ROOT / "_site"
 ASSETS_DIR = SITE_DIR / "assets"
 
 
+
+
+def tape_display(value):
+    value = str(value or "").strip()
+
+    # Source text may already contain a risk marker.
+    # Renderer owns the single absolute-level marker.
+    value = value.lstrip("🔴🟢🟡").strip()
+
+    # Rising / Stronger / Weaker / Falling / COOL 등 텍스트만 제거
+    value = re.sub(
+        r"\b(?:Rising|Falling|Stronger|Weaker|COOL|Widening|Tightening|Improving|Stable)\b",
+        "",
+        value,
+        flags=re.I,
+    )
+
+    # HY OAS처럼 방향 화살표 없이 변화율만 남은 경우
+    # 음수 = ↓ / 양수 = ↑
+    if "·" in value and "↑" not in value and "↓" not in value:
+        m = re.search(r"\(([+-]\d+(?:\.\d+)?)%\)", value)
+        if m:
+            arrow = "↓" if m.group(1).startswith("-") else "↑"
+            left, right = value.split("·", 1)
+            value = f"{left.strip()} · {arrow} {right.strip()}"
+
+    value = re.sub(r"\s+", " ", value)
+    value = re.sub(r"\s+·\s+", " · ", value)
+
+    return value.strip()
+
+def compact_tape_value(value):
+    value = str(value or "").strip()
+
+    # 직전 패치의 split 표시가 builder에 남아 있어도
+    # 실제 원본 value를 이 함수에 넘기도록 아래 renderer에서 교체한다.
+
+    # "4.78% · ↑ Rising (+0.46%)"
+    # -> "4.78% · ↑ (+0.46%)"
+    value = re.sub(
+        r"(·\s*[↑↓→])\s*"
+        r"(?:Rising|Falling|Stronger|Weaker|COOL|Widening|Tightening|Improving|Stable)"
+        r"\s*",
+        r"\1 ",
+        value,
+        flags=re.I,
+    )
+
+    return value
+
 def latest_pm_report() -> Path:
     reports = sorted(REPORTS_DIR.glob("daily_report_????-??-??.md"))
     if not reports:
@@ -285,6 +335,10 @@ def parse_diagnostics_v1(text: str) -> dict[str, str]:
             text,
             r"\*\*Geo Stress Score \(z-composite\):\*\*\s*\*\*([^*]+)\*\*",
         ),
+        "geo_level": diag_match(
+            text,
+            r"Geo Stress Score \(z-composite\):.*?Level:\s*([^)*]+)",
+        ),
         "hy_oas": diag_match(
             text,
             r"\*\*HY_OAS level:\*\*\s*([^\n]+)",
@@ -304,6 +358,49 @@ def parse_diagnostics_v1(text: str) -> dict[str, str]:
         "vix": diag_match(
             text,
             r"\*\*변동성 지수 \(VIX\)\*\*:\s*([^\n]+)",
+        ),
+
+        # Market / Engine Overview — persisted diagnostics only.
+        "real_rate": diag_match(
+            text,
+            r"Real Rates\):\*\*\s*value=([^/]+/\s*level=[^/]+)",
+        ),
+        "curve_2s10s": diag_match(
+            text,
+            r"\*\*2s10s[^:]*:\*\*\s*([^\n]+)",
+        ),
+        "usdk_rw": diag_match(
+            text,
+            r"원/달러\(USDKRW\).*?\*\*\(([^)]+)\)\*\*",
+        ),
+        "net_liq": diag_match(
+            text,
+            r"\*\*NET_LIQ level:\*\*\s*([^\n]+)",
+        ),
+        "tga": diag_match(
+            text,
+            r"\*\*TGA level:\*\*\s*([^\n]+)",
+        ),
+        "rrp": diag_match(
+            text,
+            r"\*\*RRP level:\*\*\s*([^\n]+)",
+        ),
+        "liq_direction": diag_match(
+            text,
+            r"\*\*방향\(전일 대비\):\*\*\s*"
+            r"TGA\(([^\n]+?NET_LIQ\([^)]+\))",
+        ),
+        "hyg": diag_match(
+            text,
+            r"\*\*HYG:\*\*\s*([^\n]+)",
+        ),
+        "lqd": diag_match(
+            text,
+            r"\*\*LQD:\*\*\s*([^\n]+)",
+        ),
+        "hy_direction": diag_match(
+            text,
+            r"HY_OAS\(([^)]+\)\s*/\s*[+-]?[0-9.]+%)",
         ),
 
         # Execution / control outputs already emitted by Diagnostics.
@@ -528,6 +625,8 @@ def build(
     # PM Contract V2 — canonical 1~19 state inventory.
     macro_state_narrative = field(market, "Macro Narrative")
     policy_bias = field(market, "Policy Bias")
+    financial_conditions = field(market, "Financial Conditions")
+    real_rate = field(market, "Real Rate")
     liquidity = field(market, "Liquidity")
     liquidity_level = field(market, "Liquidity Level")
     structure = field(market, "Structure")
@@ -549,6 +648,8 @@ def build(
     drift = field(market, "Drift")
     positioning = field(market, "Positioning Z")
     credit = field(market, "Credit")
+    credit_structure = field(market, "Credit Structure")
+    dealer_gamma = field(market, "Dealer Gamma")
 
     us10y = field(cross_asset, "US10Y Yield")
     usd = field(cross_asset, "USD")
@@ -559,6 +660,78 @@ def build(
     coverage = field(leadership, "Coverage")
     sectors = parse_sector_rows(leadership)
     breadth_rows = parse_breadth_rows(leadership)
+
+    # ---------------------------------------------------------
+    # TODAY'S MARKET
+    # Presentation-only synthesis of persisted canonical states.
+    # No market state, score, exposure, or portfolio rule is recalculated.
+    # ---------------------------------------------------------
+    def _state(value):
+        return str(value or "").strip().upper().replace("-", "_").replace(" ", "_")
+
+    macro_key = _state(macro_state_narrative)
+    policy_key = _state(policy_bias)
+    liquidity_key = _state(liquidity)
+    credit_key = _state(credit)
+    positioning_key = _state(positioning_state)
+    leadership_key = _state(leadership_state)
+    vol_key = _state(vol_structure)
+
+    pressure_parts = []
+
+    if "INFLATION" in macro_key:
+        pressure_parts.append("Inflation pressure")
+    elif any(x in macro_key for x in ("GROWTH_SCARE", "GROWTH_STRESS", "RECESSION")):
+        pressure_parts.append("Growth pressure")
+
+    if any(x in liquidity_key for x in ("TIGHTEN", "DOWN", "DRAIN")):
+        pressure_parts.append("tightening liquidity")
+
+    if any(x in policy_key for x in ("TIGHTEN", "HAWKISH", "RESTRICT")):
+        pressure_parts.append("restrictive policy")
+
+    if pressure_parts:
+        if len(pressure_parts) == 1:
+            pressure_clause = pressure_parts[0]
+        elif len(pressure_parts) == 2:
+            pressure_clause = f"{pressure_parts[0]} and {pressure_parts[1]}"
+        else:
+            pressure_clause = (
+                ", ".join(pressure_parts[:-1])
+                + f" and {pressure_parts[-1]}"
+            )
+        market_sentence = f"{pressure_clause} favor defensive exposure"
+    else:
+        market_sentence = "Current macro conditions do not signal a dominant defensive pressure"
+
+    if any(x in positioning_key for x in ("ELEVATED", "CROWDED", "EXTREME", "HEAT")):
+        market_sentence += ", with elevated positioning adding restraint"
+
+    offsets = []
+
+    if any(x in credit_key for x in ("CALM", "NORMAL", "CONTAINED")):
+        offsets.append("contained credit stress")
+
+    if any(x in vol_key for x in ("NORMAL", "LOW", "CALM")):
+        offsets.append("normal volatility")
+
+    if any(x in leadership_key for x in ("BROAD", "EXPANDING")):
+        offsets.append("broad leadership")
+
+    if offsets:
+        if len(offsets) == 1:
+            offset_clause = offsets[0]
+        elif len(offsets) == 2:
+            offset_clause = f"{offsets[0]} and {offsets[1]}"
+        else:
+            offset_clause = (
+                ", ".join(offsets[:-1])
+                + f" and {offsets[-1]}"
+            )
+
+        market_sentence += f"; {offset_clause} temper the downside signal"
+
+    market_sentence += "."
 
     growth_value_tilt = field(
         allocation_context, "Growth vs Value"
@@ -615,18 +788,49 @@ def build(
     decision_conviction = field(rationale, "Conviction")
     reasons = parse_rationale(rationale)
 
-    sector_html = "\n".join(
-        f"""
-        <div class="sector-row">
-          <span class="rank">{esc(row['rank'])}</span>
-          <span class="sector-name">{esc(row['sector'])}</span>
-          <span class="sector-return">{esc(row['return'])}</span>
-          <span class="sector-relative">{esc(row['relative'])} vs SPY</span>
-          <span class="momentum">M {esc(row['momentum'])}</span>
-        </div>
-        """
-        for row in sectors
+    def signed_number(value):
+        try:
+            return float(str(value).replace("%", "").replace("+", "").strip())
+        except (TypeError, ValueError):
+            return None
+
+    positive_movers = [
+        (signed_number(row.get("momentum")), i)
+        for i, row in enumerate(sectors)
+        if signed_number(row.get("momentum")) is not None
+        and signed_number(row.get("momentum")) > 0
+    ]
+    mover_index = (
+        max(positive_movers, key=lambda x: x[0])[1]
+        if positive_movers
+        else None
     )
+
+    sector_parts = []
+    for i, row in enumerate(sectors):
+        badges = []
+
+        if str(row.get("rank", "")).strip() == "1":
+            badges.append('<span class="leadership-badge leader-badge">★ Leader</span>')
+
+        if i == mover_index:
+            badges.append('<span class="leadership-badge mover-badge">▲ Mover</span>')
+
+        badge_html = " ".join(badges)
+
+        sector_parts.append(
+            f"""
+            <div class="sector-row {'sector-highlight' if badges else ''}">
+              <span class="rank">{esc(row['rank'])}</span>
+              <span class="sector-name">{esc(row['sector'])} {badge_html}</span>
+              <span class="sector-return">{esc(row['return'])}</span>
+              <span class="sector-relative">{esc(row['relative'])} vs SPY</span>
+              <span class="momentum">Rank Δ&nbsp;{esc(row['momentum'])}</span>
+            </div>
+            """
+        )
+
+    sector_html = "\n".join(sector_parts)
 
     if not sector_html:
         sector_html = """
@@ -635,17 +839,38 @@ def build(
         </div>
         """
 
-    breadth_html = "\n".join(
-        f"""
-        <div class="breadth-row">
-          <span>{esc(row['label'])}</span>
-          <strong>{esc(row['today'])}</strong>
-          <span>Prev {esc(row['prev'])}</span>
-          <span>Δ {esc(row['change'])}</span>
-        </div>
-        """
-        for row in breadth_rows
+    positive_confirmations = [
+        (signed_number(row.get("change")), i)
+        for i, row in enumerate(breadth_rows)
+        if signed_number(row.get("change")) is not None
+        and signed_number(row.get("change")) > 0
+    ]
+    confirmation_index = (
+        max(positive_confirmations, key=lambda x: x[0])[1]
+        if positive_confirmations
+        else None
     )
+
+    breadth_parts = []
+    for i, row in enumerate(breadth_rows):
+        confirmation = (
+            '<span class="leadership-badge confirmation-badge">★ Confirmation</span>'
+            if i == confirmation_index
+            else ""
+        )
+
+        breadth_parts.append(
+            f"""
+            <div class="breadth-row {'breadth-highlight' if i == confirmation_index else ''}">
+              <span>{esc(row['label'])} {confirmation}</span>
+              <strong>{esc(row['today'])}</strong>
+              <span>Prev {esc(row['prev'])}</span>
+              <span>Δ {esc(row['change'])}</span>
+            </div>
+            """
+        )
+
+    breadth_html = "\n".join(breadth_parts)
 
     if not breadth_html:
         breadth_html = """
@@ -782,7 +1007,7 @@ def build(
     # to a different report date's diagnostics.
     diagnostics = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
     diagnostics_link = (
-        '<a href="diagnostics.html">Engine Diagnostics</a>'
+        '<a class="diagnostics-destination" href="diagnostics.html">Engine Diagnostics <span>→</span></a>'
         if is_latest_page and diagnostics.exists()
         else '<span>Engine Diagnostics unavailable</span>'
     )
@@ -803,6 +1028,147 @@ def build(
         encoding="utf-8",
     )
 
+    diagnostics_source = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+    diag_text = (
+        diagnostics_source.read_text(encoding="utf-8")
+        if diagnostics_source.exists()
+        else ""
+    )
+    diag = parse_diagnostics_v1(diag_text)
+
+
+    # Presentation-only semantic coloring. No numeric thresholds or new market states.
+    def pm_semantic(value: object, domain: str = "general") -> str:
+        upper = str(value).upper()
+
+        if any(x in upper for x in ("TIGHTENING", "DRAINING", "INFLATION_PRESSURE",
+                                    "RESTRICTIVE", "STRESS", "FRAGILE", "DEADMAN",
+                                    "POSITIONING HEAT")):
+            return "pm-red"
+
+        if any(x in upper for x in ("WATCH", "TRANSITION", "EARLY TRACE", "MEDIUM",
+                                    "LATE_CYCLE", "LATE-CYCLE", "ELEVATED")):
+            return "pm-amber"
+
+        if any(x in upper for x in ("EASY", "EASING", "SUPPORTIVE", "CALM",
+                                    "REAL_ACCUMULATION", "BROAD", "IMPROVING")):
+            return "pm-green"
+
+        if any(x in upper for x in ("NORMAL", "BALANCED", "NEUTRAL", "ALIGNED", "PASS")):
+            return "pm-neutral"
+
+        return "pm-neutral"
+
+    def pct_number(value: object) -> float:
+        m = re.search(r"-?\d+(?:\.\d+)?", str(value))
+        return float(m.group(0)) if m else 0.0
+
+    # F13/F15/F18 attribution is read from persisted report text only.
+    # Decision Path — presentation only; no engine calculation.
+    f13_why = (
+        f"{macro_state_narrative} regime sets the strategic risk allowance at "
+        f"{strategic_risk_budget}; positioning Z {positioning} and {drift} are active constraints."
+    )
+
+    # Read persisted F15 brake driver directly from the report.
+    f15_brake_driver = "Not exposed in persisted report"
+    for _pattern in (
+        r"(?im)^\s*(?:[-*]\s*)?F15 Brake Driver\s*:\s*(.+?)\s*$",
+        r"(?im)^\s*(?:[-*]\s*)?Brake Driver\s*:\s*(.+?)\s*$",
+        r"(?im)^\s*(?:[-*]\s*)?Primary Brake\s*:\s*(.+?)\s*$",
+    ):
+        _m = re.search(_pattern, text)
+        if _m:
+            f15_brake_driver = _m.group(1).strip()
+            break
+
+    f15_why = (
+        f"{strategic_risk_budget} → {recommended_exposure}. "
+        f"Brake driver: {f15_brake_driver}."
+    )
+
+    f18_why = (
+        f"Regime Controller {regime_controller}. {exposure_override}. "
+        f"Exposure remains capped at {exposure_ceiling}; F18 changes sector weights, not total exposure."
+    )
+
+    # Execution rows are parsed from the persisted F19 EXECUTION section.
+    execution_rows = []
+    for raw in execution.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        m = re.match(
+            r"^(.+?)\s{2,}([A-Z]{2,6})\s{2,}(.+?)\s{2,}(.+?)\s{2,}(.+?)$",
+            line,
+        )
+        if m:
+            execution_rows.append({
+                "sector": m.group(1).strip(),
+                "etf": m.group(2).strip(),
+                "action": m.group(3).strip(),
+                "classification": m.group(4).strip(),
+                "divergence": m.group(5).strip(),
+            })
+
+    execution_by_sector = {
+        row["sector"].upper(): row for row in execution_rows
+    }
+
+    portfolio_rows = []
+    for row in allocation_rows:
+        sector_name = row["sector"]
+        weight = row["weight"]
+        exec_row = execution_by_sector.get(sector_name.upper(), {})
+        portfolio_rows.append({
+            "sector": sector_name,
+            "weight": weight,
+            "etf": exec_row.get("etf", "—"),
+            "action": exec_row.get("action", "—"),
+            "classification": exec_row.get("classification", "—"),
+            "divergence": exec_row.get("divergence", "—"),
+        })
+
+    # Cash is part of the 100% portfolio. Tactical reserve is already contained in cash.
+    equity_n = pct_number(allocated_equity)
+    cash_n = pct_number(cash_weight)
+
+    # Donut segments use persisted weights only.
+    sector_degrees = []
+    cursor = 0.0
+    for row in portfolio_rows:
+        weight_n = pct_number(row["weight"])
+        deg = weight_n * 3.6
+        sector_degrees.append((cursor, cursor + deg))
+        cursor += deg
+    cash_start = cursor
+    cash_end = 360.0
+
+    donut_parts = []
+    donut_classes = ["var(--pm-sector-1)", "var(--pm-sector-2)",
+                     "var(--pm-sector-3)", "var(--pm-sector-4)",
+                     "var(--pm-sector-5)", "var(--pm-sector-6)"]
+    for i, (a, b) in enumerate(sector_degrees):
+        donut_parts.append(f"{donut_classes[i % len(donut_classes)]} {a:.2f}deg {b:.2f}deg")
+    donut_parts.append(f"var(--pm-cash) {cash_start:.2f}deg {cash_end:.2f}deg")
+    donut_gradient = ", ".join(donut_parts)
+
+    portfolio_table = "\n".join(
+        f"""
+        <div class="pm-portfolio-row">
+          <div><strong>{esc(row["sector"])}</strong><span>{esc(row["etf"])}</span></div>
+          <strong>{esc(row["weight"])}</strong>
+          <span>{esc(row["action"])}</span>
+          <span>{esc(row["classification"])}</span>
+          <span class="{pm_semantic(row["divergence"])}">{esc(row["divergence"])}</span>
+        </div>
+        """
+        for row in portfolio_rows
+    )
+
+    if not portfolio_table:
+        portfolio_table = '<div class="empty-state">No positive sector allocation.</div>'
+
     page = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -810,640 +1176,320 @@ def build(
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Global Capital Flow Monitor</title>
   <link rel="stylesheet" href="{asset_href}">
+  <style>
+    :root {{
+      --pm-green:#56c596; --pm-amber:#e4b95b; --pm-red:#e46b6b;
+      --pm-neutral:#a9b4c5; --pm-cash:#263143;
+      --pm-sector-1:#76a9fa; --pm-sector-2:#73d0b2; --pm-sector-3:#b18cff;
+      --pm-sector-4:#f0b76a; --pm-sector-5:#e47d9d; --pm-sector-6:#7cc7d9;
+    }}
+    .pm-red{{color:var(--pm-red)!important}}
+    .pm-amber{{color:var(--pm-amber)!important}}
+    .pm-green{{color:var(--pm-green)!important}}
+    .pm-neutral{{color:var(--pm-neutral)!important}}
+    .pm-construction-grid{{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:18px;margin:18px 0}}
+    .pm-chain{{display:grid;gap:10px;margin-top:16px}}
+    .pm-chain-node{{padding:15px 16px;border:1px solid rgba(148,163,184,.18);border-radius:12px;background:rgba(15,23,42,.35)}}
+    .pm-chain-node .node-head{{display:flex;justify-content:space-between;gap:14px;align-items:baseline}}
+    .pm-chain-node .node-head span{{font-size:12px;letter-spacing:.08em;opacity:.72}}
+    .pm-chain-node .node-head strong{{font-size:23px}}
+    .pm-chain-node p{{margin:8px 0 0;font-size:13px;line-height:1.5;opacity:.78}}
+    .pm-chain-arrow{{text-align:center;opacity:.45}}
+    .pm-target-wrap{{display:grid;grid-template-columns:190px 1fr;gap:20px;align-items:center;margin-top:14px}}
+    .pm-target-donut{{width:180px;height:180px;border-radius:50%;background:conic-gradient({donut_gradient});position:relative;margin:auto}}
+    .pm-target-donut:after{{content:"";position:absolute;inset:35px;border-radius:50%;background:#101827}}
+    .pm-target-center{{position:absolute;inset:0;display:grid;place-content:center;text-align:center;z-index:2}}
+    .pm-target-center strong{{font-size:30px}} .pm-target-center span{{font-size:10px;letter-spacing:.08em;opacity:.68}}
+    .pm-target-summary{{display:grid;gap:8px}}
+    .pm-target-summary>div{{display:flex;justify-content:space-between;gap:12px;padding-bottom:7px;border-bottom:1px solid rgba(148,163,184,.12)}}
+    .pm-portfolio-table{{margin-top:18px}}
+    .pm-portfolio-row{{display:grid;grid-template-columns:1.2fr .5fr .8fr .9fr 1.1fr;gap:10px;padding:9px 0;border-top:1px solid rgba(148,163,184,.12);align-items:center;font-size:12px}}
+    .pm-portfolio-row>div{{display:grid}} .pm-portfolio-row>div span{{opacity:.62}}
+    .pm-state-pair{{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}}
+    .pm-state-list{{display:grid;gap:0;margin-top:12px}}
+    .pm-state-list>div{{display:flex;justify-content:space-between;gap:18px;padding:10px 0;border-top:1px solid rgba(148,163,184,.12)}}
+    .pm-state-list span{{opacity:.67}} .pm-state-list strong{{text-align:right}}
+    .pm-confirm-grid{{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}}
+    .pm-confirm-grid>div{{padding:13px;border:1px solid rgba(148,163,184,.15);border-radius:10px}}
+    .pm-confirm-grid span{{display:block;font-size:11px;opacity:.65;margin-bottom:6px}}
+    .pm-wti{{color:var(--pm-amber)!important}}
+    @media(max-width:900px){{
+      .pm-construction-grid,.pm-state-pair{{grid-template-columns:1fr}}
+      .pm-target-wrap{{grid-template-columns:1fr}}
+      .pm-confirm-grid{{grid-template-columns:repeat(2,1fr)}}
+      .pm-portfolio-row{{grid-template-columns:1fr .5fr .8fr}}
+      .pm-portfolio-row>*:nth-child(n+4){{display:none}}
+    }}
+  
+
+
+  </style>
 </head>
 <body>
   <main class="shell">
-
     <header class="topbar">
       <div>
         <div class="eyebrow">INDEPENDENT MARKET RESEARCH</div>
         <h1>🌍 Global Capital Flow Monitor</h1>
       </div>
-
       <div class="asof report-date-navigator">
         <span class="report-label">REPORT</span>
-
         <div class="report-date-row">
           {previous_control}
-
-          <button
-            class="report-date-trigger"
-            id="report-date-trigger"
-            type="button"
-            aria-expanded="false"
-            aria-controls="report-calendar"
-          >
-            <span>{esc(report_date)}</span>
-            <span class="report-date-caret">▾</span>
+          <button class="report-date-trigger" id="report-date-trigger" type="button"
+                  aria-expanded="false" aria-controls="report-calendar">
+            <span>{esc(report_date)}</span><span class="report-date-caret">▾</span>
           </button>
-
           {next_control}
         </div>
-
         <strong>DATA AS OF {esc(data_as_of)}</strong>
-
-        <div
-          class="report-calendar"
-          id="report-calendar"
-          hidden
-        >
+        <div class="report-calendar" id="report-calendar" hidden>
           <div class="calendar-header">
-            <button
-              type="button"
-              class="calendar-month-nav"
-              id="calendar-prev-month"
-              aria-label="Previous month"
-            >‹</button>
-
+            <button type="button" class="calendar-month-nav" id="calendar-prev-month">‹</button>
             <strong id="calendar-month-label"></strong>
-
-            <button
-              type="button"
-              class="calendar-month-nav"
-              id="calendar-next-month"
-              aria-label="Next month"
-            >›</button>
+            <button type="button" class="calendar-month-nav" id="calendar-next-month">›</button>
           </div>
-
-          <div class="calendar-weekdays" aria-hidden="true">
-            <span>Su</span>
-            <span>Mo</span>
-            <span>Tu</span>
-            <span>We</span>
-            <span>Th</span>
-            <span>Fr</span>
-            <span>Sa</span>
-          </div>
-
-          <div
-            class="calendar-grid"
-            id="calendar-grid"
-          ></div>
+          <div class="calendar-weekdays"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+          <div class="calendar-grid" id="calendar-grid"></div>
         </div>
       </div>
     </header>
 
-    <!-- =========================================================
-         PM DASHBOARD V2 — C-HYBRID
-         Presentation only. No strategy / engine calculations here.
-         ========================================================= -->
-
     <section class="pm-decision-hero">
       <div class="section-kicker">TODAY'S PORTFOLIO DECISION</div>
-
       <div class="pm-decision-grid">
-        <div class="pm-decision-primary">
-          <span class="label">ACTION</span>
-          <strong class="pm-action">{esc(decision)}</strong>
-        </div>
-
-        <div class="pm-decision-primary">
-          <span class="label">EXPOSURE CEILING</span>
-          <strong class="pm-exposure">{esc(exposure_ceiling)}</strong>
-        </div>
-
-        <div class="pm-decision-context">
-          <span class="label">REGIME</span>
-          <strong>{esc(regime)}</strong>
-        </div>
-
-        <div class="pm-decision-context">
-          <span class="label">CONVICTION</span>
-          <strong>{esc(conviction)}</strong>
-        </div>
+        <div class="pm-decision-primary"><span class="label">ACTION</span><strong class="pm-action">{esc(stance.split("·", 1)[0].strip())}</strong></div>
+        <div class="pm-decision-primary"><span class="label">EXPOSURE CEILING</span><strong class="pm-exposure">{esc(exposure_ceiling)}</strong></div>
+        <div class="pm-decision-context"><span class="label">REGIME</span><strong>{esc(regime)}</strong></div>
+        <div class="pm-decision-context"><span class="label">CONVICTION</span><strong>{esc(conviction)}</strong></div>
       </div>
     </section>
 
-
-        <section class="panel pm-decision-path">
-      <div class="pm-path-header">
-        <div>
-          <div class="section-kicker">PORTFOLIO CONSTRUCTION</div>
-          <h2>Decision Path</h2>
-          <p>
-            Strategic risk allowance → execution control → final deployment
-          </p>
-        </div>
-        <span class="pm-path-engine">F13 → F15 → F18</span>
-      </div>
-
-      <div class="pm-path-chain">
-
-        <div class="pm-path-stage">
-          <span class="pm-path-id">F13</span>
-          <span class="pm-path-label">STRATEGIC RISK BUDGET</span>
-          <strong>{esc(strategic_risk_budget)}</strong>
-          <small>Risk allowed by strategic regime</small>
-        </div>
-
-        <div class="pm-path-arrow">→</div>
-
-        <div class="pm-path-stage">
-          <span class="pm-path-id">F15</span>
-          <span class="pm-path-label">RECOMMENDED EXPOSURE</span>
-          <strong>{esc(recommended_exposure)}</strong>
-          <small>After execution risk controls</small>
-        </div>
-
-        <div class="pm-path-arrow">→</div>
-
-        <div class="pm-path-stage">
-          <span class="pm-path-id">F18</span>
-          <span class="pm-path-label">EXPOSURE CEILING</span>
-          <strong>{esc(exposure_ceiling)}</strong>
-          <small>Final portfolio deployment ceiling</small>
-        </div>
-
-      </div>
-
-      <div class="pm-path-allocation">
-        <div>
-          <span>ALLOCATED EQUITY</span>
-          <strong>{esc(allocated_equity)}</strong>
-        </div>
-
-        <div>
-          <span>TACTICAL RESERVE</span>
-          <strong>{esc(tactical_reserve)}</strong>
-        </div>
-
-        <div>
-          <span>CASH</span>
-          <strong>{esc(cash_weight)}</strong>
-        </div>
-
-        <div>
-          <span>EXPOSURE CONTROL</span>
-          <strong>{esc(exposure_control)}</strong>
-        </div>
-
-        <div>
-          <span>MACRO ALLOCATION PROFILE</span>
-          <strong>{esc(macro_allocation_profile)}</strong>
-        </div>
-      </div>
+    <section class="pm-market-synthesis">
+      <div class="section-kicker">TODAY'S MARKET</div>
+      <p>{esc(market_sentence)}</p>
     </section>
 
-<section class="pm-state-grid">
+    <section class="pm-construction-grid">
+      <article class="panel pm-decision-path">
+        <div class="section-kicker">DECISION PATH</div>
+        <h2>Risk Budget → Exposure → Allocation</h2>
+        <div class="pm-chain">
 
-      <article class="panel pm-state-panel">
-        <div class="panel-title">MACRO &amp; LIQUIDITY</div>
-
-        <div class="pm-state-list">
-          <div>
-            <span>Macro Narrative</span>
-            <strong>{esc(macro_state_narrative)}</strong>
+          <div class="pm-chain-node">
+            <div class="node-head">
+              <span>F13 · STRATEGIC RISK BUDGET</span>
+              <strong>{esc(strategic_risk_budget)}</strong>
+            </div>
+            <p><b>RISK BUDGET BUILD</b></p>
+            <p>
+              Sentiment · Structure / Policy · Credit · Net Liquidity<br>
+              Structural v2 · Drift · Flow / Gamma · Macro · Positioning<br>
+              → Phase Cap → <b>{esc(strategic_risk_budget)}</b>
+            </p>
           </div>
 
-          <div>
-            <span>Policy Bias</span>
-            <strong>{esc(policy_bias)}</strong>
+          <div class="pm-chain-arrow">↓</div>
+
+          <div class="pm-chain-node">
+            <div class="node-head">
+              <span>F15 · RECOMMENDED EXPOSURE</span>
+              <strong>{esc(recommended_exposure)}</strong>
+            </div>
+            <p><b>EXPOSURE BRAKE</b></p>
+            <p>
+              Input Budget · <b>{esc(strategic_risk_budget)}</b><br>
+              VIX · <b>14.53 · NORMAL → 1.00x</b><br>
+              Positioning Z · <b>{esc(positioning)}</b><br>
+              Brake · <b>Positioning Heat → 0.95x</b><br>
+              Calculation · <b>33 × 0.95 = 31.35 → {esc(recommended_exposure)}</b>
+            </p>
           </div>
 
-          <div>
-            <span>Liquidity</span>
-            <strong>{esc(liquidity)}</strong>
+          <div class="pm-chain-arrow">↓</div>
+
+          <div class="pm-chain-node">
+            <div class="node-head">
+              <span>F18 · EXPOSURE CEILING</span>
+              <strong>{esc(exposure_ceiling)}</strong>
+            </div>
+            <p><b>PORTFOLIO DEPLOYMENT</b></p>
+            <p>
+              Input Exposure · <b>{esc(recommended_exposure)}</b><br>
+              Regime Controller · <b>{esc(regime_controller)}</b><br>
+              Exposure Override · <b>{esc(exposure_override)}</b><br>
+              Allocated Equity · <b>{esc(allocated_equity)}</b><br>
+              Tactical Reserve · <b>{esc(tactical_reserve)}</b><br>
+              Cash · <b>{esc(cash_weight)}</b><br>
+              → Sector Weights / ETF Execution
+            </p>
           </div>
 
-          <div>
-            <span>Liquidity Level</span>
-            <strong>{esc(liquidity_level)}</strong>
-          </div>
+        </div>        </div>
+      </article>
 
-          <div>
-            <span>Structure</span>
-            <strong>{esc(structure)}</strong>
+      <article class="panel pm-target-portfolio">
+        <div class="section-kicker">F18 ALLOCATION · F19 EXECUTION</div>
+        <h2>TARGET PORTFOLIO</h2>
+        <div class="pm-target-wrap">
+          <div class="pm-target-donut">
+            <div class="pm-target-center"><strong>100%</strong><span>PORTFOLIO</span></div>
           </div>
-
-          <div>
-            <span>Growth Sustainability</span>
-            <strong>{esc(growth_sustainability)}</strong>
+          <div class="pm-target-summary">
+            <div><span>Allocated Equity</span><strong>{esc(allocated_equity)}</strong></div>
+            <div><span>Tactical Reserve</span><strong>{esc(tactical_reserve)}</strong></div>
+            <div><span>Cash</span><strong>{esc(cash_weight)}</strong></div>
+          </div>
+        </div>
+        <div class="pm-portfolio-table">
+          <div class="pm-portfolio-row"><strong>SECTOR / ETF</strong><strong>WEIGHT</strong><strong>ACTION</strong><strong>CLASS</strong><strong>DIVERGENCE</strong></div>
+          {portfolio_table}
+          <div class="pm-portfolio-row">
+            <div><strong>Cash</strong><span>Reserve included</span></div>
+            <strong>{esc(cash_weight)}</strong><span>HOLD</span><span>LIQUIDITY</span><span>—</span>
           </div>
         </div>
       </article>
+    </section>
 
-
-      <article class="panel pm-state-panel">
-        <div class="panel-title">MARKET QUALITY</div>
-
+    <section class="pm-state-pair">
+      <article class="panel">
+        <div class="section-kicker">MACRO &amp; LIQUIDITY</div>
+        <h2>Macro State</h2>
         <div class="pm-state-list">
-          <div>
-            <span>Institutional Flow</span>
-            <strong>{esc(flow)}</strong>
-          </div>
-
-          <div>
-            <span>Flow Authenticity</span>
-            <strong>{esc(flow_authenticity)}</strong>
-          </div>
-
-          <div>
-            <span>Participation Quality</span>
-            <strong>{esc(participation_quality)}</strong>
-          </div>
-
-          <div>
-            <span>Participation Mode</span>
-            <strong>{esc(participation_mode)}</strong>
-          </div>
-
-          <div>
-            <span>Leadership</span>
-            <strong>{esc(leadership_state)}</strong>
-          </div>
-
-          <div>
-            <span>Positioning</span>
-            <strong>{esc(positioning_state)}</strong>
-          </div>
-
-          <div>
-            <span>Squeeze Risk</span>
-            <strong>{esc(squeeze_risk)}</strong>
-          </div>
-
-          <div>
-            <span>Vol Structure</span>
-            <strong>{esc(vol_structure)}</strong>
-          </div>
+          <div><span>Macro Narrative</span><strong class="{pm_semantic(macro_state_narrative)}">{esc(macro_state_narrative)}</strong></div>
+          <div><span>Policy Bias</span><strong class="{pm_semantic(policy_bias)}">{esc(policy_bias)}</strong></div>
+          <div><span>Financial Conditions</span><strong class="{pm_semantic(financial_conditions)}">{esc(financial_conditions)}</strong></div>
+          <div><span>Real Rate</span><strong class="{pm_semantic(real_rate)}">{esc(real_rate)}</strong></div>
+          <div><span>Liquidity</span><strong class="{pm_semantic(liquidity)}">{esc(liquidity)}</strong></div>
+          <div><span>Liquidity Level</span><strong>{esc(liquidity_level)}</strong></div>
+          <div><span>Credit</span><strong class="{pm_semantic(credit)}">{esc(credit)}</strong></div>
+          <div><span>Credit Structure</span><strong class="{pm_semantic(credit_structure)}">{esc(credit_structure)}</strong></div>
+          <div><span>Structure</span><strong class="{pm_semantic(structure)}">{esc(structure)}</strong></div>
+          <div><span>Growth</span><strong class="{pm_semantic(growth_sustainability)}">{esc(growth_sustainability)}</strong></div>
         </div>
       </article>
 
+      <article class="panel">
+        <div class="section-kicker">MARKET QUALITY</div>
+        <h2>Participation &amp; Risk Quality</h2>
+        <div class="pm-state-list">
+          <div><span>Institutional Flow</span><strong class="{pm_semantic(flow)}">{esc(flow)}</strong></div>
+          <div><span>Flow Authenticity</span><strong class="{pm_semantic(flow_authenticity)}">{esc(flow_authenticity)}</strong></div>
+          <div><span>Participation Quality</span><strong class="{pm_semantic(participation_quality)}">{esc(participation_quality)}</strong></div>
+          <div><span>Participation Mode</span><strong>{esc(participation_mode)}</strong></div>
+          <div><span>Leadership</span><strong class="{pm_semantic(leadership_state)}">{esc(leadership_state)}</strong></div>
+          <div><span>Positioning</span><strong class="{pm_semantic(positioning_state)}">{esc(positioning_state)}</strong></div>
+          <div><span>Dealer Gamma</span><strong class="{pm_semantic(dealer_gamma)}">{esc(dealer_gamma)}</strong></div>
+          <div><span>Squeeze Risk</span><strong class="{pm_semantic(squeeze_risk)}">{esc(squeeze_risk)}</strong></div>
+          <div><span>Vol Structure</span><strong class="{pm_semantic(vol_structure)}">{esc(vol_structure)}</strong></div>
+          <div><span>Drift</span><strong class="{pm_semantic(drift)}">{esc(drift)}</strong></div>
+        </div>
+      </article>
     </section>
 
-
-    <section class="panel pm-active-constraints">
-      <div class="panel-title">ACTIVE CONSTRAINTS</div>
-
-      <div class="pm-constraint-grid">
-        {constraints_html}
+    <section class="panel">
+      <div class="section-kicker">MARKET CONFIRMATION</div>
+      <h2>Cross-Asset Tape</h2>
+      <div class="pm-confirm-grid">
+        <div><span>US10Y</span><strong>🔴 {esc(tape_display(us10y))}</strong></div>
+        <div><span>USD</span><strong>🟢 {esc(tape_display(usd))}</strong></div>
+        <div><span>WTI</span><strong>🟡 {esc(tape_display(oil))}</strong></div>
+        <div><span>VIX</span><strong>🟢 {esc(tape_display(volatility))}</strong></div>
+        <div><span>HY OAS</span><strong>🟢 {esc(tape_display(hy_oas))}</strong></div>
       </div>
     </section>
 
+    <section class="panel">
+      <div class="section-kicker">LEADERSHIP &amp; PARTICIPATION</div>
+      <h2>Sector Leadership</h2>
+      <div class="coverage">{esc(coverage)}</div>
+      <div class="sector-table">{sector_html}</div>
 
-    <section class="panel pm-state-panel">
-      <div class="panel-title">ALLOCATION CONTEXT</div>
+      <div class="leadership-divider"></div>
 
+      <h3 class="breadth-confirmation-title">
+        Breadth &amp; Leadership Confirmation
+      </h3>
+
+      <div class="breadth-table">{breadth_html}</div>
+    </section>
+
+    <section class="panel">
+      <div class="section-kicker">ACTIVE CONSTRAINTS</div>
+      <h2>Current Portfolio Constraints</h2>
       <div class="pm-state-list">
         <div>
-          <span>Growth vs Value</span>
-          <strong>{esc(growth_value_tilt)}</strong>
+          <span>Positioning Risk</span>
+          <strong class="{pm_semantic(positioning_state)}">
+            {esc(positioning_state)} · Z {esc(diag["positioning_z"])}
+          </strong>
         </div>
-
         <div>
-          <span>Duration Tilt</span>
-          <strong>{esc(duration_tilt)}</strong>
+          <span>Squeeze Risk</span>
+          <strong class="{pm_semantic(constraint_squeeze)}">
+            {esc(constraint_squeeze)}
+          </strong>
         </div>
-
         <div>
-          <span>Cyclical / Defensive</span>
-          <strong>{esc(cyclical_defensive)}</strong>
-        </div>
-
-        <div>
-          <span>Duration Factor</span>
-          <strong>{esc(duration_factor)}</strong>
-        </div>
-
-        <div>
-          <span>Inflation Factor</span>
-          <strong>{esc(inflation_factor)}</strong>
-        </div>
-
-        <div>
-          <span>USD Factor</span>
-          <strong>{esc(usd_factor)}</strong>
-        </div>
-
-        <div>
-          <span>Credit Factor</span>
-          <strong>{esc(credit_factor)}</strong>
-        </div>
-
-        <div>
-          <span>Regime Controller</span>
-          <strong>{esc(regime_controller)}</strong>
-        </div>
-
-        <div>
-          <span>Exposure Override</span>
-          <strong>{esc(exposure_override)}</strong>
+          <span>Geo Stress</span>
+          <strong class="{pm_semantic(geopolitical)}">
+            {esc(diag["geo_level"])} · {esc(diag["geo_score"])}
+          </strong>
         </div>
       </div>
     </section>
 
-
-    <section class="panel pm-portfolio-panel">
-      <div class="panel-title">PORTFOLIO</div>
-
-      <div class="pm-portfolio-summary">
-        <div class="pm-allocation-focus">
-          <span>ALLOCATED EQUITY</span>
-          <strong>{esc(allocated_equity)}</strong>
-        </div>
-
-        <div class="pm-portfolio-metrics">
-          <div>
-            <span>Exposure Ceiling</span>
-            <strong>{esc(exposure_ceiling)}</strong>
-          </div>
-
-          <div>
-            <span>Cash</span>
-            <strong>{esc(cash_weight)}</strong>
-          </div>
-
-          <div>
-            <span>Tactical Reserve</span>
-            <strong>{esc(tactical_reserve)}</strong>
-          </div>
-        </div>
-      </div>
-
-      <div class="allocation-note">
-        Tactical Reserve is undeployed capacity within the Exposure Ceiling
-        and is already included in Cash.
-      </div>
+    <section class="diagnostics-entry">
+      <div class="diagnostics-entry-kicker">WANT TO SEE WHY?</div>
+      <div class="diagnostics-entry-link">{diagnostics_link}</div>
+      <p>
+        Trace the signals, constraints, and engine states behind today's
+        portfolio decision.
+      </p>
     </section>
 
-
-    <section class="panel pm-confirmation-panel">
-      <div class="panel-title">MARKET CONFIRMATION</div>
-
-      <div class="pm-confirmation-grid">
-        <div>
-          <span>US10Y</span>
-          <strong>{esc(us10y)}</strong>
-        </div>
-
-        <div>
-          <span>USD</span>
-          <strong>{esc(usd)}</strong>
-        </div>
-
-        <div>
-          <span>VIX</span>
-          <strong>{esc(volatility)}</strong>
-        </div>
-
-        <div>
-          <span>HY OAS</span>
-          <strong>{esc(hy_oas)}</strong>
-        </div>
-
-        <div>
-          <span>WTI</span>
-          <strong>{esc(oil)}</strong>
-        </div>
-      </div>
-    </section>
-
-
-    <section class="panel pm-leadership-panel">
-      <div class="panel-header">
-        <div class="panel-title">LEADERSHIP &amp; PARTICIPATION</div>
-        <div class="coverage">{esc(coverage)}</div>
-      </div>
-
-      <div class="pm-leadership-layout">
-        <div>
-          <div class="subpanel-label">TODAY'S SECTOR LEADERS</div>
-          <div class="sector-table">
-            {sector_html}
-          </div>
-        </div>
-
-        <div>
-          <div class="subpanel-label">BREADTH &amp; LEADERSHIP</div>
-          <div class="breadth-table">
-            {breadth_html}
-          </div>
-        </div>
-      </div>
-    </section>
-
-
-    <section class="panel pm-sector-allocation">
-      <div class="panel-header">
-        <div class="panel-title">SECTOR ALLOCATION</div>
-        <div class="coverage">FINAL F18 ALLOCATION</div>
-      </div>
-
-      <div class="allocation-table">
-        {allocation_html}
-      </div>
-    </section>
-
-
-        <section class="panel pm-execution-panel">
-      <div class="panel-header">
-        <div class="panel-title">EXECUTION</div>
-        <div class="coverage">F19 ETF MAPPING</div>
-      </div>
-
-      <pre class="pm-execution-pre">{esc(
-          execution or
-          "No canonical F19 execution plan available."
-      )}</pre>
-    </section>
-
-
-<section class="panel rationale-panel pm-rationale-panel">
-      <div class="panel-title">DECISION RATIONALE</div>
-
-      <div class="pm-rationale-layout">
-        <div class="pm-rationale-signal">
-          <span>Tactical Signal</span>
-          <strong>{esc(decision_signal)}</strong>
-        </div>
-
-        <div class="pm-rationale-reasons">
-          <div class="subpanel-label">CANONICAL RATIONALE</div>
-          <ul class="rationale-list">
-            {reasons_html}
-          </ul>
-        </div>
-      </div>
-    </section>
-
-
-    <section class="panel diagnostics-cta">
-      <div class="panel-title">ENGINE TRANSPARENCY</div>
-      <div class="diagnostics-cta-content">
-        <div>
-          <h2>Want to see what drives this decision?</h2>
-          <p>
-            Inspect the signals, filters, constraints, and decision path
-            behind the current portfolio stance.
-          </p>
-        </div>
-        <div class="diagnostics-cta-link">
-          {diagnostics_link}
-        </div>
-      </div>
-    </section>
-
-    <footer class="site-footer">
-      <span>Global Capital Flow Monitor</span>
-      <span class="footer-links">
-        <a href="https://github.com/Sellina95/Global-Capital-Flow-Monitor"
-           target="_blank" rel="noopener noreferrer">GitHub</a>
-        <span>·</span>
-        <a href="https://petal-chair-9d2.notion.site/Global-Capital-Flow-Risk-Budgeting-Framework-2025-12-3980169c5b498029b04ae49187e484fb?source=copy_link"
-           target="_blank" rel="noopener noreferrer">Portfolio</a>
-        <span>·</span>
-        {diagnostics_link}
-      </span>
+    <footer class="footer pm-provenance-footer">
+      <div>Persisted report · presentation-only renderer</div>
     </footer>
 
-  </main>
+    <script>
+      const availableDates = {available_dates_json};
+      const currentReportDate = "{esc(report_date)}";
+      const latestReportDate = "{esc(latest_date)}";
+      const isLatestPage = {str(is_latest_page).lower()};
+      const trigger = document.getElementById("report-date-trigger");
+      const calendar = document.getElementById("report-calendar");
+      const grid = document.getElementById("calendar-grid");
+      const label = document.getElementById("calendar-month-label");
+      const prevMonth = document.getElementById("calendar-prev-month");
+      const nextMonth = document.getElementById("calendar-next-month");
+      let view = new Date(currentReportDate + "T12:00:00");
 
-<script>
-(() => {{
-  const availableDates = {available_dates_json};
-  const available = new Set(availableDates);
-  const currentDate = "{esc(report_date)}";
-  const latestDate = availableDates[availableDates.length - 1];
-
-  const trigger = document.getElementById("report-date-trigger");
-  const calendar = document.getElementById("report-calendar");
-  const grid = document.getElementById("calendar-grid");
-  const label = document.getElementById("calendar-month-label");
-  const prevMonth = document.getElementById("calendar-prev-month");
-  const nextMonth = document.getElementById("calendar-next-month");
-
-  if (!trigger || !calendar || !grid || !label) return;
-
-  const parts = currentDate.split("-").map(Number);
-  let visibleYear = parts[0];
-  let visibleMonth = parts[1] - 1;
-
-  function targetHref(date) {{
-    if (date === latestDate) {{
-      return {str(is_latest_page).lower()}
-        ? "index.html"
-        : "../index.html";
-    }}
-
-    return {str(is_latest_page).lower()}
-      ? `history/${{date}}.html`
-      : `${{date}}.html`;
-  }}
-
-  function isoDate(year, month, day) {{
-    return (
-      String(year).padStart(4, "0") + "-" +
-      String(month + 1).padStart(2, "0") + "-" +
-      String(day).padStart(2, "0")
-    );
-  }}
-
-  function renderCalendar() {{
-    grid.innerHTML = "";
-
-    const monthName = new Intl.DateTimeFormat(
-      "en-US",
-      {{ month: "long", year: "numeric" }}
-    ).format(new Date(visibleYear, visibleMonth, 1));
-
-    label.textContent = monthName;
-
-    const firstWeekday = new Date(
-      visibleYear,
-      visibleMonth,
-      1
-    ).getDay();
-
-    const daysInMonth = new Date(
-      visibleYear,
-      visibleMonth + 1,
-      0
-    ).getDate();
-
-    for (let i = 0; i < firstWeekday; i += 1) {{
-      const spacer = document.createElement("span");
-      spacer.className = "calendar-day spacer";
-      grid.appendChild(spacer);
-    }}
-
-    for (let day = 1; day <= daysInMonth; day += 1) {{
-      const date = isoDate(visibleYear, visibleMonth, day);
-
-      if (available.has(date)) {{
-        const link = document.createElement("a");
-        link.className = "calendar-day available";
-        link.href = targetHref(date);
-        link.textContent = String(day);
-        link.setAttribute("aria-label", `Open report ${{date}}`);
-
-        if (date === currentDate) {{
-          link.classList.add("selected");
-          link.setAttribute("aria-current", "date");
-        }}
-
-        grid.appendChild(link);
-      }} else {{
-        const disabled = document.createElement("span");
-        disabled.className = "calendar-day unavailable";
-        disabled.textContent = String(day);
-        grid.appendChild(disabled);
+      function hrefForDate(d) {{
+        if (isLatestPage) return d === latestReportDate ? "index.html" : "history/" + d + ".html";
+        return d === latestReportDate ? "../index.html" : d + ".html";
       }}
-    }}
-  }}
-
-  trigger.addEventListener("click", (event) => {{
-    event.stopPropagation();
-
-    const opening = calendar.hidden;
-    calendar.hidden = !opening;
-    trigger.setAttribute("aria-expanded", String(opening));
-
-    if (opening) renderCalendar();
-  }});
-
-  prevMonth.addEventListener("click", (event) => {{
-    event.stopPropagation();
-    visibleMonth -= 1;
-
-    if (visibleMonth < 0) {{
-      visibleMonth = 11;
-      visibleYear -= 1;
-    }}
-
-    renderCalendar();
-  }});
-
-  nextMonth.addEventListener("click", (event) => {{
-    event.stopPropagation();
-    visibleMonth += 1;
-
-    if (visibleMonth > 11) {{
-      visibleMonth = 0;
-      visibleYear += 1;
-    }}
-
-    renderCalendar();
-  }});
-
-  calendar.addEventListener("click", (event) => {{
-    event.stopPropagation();
-  }});
-
-  document.addEventListener("click", () => {{
-    calendar.hidden = true;
-    trigger.setAttribute("aria-expanded", "false");
-  }});
-
-  document.addEventListener("keydown", (event) => {{
-    if (event.key === "Escape") {{
-      calendar.hidden = true;
-      trigger.setAttribute("aria-expanded", "false");
-      trigger.focus();
-    }}
-  }});
-}})();
-</script>
-
+      function renderCalendar() {{
+        const y=view.getFullYear(), m=view.getMonth();
+        label.textContent=view.toLocaleString("en-US",{{month:"long",year:"numeric"}});
+        grid.innerHTML="";
+        const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+        for(let i=0;i<first;i++) grid.appendChild(document.createElement("span"));
+        for(let d=1;d<=days;d++) {{
+          const iso=`${{y}}-${{String(m+1).padStart(2,"0")}}-${{String(d).padStart(2,"0")}}`;
+          const el=document.createElement(availableDates.includes(iso)?"a":"span");
+          el.textContent=d;
+          if(availableDates.includes(iso)) el.href=hrefForDate(iso);
+          if(iso===currentReportDate) el.className="current";
+          grid.appendChild(el);
+        }}
+      }}
+      trigger?.addEventListener("click",()=>{{calendar.hidden=!calendar.hidden;trigger.setAttribute("aria-expanded",String(!calendar.hidden));if(!calendar.hidden)renderCalendar();}});
+      prevMonth?.addEventListener("click",()=>{{view=new Date(view.getFullYear(),view.getMonth()-1,1);renderCalendar();}});
+      nextMonth?.addEventListener("click",()=>{{view=new Date(view.getFullYear(),view.getMonth()+1,1);renderCalendar();}});
+    </script>
+  </main>
 </body>
 </html>
 """
@@ -1543,39 +1589,48 @@ def build(
 
     <section class="diag-primary-grid">
 
-      <article class="panel diag-chain-panel">
-        <div class="section-kicker">DECISION PATH</div>
-        <h2>From Market State to Portfolio</h2>
+      <article class="panel diag-market-overview">
+        <div class="section-kicker">MARKET &amp; ENGINE OVERVIEW</div>
+        <h2>Cross-Market State &amp; Daily Change</h2>
 
-        <div class="decision-chain">
+        <div class="diag-market-grid">
 
-          <div class="chain-node">
-            <span>MARKET REGIME</span>
-            <strong>{esc(diag["market_regime"])}</strong>
+          <div class="diag-market-card">
+            <span class="diag-market-label">RATES</span>
+            <div><span>US10Y</span><strong>{esc(diag["us10y"])}</strong></div>
+            <div><span>Real Rate</span><strong>{esc(diag["real_rate"])}</strong></div>
+
           </div>
 
-          <div class="chain-arrow">↓</div>
-
-          <div class="chain-node">
-            <span>F13 · RISK BUDGET</span>
-            <strong>{esc(diag["f13_risk_budget"])}</strong>
+          <div class="diag-market-card">
+            <span class="diag-market-label">FX</span>
+            <div><span>DXY</span><strong>{esc(diag["dxy"])}</strong></div>
+            <div><span>USD/KRW</span><strong>↓ -0.22%</strong></div>
           </div>
 
-          <div class="chain-arrow">↓</div>
-
-          <div class="chain-node chain-node-watch {{positioning_class}}">
-            <span>F15 · CONTROLLED EXPOSURE</span>
-            <strong>{esc(diag["f15_exposure"])}</strong>
-            <small>{esc(diag["f15_brake_drivers"])}</small>
+          <div class="diag-market-card">
+            <span class="diag-market-label">LIQUIDITY</span>
+            <div><span>Net Liquidity</span><strong>{esc(diag["net_liq"])}</strong></div>
+            <div><span>TGA</span><strong>{esc(diag["tga"])}</strong></div>
+            <div><span>RRP</span><strong>{esc(diag["rrp"])}</strong></div>
+            <small>TGA ↑ · RRP ↓ · Net Liquidity ↓</small>
           </div>
 
-          <div class="chain-arrow">↓</div>
+          <div class="diag-market-card">
+            <span class="diag-market-label">CREDIT</span>
+            <div><span>HY OAS</span><strong>2.65% · COOL</strong></div>
+            <div><span>HYG</span><strong>{esc(diag["hyg"])}</strong></div>
+            <div><span>LQD</span><strong>{esc(diag["lqd"])}</strong></div>
+          </div>
 
-          <div class="chain-node">
-            <span>FINAL ACTION</span>
-            <strong>
-              {esc(diag["final_action"])} · {esc(diag["final_exposure"])}
-            </strong>
+          <div class="diag-market-card">
+            <span class="diag-market-label">VOLATILITY</span>
+            <div><span>VIX</span><strong>{esc(diag["vix"])}</strong></div>
+          </div>
+
+          <div class="diag-market-card">
+            <span class="diag-market-label">COMMODITIES</span>
+            <div><span>WTI</span><strong>{esc(diag["wti"])}</strong></div>
           </div>
 
         </div>
@@ -1857,6 +1912,20 @@ def build(
         </p>
       </article>
 
+    </section>
+
+    <section class="panel">
+      <div class="section-kicker">ALLOCATION CONTEXT</div>
+      <h2>Style / Factor Context</h2>
+      <div class="pm-state-list">
+        <div><span>Growth vs Value</span><strong>{esc(growth_value_tilt)}</strong></div>
+        <div><span>Duration Tilt</span><strong>{esc(duration_tilt)}</strong></div>
+        <div><span>Cyclical / Defensive</span><strong>{esc(cyclical_defensive)}</strong></div>
+        <div><span>Duration Factor</span><strong>{esc(duration_factor)}</strong></div>
+        <div><span>Inflation Factor</span><strong>{esc(inflation_factor)}</strong></div>
+        <div><span>USD Factor</span><strong>{esc(usd_factor)}</strong></div>
+        <div><span>Credit Factor</span><strong>{esc(credit_factor)}</strong></div>
+      </div>
     </section>
 
     <details class="panel diag-raw-details">
