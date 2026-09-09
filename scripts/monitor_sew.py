@@ -4,7 +4,8 @@ import requests
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from typing import Dict, Any, Optional
 
 
@@ -405,6 +406,43 @@ def download_intraday_prices(
 
 
 # ---------------------------
+# 6.5 SEW lifecycle observability
+# ---------------------------
+def load_previous_sew_state(
+    filepath: str = "insights/sew_state.json",
+) -> Dict[str, Any]:
+    if not os.path.exists(filepath):
+        return {}
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def append_sew_lifecycle_event(
+    transition: str,
+    event_type: str,
+    reason: str,
+    filepath: str = "insights/sew_events.log",
+) -> None:
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    now_utc = datetime.now(timezone.utc)
+    now_kst = now_utc.astimezone(ZoneInfo("Asia/Seoul"))
+
+    line = (
+        f"{now_utc.isoformat(timespec='seconds')} | "
+        f"{now_kst.isoformat(timespec='seconds')} | "
+        f"DEADMAN | {transition} | "
+        f"{event_type} | {reason}\n"
+    )
+
+    with open(filepath, "a", encoding="utf-8") as f:
+        f.write(line)
+
+
+# ---------------------------
 # 7. SEW 상태 저장 함수
 # ---------------------------
 def save_sew_state(
@@ -607,7 +645,13 @@ def evaluate_flow_change(
 # 8. 메인 감시 및 이메일 로직
 # ---------------------------
 def check_market_anomaly():
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_utc = datetime.now(timezone.utc)
+    now_kst = now_utc.astimezone(ZoneInfo("Asia/Seoul"))
+    now_str = now_kst.strftime("%Y-%m-%d %H:%M:%S KST")
+
+    previous_sew_state = load_previous_sew_state()
+    previous_deadman = bool(previous_sew_state.get("deadman", False))
+
     csv_path = "data/market_data_history.csv"
     context = load_war_room_context(csv_path) or {}
 
@@ -804,6 +848,22 @@ def check_market_anomaly():
     else:
         sew_status = "STABLE"
         sew_summary = f"✅ 이상징후 없음 ({len(z_map)}개 자산 정상 범위 / z-score 발작 없음)"
+
+    # ---------------------------
+    # DEADMAN lifecycle observability
+    # ---------------------------
+    if hard_deadman and not previous_deadman:
+        append_sew_lifecycle_event(
+            transition="TRIGGERED",
+            event_type=event_type,
+            reason=status_msg,
+        )
+    elif previous_deadman and not hard_deadman:
+        append_sew_lifecycle_event(
+            transition="CLEARED",
+            event_type=event_type,
+            reason="HARD DEADMAN condition cleared",
+        )
 
     # ---------------------------
     # SEW 상태 파일 저장

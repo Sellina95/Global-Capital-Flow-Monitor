@@ -249,6 +249,47 @@ def diag_match(
     return match.group(1).strip() if match else default
 
 
+
+def load_recent_sew_events(
+    filepath: str = "insights/sew_events.log",
+    limit: int = 5,
+) -> list[dict[str, str]]:
+    """Presentation-only reader for persisted SEW lifecycle events."""
+    path = Path(filepath)
+    if not path.exists():
+        return []
+
+    events = []
+
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return []
+
+    for line in reversed(lines):
+        parts = [part.strip() for part in line.split(" | ", 5)]
+        if len(parts) != 6:
+            continue
+
+        utc_ts, kst_ts, system, transition, event_type, reason = parts
+
+        if system != "DEADMAN":
+            continue
+
+        events.append({
+            "timestamp_utc": utc_ts,
+            "timestamp_kst": kst_ts,
+            "transition": transition,
+            "event_type": event_type,
+            "reason": reason,
+        })
+
+        if len(events) >= limit:
+            break
+
+    return events
+
+
 def parse_diagnostics_v1(text: str) -> dict[str, str]:
     """
     Presentation-only Diagnostics V1 contract.
@@ -292,6 +333,10 @@ def parse_diagnostics_v1(text: str) -> dict[str, str]:
             text,
             r"\*\*Flow Continuity:\*\*[^\n]*"
             r"tilt=([+-]?\d+)",
+        ),
+        "f13_flow_continuity_role": diag_match(
+            text,
+            r"\*\*Flow Continuity:\*\*[^\n]*\(([^,()]+),\s*tilt=",
         ),
         "f13_flow_regime_tilt": diag_match(
             text,
@@ -343,6 +388,14 @@ def parse_diagnostics_v1(text: str) -> dict[str, str]:
             text,
             r"\*\*HY_OAS level:\*\*\s*([^\n]+)",
         ),
+        "hy_oas_level": diag_match(
+            text,
+            r"\*\*HY_OAS level:\*\*\s*([0-9.]+%)",
+        ),
+        "hy_oas_state": diag_match(
+            text,
+            r"\*\*HY_OAS level:\*\*[^\n]*?\*\*([A-Z_]+)\s*\(",
+        ),
         "us10y": diag_match(
             text,
             r"\*\*미국 10년물 금리\*\*:\s*([^\n]+)",
@@ -387,8 +440,24 @@ def parse_diagnostics_v1(text: str) -> dict[str, str]:
         ),
         "liq_direction": diag_match(
             text,
+            r"### 🧰 4\) Fed Plumbing Filter[\s\S]*?"
             r"\*\*방향\(전일 대비\):\*\*\s*"
-            r"TGA\(([^\n]+?NET_LIQ\([^)]+\))",
+            r"(TGA\([^)]+\)\s*/\s*RRP\([^)]+\)\s*/\s*NET_LIQ\([^)]+\))",
+        ),
+        "tga_direction": diag_match(
+            text,
+            r"### 🧰 4\) Fed Plumbing Filter[\s\S]*?"
+            r"\*\*방향\(전일 대비\):\*\*\s*TGA\(([^)]+)\)",
+        ),
+        "rrp_direction": diag_match(
+            text,
+            r"### 🧰 4\) Fed Plumbing Filter[\s\S]*?"
+            r"\*\*방향\(전일 대비\):\*\*[^\n]*RRP\(([^)]+)\)",
+        ),
+        "net_liq_direction": diag_match(
+            text,
+            r"### 🧰 4\) Fed Plumbing Filter[\s\S]*?"
+            r"\*\*방향\(전일 대비\):\*\*[^\n]*NET_LIQ\(([^)]+)\)",
         ),
         "hyg": diag_match(
             text,
@@ -406,7 +475,7 @@ def parse_diagnostics_v1(text: str) -> dict[str, str]:
         # Execution / control outputs already emitted by Diagnostics.
         "market_regime": diag_match(
             text,
-            r"\*\*국면 전환 감지:\*\*[^\n]*?→\s*\*\*(.+?)\*\*",
+            r"\*\*Operational Phase:\*\*\s*(?:✅\s*)?\*\*([^*]+)\*\*",
         ),
         "deadman": diag_match(
             text,
@@ -1220,10 +1289,16 @@ def build(
       .pm-portfolio-row{{grid-template-columns:1fr .5fr .8fr}}
       .pm-portfolio-row>*:nth-child(n+4){{display:none}}
     }}
-  
 
 
-  </style>
+
+
+    .diag-shadow-compact b {{
+      font-size: 13px;
+      line-height: 1.25;
+      font-weight: 700;
+    }}
+</style>
 </head>
 <body>
   <main class="shell">
@@ -1523,6 +1598,27 @@ def build(
         vix_change = diag_change_parts(diag["vix"])
         wti_change = diag_change_parts(diag["wti"])
 
+        recent_sew_events = load_recent_sew_events()
+
+        if recent_sew_events:
+            recent_alerts_html = "".join(
+                f"""
+                <div class="diag-alert-event">
+                  <strong>{esc(event["transition"])}</strong>
+                  <span>{esc(event["event_type"])}</span>
+                  <small>{esc(event["timestamp_kst"])}</small>
+                </div>
+                """
+                for event in recent_sew_events
+            )
+        else:
+            recent_alerts_html = """
+                <div class="diag-alert-event">
+                  <strong>NO RECORDED LIFECYCLE EVENTS</strong>
+                  <span>Current history begins with verified persisted events.</span>
+                </div>
+            """
+
         sew_class = diag_semantic_class(diag["sew"])
         deadman_class = diag_semantic_class(diag["deadman"])
         flow_class = diag_semantic_class(diag["flow_state"])
@@ -1540,6 +1636,60 @@ def build(
             f13_positioning_impact = -4
         else:
             f13_positioning_impact = 0
+
+        # Presentation-only dated research context.
+        # Never used by Production, F13, F15, F18, or portfolio scoring.
+        research_date = latest_strategic_context_date()
+        strategic = load_strategic_context(research_date) if research_date else {
+            "strategic_context": "",
+            "brief": [],
+        }
+        strategic_insight = strategic.get("strategic_context", "")
+        strategic_brief = strategic.get("brief", [])
+
+        strategic_research_cta = bloomberg_research_cta(research_date)
+
+        if strategic_insight:
+            brief_items = "".join(
+                f"""
+                <div class="strategic-brief-item">
+                  <strong>{esc(item["title"])}</strong>
+                  <p>{esc(item["summary"])}</p>
+                </div>
+                """
+                for item in strategic_brief
+            )
+
+            brief_details = (
+                f"""
+                <details class="strategic-context-more">
+                  <summary>More →</summary>
+                  <div class="strategic-brief-list">
+                    {brief_items}
+                  </div>
+                </details>
+                """
+                if brief_items
+                else ""
+            )
+
+            strategic_context_html = f"""
+              <div class="strategic-context-live">
+                <p class="strategic-context-insight">{esc(strategic_insight)}</p>
+                {brief_details}
+                <p class="strategic-context-disclaimer">
+                  Independent research context — not used in portfolio scoring.
+                </p>
+                {strategic_research_cta}
+              </div>
+            """
+        else:
+            strategic_context_html = """
+              <div class="strategic-context-empty">
+                <strong>NO RESEARCH CONTEXT PUBLISHED FOR THIS DATE</strong>
+                <p>Independent research context — not used in portfolio scoring.</p>
+              </div>
+            """
 
         diag_page = f"""<!doctype html>
 <html lang="en">
@@ -1574,104 +1724,21 @@ def build(
         <strong>{esc(diag["deadman"])}</strong>
       </article>
 
-      <article class="diag-status-card {{flow_class}}">
-        <div class="label">INSTITUTIONAL FLOW</div>
-        <strong>{esc(diag["flow_state"])}</strong>
-        <span>{esc(diag["flow_delta"])}</span>
+      <article class="diag-status-card diag-recent-alerts">
+        <div class="label">RECENT SYSTEM ALERTS</div>
+        {recent_alerts_html}
       </article>
 
-      <article class="diag-status-card diag-status-watch {{positioning_class}}">
-        <div class="label">POSITIONING</div>
-        <strong>POS_Z {esc(diag["positioning_z"])}</strong>
-        <span>{esc(diag["f15_brake_drivers"])}</span>
-      </article>
-    </section>
-
-    <section class="diag-primary-grid">
-
-      <article class="panel diag-market-overview">
-        <div class="section-kicker">MARKET &amp; ENGINE OVERVIEW</div>
-        <h2>Cross-Market State &amp; Daily Change</h2>
-
-        <div class="diag-market-grid">
-
-          <div class="diag-market-card">
-            <span class="diag-market-label">RATES</span>
-            <div><span>US10Y</span><strong>{esc(diag["us10y"])}</strong></div>
-            <div><span>Real Rate</span><strong>{esc(diag["real_rate"])}</strong></div>
-
-          </div>
-
-          <div class="diag-market-card">
-            <span class="diag-market-label">FX</span>
-            <div><span>DXY</span><strong>{esc(diag["dxy"])}</strong></div>
-            <div><span>USD/KRW</span><strong>↓ -0.22%</strong></div>
-          </div>
-
-          <div class="diag-market-card">
-            <span class="diag-market-label">LIQUIDITY</span>
-            <div><span>Net Liquidity</span><strong>{esc(diag["net_liq"])}</strong></div>
-            <div><span>TGA</span><strong>{esc(diag["tga"])}</strong></div>
-            <div><span>RRP</span><strong>{esc(diag["rrp"])}</strong></div>
-            <small>TGA ↑ · RRP ↓ · Net Liquidity ↓</small>
-          </div>
-
-          <div class="diag-market-card">
-            <span class="diag-market-label">CREDIT</span>
-            <div><span>HY OAS</span><strong>2.65% · COOL</strong></div>
-            <div><span>HYG</span><strong>{esc(diag["hyg"])}</strong></div>
-            <div><span>LQD</span><strong>{esc(diag["lqd"])}</strong></div>
-          </div>
-
-          <div class="diag-market-card">
-            <span class="diag-market-label">VOLATILITY</span>
-            <div><span>VIX</span><strong>{esc(diag["vix"])}</strong></div>
-          </div>
-
-          <div class="diag-market-card">
-            <span class="diag-market-label">COMMODITIES</span>
-            <div><span>WTI</span><strong>{esc(diag["wti"])}</strong></div>
-          </div>
-
+      <article class="diag-status-card">
+        <div class="label">OBSERVATION ONLY</div>
+        <strong>Shadow Monitor</strong>
+        <div class="diag-shadow-compact">
+          <div><span>Growth Sustainability</span><b>{esc(diag["growth_shadow"])}</b></div>
+          <div><span>Flow Authenticity</span><b>{esc(diag["flow_auth_shadow"])}</b></div>
+          <div><span>Leadership Breadth</span><b>{esc(diag["breadth_shadow"])}</b></div>
+          <div><span>Positioning Stress</span><b>{esc(diag["positioning_shadow"])}</b></div>
         </div>
       </article>
-
-      <article class="panel diag-portfolio-panel">
-        <div class="section-kicker">PORTFOLIO</div>
-        <h2>Final Composition</h2>
-
-        <div class="portfolio-donut-wrap">
-          <div
-            class="portfolio-donut"
-            style="--equity-number:{esc(diag_equity_number)}"
-            aria-label="Allocated equity {esc(diag_equity)}, cash {esc(diag_cash)}"
-          >
-            <div class="portfolio-donut-center">
-              <strong>{esc(diag_equity)}</strong>
-              <span>ALLOCATED EQUITY</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="portfolio-legend">
-          <div>
-            <span class="legend-dot legend-equity"></span>
-            <span>Allocated Equity</span>
-            <strong>{esc(diag_equity)}</strong>
-          </div>
-          <div>
-            <span class="legend-dot legend-cash"></span>
-            <span>Cash &amp; Hedge</span>
-            <strong>{esc(diag_cash)}</strong>
-          </div>
-        </div>
-
-        <div class="cash-detail">
-          <span>Strategic Cash {esc(diag["strategic_cash"])}</span>
-          <span>Tactical Reserve {esc(diag["tactical_reserve"])}</span>
-        </div>
-      </article>
-
     </section>
 
     <section class="panel diag-drivers-panel">
@@ -1751,7 +1818,7 @@ def build(
             <strong>Flow Continuity</strong>
             <small>F13 contribution</small>
           </div>
-          <span>FLOW PERSISTENCE</span>
+          <span>{esc(diag["f13_flow_continuity_role"])}</span>
           <b class="impact-positive">
             {esc(diag["f13_flow_continuity_tilt"])}
           </b>
@@ -1810,6 +1877,93 @@ def build(
 
     </section>
 
+    <section class="diag-primary-grid">
+
+      <article class="panel diag-market-overview">
+        <div class="section-kicker">MARKET &amp; ENGINE OVERVIEW</div>
+        <h2>Cross-Market State &amp; Daily Change</h2>
+
+        <div class="diag-market-grid">
+
+          <div class="diag-market-card">
+            <span class="diag-market-label">RATES</span>
+            <div><span>US10Y</span><strong>{esc(diag["us10y"])}</strong></div>
+            <div><span>Real Rate</span><strong>{esc(diag["real_rate"])}</strong></div>
+
+          </div>
+
+          <div class="diag-market-card">
+            <span class="diag-market-label">FX</span>
+            <div><span>DXY</span><strong>{esc(diag["dxy"])}</strong></div>
+            <div><span>USD/KRW</span><strong>{esc(("↓ " if str(diag["usdk_rw"]).startswith("-") else "↑ " if str(diag["usdk_rw"]).startswith("+") else "") + str(diag["usdk_rw"]))}</strong></div>
+          </div>
+
+          <div class="diag-market-card">
+            <span class="diag-market-label">LIQUIDITY</span>
+            <div><span>Net Liquidity</span><strong>{esc(diag["net_liq"])}</strong></div>
+            <div><span>TGA</span><strong>{esc(diag["tga"])}</strong></div>
+            <div><span>RRP</span><strong>{esc(diag["rrp"])}</strong></div>
+            <small>TGA {esc(diag["tga_direction"])} · RRP {esc(diag["rrp_direction"])} · Net Liquidity {esc(diag["net_liq_direction"])}</small>
+          </div>
+
+          <div class="diag-market-card">
+            <span class="diag-market-label">CREDIT</span>
+            <div><span>HY OAS</span><strong>{esc(diag["hy_oas_level"])} · {esc(diag["hy_oas_state"])} · {esc(diag["hy_direction"])}</strong></div>
+            <div><span>HYG</span><strong>{esc(diag["hyg"])}</strong></div>
+            <div><span>LQD</span><strong>{esc(diag["lqd"])}</strong></div>
+          </div>
+
+          <div class="diag-market-card">
+            <span class="diag-market-label">VOLATILITY</span>
+            <div><span>VIX</span><strong>{esc(diag["vix"])}</strong></div>
+          </div>
+
+          <div class="diag-market-card">
+            <span class="diag-market-label">COMMODITIES</span>
+            <div><span>WTI</span><strong>{esc(diag["wti"])}</strong></div>
+          </div>
+
+        </div>
+      </article>
+
+      <article class="panel diag-portfolio-panel">
+        <div class="section-kicker">PORTFOLIO</div>
+        <h2>Final Composition</h2>
+
+        <div class="portfolio-donut-wrap">
+          <div
+            class="portfolio-donut"
+            style="--equity-number:{esc(diag_equity_number)}"
+            aria-label="Allocated equity {esc(diag_equity)}, cash {esc(diag_cash)}"
+          >
+            <div class="portfolio-donut-center">
+              <strong>{esc(diag_equity)}</strong>
+              <span>ALLOCATED EQUITY</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="portfolio-legend">
+          <div>
+            <span class="legend-dot legend-equity"></span>
+            <span>Allocated Equity</span>
+            <strong>{esc(diag_equity)}</strong>
+          </div>
+          <div>
+            <span class="legend-dot legend-cash"></span>
+            <span>Cash &amp; Hedge</span>
+            <strong>{esc(diag_cash)}</strong>
+          </div>
+        </div>
+
+        <div class="cash-detail">
+          <span>Strategic Cash {esc(diag["strategic_cash"])}</span>
+          <span>Tactical Reserve {esc(diag["tactical_reserve"])}</span>
+        </div>
+      </article>
+
+    </section>
+
     <section class="panel diag-change-panel">
       <div class="section-kicker">MARKET CONTEXT</div>
       <h2>What Changed Today?</h2>
@@ -1861,59 +2015,6 @@ def build(
       </div>
     </section>
 
-    <section class="diag-secondary-grid">
-
-      <article class="panel">
-        <div class="section-kicker">SUPPORTING RISK CONTEXT</div>
-        <h2>Supporting Risk Context</h2>
-
-        <div class="diag-context-row">
-          <span>Credit / HY OAS</span>
-          <strong>{esc(diag["hy_oas"])}</strong>
-        </div>
-
-        <div class="diag-context-row">
-          <span>Geo Stress</span>
-          <strong>{esc(diag["geo_score"])}</strong>
-        </div>
-
-        <div class="diag-context-row">
-          <span>Pseudo Gamma</span>
-          <strong class="{{gamma_class}}">{esc(diag["gamma_state"])}</strong>
-        </div>
-      </article>
-
-      <article class="panel">
-        <div class="section-kicker">OBSERVATION ONLY</div>
-        <h2>Shadow Monitor</h2>
-
-        <div class="engine-map">
-          <div>
-            <span>12.5 Growth Sustainability</span>
-            <strong>{esc(diag["growth_shadow"])}</strong>
-          </div>
-          <div>
-            <span>12.6 Flow Authenticity</span>
-            <strong>{esc(diag["flow_auth_shadow"])}</strong>
-          </div>
-          <div>
-            <span>12.7 Leadership Breadth</span>
-            <strong>{esc(diag["breadth_shadow"])}</strong>
-          </div>
-          <div>
-            <span>12.8 Positioning Stress</span>
-            <strong>{esc(diag["positioning_shadow"])}</strong>
-          </div>
-        </div>
-
-        <p class="shadow-disclaimer">
-          Observation-only diagnostics. These states are not presented
-          as independent portfolio decisions.
-        </p>
-      </article>
-
-    </section>
-
     <section class="panel">
       <div class="section-kicker">ALLOCATION CONTEXT</div>
       <h2>Style / Factor Context</h2>
@@ -1926,6 +2027,13 @@ def build(
         <div><span>USD Factor</span><strong>{esc(usd_factor)}</strong></div>
         <div><span>Credit Factor</span><strong>{esc(credit_factor)}</strong></div>
       </div>
+    </section>
+
+    <section class="panel strategic-context-panel">
+      <div class="section-kicker">RESEARCH CONTEXT · {esc(research_date)} · NOT AN ENGINE INPUT</div>
+      <h2>TODAY'S STRATEGIC CONTEXT</h2>
+
+      {strategic_context_html}
     </section>
 
     <details class="panel diag-raw-details">
@@ -1947,6 +2055,114 @@ def build(
     print(f"[OK] Sectors rendered: {len(sectors)}")
     print(f"[OK] Breadth rows rendered: {len(breadth_rows)}")
     print(f"[OK] Allocation rows rendered: {len(allocation_rows)}")
+
+
+
+
+def bloomberg_research_cta(research_date: str) -> str:
+    """
+    Presentation-only link to the Bloomberg Surveillance Research Desk.
+
+    The Research Desk owns latest-report discovery and redirects to the
+    latest actually published public research artifact.
+    """
+    if not research_date:
+        return ""
+
+    desk_url = "https://sellina95.github.io/bloomberg-surveillance-research/"
+
+    return f"""
+      <div class="strategic-research-cta">
+        <span>See how global market practitioners frame today's risks</span>
+        <a class="strategic-research-button"
+           href="{desk_url}"
+           target="_blank"
+           rel="noopener noreferrer">
+          View Latest Practitioner Research ↗
+        </a>
+        <small>Bloomberg Surveillance Research</small>
+      </div>
+    """
+
+
+
+def latest_strategic_context_date() -> str:
+    """
+    Return the latest persisted dated research-context artifact.
+    Presentation-only. Does not affect engine state or historical PM reports.
+    """
+    context_dir = ROOT / "research_context"
+
+    if not context_dir.exists():
+        return ""
+
+    dates = []
+
+    for path in context_dir.glob("????-??-??.json"):
+        date_value = path.stem
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_value):
+            dates.append(date_value)
+
+    return max(dates) if dates else ""
+
+
+
+def load_strategic_context(report_date: str) -> dict:
+    """
+    Presentation-only research context.
+
+    Reads a dated research artifact only. This data is not an engine
+    input and must not affect market state, scoring, exposure, or allocation.
+    """
+    path = ROOT / "research_context" / f"{report_date}.json"
+
+    empty = {
+        "strategic_context": "",
+        "brief": [],
+    }
+
+    if not path.exists():
+        return empty
+
+    try:
+        import json
+
+        data = json.loads(path.read_text(encoding="utf-8"))
+
+        if data.get("engine_input") is not False:
+            return empty
+
+        if data.get("classification") != "RESEARCH_CONTEXT_ONLY":
+            return empty
+
+        insight = str(data.get("strategic_context", "")).strip()
+        brief = data.get("brief", [])
+
+        if not isinstance(brief, list):
+            brief = []
+
+        clean_brief = []
+        for item in brief[:8]:
+            if not isinstance(item, dict):
+                continue
+
+            title = str(item.get("title", "")).strip()
+            summary = str(item.get("summary", "")).strip()
+
+            if title and summary:
+                clean_brief.append({
+                    "title": title,
+                    "summary": summary,
+                })
+
+        return {
+            "strategic_context": insight,
+            "brief": clean_brief,
+        }
+
+    except Exception:
+        return empty
+
 
 
 def build_historical_pm_pages() -> int:

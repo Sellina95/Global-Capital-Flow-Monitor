@@ -1,0 +1,40 @@
+{
+  "date": "2026-09-09",
+  "classification": "RESEARCH_CONTEXT_ONLY",
+  "engine_input": false,
+  "strategic_context": "Middle East risk is evolving from a single Hormuz chokepoint into a multi-node energy resilience test; Brent remaining below $100 suggests inventories, alternative routes and non-OPEC supply are still functioning as shock absorbers.",
+  "brief": [
+    {
+      "title": "Energy Shock",
+      "summary": "Risk is expanding from Hormuz into Saudi energy infrastructure and Bab el-Mandeb, turning a single-chokepoint disruption into a broader multi-node energy-system shock."
+    },
+    {
+      "title": "Saudi Infrastructure",
+      "summary": "Alternative supply infrastructure is itself becoming exposed, reducing the effective redundancy available when primary Gulf routes are disrupted."
+    },
+    {
+      "title": "Red Sea / Bab el-Mandeb",
+      "summary": "Alternative routes provide resilience only when their accessibility and failure risks remain sufficiently independent from the primary route."
+    },
+    {
+      "title": "Oil Resilience",
+      "summary": "Brent remaining below $100 despite severe regional disruption suggests inventories, alternative routing, non-OPEC supply and demand adaptation are absorbing part of the shock."
+    },
+    {
+      "title": "Strategic Option Value",
+      "summary": "Effective resilience depends on capacity, accessibility during stress and failure independence—not simply on the number of available alternatives."
+    },
+    {
+      "title": "Fed Transmission",
+      "summary": "Higher oil prices are renewing inflation pressure and pushing Treasury yields higher, narrowing the Fed's policy flexibility and increasing equity discount-rate pressure."
+    },
+    {
+      "title": "Rates / FX Divergence",
+      "summary": "The combination of higher U.S. Treasury yields and a weaker dollar warrants monitoring whether rising yields increasingly reflect inflation, fiscal or risk premia rather than stronger U.S. growth."
+    },
+    {
+      "title": "Commodity CapEx Cycle",
+      "summary": "Oil and copper strength represent distinct inflation channels: geopolitical supply disruption versus investment-demand pressure from infrastructure and capital formation."
+    }
+  ]
+}
