@@ -1,0 +1,49 @@
+{
+  "checkpoint": "GCF_V1_RESEARCH_PERFORMANCE_BASELINE_V1",
+  "status": "PASS",
+  "claim_boundary": {
+    "label": "RESEARCH-GRADE HISTORICAL BACKTEST — PUBLIC/YAHOO MARKET DATA",
+    "disclaimer": "NOT A LIVE OR PRODUCTION TRACK RECORD",
+    "institutional_or_canonical_performance_claim": false
+  },
+  "methodology": {
+    "portfolio_arm": "BASELINE_PRODUCTION_AUTHORITY",
+    "positions_rows": 2012,
+    "execution_start": "2018-06-19",
+    "execution_end": "2026-06-22",
+    "first_return_endpoint": "2018-06-20",
+    "final_return_endpoint": "2026-06-23",
+    "return_timing": "execution-date close to next trading-session close",
+    "cash": "ZERO-CARRY CASH ASSUMPTION",
+    "costs": "GROSS BEFORE TRANSACTION COSTS",
+    "price_source": "Yahoo/yfinance research-grade adjusted Close",
+    "prohibited_proxies": ["IYR", "VOX"]
+  },
+  "authority": {
+    "canonical_evidence_parent": "85684101d95a1c671f1b90530e523a829c11b232",
+    "positions_path": "data/backtest/results/canonical_performance_input_contract_v1/canonical_performance_positions_v1.csv",
+    "positions_sha256": "1cf97d6553db7b09dfaf1b60f0ca973092f2515c439c63c3ba9b341d0b079305",
+    "legacy_reused_price_path": "data/backtest/sector_prices.csv",
+    "legacy_reused_price_sha256": "8d333ebe45a394f9eda93308772644f23f69364c496eb2f471c4982d5966fad8"
+  },
+  "validation": {
+    "command": "python scripts/backtest/run_research_performance_v1.py --validate-only",
+    "positions": 2012,
+    "one_forward_interval_per_position": true,
+    "required_price_missing": 0,
+    "nonzero_weight_return_missing": 0,
+    "spy_return_missing": 0,
+    "capital_identity_failures": 0,
+    "iyr_vox_used": 0,
+    "result": "RESEARCH_PERFORMANCE_RUNNER_READY"
+  },
+  "artifacts": {
+    "scripts/backtest/run_research_performance_v1.py": "3f8c56f3f02ec33696b45af20f836d8ee425eeb9677ec90519721f743bf965dc",
+    "data/backtest/research_price_completion/research_price_completion_manifest_v1.json": "5629f5e8a3f8ed90db1e3aafba8a48923e1484285e30aa4861b5685c46864792",
+    "data/backtest/research_price_completion/xlc_yahoo_auto_adjust_close.csv": "afe42d8cce02e0727c757045e9e3f5b3f215ce43cb10f9cc4192ca4d435098cb",
+    "data/backtest/research_price_completion/xlre_yahoo_auto_adjust_close.csv": "7194af0f0e162065116418e74f5ba20db89ff9dd769e9f401b7a3f0be9febc04",
+    "data/backtest/results/research_performance_v1/research_performance_daily_v1.csv": "050b8261cebf5279e8815a6cf43c0f96af03259ecfa3b6d29e27d275848788de",
+    "data/backtest/results/research_performance_v1/research_performance_calendar_year_v1.csv": "2ad8344e792569e3db81bdc8422de94d9953fdd47e6f9d139a19fd12de08ee55",
+    "data/backtest/results/research_performance_v1/research_performance_summary_v1.json": "468ade158e8a6afba587ff903904d4a11b1036c812381139bf527745ec282562"
+  }
+}

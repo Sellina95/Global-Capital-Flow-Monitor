@@ -1,0 +1,46 @@
+{
+  "average_cash_weight": 0.7995203777335984,
+  "average_equity_exposure": 0.2004796222664016,
+  "cash_assumption": "ZERO-CARRY CASH ASSUMPTION",
+  "claim_label": "RESEARCH-GRADE HISTORICAL BACKTEST \u2014 PUBLIC/YAHOO MARKET DATA",
+  "comparisons": {
+    "gcf_cagr_minus_exposure_matched_spy_cagr": -0.0040992740148413365,
+    "gcf_cagr_minus_spy_cagr": -0.13118594636070458,
+    "gcf_cumulative_minus_exposure_matched_spy_cumulative": -0.03726056714583037,
+    "gcf_mdd_minus_spy_mdd": 0.27440967948037054,
+    "gcf_volatility_minus_spy_volatility": -0.16503999207018155
+  },
+  "cost_convention": "GROSS BEFORE TRANSACTION COSTS",
+  "disclaimer": "NOT A LIVE OR PRODUCTION TRACK RECORD",
+  "execution_window": {
+    "end": "2026-06-22",
+    "start": "2018-06-19"
+  },
+  "exposure_matched_spy_return": {
+    "annualized_volatility": 0.033366173821245904,
+    "cagr": 0.020785374631131726,
+    "cumulative_return": 0.1785111501142822,
+    "maximum_drawdown": -0.0505400495462881,
+    "sharpe_like": 0.6332852523718814
+  },
+  "gcf_gross_return": {
+    "annualized_volatility": 0.028307231321870054,
+    "cagr": 0.01668610061629039,
+    "cumulative_return": 0.14125058296845183,
+    "maximum_drawdown": -0.06276301353198399,
+    "sharpe_like": 0.5987839846219172
+  },
+  "observations": 2012,
+  "return_endpoint_window": {
+    "end": "2026-06-23",
+    "start": "2018-06-20"
+  },
+  "sharpe_convention": "mean daily gross return / sample daily volatility * sqrt(252); risk-free=0; research statistic",
+  "spy_return": {
+    "annualized_volatility": 0.1933472233920516,
+    "cagr": 0.14787204697699496,
+    "cumulative_return": 2.0074412368243704,
+    "maximum_drawdown": -0.33717269301235453,
+    "sharpe_like": 0.810359928605604
+  }
+}

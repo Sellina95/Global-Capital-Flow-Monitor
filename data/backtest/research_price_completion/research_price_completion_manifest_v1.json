@@ -1,0 +1,28 @@
+{
+  "artifact_classification": "RESEARCH_GRADE_PRICE_COMPLETION",
+  "claim_boundary": "Not institutional or canonical price provenance",
+  "source": "Yahoo/yfinance",
+  "convention": "yf.download(..., auto_adjust=True) adjusted Close",
+  "requested_start_inclusive": "2018-06-19",
+  "requested_end_exclusive": "2026-06-24",
+  "required_last_observation": "2026-06-23",
+  "extraction_timestamp": "UNKNOWN_NOT_INCLUDED_IN_TRANSFERRED_CSV",
+  "artifacts": {
+    "data/backtest/research_price_completion/xlc_yahoo_auto_adjust_close.csv": {
+      "ticker": "XLC",
+      "rows": 2013,
+      "first_date": "2018-06-19",
+      "last_date": "2026-06-23",
+      "sha256": "afe42d8cce02e0727c757045e9e3f5b3f215ce43cb10f9cc4192ca4d435098cb"
+    },
+    "data/backtest/research_price_completion/xlre_yahoo_auto_adjust_close.csv": {
+      "ticker": "XLRE",
+      "rows": 2013,
+      "first_date": "2018-06-19",
+      "last_date": "2026-06-23",
+      "sha256": "7194af0f0e162065116418e74f5ba20db89ff9dd769e9f401b7a3f0be9febc04"
+    }
+  },
+  "proxy_policy": "IYR and VOX prohibited",
+  "status": "PASS"
+}
