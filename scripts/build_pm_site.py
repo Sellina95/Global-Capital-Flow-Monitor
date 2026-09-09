@@ -475,7 +475,11 @@ def parse_diagnostics_v1(text: str) -> dict[str, str]:
         # Execution / control outputs already emitted by Diagnostics.
         "market_regime": diag_match(
             text,
-            r"\*\*Operational Phase:\*\*\s*(?:✅\s*)?\*\*([^*]+)\*\*",
+            r"\*\*Operational Phase:\*\*\s*(?:\*\*)?(.+?)(?:\*\*)?\s*\(Cap:",
+        ),
+        "macro_narrative": diag_match(
+            text,
+            r"\*\*Structural Regime:\*\*\s*(?:\*\*)?([^*\n]+?)(?:\*\*)?\s*$",
         ),
         "deadman": diag_match(
             text,
@@ -1776,7 +1780,7 @@ def build(
             <strong>Macro</strong>
             <small>F13 contribution</small>
           </div>
-          <span>{esc(diag["market_regime"])}</span>
+          <span>{esc(diag["macro_narrative"])}</span>
           <b class="impact-positive">
             {esc(diag["f13_macro_tilt"])}
           </b>
