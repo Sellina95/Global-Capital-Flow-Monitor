@@ -1,0 +1,40 @@
+{
+  "date": "2026-09-10",
+  "classification": "RESEARCH_CONTEXT_ONLY",
+  "engine_input": false,
+  "strategic_context": "The macro constraint is shifting from a pure geopolitical oil shock toward a broader inflation-and-duration problem: crude above $100 and rising long-end yields are tightening financial conditions even as the dollar fails to strengthen, while simultaneous pressure on Hormuz and Red Sea routes reduces the independence of global energy-system redundancies.",
+  "brief": [
+    {
+      "title": "Treasury Duration Risk",
+      "summary": "The U.S. Treasury's $6 billion long-dated debt buyback failed to materially relieve duration pressure, with long-term yields remaining elevated as investors continue to demand compensation for inflation, fiscal and geopolitical risk."
+    },
+    {
+      "title": "Oil Above $100",
+      "summary": "Brent moved above $100 as Middle East shipping and supply risks intensified, increasing the probability that the energy shock feeds more persistently into inflation expectations and global financial conditions."
+    },
+    {
+      "title": "Rates / Dollar Divergence",
+      "summary": "U.S. long-term yields are rising without a corresponding strengthening of the dollar, warranting attention to whether the move increasingly reflects inflation, fiscal or term premia rather than superior U.S. growth."
+    },
+    {
+      "title": "Hormuz Compression",
+      "summary": "Traffic through the Strait of Hormuz has fallen sharply, demonstrating that the disruption is affecting physical shipping capacity rather than remaining only a geopolitical risk premium."
+    },
+    {
+      "title": "Red Sea Redundancy Risk",
+      "summary": "Pressure around Bab el-Mandeb and Yemen weakens the independence of the Red Sea route just as Saudi Arabia relies more heavily on western export infrastructure to bypass Hormuz."
+    },
+    {
+      "title": "Policy Constraint",
+      "summary": "Higher energy prices and long-end yields narrow the room for monetary easing by reinforcing inflation risk while simultaneously increasing financing pressure on households, companies and governments."
+    },
+    {
+      "title": "Korea Rate Transmission",
+      "summary": "Korean government-bond yields remain exposed to higher global rates and oil-driven inflation concerns, illustrating how the external energy shock is transmitting into domestic discount rates and foreign positioning."
+    },
+    {
+      "title": "Asia Capital Allocation",
+      "summary": "The combination of elevated energy costs, higher global yields and weaker risk appetite raises the hurdle rate for Asian equities even as capital continues to differentiate between strategic technology investment and broader cyclical exposure."
+    }
+  ]
+}

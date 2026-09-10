@@ -1623,6 +1623,20 @@ def build(
                 </div>
             """
 
+        sew_display = str(diag["sew"])
+        sew_display = sew_display.replace(
+            "이상징후 없음",
+            "No anomalies detected",
+        )
+        sew_display = sew_display.replace(
+            "개 자산 정상 범위",
+            " assets within normal range",
+        )
+        sew_display = sew_display.replace(
+            "z-score 발작 없음",
+            "no z-score spikes",
+        )
+
         sew_class = diag_semantic_class(diag["sew"])
         deadman_class = diag_semantic_class(diag["deadman"])
         flow_class = diag_semantic_class(diag["flow_state"])
@@ -1643,11 +1657,10 @@ def build(
 
         # Presentation-only dated research context.
         # Never used by Production, F13, F15, F18, or portfolio scoring.
-        research_date = latest_strategic_context_date()
-        strategic = load_strategic_context(research_date) if research_date else {
-            "strategic_context": "",
-            "brief": [],
-        }
+        # Daily Strategy News must be SAME-DATE with the PM report.
+        # Never reuse an older research artifact as today's context.
+        research_date = report_date
+        strategic = load_strategic_context(research_date)
         strategic_insight = strategic.get("strategic_context", "")
         strategic_brief = strategic.get("brief", [])
 
@@ -1720,7 +1733,7 @@ def build(
     <section class="diag-status-grid">
       <article class="diag-status-card {{sew_class}}">
         <div class="label">STRUCTURAL EARLY WARNING</div>
-        <strong>{esc(diag["sew"])}</strong>
+        <strong>{esc(sew_display)}</strong>
       </article>
 
       <article class="diag-status-card {{deadman_class}}">
