@@ -4,6 +4,8 @@ import html
 import re
 from pathlib import Path
 
+from research_context_contract import load_research_context
+
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORTS_DIR = ROOT / "reports"
@@ -288,6 +290,550 @@ def load_recent_sew_events(
             break
 
     return events
+
+
+
+def risk_monitor_ui(text, latest=False):
+    """Display persisted report signals only; never calculate risk states."""
+    def clean(s):
+        return s.replace('**', '').replace('*', '').replace('\\_', '_').strip()
+
+    def section(title):
+        headings = list(re.finditer(r'^\s*(#{1,6})\s+(.+)$', text, re.M))
+        for i, h in enumerate(headings):
+            if title.lower() in h[2].lower():
+                end = next((n.start() for n in headings[i+1:]
+                            if len(n[1]) <= len(h[1])), len(text))
+                return text[h.end():end]
+        return ''
+
+    def value(block, label):
+        for line in block.splitlines():
+            line = clean(line).lstrip('- ').strip()
+            if line.lower().startswith(label.lower()):
+                return line[len(label):].lstrip(': ').strip() or 'Unavailable'
+        return 'Unavailable'
+
+    def items(values):
+        return '<ul>' + ''.join(
+            '<li>' + html.escape(v) + '</li>' for v in values
+        ) + '</ul>'
+
+    def panel(title, body, anchor):
+        return (
+            '<section class="panel" id="' + anchor + '">'
+            '<div class="section-kicker">RISK MONITORING</div><h2>'
+            + html.escape(title) + '</h2>' + body + '</section>'
+        )
+
+    corr_parts, alerts = [], []
+    for title, label in [
+        ('6.5) Correlation Break Monitor', 'Market correlation'),
+        ('6.6) Sector Correlation Break Monitor', 'Sector divergence'),
+    ]:
+        block = section(title)
+        active = re.search(
+            r'^\s*Correlation Break Detected\s*:', block, re.M | re.I
+        )
+        normal = re.search(
+            r'No significant (?:sector )?correlation break detected',
+            block, re.I
+        )
+        if active:
+            signals = []
+            for line in block[active.end():].splitlines():
+                if not line.strip():
+                    if signals:
+                        break
+                    continue
+                if not line.lstrip().startswith('- '):
+                    break
+                signals.append(clean(line).lstrip('- ').strip())
+            signals = signals or ['Break detected; details unavailable']
+            alerts.extend(label + ': ' + s for s in signals)
+            body = items(signals)
+        elif normal:
+            body = '<p>No active alerts</p>'
+        else:
+            body = '<p>Data unavailable / unrecognized report format</p>'
+        corr_parts.append('<h3>' + label + '</h3>' + body)
+
+    corr = panel(
+        'Correlation & Divergence',
+        ''.join(corr_parts),
+        'correlation-divergence',
+    )
+
+    summary = ''
+    if alerts:
+        chips = []
+        for alert in alerts:
+            category, separator, signal = alert.partition(': ')
+            if not separator:
+                signal = alert
+                category = 'Correlation break'
+            chips.append(
+                '<span class="tape-break-chip" title="'
+                + html.escape(category, quote=True)
+                + '"><span class="tape-break-dot" aria-hidden="true"></span>'
+                + html.escape(signal) + '</span>'
+            )
+        summary = """
+        <style>
+          .tape-break-wrap {
+            margin-top: 16px;
+            padding-top: 13px;
+            border-top: 1px solid rgba(148,163,184,.18);
+          }
+          .tape-break-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .09em;
+            opacity: .7;
+            margin-bottom: 9px;
+          }
+          .tape-break-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+          .tape-break-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 7px 11px;
+            border-radius: 11px;
+            border: 1px solid rgba(232,143,162,.25);
+            background: rgba(232,143,162,.10);
+            color: #f2b1bd;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+          }
+          .tape-break-dot {
+            width: 5px;
+            height: 5px;
+            flex: 0 0 5px;
+            border-radius: 50%;
+            background: currentColor;
+          }
+        </style>
+        <div class="tape-break-wrap">
+          <div class="tape-break-label">CORRELATION BREAK</div>
+          <div class="tape-break-chips">
+        """ + ''.join(chips) + '</div></div>'
+
+    geo = section('7.2) Geopolitical Early Warning Monitor')
+    labels = [
+        'Geo Stress Score (z-composite)', 'Coverage', '3D Avg Score',
+        'Geo Momentum', 'Closest Historical Match', 'Cosine Similarity Score',
+        'Similarity Signal', 'Missing/Skipped',
+    ]
+
+    def geo_value(label):
+        raw = value(geo, label + ':')
+        pattern = None
+        if label == 'Geo Momentum':
+            pattern = r'^(.*?)\s*\(Status:\s*([^)]+)\)\s*$'
+        elif label == 'Geo Stress Score (z-composite)':
+            pattern = r'^(.*?)\s*\(Level:\s*([^)]+)\)\s*$'
+        match = re.match(pattern, raw, re.I) if pattern else None
+        if not match:
+            return html.escape(raw)
+        number, state = match.groups()
+        state = state.strip()
+        tone = {
+            'RISING': 'rose',
+            'FALLING': 'mint',
+            'DECLINING': 'mint',
+            'NORMAL': 'yellow',
+        }.get(state.upper(), 'neutral')
+        return (
+            '<span class="geo-number">' + html.escape(number.strip())
+            + '</span> <span class="geo-pill geo-' + tone + '">'
+            + html.escape(state) + '</span>'
+        )
+
+    rows = ''.join(
+        '<div><span>' + html.escape(
+            'Stress Score' if label == 'Geo Stress Score (z-composite)'
+            else label
+        ) + '</span><strong>' + geo_value(label) + '</strong></div>'
+        for label in labels
+    )
+    drivers = []
+    collecting = False
+    for line in geo.splitlines():
+        if 'Top Drivers:' in clean(line):
+            collecting = True
+            continue
+        if collecting:
+            if not line.strip():
+                continue
+            if not re.match(r'^\s{2,}-\s', line):
+                break
+            drivers.append(clean(line).lstrip('- ').strip())
+
+
+    driver_cards = []
+    for driver in drivers:
+        name, separator, detail = driver.partition(':')
+        contribution = re.search(
+            r'\bcontrib=([+-]?\d+(?:\.\d+)?)', detail
+        )
+        if not separator or not contribution:
+            driver_cards.append(
+                '<div class="geo-driver-card">'
+                + html.escape(driver) + '</div>'
+            )
+            continue
+        amount = contribution.group(1)
+        direction = float(amount)
+        tone = 'rose' if direction > 0 else 'mint' if direction < 0 else 'neutral'
+        label = (
+            'Adds to stress' if direction > 0
+            else 'Offsets stress' if direction < 0
+            else 'Neutral contribution'
+        )
+        driver_cards.append(
+            '<article class="geo-driver-card">'
+            '<div class="geo-driver-top"><strong>'
+            + html.escape(name.strip().replace('_', ' '))
+            + '</strong><span class="geo-pill geo-' + tone + '">'
+            + html.escape(amount) + '</span></div>'
+            '<small>' + label + '</small></article>'
+        )
+
+    geo_styles = """
+    <style>
+      #geopolitical-stress .pm-state-list > div {
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      #geopolitical-stress .pm-state-list strong {
+        overflow-wrap: anywhere;
+      }
+      #geopolitical-stress .geo-number {
+        font-variant-numeric: tabular-nums;
+        margin-right: 6px;
+      }
+      #geopolitical-stress .geo-pill {
+        display: inline-block;
+        padding: 4px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        border: 1px solid transparent;
+      }
+      #geopolitical-stress .geo-rose {
+        color: #f2b1bd;
+        background: rgba(232,143,162,.14);
+        border-color: rgba(232,143,162,.24);
+      }
+      #geopolitical-stress .geo-mint {
+        color: #9bd8c3;
+        background: rgba(115,191,165,.14);
+        border-color: rgba(115,191,165,.24);
+      }
+      #geopolitical-stress .geo-yellow {
+        color: #efd48c;
+        background: rgba(225,191,103,.14);
+        border-color: rgba(225,191,103,.24);
+      }
+      #geopolitical-stress .geo-neutral {
+        color: inherit;
+        background: rgba(148,163,184,.12);
+        border-color: rgba(148,163,184,.22);
+      }
+      #geopolitical-stress .geo-driver-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 185px), 1fr));
+        gap: 9px;
+        margin: 12px 0;
+      }
+      #geopolitical-stress .geo-driver-card {
+        min-width: 0;
+        padding: 12px;
+        border-radius: 13px;
+        border: 1px solid rgba(148,163,184,.2);
+        background: rgba(148,163,184,.05);
+        overflow-wrap: anywhere;
+      }
+      #geopolitical-stress .geo-driver-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      #geopolitical-stress .geo-driver-top strong {
+        font-size: 12px;
+        letter-spacing: .025em;
+      }
+      #geopolitical-stress .geo-driver-card small {
+        display: block;
+        margin-top: 7px;
+        font-size: 10px;
+        opacity: .7;
+      }
+      #geopolitical-stress .geo-driver-details {
+        margin-top: 12px;
+        font-size: 12px;
+      }
+      #geopolitical-stress .geo-driver-details summary {
+        cursor: pointer;
+        padding: 5px 0;
+      }
+      #geopolitical-stress .geo-driver-details li {
+        margin: 8px 0;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+      }
+      #geopolitical-stress .geo-driver-details summary:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 4px;
+      }
+    </style>
+    """
+    driver_html = (
+        '<div class="geo-driver-grid">' + ''.join(driver_cards) + '</div>'
+        '<details class="geo-driver-details">'
+        '<summary>View Driver Calculation Details</summary>'
+        + items(drivers) + '</details>'
+        if drivers else '<p>Data unavailable</p>'
+    )
+    geo_card = panel(
+        'Geopolitical Stress',
+        geo_styles + '<div class="pm-state-list">' + rows
+        + '</div><h3>Top Drivers</h3>' + driver_html,
+        'geopolitical-stress',
+    )
+
+    etf_block = section('Country ETF Risk Monitor')
+    etfs = []
+    for m in re.finditer(
+        r'^###\s+([A-Z0-9.^=-]+)\s*\n(.*?)(?=^###\s|\Z)',
+        etf_block, re.M | re.S
+    ):
+        symbol, block = m.groups()
+        crash = value(block, 'Crash?')
+        level = value(block, 'Risk Level:')
+
+        def z(label):
+            raw = value(block, label)
+            try:
+                return format(float(raw), '+.2f')
+            except ValueError:
+                return raw
+
+        active = crash.upper() == 'TRUE' or level.upper() == 'EXTREME'
+        complete = (
+            crash.upper() in ('TRUE', 'FALSE') and level != 'Unavailable'
+        )
+        detail = (
+            'Crash flag: ' + crash
+            + ' · 1D Z ' + z('Z-Score (1d):')
+            + ' · 5D Z ' + z('Z-Score (5d):')
+        )
+        tone = (
+            "alert" if active else
+            "normal" if complete and level.upper() == "NORMAL"
+            else "neutral"
+        )
+        flag = {
+            "TRUE": "Crash flag · Triggered",
+            "FALSE": "Crash flag · Not triggered",
+        }.get(crash.upper(), "Crash flag · Unavailable")
+        rendered = (
+            '<article class="etf-pretty-card etf-tone-' + tone + '">'
+            '<div class="etf-pretty-top">'
+            '<span class="etf-pretty-symbol">' + html.escape(symbol) + '</span>'
+            '<span class="etf-pretty-badge">' + html.escape(level) + '</span>'
+            '</div>'
+            '<div class="etf-pretty-flag">' + html.escape(flag) + '</div>'
+            '<div class="etf-pretty-chips">'
+            '<span><small>1D Z</small><b>' + html.escape(z('Z-Score (1d):'))
+            + '</b></span>'
+            '<span><small>5D Z</small><b>' + html.escape(z('Z-Score (5d):'))
+            + '</b></span>'
+            '</div></article>'
+        )
+        etfs.append((active, complete, rendered))
+
+
+    styles = """
+    <style>
+      #etf-risk-monitor {
+        --etf-alert: #f2b1bd;
+        --etf-mint: #9bd8c3;
+      }
+      #etf-risk-monitor .etf-pretty-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+        gap: 12px;
+        margin: 14px 0 18px;
+      }
+      #etf-risk-monitor .etf-pretty-card {
+        min-width: 0;
+        padding: 18px;
+        border: 1px solid rgba(148,163,184,.22);
+        border-radius: 18px;
+        background: rgba(148,163,184,.06);
+      }
+      #etf-risk-monitor .etf-tone-alert {
+        border-color: rgba(232,143,162,.38);
+        background: linear-gradient(135deg,rgba(232,143,162,.14),rgba(180,150,220,.06));
+      }
+      #etf-risk-monitor .etf-tone-normal {
+        border-color: rgba(115,191,165,.24);
+        background: rgba(115,191,165,.06);
+      }
+      #etf-risk-monitor .etf-pretty-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      #etf-risk-monitor .etf-pretty-symbol {
+        font-size: 21px;
+        font-weight: 750;
+        letter-spacing: .035em;
+      }
+      #etf-risk-monitor .etf-pretty-badge {
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        background: rgba(148,163,184,.14);
+      }
+      #etf-risk-monitor .etf-tone-alert .etf-pretty-badge {
+        color: var(--etf-alert);
+        background: rgba(232,143,162,.14);
+      }
+      #etf-risk-monitor .etf-tone-normal .etf-pretty-badge {
+        color: var(--etf-mint);
+        background: rgba(115,191,165,.14);
+      }
+      #etf-risk-monitor .etf-pretty-flag {
+        margin-top: 10px;
+        font-size: 12px;
+        opacity: .8;
+      }
+      #etf-risk-monitor .etf-pretty-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      #etf-risk-monitor .etf-pretty-chips > span {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 11px;
+        border: 1px solid rgba(148,163,184,.14);
+        border-radius: 10px;
+        background: rgba(148,163,184,.08);
+        font-variant-numeric: tabular-nums;
+      }
+      #etf-risk-monitor .etf-pretty-chips small {
+        font-size: 10px;
+        opacity: .65;
+      }
+      #etf-risk-monitor .etf-pretty-chips b {
+        font-size: 13px;
+      }
+      #etf-risk-monitor .etf-pretty-caption {
+        font-size: 11px;
+        letter-spacing: .09em;
+        opacity: .7;
+      }
+      #etf-risk-monitor .etf-pretty-details {
+        margin-top: 8px;
+        border-top: 1px solid rgba(148,163,184,.18);
+        padding-top: 14px;
+      }
+      #etf-risk-monitor .etf-pretty-details > summary {
+        cursor: pointer;
+        font-size: 12px;
+        padding: 6px 0;
+      }
+      #etf-risk-monitor .etf-pretty-details > summary:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 4px;
+        border-radius: 4px;
+      }
+
+      /* Compact ETF cards */
+      #etf-risk-monitor .etf-pretty-grid {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 220px));
+        gap: 9px;
+        margin: 10px 0 14px;
+      }
+      #etf-risk-monitor .etf-pretty-card {
+        padding: 12px;
+        border-radius: 13px;
+      }
+      #etf-risk-monitor .etf-pretty-symbol {
+        font-size: 17px;
+      }
+      #etf-risk-monitor .etf-pretty-badge {
+        padding: 4px 8px;
+        font-size: 9px;
+      }
+      #etf-risk-monitor .etf-pretty-flag {
+        margin-top: 7px;
+        font-size: 11px;
+      }
+      #etf-risk-monitor .etf-pretty-chips {
+        gap: 6px;
+        margin-top: 10px;
+      }
+      #etf-risk-monitor .etf-pretty-chips > span {
+        gap: 7px;
+        padding: 5px 8px;
+        border-radius: 8px;
+      }
+      #etf-risk-monitor .etf-pretty-chips b {
+        font-size: 12px;
+      }
+    </style>
+    """
+    active_rows = [row[2] for row in etfs if row[0]]
+    if active_rows:
+        active_html = (
+            '<div class="etf-pretty-caption">ACTIVE FLAGS · '
+            + str(len(active_rows)) + '</div>'
+            '<div class="etf-pretty-grid">'
+            + ''.join(active_rows) + '</div>'
+        )
+    else:
+        active_html = (
+            '<p>No active crash / extreme flags</p>'
+            if etfs and all(row[1] for row in etfs)
+            else '<p>Data unavailable / incomplete ETF report</p>'
+        )
+    if etfs and not all(row[1] for row in etfs):
+        active_html += '<p>Some ETF fields are unavailable.</p>'
+    if etfs:
+        active_html += (
+            '<details class="etf-pretty-details">'
+            '<summary>View All ETF Risk Details · '
+            + str(len(etfs)) + ' ETFs</summary>'
+            '<div class="etf-pretty-grid">'
+            + ''.join(row[2] for row in etfs)
+            + '</div></details>'
+        )
+    etf_card = panel(
+        'ETF Risk Monitor', styles + active_html, 'etf-risk-monitor'
+    )
+    return summary, corr, geo_card + etf_card
 
 
 def parse_diagnostics_v1(text: str) -> dict[str, str]:
@@ -628,6 +1174,147 @@ def esc(value: object) -> str:
     return html.escape(str(value))
 
 
+
+def target_weight_comparison(text, report_date):
+    """Compare persisted target weights; never infer executed trades."""
+    from decimal import Decimal, InvalidOperation
+
+    def number(raw):
+        raw = str(raw).strip()
+        if not re.fullmatch(r'\d+(?:\.\d+)?%', raw):
+            return None
+        try:
+            n = Decimal(raw[:-1])
+            return n if 0 <= n <= 100 else None
+        except InvalidOperation:
+            return None
+
+    def snapshot(raw):
+        block = section(raw, 0, "PORTFOLIO ALLOCATION")
+        rows = parse_allocation_rows(block)
+        totals = {
+            label: number(field(block, label))
+            for label in ("Allocated Equity", "Cash", "Tactical Reserve")
+        }
+        weights, names = {}, {}
+        for row in rows:
+            key = row["sector"].strip().casefold()
+            n = number(row["weight"])
+            if not key or key in weights or n is None:
+                return None
+            weights[key] = n
+            names[key] = row["sector"]
+        equity, cash = totals["Allocated Equity"], totals["Cash"]
+        if equity is None or cash is None:
+            return None
+        # Allow only the rounding implied by one-decimal persisted weights.
+        tolerance = Decimal("0.05") * (len(rows) + 1)
+        if abs(sum(weights.values(), Decimal(0)) - equity) > tolerance:
+            return None
+        if abs(equity + cash - 100) > Decimal("0.1"):
+            return None
+        return weights, names, totals
+
+    candidates = sorted(
+        path for path in REPORTS_DIR.glob("daily_report_????-??-??.md")
+        if path.stem.removeprefix("daily_report_") < report_date
+    )
+    previous_path = candidates[-1] if candidates else None
+    previous_date = (
+        previous_path.stem.removeprefix("daily_report_")
+        if previous_path else None
+    )
+    current = snapshot(text)
+    previous = None
+    if previous_path:
+        raw = previous_path.read_text(encoding="utf-8")
+        if metadata(raw, "Date") == previous_date:
+            previous = snapshot(raw)
+    ready = current is not None and previous is not None
+
+    def badge(name, total=False):
+        if not ready:
+            return '<span class="target-delta target-flat">N/A</span>'
+        if total:
+            now = current[2].get(name)
+            old = previous[2].get(name)
+        else:
+            key = name.strip().casefold()
+            now = current[0].get(key, Decimal(0))
+            old = previous[0].get(key, Decimal(0))
+        if now is None or old is None:
+            return '<span class="target-delta target-flat">N/A</span>'
+        delta = now - old
+        tone = "up" if delta > 0 else "down" if delta < 0 else "flat"
+        label = f"{delta:+.1f} pp" if delta else "—"
+        if not total:
+            if old == 0 and now > 0:
+                label += " · NEW"
+            elif old > 0 and now == 0:
+                label += " · EXIT"
+        return (
+            '<span class="target-delta target-' + tone
+            + '" title="' + html.escape(
+                f"{old:.1f}% → {now:.1f}% · target weights", quote=True
+            ) + '">' + label + '</span>'
+        )
+
+    exits = []
+    if ready:
+        for key, weight in previous[0].items():
+            if weight > 0 and current[0].get(key, Decimal(0)) == 0:
+                exits.append(previous[1][key])
+
+    caption = (
+        "Target weight change · vs " + previous_date
+        if previous_date else "Target weight change · no previous report"
+    )
+    if previous_date and not ready:
+        caption += " · comparison unavailable"
+    caption += " · pp = percentage points · not executed trades"
+
+    style = """
+    <style>
+      .pm-target-portfolio .target-comparison-note {
+        font-size:10px; opacity:.7; line-height:1.6; margin:0 0 12px;
+      }
+      .pm-target-portfolio .target-delta {
+        display:inline-block; padding:4px 7px; border-radius:9px;
+        font-size:10px; font-weight:650; line-height:1.5;
+        font-variant-numeric:tabular-nums; white-space:nowrap;
+      }
+      .pm-target-portfolio .target-up {
+        color:#9bd8c3; background:rgba(115,191,165,.13);
+      }
+      .pm-target-portfolio .target-down {
+        color:#f2b1bd; background:rgba(232,143,162,.13);
+      }
+      .pm-target-portfolio .target-flat {
+        color:inherit; background:rgba(148,163,184,.09); opacity:.7;
+      }
+      .pm-target-portfolio .pm-portfolio-row {
+        grid-template-columns:1.3fr .55fr .95fr .8fr .9fr 1.1fr;
+      }
+      .pm-target-portfolio .pm-portfolio-row > * {
+        min-width:0; overflow-wrap:anywhere;
+      }
+      .pm-target-portfolio .pm-target-summary strong .target-delta {
+        margin-left:6px;
+      }
+      @media(max-width:760px) {
+        .pm-target-portfolio .pm-portfolio-row {
+          grid-template-columns:minmax(0,1fr) .55fr .95fr;
+        }
+        .pm-target-portfolio .pm-portfolio-row > :nth-child(n+4) {
+          display:none;
+        }
+      }
+    </style>
+    """
+    note = style + '<p class="target-comparison-note">' + html.escape(caption) + '</p>'
+    return badge, exits, note
+
+
 def build(
     source: Path | None = None,
     output_path: Path | None = None,
@@ -647,7 +1334,7 @@ def build(
 
     text = source.read_text(encoding="utf-8")
 
-    report_date = metadata(text, "Date")
+    report_date = source.stem.removeprefix("daily_report_")
     data_as_of = metadata(text, "Data as of")
 
     stance = top_value(text, "PORTFOLIO STANCE")
@@ -1075,14 +1762,17 @@ def build(
              'aria-hidden="true">›</span>'
     )
 
-    # Only the latest PM page may point at the canonical latest
-    # diagnostics page. Historical PM pages must never fall through
-    # to a different report date's diagnostics.
+    # Date-specific diagnostics use the same presentation template.
     diagnostics = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+    diagnostics_output = (
+        SITE_DIR / "diagnostics.html" if is_latest_page
+        else output_path.parent / f"{report_date}-diagnostics.html"
+    )
+    diagnostics_href = diagnostics_output.name
+    pm_return_href = output_path.name
     diagnostics_link = (
-        '<a class="diagnostics-destination" href="diagnostics.html">Engine Diagnostics <span>→</span></a>'
-        if is_latest_page and diagnostics.exists()
-        else '<span>Engine Diagnostics unavailable</span>'
+        f'<a class="diagnostics-destination" href="{esc(diagnostics_href)}">'
+        'Engine Diagnostics <span>→</span></a>'
     )
 
     import json
@@ -1226,11 +1916,14 @@ def build(
     donut_parts.append(f"var(--pm-cash) {cash_start:.2f}deg {cash_end:.2f}deg")
     donut_gradient = ", ".join(donut_parts)
 
+    target_delta, target_exits, target_note = target_weight_comparison(text, report_date)
+
     portfolio_table = "\n".join(
         f"""
         <div class="pm-portfolio-row">
           <div><strong>{esc(row["sector"])}</strong><span>{esc(row["etf"])}</span></div>
           <strong>{esc(row["weight"])}</strong>
+          <span>{target_delta(row["sector"])}</span>
           <span>{esc(row["action"])}</span>
           <span>{esc(row["classification"])}</span>
           <span class="{pm_semantic(row["divergence"])}">{esc(row["divergence"])}</span>
@@ -1241,6 +1934,17 @@ def build(
 
     if not portfolio_table:
         portfolio_table = '<div class="empty-state">No positive sector allocation.</div>'
+
+
+    if target_exits:
+        portfolio_table += "".join(
+            '<div class="pm-portfolio-row">'
+            '<div><strong>' + esc(name)
+            + '</strong><span>Removed from target</span></div>'
+            '<strong>0.0%</strong><span>' + target_delta(name)
+            + '</span><span>—</span><span>—</span><span>—</span></div>'
+            for name in target_exits
+        )
 
     page = f"""<!doctype html>
 <html lang="en">
@@ -1410,22 +2114,23 @@ def build(
       <article class="panel pm-target-portfolio">
         <div class="section-kicker">F18 ALLOCATION · F19 EXECUTION</div>
         <h2>TARGET PORTFOLIO</h2>
+        {target_note}
         <div class="pm-target-wrap">
           <div class="pm-target-donut">
             <div class="pm-target-center"><strong>100%</strong><span>PORTFOLIO</span></div>
           </div>
           <div class="pm-target-summary">
-            <div><span>Allocated Equity</span><strong>{esc(allocated_equity)}</strong></div>
-            <div><span>Tactical Reserve</span><strong>{esc(tactical_reserve)}</strong></div>
-            <div><span>Cash</span><strong>{esc(cash_weight)}</strong></div>
+            <div><span>Allocated Equity</span><strong>{esc(allocated_equity)} {target_delta("Allocated Equity", total=True)}</strong></div>
+            <div><span>Tactical Reserve</span><strong>{esc(tactical_reserve)} {target_delta("Tactical Reserve", total=True)}</strong></div>
+            <div><span>Cash</span><strong>{esc(cash_weight)} {target_delta("Cash", total=True)}</strong></div>
           </div>
         </div>
         <div class="pm-portfolio-table">
-          <div class="pm-portfolio-row"><strong>SECTOR / ETF</strong><strong>WEIGHT</strong><strong>ACTION</strong><strong>CLASS</strong><strong>DIVERGENCE</strong></div>
+          <div class="pm-portfolio-row"><strong>SECTOR / ETF</strong><strong>WEIGHT</strong><strong>Δ vs Prev</strong><strong>ACTION</strong><strong>CLASS</strong><strong>DIVERGENCE</strong></div>
           {portfolio_table}
           <div class="pm-portfolio-row">
             <div><strong>Cash</strong><span>Reserve included</span></div>
-            <strong>{esc(cash_weight)}</strong><span>HOLD</span><span>LIQUIDITY</span><span>—</span>
+            <strong>{esc(cash_weight)}</strong><span>{target_delta("Cash", total=True)}</span><span>HOLD</span><span>LIQUIDITY</span><span>—</span>
           </div>
         </div>
       </article>
@@ -1477,7 +2182,10 @@ def build(
         <div><span>VIX</span><strong>🟢 {esc(tape_display(volatility))}</strong></div>
         <div><span>HY OAS</span><strong>🟢 {esc(tape_display(hy_oas))}</strong></div>
       </div>
+    {risk_monitor_ui(diag_text, is_latest_page)[0]}
     </section>
+
+
 
     <section class="panel">
       <div class="section-kicker">LEADERSHIP &amp; PARTICIPATION</div>
@@ -1576,8 +2284,8 @@ def build(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(page, encoding="utf-8")
 
-    if build_diagnostics and diagnostics.exists():
-        diag_text = diagnostics.read_text(encoding="utf-8")
+    if build_diagnostics:
+        diag_text = diagnostics.read_text(encoding="utf-8") if diagnostics.exists() else ""
         diag = parse_diagnostics_v1(diag_text)
 
         # Portfolio composition comes from the canonical PM allocation contract.
@@ -1602,7 +2310,9 @@ def build(
         vix_change = diag_change_parts(diag["vix"])
         wti_change = diag_change_parts(diag["wti"])
 
-        recent_sew_events = load_recent_sew_events()
+        recent_sew_events = (
+            load_recent_sew_events() if report_date == latest_date else []
+        )
 
         if recent_sew_events:
             recent_alerts_html = "".join(
@@ -1622,6 +2332,14 @@ def build(
                   <span>Current history begins with verified persisted events.</span>
                 </div>
             """
+
+        if report_date != latest_date:
+            recent_alerts_html = (
+                '<div class="diag-alert-event">'
+                '<strong>HISTORICAL EVENT LOG UNAVAILABLE</strong>'
+                '<span>Current lifecycle events are not shown on historical reports.</span>'
+                '</div>'
+            )
 
         sew_display = str(diag["sew"])
         sew_display = sew_display.replace(
@@ -1647,66 +2365,18 @@ def build(
 
         # Frozen F13 positioning rule, validated against Production.
         # Used only to expose an existing decision contribution.
-        diag_pos_z = float(diag["f13_positioning_z"])
-        if diag_pos_z >= 2.0:
+        try:
+            diag_pos_z = float(diag["f13_positioning_z"])
+        except (ValueError, TypeError):
+            diag_pos_z = None
+        if diag_pos_z is None:
+            f13_positioning_impact = None
+        elif diag_pos_z >= 2.0:
             f13_positioning_impact = -8
         elif diag_pos_z >= 1.5:
             f13_positioning_impact = -4
         else:
             f13_positioning_impact = 0
-
-        # Presentation-only dated research context.
-        # Never used by Production, F13, F15, F18, or portfolio scoring.
-        # Daily Strategy News must be SAME-DATE with the PM report.
-        # Never reuse an older research artifact as today's context.
-        research_date = report_date
-        strategic = load_strategic_context(research_date)
-        strategic_insight = strategic.get("strategic_context", "")
-        strategic_brief = strategic.get("brief", [])
-
-        strategic_research_cta = bloomberg_research_cta(research_date)
-
-        if strategic_insight:
-            brief_items = "".join(
-                f"""
-                <div class="strategic-brief-item">
-                  <strong>{esc(item["title"])}</strong>
-                  <p>{esc(item["summary"])}</p>
-                </div>
-                """
-                for item in strategic_brief
-            )
-
-            brief_details = (
-                f"""
-                <details class="strategic-context-more">
-                  <summary>More →</summary>
-                  <div class="strategic-brief-list">
-                    {brief_items}
-                  </div>
-                </details>
-                """
-                if brief_items
-                else ""
-            )
-
-            strategic_context_html = f"""
-              <div class="strategic-context-live">
-                <p class="strategic-context-insight">{esc(strategic_insight)}</p>
-                {brief_details}
-                <p class="strategic-context-disclaimer">
-                  Independent research context — not used in portfolio scoring.
-                </p>
-                {strategic_research_cta}
-              </div>
-            """
-        else:
-            strategic_context_html = """
-              <div class="strategic-context-empty">
-                <strong>NO RESEARCH CONTEXT PUBLISHED FOR THIS DATE</strong>
-                <p>Independent research context — not used in portfolio scoring.</p>
-              </div>
-            """
 
         diag_page = f"""<!doctype html>
 <html lang="en">
@@ -1714,20 +2384,24 @@ def build(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Engine Diagnostics · Global Capital Flow Monitor</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="{asset_href}">
 </head>
 <body>
   <main class="shell diagnostics-shell">
+    {"" if diagnostics.exists() else
+     '<div class="panel">No persisted engine diagnostics for this date. '
+     'Diagnostic fields are unavailable.</div>'}
+
 
     <header class="topbar diagnostics-topbar">
       <div>
         <div class="eyebrow">MODEL OBSERVABILITY · CONTROL ROOM</div>
         <h1>Engine Diagnostics</h1>
         <div class="diag-asof">
-          REPORT {esc(diag["date"])} · DATA AS OF {esc(diag["data_as_of"])}
+          REPORT {esc(report_date)} · DATA AS OF {esc(diag["data_as_of"])}
         </div>
       </div>
-      <a href="index.html">← PM View</a>
+      <a href="{esc(pm_return_href)}">← PM View</a>
     </header>
 
     <section class="diag-status-grid">
@@ -1851,7 +2525,7 @@ def build(
           </div>
           <span>POS_Z {esc(diag["f13_positioning_z"])}</span>
           <b class="impact-negative">
-            {f13_positioning_impact:+d}
+            {format(f13_positioning_impact, "+d") if f13_positioning_impact is not None else "N/A"}
           </b>
           <div class="impact-track">
             <i class="impact-bar impact-bar-red impact-w80"></i>
@@ -2032,6 +2706,8 @@ def build(
       </div>
     </section>
 
+
+
     <section class="panel">
       <div class="section-kicker">ALLOCATION CONTEXT</div>
       <h2>Style / Factor Context</h2>
@@ -2046,14 +2722,34 @@ def build(
       </div>
     </section>
 
-    <section class="panel strategic-context-panel">
-      <div class="section-kicker">RESEARCH CONTEXT · {esc(research_date)} · NOT AN ENGINE INPUT</div>
-      <h2>TODAY'S STRATEGIC CONTEXT</h2>
+    {risk_monitor_ui(diag_text)[2]}
 
-      {strategic_context_html}
+    <section class="panel strategic-context-panel">
+      <div class="section-kicker">PRACTITIONER RESEARCH</div>
+      <h2>WHAT ARE GLOBAL MARKET PRACTITIONERS WATCHING?</h2>
+      <div class="strategic-research-cta">
+        <p>Explore the latest macro, policy, cross-asset and geopolitical context shaping institutional market discussions.</p>
+        <a class="strategic-research-button"
+           href="https://sellina95.github.io/bloomberg-surveillance-research/"
+           target="_blank"
+           rel="noopener noreferrer">
+          View Latest Practitioner Research ↗
+        </a>
+        <small>Independent research context · Not an engine input</small>
+      </div>
     </section>
 
-    <details class="panel diag-raw-details">
+
+    <script>
+      function openLinkedDiagnostics() {{
+        if (location.hash === '#full-engine-diagnostics') {{
+          document.getElementById('full-engine-diagnostics').open = true;
+        }}
+      }}
+      window.addEventListener('DOMContentLoaded', openLinkedDiagnostics);
+      window.addEventListener('hashchange', openLinkedDiagnostics);
+    </script>
+<details class="panel diag-raw-details" id="full-engine-diagnostics">
       <summary>View Full Engine Diagnostics</summary>
       <pre class="diagnostics">{esc(diag_text)}</pre>
     </details>
@@ -2062,7 +2758,7 @@ def build(
 </body>
 </html>
 """
-        (SITE_DIR / "diagnostics.html").write_text(
+        diagnostics_output.write_text(
             diag_page,
             encoding="utf-8",
         )
@@ -2188,7 +2884,7 @@ def build_historical_pm_pages() -> int:
 
     Availability is defined strictly by the existence of a persisted
     daily_report_YYYY-MM-DD.md artifact. Historical rendering never
-    recalculates Production state and never writes Diagnostics.
+    recalculates Production state; Diagnostics use same-date artifacts.
     """
     reports = sorted(REPORTS_DIR.glob("daily_report_????-??-??.md"))
     history_dir = SITE_DIR / "history"
@@ -2199,7 +2895,7 @@ def build_historical_pm_pages() -> int:
         build(
             source=source,
             output_path=history_dir / f"{report_date}.html",
-            build_diagnostics=False,
+            build_diagnostics=True,
         )
 
     return len(reports)
