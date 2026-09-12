@@ -7,6 +7,8 @@ on:
 
 jobs:
   monitor:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -38,18 +40,18 @@ jobs:
           RESEND_FROM: ${{ secrets.RESEND_FROM }}
           RESEND_TO: ${{ secrets.RESEND_TO }}
         run: python scripts/monitor_sew.py --once
-    
-    - name: Commit SEW lifecycle events
-      run: |
-        if grep -Eq "SEW=DEADMAN|credit=FRACTURE|EVENT=(LIQUIDATION_SHOCK|MACRO_UNWIND|TECH_DELEVERAGING|RISK_OFF_SHOCK|MACRO_FLOW_DISLOCATION|TECH_STRESS)|spike=[2-9].*extreme=[1-9]|corr_break=YES" insights/alerts.log || git status --porcelain insights/sew_events.log | grep -q .; then
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add insights/alerts.log insights/sew_state.json
-          git add insights/sew_events.log 2>/dev/null || true
-          git commit -m "Update SEW lifecycle log" || echo "No SEW lifecycle changes"
-          git push
-        else
-          echo "No SEW lifecycle event. Skip commit."
-        fi
 
-    
+      - name: Commit SEW lifecycle events
+        run: |
+          if grep -Eq "SEW=DEADMAN|credit=FRACTURE|EVENT=(LIQUIDATION_SHOCK|MACRO_UNWIND|TECH_DELEVERAGING|RISK_OFF_SHOCK|MACRO_FLOW_DISLOCATION|TECH_STRESS)|spike=[2-9].*extreme=[1-9]|corr_break=YES" insights/alerts.log || git status --porcelain insights/sew_events.log | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add insights/alerts.log insights/sew_state.json
+            git add insights/sew_events.log 2>/dev/null || true
+            git commit -m "Update SEW lifecycle log" || echo "No SEW lifecycle changes"
+            git push
+          else
+            echo "No SEW lifecycle event. Skip commit."
+          fi
+
+
