@@ -4,7 +4,7 @@ import html
 import re
 from pathlib import Path
 
-from research_context_contract import load_research_context
+
 
 
 ROOT = Path(__file__).resolve().parents[1]
