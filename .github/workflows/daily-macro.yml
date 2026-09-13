@@ -292,6 +292,12 @@ jobs:
           echo "LATEST REPORT: $latest"
           echo "UPDATED: reports/latest.md"
 
+      - name: Gate public historical reliability before commit
+        run: |
+          python scripts/build_pm_site.py
+          python scripts/audit_public_historical_reliability.py --site-dir _site
+          python -m unittest tests/test_public_historical_reliability.py
+
       - name: Commit and push report
         run: |
           git config user.name "github-actions[bot]"

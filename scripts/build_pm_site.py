@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import html
+import json
 import re
 from pathlib import Path
 
@@ -11,6 +13,177 @@ ROOT = Path(__file__).resolve().parents[1]
 REPORTS_DIR = ROOT / "reports"
 SITE_DIR = ROOT / "_site"
 ASSETS_DIR = SITE_DIR / "assets"
+
+def publication_schema(text: str) -> str:
+    """Classify persisted publication contracts without inferring missing fields."""
+    required_sections = (
+        "DECISION PATH",
+        "EXECUTIVE VIEW",
+        "MARKET STATE",
+        "CROSS-ASSET CONFIRMATION",
+        "LEADERSHIP & PARTICIPATION",
+        "ALLOCATION CONTEXT",
+        "PORTFOLIO ALLOCATION",
+        "DECISION RATIONALE",
+    )
+    if text.startswith("# Global Capital Flow – Daily PM View"):
+        if all(
+            re.search(rf"^\d+\. {re.escape(title)}$", text, flags=re.MULTILINE)
+            for title in required_sections
+        ):
+            return "PM_V2_COMPLETE"
+        return "PM_V2_TRANSITIONAL"
+    if "### 🧠 13) Narrative Engine" in text:
+        return "LEGACY_ENGINE"
+    return "LEGACY_BASIC"
+
+
+def _available_report_dates() -> list[str]:
+    return [
+        path.stem.removeprefix("daily_report_")
+        for path in sorted(REPORTS_DIR.glob("daily_report_????-??-??.md"))
+    ]
+
+
+def _ensure_site_css() -> None:
+    SITE_DIR.mkdir(parents=True, exist_ok=True)
+    ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+    css_source = ROOT / "assets" / "pm_site.css"
+    if not css_source.exists():
+        raise FileNotFoundError(f"Missing canonical PM site stylesheet: {css_source}")
+    (ASSETS_DIR / "style.css").write_text(
+        css_source.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+
+def _snapshot_page(
+    *,
+    source_text: str,
+    report_date: str,
+    data_as_of: str,
+    output_path: Path,
+    source_kind: str,
+    schema: str,
+    diagnostics_href: str | None = None,
+) -> None:
+    """Render an old contract losslessly instead of inventing modern fields."""
+    _ensure_site_css()
+    dates = _available_report_dates()
+    latest_date = dates[-1]
+    index = dates.index(report_date)
+    previous_date = dates[index - 1] if index else None
+    next_date = dates[index + 1] if index < len(dates) - 1 else None
+    is_latest_page = output_path == SITE_DIR / "index.html"
+    asset_href = "assets/style.css" if is_latest_page else "../assets/style.css"
+
+    def href_for_date(value: str) -> str:
+        if is_latest_page:
+            return "index.html" if value == latest_date else f"history/{value}.html"
+        return "../index.html" if value == latest_date else f"{value}.html"
+
+    previous_control = (
+        f'<a class="report-nav-arrow" href="{html.escape(href_for_date(previous_date))}" '
+        'aria-label="Previous report">‹</a>'
+        if previous_date
+        else '<span class="report-nav-arrow disabled" aria-hidden="true">‹</span>'
+    )
+    next_control = (
+        f'<a class="report-nav-arrow" href="{html.escape(href_for_date(next_date))}" '
+        'aria-label="Next report">›</a>'
+        if next_date
+        else '<span class="report-nav-arrow disabled" aria-hidden="true">›</span>'
+    )
+    asof_display = data_as_of or "NOT RECORDED IN PERSISTED SOURCE"
+    absence_attr = ' data-source-absence="true"' if not data_as_of else ""
+    diagnostic_link = (
+        f'<a class="diagnostics-destination" href="{html.escape(diagnostics_href)}">'
+        'Persisted engine diagnostics <span>→</span></a>'
+        if diagnostics_href
+        else '<span class="archive-source-note">No separate diagnostics artifact was persisted.</span>'
+    )
+    source_hash = hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+    dates_json = json.dumps(dates)
+    page = f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Global Capital Flow Monitor · {html.escape(report_date)}</title>
+  <link rel="stylesheet" href="{asset_href}">
+  <style>
+    .archive-banner{{margin:18px 0;padding:16px 18px;border:1px solid rgba(148,163,184,.22);border-radius:14px;background:rgba(15,23,42,.45)}}
+    .archive-banner p{{margin:7px 0 0;line-height:1.55;opacity:.82}}
+    .archive-source{{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.62 ui-monospace,SFMono-Regular,Menlo,monospace;padding:20px;border-radius:14px;background:#0b1220;border:1px solid rgba(148,163,184,.18)}}
+    .archive-source-note{{font-size:12px;opacity:.7}}
+  </style>
+</head>
+<body>
+  <main class="shell" data-publication-schema="{schema}" data-source-kind="{source_kind}">
+    <header class="topbar">
+      <div><div class="eyebrow">INDEPENDENT MARKET RESEARCH</div><h1>🌍 Global Capital Flow Monitor</h1></div>
+      <div class="asof report-date-navigator">
+        <span class="report-label">REPORT</span>
+        <div class="report-date-row">{previous_control}
+          <button class="report-date-trigger" id="report-date-trigger" type="button" aria-expanded="false" aria-controls="report-calendar">
+            <span>{html.escape(report_date)}</span><span class="report-date-caret">▾</span>
+          </button>{next_control}
+        </div>
+        <strong{absence_attr}>DATA AS OF {html.escape(asof_display)}</strong>
+        <div class="report-calendar" id="report-calendar" hidden>
+          <div class="calendar-header"><button type="button" class="calendar-month-nav" id="calendar-prev-month">‹</button><strong id="calendar-month-label"></strong><button type="button" class="calendar-month-nav" id="calendar-next-month">›</button></div>
+          <div class="calendar-weekdays"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+        </div>
+      </div>
+    </header>
+    <section class="archive-banner">
+      <div class="section-kicker">PERSISTED HISTORICAL SOURCE · {schema}</div>
+      <p>This report predates the complete PM V2 publication contract. It is shown losslessly from the persisted same-date artifact. Missing modern fields are not inferred, defaulted, or backfilled.</p>
+      <p>{diagnostic_link}</p>
+    </section>
+    <pre class="archive-source" id="persisted-report-source" data-source-sha256="{source_hash}">{html.escape(source_text)}</pre>
+    <footer class="footer pm-provenance-footer"><div>Persisted report · lossless archival renderer</div></footer>
+    <script>
+      const availableDates={dates_json}; const currentReportDate="{report_date}"; const latestReportDate="{latest_date}"; const isLatestPage={str(is_latest_page).lower()};
+      const trigger=document.getElementById("report-date-trigger"), calendar=document.getElementById("report-calendar"), grid=document.getElementById("calendar-grid"), label=document.getElementById("calendar-month-label"), prevMonth=document.getElementById("calendar-prev-month"), nextMonth=document.getElementById("calendar-next-month"); let view=new Date(currentReportDate+"T12:00:00");
+      function hrefForDate(d){{if(isLatestPage)return d===latestReportDate?"index.html":"history/"+d+".html";return d===latestReportDate?"../index.html":d+".html";}}
+      function renderCalendar(){{const y=view.getFullYear(),m=view.getMonth();label.textContent=view.toLocaleString("en-US",{{month:"long",year:"numeric"}});grid.innerHTML="";const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++)grid.appendChild(document.createElement("span"));for(let d=1;d<=days;d++){{const iso=`${{y}}-${{String(m+1).padStart(2,"0")}}-${{String(d).padStart(2,"0")}}`;const el=document.createElement(availableDates.includes(iso)?"a":"span");el.textContent=d;if(availableDates.includes(iso))el.href=hrefForDate(iso);if(iso===currentReportDate)el.className="current";grid.appendChild(el);}}}}
+      trigger?.addEventListener("click",()=>{{calendar.hidden=!calendar.hidden;trigger.setAttribute("aria-expanded",String(!calendar.hidden));if(!calendar.hidden)renderCalendar();}});prevMonth?.addEventListener("click",()=>{{view=new Date(view.getFullYear(),view.getMonth()-1,1);renderCalendar();}});nextMonth?.addEventListener("click",()=>{{view=new Date(view.getFullYear(),view.getMonth()+1,1);renderCalendar();}});
+    </script>
+  </main>
+</body>
+</html>
+"""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(page, encoding="utf-8")
+
+
+def build_source_snapshot_page(source: Path, output_path: Path) -> None:
+    text = source.read_text(encoding="utf-8")
+    report_date = source.stem.removeprefix("daily_report_")
+    data_as_of = metadata(text, "Data as of", default="")
+    diagnostics = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+    diagnostics_href = f"{report_date}-diagnostics.html" if diagnostics.exists() else None
+    _snapshot_page(
+        source_text=text,
+        report_date=report_date,
+        data_as_of=data_as_of,
+        output_path=output_path,
+        source_kind="daily_report",
+        schema=publication_schema(text),
+        diagnostics_href=diagnostics_href,
+    )
+    if diagnostics.exists():
+        diagnostics_text = diagnostics.read_text(encoding="utf-8")
+        _snapshot_page(
+            source_text=diagnostics_text,
+            report_date=report_date,
+            data_as_of=metadata(diagnostics_text, "Data as of", default=""),
+            output_path=output_path.parent / diagnostics_href,
+            source_kind="engine_diagnostics",
+            schema="DIAGNOSTICS_LEGACY_SNAPSHOT",
+        )
 
 
 
@@ -869,6 +1042,15 @@ def parse_diagnostics_v1(text: str) -> dict[str, str]:
             text,
             r"\*\*Brake Drivers:\*\*\s*([^\n]+)",
         ),
+        "f15_vix_control": diag_match(
+            text,
+            r"\*\*VIX Level:\*\*\s*([^|\n]+?)\s*\|\s*"
+            r"\*\*Change:\*\*\s*([^\n]+)",
+        ),
+        "f15_positioning_control": diag_match(
+            text,
+            r"\*\*Positioning Layer:\*\*\s*([^\n]+)",
+        ),
         # F13 measured decision contributions already emitted
         # by the canonical diagnostics report.
         "f13_macro_tilt": diag_match(
@@ -1077,7 +1259,7 @@ def parse_diagnostics_v1(text: str) -> dict[str, str]:
         "tactical_reserve": diag_match(
             text,
             r"\*\*Tactical Reserve \(Cap / Unallocated\):\*\*\s*"
-            r"([0-9]+(?:\.[0-9]+)?%)",
+            r"(-?[0-9]+(?:\.[0-9]+)?%)",
         ),
     }
 
@@ -1333,6 +1515,13 @@ def build(
         output_path = SITE_DIR / "index.html"
 
     text = source.read_text(encoding="utf-8")
+
+    if publication_schema(text) != "PM_V2_COMPLETE":
+        build_source_snapshot_page(source, output_path)
+        print(f"[OK] Source: {source}")
+        print(f"[OK] Site:   {output_path}")
+        print(f"[OK] Schema: {publication_schema(text)} · lossless snapshot")
+        return
 
     report_date = source.stem.removeprefix("daily_report_")
     data_as_of = metadata(text, "Data as of")
@@ -1775,21 +1964,9 @@ def build(
         'Engine Diagnostics <span>→</span></a>'
     )
 
-    import json
     available_dates_json = json.dumps(available_dates)
 
-    SITE_DIR.mkdir(parents=True, exist_ok=True)
-    ASSETS_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Canonical site stylesheet.
-    # _site is generated output; always rebuild CSS from the tracked source asset.
-    css_source = ROOT / "assets" / "pm_site.css"
-    if not css_source.exists():
-        raise FileNotFoundError(f"Missing canonical PM site stylesheet: {css_source}")
-    (ASSETS_DIR / "style.css").write_text(
-        css_source.read_text(encoding="utf-8"),
-        encoding="utf-8",
-    )
+    _ensure_site_css()
 
     diagnostics_source = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
     diag_text = (
@@ -1797,7 +1974,27 @@ def build(
         if diagnostics_source.exists()
         else ""
     )
+    if build_diagnostics and not diag_text:
+        raise FileNotFoundError(
+            f"Complete PM V2 report requires same-date diagnostics: {diagnostics_source}"
+        )
     diag = parse_diagnostics_v1(diag_text)
+
+    optional_f15_controls = []
+    if diag["f15_vix_control"] != "N/A":
+        optional_f15_controls.append(
+            f'VIX Control · <b>{html.escape(diag["f15_vix_control"])}</b><br>'
+        )
+    if diag["f15_positioning_control"] != "N/A":
+        optional_f15_controls.append(
+            "Positioning Control · <b>"
+            f'{html.escape(diag["f15_positioning_control"])}</b><br>'
+        )
+    if diag["f15_brake_drivers"] != "N/A":
+        optional_f15_controls.append(
+            f'Brake Drivers · <b>{html.escape(diag["f15_brake_drivers"])}</b><br>'
+        )
+    f15_controls_html = "".join(optional_f15_controls)
 
 
     # Presentation-only semantic coloring. No numeric thresholds or new market states.
@@ -1862,7 +2059,9 @@ def build(
         if not line:
             continue
         m = re.match(
-            r"^(.+?)\s{2,}([A-Z]{2,6})\s{2,}(.+?)\s{2,}(.+?)\s{2,}(.+?)$",
+            r"^(.+?)\s*\|\s*([A-Z]{2,6})\s*\|\s*"
+            r"(?:[0-9]+(?:\.[0-9]+)?%\s*\|\s*)?"
+            r"(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)$",
             line,
         )
         if m:
@@ -2082,10 +2281,8 @@ def build(
             <p><b>EXPOSURE BRAKE</b></p>
             <p>
               Input Budget · <b>{esc(strategic_risk_budget)}</b><br>
-              VIX · <b>14.53 · NORMAL → 1.00x</b><br>
-              Positioning Z · <b>{esc(positioning)}</b><br>
-              Brake · <b>Positioning Heat → 0.95x</b><br>
-              Calculation · <b>33 × 0.95 = 31.35 → {esc(recommended_exposure)}</b>
+              {f15_controls_html}
+              Persisted Output · <b>{esc(strategic_risk_budget)} → {esc(recommended_exposure)}</b>
             </p>
           </div>
 

@@ -40,6 +40,11 @@ jobs:
         run: |
           python scripts/build_pm_site.py
 
+      - name: Gate public historical reliability
+        run: |
+          python scripts/audit_public_historical_reliability.py --site-dir _site
+          python -m unittest tests/test_public_historical_reliability.py
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 

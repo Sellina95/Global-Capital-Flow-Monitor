@@ -1,0 +1,26 @@
+{
+  "contract": "GCF_PUBLIC_HISTORICAL_REPORT_RELIABILITY_V1",
+  "verdict": "PASS",
+  "audited_calendar_dates": 246,
+  "audited_reports": 246,
+  "audited_diagnostics_sources": 11,
+  "reconciled_displayed_fields_checks": 90515,
+  "schema_population": {
+    "LEGACY_BASIC": 50,
+    "LEGACY_ENGINE": 185,
+    "PM_V2_COMPLETE": 6,
+    "PM_V2_TRANSITIONAL": 5
+  },
+  "rendering_population": {
+    "lossless_snapshot_reports": 240,
+    "strict_structured_reports": 6
+  },
+  "legitimate_unavailable": {
+    "source_recorded_na_or_nan_tokens_preserved": 307,
+    "reports_without_persisted_data_as_of": 77,
+    "reports_without_separate_diagnostics_source": 235
+  },
+  "failure_total": 0,
+  "failure_class_counts": {},
+  "issues": []
+}
