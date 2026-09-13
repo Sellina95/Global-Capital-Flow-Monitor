@@ -4,6 +4,8 @@ import hashlib
 import html
 import json
 import re
+import tempfile
+from collections import Counter
 from pathlib import Path
 
 
@@ -184,6 +186,130 @@ def build_source_snapshot_page(source: Path, output_path: Path) -> None:
             source_kind="engine_diagnostics",
             schema="DIAGNOSTICS_LEGACY_SNAPSHOT",
         )
+
+
+def _decorate_reconstruction_page(output_path: Path, record: dict, source_text: str) -> None:
+    """Attach field provenance and the immutable lossless source to PM V2 output."""
+    page = output_path.read_text(encoding="utf-8")
+    counts = Counter(item["status"] for item in record["fields"].values())
+    rows = "".join(
+        "<tr>"
+        f"<td>{html.escape(item['section'])}</td>"
+        f"<td>{html.escape(item['label'])}</td>"
+        f"<td><strong>{item['status']}</strong></td>"
+        f"<td>{html.escape(item['value'])}</td>"
+        f"<td>{html.escape(item['reason'])}</td>"
+        "</tr>"
+        for item in record["fields"].values()
+    )
+    record_json = json.dumps(record, ensure_ascii=False).replace("</", "<\\/")
+    source_hash = hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+    conflict_rows = "".join(
+        "<tr>"
+        f"<td>{html.escape(item['field'])}</td>"
+        f"<td>{html.escape(item['canonical_replay'])}</td>"
+        f"<td>{html.escape(item['persisted_publication'])}</td>"
+        "</tr>"
+        for item in record.get("authority_conflicts", [])
+    )
+    conflict_panel = (
+        '<div class="reconstruction-conflict"><strong>Authority difference disclosed</strong>'
+        '<p>The current-equivalent canonical replay differs from the value actually persisted in the original publication. The cockpit uses the canonical replay; the observed publication value remains visible here and in the lossless source.</p>'
+        '<div class="reconstruction-table-wrap"><table class="reconstruction-table"><thead><tr><th>Field</th><th>Canonical replay</th><th>Persisted publication</th></tr></thead><tbody>'
+        + conflict_rows + '</tbody></table></div></div>'
+        if conflict_rows else ""
+    )
+    if record.get("canonical_exact_clock"):
+        top_notice = (
+            '<section class="reconstruction-top-notice"><strong>CANONICAL REPLAY · NOT THE ORIGINAL PUBLICATION</strong>'
+            f'<p>{len(record.get("authority_conflicts", []))} replay/persisted authority differences are disclosed below. '
+            'The cockpit uses exact-clock canonical reconstruction where available; the original publication is preserved losslessly.</p>'
+            '<a href="#reconstruction-provenance">Review authority and provenance</a></section>'
+        )
+    else:
+        top_notice = (
+            '<section class="reconstruction-top-notice"><strong>PERSISTED-SOURCE RECONSTRUCTION</strong>'
+            '<p>No exact-clock frozen canonical replay exists for this report. Only explicit same-date persisted fields are shown; all other fields remain unavailable.</p>'
+            '<a href="#reconstruction-provenance">Review authority and provenance</a></section>'
+        )
+    panel = f"""
+    <section class="panel reconstruction-contract" id="reconstruction-provenance">
+      <div class="section-kicker">HISTORICAL PM V2 RECONSTRUCTION</div>
+      <h2>Truth &amp; Provenance Contract</h2>
+      <p>Field authority: A = exact-clock frozen canonical PIT replay; B = explicit same-date persisted source; C = legitimately unavailable. No nearest-date, current, neutral, zero, or inferred backfill is permitted.</p>
+      <div class="reconstruction-counts"><strong>A {counts['A']}</strong><strong>B {counts['B']}</strong><strong>C {counts['C']}</strong></div>
+      {conflict_panel}
+      <details><summary>Field-level provenance</summary>
+        <div class="reconstruction-table-wrap"><table class="reconstruction-table"><thead><tr><th>Section</th><th>Field</th><th>Class</th><th>Displayed value</th><th>Authority reason</th></tr></thead><tbody>{rows}</tbody></table></div>
+      </details>
+      <details><summary>Lossless persisted same-date source</summary>
+        <pre class="archive-source" id="persisted-report-source" data-source-sha256="{source_hash}">{html.escape(source_text)}</pre>
+      </details>
+    </section>
+    <script type="application/json" id="historical-pm-v2-reconstruction-record">{record_json}</script>
+    """
+    style = """
+    <style>
+      .reconstruction-contract{margin-top:18px}.reconstruction-counts{display:flex;gap:14px;margin:12px 0}
+      .reconstruction-contract details{margin-top:12px}.reconstruction-table-wrap{overflow:auto;margin-top:10px}
+      .reconstruction-conflict{margin:12px 0;padding:12px;border:1px solid rgba(228,185,91,.35);border-radius:10px;background:rgba(228,185,91,.08)}
+      .reconstruction-top-notice{margin:14px 0;padding:13px 16px;border:1px solid rgba(228,185,91,.42);border-radius:12px;background:rgba(228,185,91,.10)}
+      .reconstruction-top-notice p{margin:6px 0;line-height:1.45}.reconstruction-top-notice a{font-size:12px}
+      .reconstruction-table{border-collapse:collapse;width:100%;font-size:11px}.reconstruction-table th,.reconstruction-table td{padding:7px;border-top:1px solid rgba(148,163,184,.15);text-align:left;vertical-align:top}
+      .archive-source{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:16px;border-radius:12px;background:#0b1220}
+      .reconstruction-unavailable .pm-target-donut{background:repeating-linear-gradient(135deg,rgba(148,163,184,.08),rgba(148,163,184,.08) 8px,rgba(148,163,184,.16) 8px,rgba(148,163,184,.16) 16px)}
+      .reconstruction-unavailable .pm-target-center strong{font-size:15px}
+    </style>
+    """
+    page = page.replace("</head>", style + "</head>", 1)
+    page = page.replace(
+        '<main class="shell">',
+        f'<main class="shell reconstruction-page" data-publication-schema="PM_V2_RECONSTRUCTED" data-reconstruction-contract="{record["contract"]}">',
+        1,
+    )
+    page = page.replace("</header>", "</header>" + top_notice, 1)
+    page = page.replace(
+        '<section class="diagnostics-entry">',
+        '<section class="diagnostics-entry" data-reconstruction-note="true">',
+        1,
+    )
+    diagnostics_source = REPORTS_DIR / f"engine_diagnostics_{record['report_date']}.md"
+    if not diagnostics_source.exists():
+        page = re.sub(
+            r'<section class="diagnostics-entry" data-reconstruction-note="true">.*?</section>',
+            '<section class="diagnostics-entry" data-reconstruction-note="true"><p>Unavailable · no separate same-date diagnostics artifact was persisted.</p></section>',
+            page,
+            count=1,
+            flags=re.DOTALL,
+        )
+    if not record["sector_weights"]:
+        page = page.replace('class="shell reconstruction-page"', 'class="shell reconstruction-page reconstruction-unavailable"', 1)
+        page = page.replace('<strong>100%</strong><span>PORTFOLIO</span>', '<strong>Unavailable</strong><span>ALLOCATION</span>', 1)
+
+    def mark_exact_unavailable(match: re.Match[str]) -> str:
+        tag = match.group("tag")
+        attrs = match.group("attrs")
+        class_match = re.search(r'class="([^"]*)"', attrs)
+        if class_match:
+            classes = [item for item in class_match.group(1).split() if item != "pm-neutral"]
+            if "pm-unavailable" not in classes:
+                classes.append("pm-unavailable")
+            attrs = attrs[:class_match.start(1)] + " ".join(classes) + attrs[class_match.end(1):]
+        else:
+            attrs += ' class="pm-unavailable"'
+        if 'data-availability=' not in attrs:
+            attrs += ' data-availability="unavailable"'
+        return f"<{tag}{attrs}>Unavailable</{tag}>"
+
+    # Reconstruction-only semantic normalization. This changes presentation
+    # metadata, never the reconstructed value or its authority.
+    page = re.sub(
+        r'<(?P<tag>strong|span|b)(?P<attrs>[^>]*)>\s*Unavailable\s*</(?P=tag)>',
+        mark_exact_unavailable,
+        page,
+    )
+    page = page.replace('<footer class="footer pm-provenance-footer">', panel + '<footer class="footer pm-provenance-footer">', 1)
+    output_path.write_text(page, encoding="utf-8")
 
 
 
@@ -1515,6 +1641,7 @@ def build(
         output_path = SITE_DIR / "index.html"
 
     text = source.read_text(encoding="utf-8")
+    is_reconstruction = "**Reconstruction Contract:**" in text
 
     if publication_schema(text) != "PM_V2_COMPLETE":
         build_source_snapshot_page(source, output_path)
@@ -1681,6 +1808,8 @@ def build(
         market_sentence += f"; {offset_clause} temper the downside signal"
 
     market_sentence += "."
+    if is_reconstruction:
+        market_sentence = executive_summary
 
     growth_value_tilt = field(
         allocation_context, "Growth vs Value"
@@ -1784,7 +1913,7 @@ def build(
     if not sector_html:
         sector_html = """
         <div class="empty-state">
-          No same-date sector observations available.
+          Unavailable · no same-date sector observations were reconstructed.
         </div>
         """
 
@@ -1824,7 +1953,7 @@ def build(
     if not breadth_html:
         breadth_html = """
         <div class="empty-state">
-          No canonical breadth observations available.
+          Unavailable · no exact-clock breadth observations were reconstructed.
         </div>
         """
 
@@ -1841,7 +1970,7 @@ def build(
     if not allocation_html:
         allocation_html = """
         <div class="empty-state">
-          No positive sector allocation.
+          Unavailable · no same-date sector allocation source.
         </div>
         """
 
@@ -1882,7 +2011,7 @@ def build(
     )
 
     if not reasons_html:
-        reasons_html = "<li>No canonical tactical rationale available.</li>"
+        reasons_html = "<li>Unavailable · no explicit same-date tactical rationale.</li>"
 
     # ---------------------------------------------------------
     # Report Date Navigator
@@ -2001,6 +2130,9 @@ def build(
     def pm_semantic(value: object, domain: str = "general") -> str:
         upper = str(value).upper()
 
+        if upper.strip() == "UNAVAILABLE":
+            return "pm-unavailable"
+
         if any(x in upper for x in ("TIGHTENING", "DRAINING", "INFLATION_PRESSURE",
                                     "RESTRICTIVE", "STRESS", "FRAGILE", "DEADMAN",
                                     "POSITIONING HEAT")):
@@ -2018,6 +2150,15 @@ def build(
             return "pm-neutral"
 
         return "pm-neutral"
+
+    def cross_asset_display(value: object, marker: str) -> str:
+        displayed = tape_display(value)
+        if displayed.strip().upper() == "UNAVAILABLE":
+            return (
+                '<strong class="pm-unavailable" data-availability="unavailable">'
+                'Unavailable</strong>'
+            )
+        return f"<strong>{marker} {esc(displayed)}</strong>"
 
     def pct_number(value: object) -> float:
         m = re.search(r"-?\d+(?:\.\d+)?", str(value))
@@ -2085,10 +2226,10 @@ def build(
         portfolio_rows.append({
             "sector": sector_name,
             "weight": weight,
-            "etf": exec_row.get("etf", "—"),
-            "action": exec_row.get("action", "—"),
-            "classification": exec_row.get("classification", "—"),
-            "divergence": exec_row.get("divergence", "—"),
+            "etf": exec_row.get("etf", "Unavailable" if is_reconstruction else "—"),
+            "action": exec_row.get("action", "Unavailable" if is_reconstruction else "—"),
+            "classification": exec_row.get("classification", "Unavailable" if is_reconstruction else "—"),
+            "divergence": exec_row.get("divergence", "Unavailable" if is_reconstruction else "—"),
         })
 
     # Cash is part of the 100% portfolio. Tactical reserve is already contained in cash.
@@ -2116,6 +2257,15 @@ def build(
     donut_gradient = ", ".join(donut_parts)
 
     target_delta, target_exits, target_note = target_weight_comparison(text, report_date)
+    if is_reconstruction:
+        def reconstruction_delta(name, total=False):
+            return '<span class="target-delta target-flat">Unavailable</span>'
+        target_delta = reconstruction_delta
+        target_exits = []
+        target_note = (
+            '<p class="target-comparison-note">Previous-target comparison is unavailable '
+            'unless both dates have complete same-date allocation authority.</p>'
+        )
 
     portfolio_table = "\n".join(
         f"""
@@ -2132,7 +2282,7 @@ def build(
     )
 
     if not portfolio_table:
-        portfolio_table = '<div class="empty-state">No positive sector allocation.</div>'
+        portfolio_table = '<div class="empty-state">Unavailable · no same-date sector allocation source.</div>'
 
 
     if target_exits:
@@ -2145,6 +2295,12 @@ def build(
             for name in target_exits
         )
 
+    risk_monitor_html = (
+        risk_monitor_ui(diag_text, is_latest_page)[0]
+        if diag_text
+        else '<div class="empty-state">Unavailable · no same-date engine diagnostics artifact was persisted.</div>'
+    )
+
     page = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -2155,7 +2311,7 @@ def build(
   <style>
     :root {{
       --pm-green:#56c596; --pm-amber:#e4b95b; --pm-red:#e46b6b;
-      --pm-neutral:#a9b4c5; --pm-cash:#263143;
+      --pm-neutral:#a9b4c5; --pm-unavailable:#7f8a9b; --pm-cash:#263143;
       --pm-sector-1:#76a9fa; --pm-sector-2:#73d0b2; --pm-sector-3:#b18cff;
       --pm-sector-4:#f0b76a; --pm-sector-5:#e47d9d; --pm-sector-6:#7cc7d9;
     }}
@@ -2163,6 +2319,8 @@ def build(
     .pm-amber{{color:var(--pm-amber)!important}}
     .pm-green{{color:var(--pm-green)!important}}
     .pm-neutral{{color:var(--pm-neutral)!important}}
+    .pm-unavailable{{color:var(--pm-unavailable)!important;font-style:italic}}
+    .pm-unavailable::before{{content:"NO SOURCE";display:inline-block;margin-right:6px;padding:2px 5px;border:1px dashed currentColor;border-radius:5px;font-size:8px;font-style:normal;letter-spacing:.07em;vertical-align:middle}}
     .pm-construction-grid{{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:18px;margin:18px 0}}
     .pm-chain{{display:grid;gap:10px;margin-top:16px}}
     .pm-chain-node{{padding:15px 16px;border:1px solid rgba(148,163,184,.18);border-radius:12px;background:rgba(15,23,42,.35)}}
@@ -2327,7 +2485,7 @@ def build(
           {portfolio_table}
           <div class="pm-portfolio-row">
             <div><strong>Cash</strong><span>Reserve included</span></div>
-            <strong>{esc(cash_weight)}</strong><span>{target_delta("Cash", total=True)}</span><span>HOLD</span><span>LIQUIDITY</span><span>—</span>
+            <strong>{esc(cash_weight)}</strong><span>{target_delta("Cash", total=True)}</span><span>{"Unavailable" if is_reconstruction else "HOLD"}</span><span>{"Unavailable" if is_reconstruction else "LIQUIDITY"}</span><span>{"Unavailable" if is_reconstruction else "—"}</span>
           </div>
         </div>
       </article>
@@ -2373,13 +2531,13 @@ def build(
       <div class="section-kicker">MARKET CONFIRMATION</div>
       <h2>Cross-Asset Tape</h2>
       <div class="pm-confirm-grid">
-        <div><span>US10Y</span><strong>🔴 {esc(tape_display(us10y))}</strong></div>
-        <div><span>USD</span><strong>🟢 {esc(tape_display(usd))}</strong></div>
-        <div><span>WTI</span><strong>🟡 {esc(tape_display(oil))}</strong></div>
-        <div><span>VIX</span><strong>🟢 {esc(tape_display(volatility))}</strong></div>
-        <div><span>HY OAS</span><strong>🟢 {esc(tape_display(hy_oas))}</strong></div>
+        <div><span>US10Y</span>{cross_asset_display(us10y, "🔴")}</div>
+        <div><span>USD</span>{cross_asset_display(usd, "🟢")}</div>
+        <div><span>WTI</span>{cross_asset_display(oil, "🟡")}</div>
+        <div><span>VIX</span>{cross_asset_display(volatility, "🟢")}</div>
+        <div><span>HY OAS</span>{cross_asset_display(hy_oas, "🟢")}</div>
       </div>
-    {risk_monitor_ui(diag_text, is_latest_page)[0]}
+    {risk_monitor_html}
     </section>
 
 
@@ -2406,7 +2564,7 @@ def build(
         <div>
           <span>Positioning Risk</span>
           <strong class="{pm_semantic(positioning_state)}">
-            {esc(positioning_state)} · Z {esc(diag["positioning_z"])}
+            {esc(positioning_state)} · Z {esc(positioning if is_reconstruction else diag["positioning_z"])}
           </strong>
         </div>
         <div>
@@ -2418,7 +2576,7 @@ def build(
         <div>
           <span>Geo Stress</span>
           <strong class="{pm_semantic(geopolitical)}">
-            {esc(diag["geo_level"])} · {esc(diag["geo_score"])}
+            {esc(geopolitical if is_reconstruction else diag["geo_level"] + " · " + diag["geo_score"])}
           </strong>
         </div>
       </div>
@@ -3087,13 +3245,56 @@ def build_historical_pm_pages() -> int:
     history_dir = SITE_DIR / "history"
     history_dir.mkdir(parents=True, exist_ok=True)
 
+    try:
+        from scripts.historical_pm_v2_reconstruction import (
+            build_population,
+            synthetic_pm_v2_markdown,
+        )
+    except ModuleNotFoundError:
+        from historical_pm_v2_reconstruction import (  # type: ignore
+            build_population,
+            synthetic_pm_v2_markdown,
+        )
+
+    population = {item["report_date"]: item for item in build_population()}
+
     for source in reports:
         report_date = source.stem.removeprefix("daily_report_")
-        build(
-            source=source,
-            output_path=history_dir / f"{report_date}.html",
-            build_diagnostics=True,
-        )
+        output_path = history_dir / f"{report_date}.html"
+        source_text = source.read_text(encoding="utf-8")
+        record = population[report_date]
+        if publication_schema(source_text) == "PM_V2_COMPLETE":
+            build(source=source, output_path=output_path, build_diagnostics=True)
+            continue
+
+        # The temporary structured artifact adapts verified A/B/C fields to
+        # the current renderer; it is never persisted as historical authority.
+        with tempfile.TemporaryDirectory(prefix="gcf-pm-v2-") as temp_dir:
+            synthetic = Path(temp_dir) / f"daily_report_{report_date}.md"
+            synthetic.write_text(synthetic_pm_v2_markdown(record), encoding="utf-8")
+            build(source=synthetic, output_path=output_path, build_diagnostics=False)
+        _decorate_reconstruction_page(output_path, record, source_text)
+
+        diagnostics = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+        if diagnostics.exists():
+            diagnostics_text = diagnostics.read_text(encoding="utf-8")
+            _snapshot_page(
+                source_text=diagnostics_text,
+                report_date=report_date,
+                data_as_of=metadata(diagnostics_text, "Data as of", default=""),
+                output_path=history_dir / f"{report_date}-diagnostics.html",
+                source_kind="engine_diagnostics",
+                schema="DIAGNOSTICS_LEGACY_SNAPSHOT",
+            )
+
+    (SITE_DIR / "historical-pm-v2-reconstruction.json").write_text(
+        json.dumps(
+            {"contract": "GCF_HISTORICAL_PM_V2_RECONSTRUCTION_V1", "reports": list(population.values())},
+            ensure_ascii=False,
+            indent=2,
+        ) + "\n",
+        encoding="utf-8",
+    )
 
     return len(reports)
 

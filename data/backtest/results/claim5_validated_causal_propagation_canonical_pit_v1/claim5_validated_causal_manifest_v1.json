@@ -1,0 +1,88 @@
+{
+  "checks": {
+    "arm_state_isolation": true,
+    "baseline_deterministic": true,
+    "baseline_full_replay": true,
+    "baseline_state_carry": true,
+    "canonical_date_order_exact": true,
+    "canonical_population_4645": true,
+    "capital_identity_baseline": true,
+    "capital_identity_treatment": true,
+    "comparison_one_to_one": true,
+    "filter18_residual_zero": true,
+    "g4_pass": true,
+    "historical_clock_only": true,
+    "intervention_boundary_exact": true,
+    "live_state_access_zero": true,
+    "protected_and_live_files_unchanged": true,
+    "treatment_deterministic": true,
+    "treatment_full_replay": true,
+    "treatment_intervention_exact": true,
+    "treatment_nonintervention_progression_3577": true,
+    "treatment_state_carry": true,
+    "validated_contract_pass": true,
+    "validated_intervention_population_1068": true
+  },
+  "claim": "#5_SIGNAL_RISK_EXPOSURE_ALLOCATION_CAUSALITY",
+  "constraints": {
+    "production_f13_f15_f18_modified": false,
+    "returns_pnl_performance_used": false,
+    "taxonomy_mapping_threshold_modified": false
+  },
+  "filter18_direct_residual": {
+    "DIRECT_BUILDER_REBALANCE_PATH": 322,
+    "DIRECT_FILTER18_PATH": 322,
+    "DIRECT_MACRO_PROFILE_PATH": 8,
+    "DIRECT_PREVIOUS_PORTFOLIO_PATH": 299,
+    "DIRECT_RANK_STATE_PATH": 320,
+    "RESIDUAL_UNEXPLAINED_FILTER18_PATH": 0
+  },
+  "g1_release_id": "gcfm-g1-58f2702-7b4c324-pit-v1",
+  "g4_status": "PASS",
+  "panel_authority": {
+    "canonical_promotion_eligible": true,
+    "consumer": "CLAIM5_VALIDATED_CAUSAL_PROPAGATION",
+    "evidence_classification": "G1_CANONICAL_HISTORICAL_INPUT",
+    "identity_status": "PASS",
+    "mode": "CANONICAL",
+    "regeneration_provenance_status": "NON_REGENERABLE_FROZEN_INPUT",
+    "repository_relative_path": "data/backtest/pit_safe/master_panel_pit_safe_final.csv",
+    "resolved_path": "/workspace/scratch/b149ed98ad77/gcfm_g1/data/backtest/pit_safe/master_panel_pit_safe_final.csv",
+    "sha256": "56b6732948254526bda76749a0e975c40c50d8fc8c3df0660151103aec12a39a"
+  },
+  "population": {
+    "full_history_rows_per_arm": 4645,
+    "intervention_rows": 1068,
+    "nonintervention_progression_rows": 3577
+  },
+  "production_sha": "58f270267bba502b5831a60d8e8a2a375f55f7ef",
+  "propagation": {
+    "CASH_WEIGHT": 527,
+    "FILTER13_RISK_BUDGET": 306,
+    "FILTER15_EXPOSURE": 292,
+    "FILTER18_ALLOCATED_EQUITY": 527,
+    "FILTER18_WEIGHTS": 600
+  },
+  "provenance": {
+    "g4_manifest_sha256": "fddb18dc576aeeabfc7a40a6bfc962d052dd02f26f3604ec34153ce390f91826",
+    "mapping_semantic_sha256": "6ef7cba1e196fbb067385a2acc20e193adfd357d98669d74c3a745907e47d225",
+    "master_panel_sha256": "56b6732948254526bda76749a0e975c40c50d8fc8c3df0660151103aec12a39a",
+    "validated_contract_manifest_sha256": "00983d21e7952a8170ace7bcfa5ca2facae3ba661b3fa82f56499b55050850e2",
+    "validated_contract_sha256": "3c2fde157a4f74a31424a7e5aacfa065b9680f53669bb1e21c7d5afbcbe56858"
+  },
+  "research_sha": "7b4c324b27d6a19af3ef61852020da70cc7fe8c2",
+  "schema_version": 1,
+  "status": "PASS",
+  "superseded_evidence": {
+    "artifacts": {
+      "data/backtest/results/macro_v4_causal_propagation_v1/canonical_baseline_identity_audit.txt": "f9ec6fe74d8e010816b855bad624c5a364a9bcd4af38bd5d593d8906782c9301",
+      "data/backtest/results/macro_v4_causal_propagation_v1/canonical_baseline_replay.csv": "d3a90563765d0ee031e1c2940c0e880f9872b4675438ea5a30f17d3f64902bfe",
+      "data/backtest/results/macro_v4_causal_propagation_v1/macro_v3_counterfactual_audit.txt": "50ee304f9b24736ab5d20f8bb5f6245641234931fcb13d53306e79f4797ade45",
+      "data/backtest/results/macro_v4_causal_propagation_v1/macro_v3_counterfactual_daily.csv": "ba0613f28332ac2170b5e513e3fbf5600651ea681b12ab3c0f4e69d317cb5a7b",
+      "data/backtest/results/macro_v4_causal_propagation_v1/macro_v3_counterfactual_summary.csv": "2afc51eeb53327e81c62515f9ea4ee0145ed37bb49c076339d98a6a7544124c9"
+    },
+    "old_counts_used_as_targets": false,
+    "old_population": 992,
+    "status": "SUPERSEDED_PRE_G4_ONLY"
+  }
+}

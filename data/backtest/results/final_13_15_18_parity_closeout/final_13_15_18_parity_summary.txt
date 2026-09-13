@@ -1,0 +1,70 @@
+==============================================================================
+FINAL 13 -> 15 -> 18 PARITY CLOSEOUT
+==============================================================================
+
+Scope
+-----
+PIT Backtest Chain        : Filter13 -> Filter15 -> Filter18
+Measurement Boundary     : Final execution ETF weights
+Production Modified      : NO
+Parameter Optimization   : NO
+New Signal               : NO
+Forward Fill             : NO
+
+Full-History
+------------
+Rows                      : 4645
+Execution Errors          : 0
+Missing Contract Values   : 0
+
+Filter13 -> Filter15
+--------------------
+Filter15 > Filter13 rows  : 141
+Interpretation            : OBSERVED / NOT AUTOMATIC FAILURE
+
+Reason:
+Filter15 owns validated exposure-state behavior including
+staged recovery / re-risking. This closeout does not impose
+a new Filter15 <= Filter13 invariant that Production does
+not define.
+
+Filter15 -> Filter18
+--------------------
+Sector > Filter15         : 0
+Sector / Filter18 mismatch: 0
+Negative Tactical Reserve : 0
+Max Sector Over Filter15  : 0.0
+
+Capital Reconciliation
+----------------------
+Capital Failures          : 0
+Max Capital Error         : 0.0
+
+==============================================================================
+INSTITUTIONAL GATE
+==============================================================================
+
+STATUS                    : PASS
+
+
+INTERPRETATION:
+- Full-history PIT execution completed without execution errors.
+- Filter13 output is successfully consumed by the validated
+  Filter15 production-equivalent exposure process.
+- Filter18 final execution weights never exceed Filter15's
+  allowed exposure.
+- Final sector weights reconcile with persisted Filter18 equity.
+- Equity plus cash reconciles to 100%.
+- No negative tactical reserve survives at execution boundary.
+
+PARITY DECISION:
+BACKTEST EXECUTION CHAIN VALIDATED
+
+13 -> 15 -> 18 CONTRACT:
+CLOSED
+
+NEXT PHASE:
+STRATEGY VALIDATION / PERFORMANCE ATTRIBUTION
+
+Production change:
+NONE REQUIRED

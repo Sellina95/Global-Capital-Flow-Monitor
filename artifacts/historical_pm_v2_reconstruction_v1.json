@@ -1,0 +1,123 @@
+{
+  "contract": "GCF_HISTORICAL_PM_V2_RECONSTRUCTION_V1",
+  "verdict": "PASS",
+  "audited_calendar_dates": 246,
+  "audited_reports": 246,
+  "pm_v2_surface_coverage": {
+    "reconstructed": 240,
+    "native_complete": 6,
+    "total": 246
+  },
+  "canonical_exact_clock_reports": 88,
+  "field_inventory_size": 62,
+  "field_provenance_population": {
+    "C": 10380,
+    "B": 3816,
+    "A": 1056
+  },
+  "field_level_checks": 88289,
+  "sector_weight_checks": 379,
+  "f19_rows_checked": 29,
+  "fabricated_default_values": 0,
+  "authority_differences": {
+    "reports": 88,
+    "fields": 201,
+    "by_field": {
+      "f13.risk_budget": 76,
+      "f15.recommended_exposure": 82,
+      "f18.macro_allocation": 14,
+      "f18.tactical_reserve": 29
+    }
+  },
+  "legacy_reliability_v1": {
+    "verdict": "PASS",
+    "checks": 90515,
+    "failures": 0
+  },
+  "representative_dates": [
+    {
+      "report_date": "2025-12-11",
+      "source_schema": "LEGACY_BASIC",
+      "data_as_of": "not recorded",
+      "canonical_exact_clock": false,
+      "field_classes": {
+        "C": 58,
+        "B": 4
+      },
+      "sector_weights": 0,
+      "f19_rows": 0,
+      "decision_chain": {
+        "f13.risk_budget": "Unavailable",
+        "f15.recommended_exposure": "Unavailable",
+        "f18.exposure_ceiling": "Unavailable",
+        "f18.allocated_equity": "Unavailable",
+        "f18.tactical_reserve": "Unavailable",
+        "f18.cash": "Unavailable"
+      }
+    },
+    {
+      "report_date": "2026-06-22",
+      "source_schema": "LEGACY_ENGINE",
+      "data_as_of": "2026-06-18",
+      "canonical_exact_clock": true,
+      "field_classes": {
+        "B": 17,
+        "A": 12,
+        "C": 33
+      },
+      "sector_weights": 3,
+      "f19_rows": 0,
+      "decision_chain": {
+        "f13.risk_budget": "61.0%",
+        "f15.recommended_exposure": "57.0%",
+        "f18.exposure_ceiling": "57.0%",
+        "f18.allocated_equity": "18.1%",
+        "f18.tactical_reserve": "38.9%",
+        "f18.cash": "81.9%"
+      }
+    },
+    {
+      "report_date": "2026-09-02",
+      "source_schema": "PM_V2_TRANSITIONAL",
+      "data_as_of": "2026-09-01",
+      "canonical_exact_clock": false,
+      "field_classes": {
+        "B": 26,
+        "C": 36
+      },
+      "sector_weights": 3,
+      "f19_rows": 0,
+      "decision_chain": {
+        "f13.risk_budget": "Unavailable",
+        "f15.recommended_exposure": "Unavailable",
+        "f18.exposure_ceiling": "20.0%",
+        "f18.allocated_equity": "20.0%",
+        "f18.tactical_reserve": "0.0%",
+        "f18.cash": "80.0%"
+      }
+    },
+    {
+      "report_date": "2026-09-13",
+      "source_schema": "PM_V2_COMPLETE",
+      "data_as_of": "2026-09-11",
+      "canonical_exact_clock": false,
+      "field_classes": {
+        "B": 56,
+        "C": 6
+      },
+      "sector_weights": 5,
+      "f19_rows": 5,
+      "decision_chain": {
+        "f13.risk_budget": "50.0%",
+        "f15.recommended_exposure": "52.0%",
+        "f18.exposure_ceiling": "52.0%",
+        "f18.allocated_equity": "52.0%",
+        "f18.tactical_reserve": "0.0%",
+        "f18.cash": "48.0%"
+      }
+    }
+  ],
+  "failure_total": 0,
+  "failure_class_counts": {},
+  "issues": []
+}

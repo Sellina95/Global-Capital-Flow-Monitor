@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "authority_id": "GCFM_CANONICAL_PIT_G4_CONTRACT_CLAIM5_V1",
+  "status": "CANONICAL_EVIDENCE",
+  "base_commit": "3447c330c43ee1e15d6dff181c327c5fd822e74b",
+  "g1": {
+    "status": "CLOSED",
+    "release_commit": "54698c576b1ce17c6604e8c9df1a07659c98f342"
+  },
+  "canonical_panel": {
+    "path": "data/backtest/pit_safe/master_panel_pit_safe_final.csv",
+    "sha256": "56b6732948254526bda76749a0e975c40c50d8fc8c3df0660151103aec12a39a",
+    "identity_status": "PASS",
+    "consumer_authority_status": "PASS",
+    "regeneration_provenance_status": "NON_REGENERABLE_FROZEN_INPUT"
+  },
+  "frozen_mapping": {
+    "path": "data/backtest/results/macro_v4_portfolio_mapping_spec_v1/macro_v4_portfolio_mapping_spec.json",
+    "semantic_sha256": "6ef7cba1e196fbb067385a2acc20e193adfd357d98669d74c3a745907e47d225"
+  },
+  "authority_chain": [
+    {
+      "stage": "CANONICAL_PANEL_GATE",
+      "status": "PASS",
+      "manifest": "data/backtest/results/canonical_panel_identity_provenance_v1/canonical_panel_identity_provenance_manifest_v1.json",
+      "manifest_sha256": "b5749f15f07f176bbb3a69c7a068c01d5a3e63c89452a3f5ca82630afc6f0480"
+    },
+    {
+      "stage": "G4_HISTORICAL_STATE_CLOCK",
+      "status": "PASS",
+      "manifest": "data/backtest/results/g4_historical_state_clock_integrity_canonical_pit_v1/g4_historical_state_clock_manifest_v1.json",
+      "manifest_sha256": "fddb18dc576aeeabfc7a40a6bfc962d052dd02f26f3604ec34153ce390f91826"
+    },
+    {
+      "stage": "VALIDATED_RAW_MACRO_INTERVENTION_CONTRACT",
+      "status": "PASS",
+      "population": 1068,
+      "contract": "data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_intervention_contract_daily_v1.csv",
+      "contract_sha256": "3c2fde157a4f74a31424a7e5aacfa065b9680f53669bb1e21c7d5afbcbe56858",
+      "manifest": "data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_intervention_contract_manifest_v1.json",
+      "manifest_sha256": "00983d21e7952a8170ace7bcfa5ca2facae3ba661b3fa82f56499b55050850e2"
+    },
+    {
+      "stage": "CLAIM5_CAUSAL_PROPAGATION",
+      "status": "PASS",
+      "manifest": "data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_validated_causal_manifest_v1.json",
+      "manifest_sha256": "278e14ff114b64cf8f9cb5aa7eeb70c1dda933345ec35321e3837771f05c4e61"
+    }
+  ],
+  "canonical_artifacts": {
+    "data/backtest/results/canonical_panel_identity_provenance_v1/canonical_panel_identity_negative_controls_v1.csv": "4c3aa2f954bc3b52373d24de550e44a0f4fa95a75b5607a317daf73ce4b8cca7",
+    "data/backtest/results/canonical_panel_identity_provenance_v1/canonical_panel_identity_provenance_audit_v1.txt": "db68eae11d100b4375cef6016b15ed49f168d3495128957cb9abad41e8c6b317",
+    "data/backtest/results/canonical_panel_identity_provenance_v1/canonical_panel_identity_provenance_manifest_v1.json": "b5749f15f07f176bbb3a69c7a068c01d5a3e63c89452a3f5ca82630afc6f0480",
+    "data/backtest/results/g4_historical_state_clock_integrity_canonical_pit_v1/g4_historical_state_clock_audit_v1.txt": "31f6c45869ceef84f84e1a31c30c3478c859e695699aed77b3aa4513789cb4d3",
+    "data/backtest/results/g4_historical_state_clock_integrity_canonical_pit_v1/g4_historical_state_clock_manifest_v1.json": "fddb18dc576aeeabfc7a40a6bfc962d052dd02f26f3604ec34153ce390f91826",
+    "data/backtest/results/g4_historical_state_clock_integrity_canonical_pit_v1/g4_historical_state_transition_ledger_v1.csv": "f38d1badccf23f9e68183e44d1fdaf280f28d98dcbb92bb3cdab84fb16d04d5f",
+    "data/backtest/results/g4_historical_state_clock_integrity_canonical_pit_v1/g4_negative_controls_v1.csv": "4f75f6c02b346452741aea672c48ec1d0e1428d2913310c6c392d95e6451b367",
+    "data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_intervention_contract_audit_v1.txt": "5fc412306c762c5d60737180d3b35726dd14044b0e9f7c29da3d95b7fab57442",
+    "data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_intervention_contract_daily_v1.csv": "3c2fde157a4f74a31424a7e5aacfa065b9680f53669bb1e21c7d5afbcbe56858",
+    "data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_intervention_contract_manifest_v1.json": "00983d21e7952a8170ace7bcfa5ca2facae3ba661b3fa82f56499b55050850e2",
+    "data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_intervention_date_diff_v1.csv": "15cead1c01581ca15eb6e6d08222065d51700d7b39874bb533798160486eaca6",
+    "data/backtest/results/validated_raw_macro_intervention_contract_canonical_pit_v1/validated_raw_macro_contract_daily_v1.csv": "e45c0900a9c89b9531fe2e1f1a9198301f1f34ab4b76275d26e7ebceef473d77",
+    "data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_filter18_direct_residual_daily_v1.csv": "7ac08abbefbb755e0b4e3973959c7649c1aae23f7f849caaa40f19e16e966340",
+    "data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_filter18_direct_residual_summary_v1.csv": "4a8a29dfdc85bc11e542638701854d77c033c8c9821f614ef73de015eef909e2",
+    "data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_full_history_causal_daily_v1.csv": "5dfd71eea77b2257c59729957ca0e3f02df9be470469cda086a2d0762a275442",
+    "data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_propagation_summary_v1.csv": "1b246c898cccc152199c1aff05abf630d25b8690f3c1fdb27011a9551960282b",
+    "data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_validated_causal_audit_v1.txt": "ffde0ea3fe21abfafa902a47e24b5f0209f6e31cbd9bdeb3811847f576f54718",
+    "data/backtest/results/claim5_validated_causal_propagation_canonical_pit_v1/claim5_validated_causal_manifest_v1.json": "278e14ff114b64cf8f9cb5aa7eeb70c1dda933345ec35321e3837771f05c4e61"
+  },
+  "consumer_implementation": {
+    "scripts/backtest/audit_canonical_panel_identity_provenance_v1.py": "31fc3cb057f96bc24c10ca78c76558a70770151036390ea7ff35f4ee92e0ff24",
+    "scripts/backtest/audit_g4_historical_state_clock_integrity_v1.py": "cceba028b61a3ef63fa89c598fd15c3c6a14a525edf35271e9fd60ed6f314da8",
+    "scripts/backtest/refreeze_validated_raw_macro_intervention_contract_v1.py": "346ba0af6895464957773156045045a18409d9be6f691f3b1bc3376fc67141e0",
+    "scripts/backtest/audit_claim5_validated_causal_propagation_v1.py": "7838f3c8824a9aeca1610c27a646479f50a066de83495d4bf20491424b2b8145"
+  },
+  "legacy_authority": [
+    {
+      "stage": "G4_HISTORICAL_STATE_CLOCK",
+      "status": "IMMUTABLE_SUPERSEDED_HISTORICAL_REFERENCE",
+      "manifest": "data/backtest/results/g4_historical_state_clock_integrity_v1/g4_historical_state_clock_manifest_v1.json",
+      "manifest_sha256": "8ad8daeaf9531d64d1eb789c0727c9ad1cc08044e8b40fba38c2cd2900452ee8"
+    },
+    {
+      "stage": "VALIDATED_RAW_MACRO_INTERVENTION_CONTRACT",
+      "status": "IMMUTABLE_SUPERSEDED_HISTORICAL_REFERENCE",
+      "manifest": "data/backtest/results/validated_raw_macro_intervention_contract_v1/validated_intervention_contract_manifest_v1.json",
+      "manifest_sha256": "9978830d8ef1fc67970f111ff7dfd1feca89cc62592e89f1130324ac46fe2c31"
+    },
+    {
+      "stage": "CLAIM5_CAUSAL_PROPAGATION",
+      "status": "IMMUTABLE_SUPERSEDED_HISTORICAL_REFERENCE",
+      "manifest": "data/backtest/results/claim5_validated_causal_propagation_v1/claim5_validated_causal_manifest_v1.json",
+      "manifest_sha256": "ea39f29e4f3f71286dee2b132b956832a358280d0f598f0327df476adabe5c61"
+    }
+  ],
+  "promotion_policy": {
+    "canonical_consumers_must_use_registered_panel": true,
+    "non_pit_control_is_non_promotable": true,
+    "legacy_evidence_is_non_promotable": true,
+    "performance_metrics_used": false,
+    "strategy_logic_changed": false
+  }
+}

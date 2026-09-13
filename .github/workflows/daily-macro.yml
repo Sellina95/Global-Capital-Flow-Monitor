@@ -297,6 +297,8 @@ jobs:
           python scripts/build_pm_site.py
           python scripts/audit_public_historical_reliability.py --site-dir _site
           python -m unittest tests/test_public_historical_reliability.py
+          python scripts/audit_historical_pm_v2_reconstruction.py --site-dir _site
+          python -m unittest tests/test_historical_pm_v2_reconstruction.py
 
       - name: Commit and push report
         run: |
