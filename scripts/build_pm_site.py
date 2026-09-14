@@ -1635,6 +1635,7 @@ def build(
     output_path: Path | None = None,
     build_diagnostics: bool = True,
     reconstruction_record: dict | None = None,
+    diagnostics_source_override: Path | None = None,
 ) -> None:
     """
     Build one PM view from an already-persisted daily report artifact.
@@ -2091,7 +2092,14 @@ def build(
     )
 
     # Date-specific diagnostics use the same presentation template.
-    diagnostics = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+    # Historical contract:
+    # - if engine_diagnostics_DATE.md exists, use it
+    # - otherwise use the persisted same-date daily_report_DATE.md
+    diagnostics = (
+        diagnostics_source_override
+        if diagnostics_source_override is not None
+        else REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+    )
     diagnostics_output = (
         SITE_DIR / "diagnostics.html" if is_latest_page
         else output_path.parent / f"{report_date}-diagnostics.html"
@@ -2107,7 +2115,7 @@ def build(
 
     _ensure_site_css()
 
-    diagnostics_source = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+    diagnostics_source = diagnostics
     diag_text = (
         diagnostics_source.read_text(encoding="utf-8")
         if diagnostics_source.exists()
@@ -2115,7 +2123,7 @@ def build(
     )
     if build_diagnostics and not diag_text:
         raise FileNotFoundError(
-            f"Complete PM V2 report requires same-date diagnostics: {diagnostics_source}"
+            f"No persisted historical diagnostics source: {diagnostics_source}"
         )
     diag = parse_diagnostics_v1(diag_text)
 
@@ -3278,11 +3286,15 @@ def load_strategic_context(report_date: str) -> dict:
 
 def build_historical_pm_pages() -> int:
     """
-    Render persisted PM reports as static historical pages.
+    Render persisted historical reports through the current PM + Diagnostics UI.
 
-    Availability is defined strictly by the existence of a persisted
-    daily_report_YYYY-MM-DD.md artifact. Historical rendering never
-    recalculates Production state; Diagnostics use same-date artifacts.
+    Historical source contract:
+    - PM View always uses the persisted daily_report_DATE.md authority.
+    - Diagnostics uses engine_diagnostics_DATE.md when it exists.
+    - For dates before diagnostics were split into a separate artifact,
+      the same-date daily_report_DATE.md is also the diagnostics authority.
+    - Raw legacy snapshot pages are not public historical output.
+    - Historical rendering never recalculates Production state.
     """
     reports = sorted(REPORTS_DIR.glob("daily_report_????-??-??.md"))
     history_dir = SITE_DIR / "history"
@@ -3299,40 +3311,72 @@ def build_historical_pm_pages() -> int:
             synthetic_pm_v2_markdown,
         )
 
-    population = {item["report_date"]: item for item in build_population()}
+    population = {
+        item["report_date"]: item
+        for item in build_population()
+    }
 
     for source in reports:
         report_date = source.stem.removeprefix("daily_report_")
         output_path = history_dir / f"{report_date}.html"
         source_text = source.read_text(encoding="utf-8")
         record = population[report_date]
+
+        separate_diagnostics = (
+            REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+        )
+
+        diagnostics_source = (
+            separate_diagnostics
+            if separate_diagnostics.exists()
+            else source
+        )
+
         if publication_schema(source_text) == "PM_V2_COMPLETE":
-            build(source=source, output_path=output_path, build_diagnostics=True)
+            build(
+                source=source,
+                output_path=output_path,
+                build_diagnostics=True,
+                diagnostics_source_override=diagnostics_source,
+            )
             continue
 
-        # The temporary structured artifact adapts verified A/B/C fields to
-        # the current renderer; it is never persisted as historical authority.
-        with tempfile.TemporaryDirectory(prefix="gcf-pm-v2-") as temp_dir:
-            synthetic = Path(temp_dir) / f"daily_report_{report_date}.md"
-            synthetic.write_text(synthetic_pm_v2_markdown(record), encoding="utf-8")
-            build(source=synthetic, output_path=output_path, build_diagnostics=False, reconstruction_record=record)
-        _decorate_reconstruction_page(output_path, record, source_text)
-
-        diagnostics = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
-        if diagnostics.exists():
-            diagnostics_text = diagnostics.read_text(encoding="utf-8")
-            _snapshot_page(
-                source_text=diagnostics_text,
-                report_date=report_date,
-                data_as_of=metadata(diagnostics_text, "Data as of", default=""),
-                output_path=history_dir / f"{report_date}-diagnostics.html",
-                source_kind="engine_diagnostics",
-                schema="DIAGNOSTICS_LEGACY_SNAPSHOT",
+        # Adapt verified historical PM fields to the current PM renderer.
+        # The synthetic artifact is presentation-only and is never persisted
+        # as historical authority.
+        with tempfile.TemporaryDirectory(
+            prefix="gcf-pm-v2-"
+        ) as temp_dir:
+            synthetic = (
+                Path(temp_dir)
+                / f"daily_report_{report_date}.md"
             )
+
+            synthetic.write_text(
+                synthetic_pm_v2_markdown(record),
+                encoding="utf-8",
+            )
+
+            build(
+                source=synthetic,
+                output_path=output_path,
+                build_diagnostics=True,
+                reconstruction_record=record,
+                diagnostics_source_override=diagnostics_source,
+            )
+
+        _decorate_reconstruction_page(
+            output_path,
+            record,
+            source_text,
+        )
 
     (SITE_DIR / "historical-pm-v2-reconstruction.json").write_text(
         json.dumps(
-            {"contract": "GCF_HISTORICAL_PM_V2_RECONSTRUCTION_V1", "reports": list(population.values())},
+            {
+                "contract": "GCF_HISTORICAL_PM_V2_RECONSTRUCTION_V1",
+                "reports": list(population.values()),
+            },
             ensure_ascii=False,
             indent=2,
         ) + "\n",

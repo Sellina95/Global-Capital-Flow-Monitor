@@ -410,44 +410,57 @@ def audit(site_dir: Path) -> dict:
         if "Calculation ·" in page and "Calculation ·" not in source:
             add_issue(issues, "false_fallback_default", report_date, "unsupported hard-coded F15 calculation")
 
-        diagnostics_source = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+        separate_diagnostics_source = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+        diagnostics_source = (
+            separate_diagnostics_source
+            if separate_diagnostics_source.exists()
+            else REPORTS_DIR / f"daily_report_{report_date}.md"
+        )
         diagnostics_output = site_dir / "history" / f"{report_date}-diagnostics.html"
-        if diagnostics_source.exists():
+
+        # Storage contract:
+        # - before diagnostics split: same-date daily_report is the persisted diagnostics source
+        # - after split: same-date engine_diagnostics file is authoritative
+        if separate_diagnostics_source.exists():
             diagnostics_sources += int(schema != "PM_V2_COMPLETE")
-            checks += 1
-            if not diagnostics_output.exists():
-                add_issue(issues, "missing_stale_broken_report", report_date, "persisted diagnostics page is missing")
-            else:
-                diagnostics_page = diagnostics_output.read_text(encoding="utf-8")
-                diagnostics_text = diagnostics_source.read_text(encoding="utf-8")
-                if 'id="persisted-report-source"' in diagnostics_page:
-                    raw_match = re.search(
-                        r'<pre class="archive-source" id="persisted-report-source" data-source-sha256="([0-9a-f]{64})">(.*?)</pre>',
-                        diagnostics_page,
-                        re.DOTALL,
-                    )
-                else:
-                    raw_match = re.search(
-                        r'<pre class="diagnostics">(.*?)</pre>',
-                        diagnostics_page,
-                        re.DOTALL,
-                    )
-                checks += 1
-                if not raw_match or html.unescape(raw_match.group(raw_match.lastindex)) != diagnostics_text:
-                    add_issue(
-                        issues,
-                        "source_value_rendered_unavailable",
-                        report_date,
-                        "diagnostics source snapshot is absent or not lossless",
-                    )
-                else:
-                    checks += sum(1 for line in diagnostics_text.splitlines() if line.strip())
+
+        checks += 1
+        if not diagnostics_output.exists():
+            add_issue(
+                issues,
+                "missing_stale_broken_report",
+                report_date,
+                "persisted diagnostics page is missing",
+            )
         else:
+            diagnostics_page = diagnostics_output.read_text(encoding="utf-8")
+            diagnostics_text = diagnostics_source.read_text(encoding="utf-8")
+
+            if 'id="persisted-report-source"' in diagnostics_page:
+                raw_match = re.search(
+                    r'<pre class="archive-source" id="persisted-report-source" data-source-sha256="([0-9a-f]{64})">(.*?)</pre>',
+                    diagnostics_page,
+                    re.DOTALL,
+                )
+            else:
+                raw_match = re.search(
+                    r'<pre class="diagnostics">(.*?)</pre>',
+                    diagnostics_page,
+                    re.DOTALL,
+                )
+
             checks += 1
-            if diagnostics_output.exists():
-                add_issue(issues, "missing_stale_broken_report", report_date, "diagnostics page exists without a source artifact")
-            if f"{report_date}-diagnostics.html" in page:
-                add_issue(issues, "false_fallback_default", report_date, "report links to diagnostics that were never persisted")
+            if not raw_match or html.unescape(raw_match.group(raw_match.lastindex)) != diagnostics_text:
+                add_issue(
+                    issues,
+                    "source_value_rendered_unavailable",
+                    report_date,
+                    "diagnostics source snapshot is absent or not lossless",
+                )
+            else:
+                checks += sum(
+                    1 for line in diagnostics_text.splitlines() if line.strip()
+                )
 
         expected_calendar_path = site_dir / "history" / f"{report_date}.html"
         checks += 1

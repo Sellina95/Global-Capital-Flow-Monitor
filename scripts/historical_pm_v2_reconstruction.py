@@ -432,6 +432,92 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
     pm_sector_rows, pm_breadth_rows = _pm_v2_leadership_rows(text)
     market_summary = _persisted_market_summary(text, schema)
     source_hash = sha256_text(text)
+
+    # Supplemental same-date bindings:
+    # These values already exist in the persisted historical report/diagnostics.
+    # This adapter only exposes them to the fixed PM V2 schema; it does not
+    # calculate, infer, or backfill new historical state.
+    supplemental_values: dict[str, dict[str, str]] = {}
+
+    macro_narrative = _explicit_label(text, "Macro Narrative")
+    if macro_narrative:
+        supplemental_values["market.macro_narrative"] = {
+            "value": macro_narrative,
+            "authority": str(path.relative_to(ROOT)),
+            "authority_sha256": source_hash,
+            "reason": "Explicit same-date persisted Macro Narrative.",
+        }
+
+    geopolitical = _explicit_label(text, "Geopolitical")
+    if geopolitical:
+        supplemental_values["constraint.geopolitical"] = {
+            "value": geopolitical,
+            "authority": str(path.relative_to(ROOT)),
+            "authority_sha256": source_hash,
+            "reason": "Explicit same-date persisted Geopolitical state.",
+        }
+
+    if diagnostics_text:
+        fed_block = _heading_block(diagnostics_text, "4) Fed Plumbing Filter")
+        fed_match = re.search(
+            r"(?m)^-\s*\*\*판정:\*\*\s*\*\*(.+?)\*\*\s*$",
+            fed_block,
+        )
+        if fed_match:
+            supplemental_values["market.fed_plumbing"] = {
+                "value": _clean(fed_match.group(1)),
+                "authority": str(diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": diagnostics_hash,
+                "reason": "Explicit same-date Fed Plumbing verdict.",
+            }
+
+        credit_block = _heading_block(diagnostics_text, "4.5) Credit Stress Filter")
+        credit_match = re.search(
+            r"(?m)^-\s*\*\*판정:\*\*\s*\*\*(.+?)\*\*\s*$",
+            credit_block,
+        )
+        if credit_match:
+            supplemental_values["market.credit_structure"] = {
+                "value": _clean(credit_match.group(1)),
+                "authority": str(diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": diagnostics_hash,
+                "reason": "Explicit same-date Credit Stress verdict.",
+            }
+
+        corr_block = _heading_block(diagnostics_text, "6.5) Correlation Break Monitor")
+        if "No significant correlation break detected." in corr_block:
+            supplemental_values["constraint.correlation_break"] = {
+                "value": "No significant correlation break detected.",
+                "authority": str(diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": diagnostics_hash,
+                "reason": "Explicit same-date Correlation Break result.",
+            }
+        elif "Correlation Break Detected" in corr_block:
+            supplemental_values["constraint.correlation_break"] = {
+                "value": "Correlation Break Detected",
+                "authority": str(diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": diagnostics_hash,
+                "reason": "Explicit same-date Correlation Break result.",
+            }
+
+        sector_corr_block = _heading_block(
+            diagnostics_text, "6.6) Sector Correlation Break Monitor"
+        )
+        if "Correlation Break Detected" in sector_corr_block:
+            supplemental_values["constraint.sector_corr_break"] = {
+                "value": "Correlation Break Detected",
+                "authority": str(diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": diagnostics_hash,
+                "reason": "Explicit same-date Sector Correlation Break result.",
+            }
+        elif "No significant correlation break detected." in sector_corr_block:
+            supplemental_values["constraint.sector_corr_break"] = {
+                "value": "No significant correlation break detected.",
+                "authority": str(diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": diagnostics_hash,
+                "reason": "Explicit same-date Sector Correlation Break result.",
+            }
+
     fields: dict[str, dict[str, str]] = {}
     authority_conflicts: list[dict[str, str]] = []
 
@@ -493,6 +579,18 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
                 "authority_sha256": diagnostics_hash,
                 "source_clock": data_as_of or report_date,
                 "reason": f"Explicit same-date persisted diagnostics field: {spec.label}.",
+            }
+        elif spec.key in supplemental_values:
+            item = supplemental_values[spec.key]
+            fields[spec.key] = {
+                "label": spec.label,
+                "section": spec.section,
+                "status": "B",
+                "value": item["value"],
+                "authority": item["authority"],
+                "authority_sha256": item["authority_sha256"],
+                "source_clock": data_as_of or report_date,
+                "reason": item["reason"],
             }
         else:
             fields[spec.key] = {

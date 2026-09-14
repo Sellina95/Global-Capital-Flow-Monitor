@@ -22,8 +22,9 @@ class HistoricalPmV2ReconstructionTest(unittest.TestCase):
 
     def test_full_population_contract_passes(self) -> None:
         self.assertEqual(self.result["verdict"], "PASS", self.result["issues"][:5])
-        self.assertEqual(self.result["audited_calendar_dates"], 246)
-        self.assertEqual(self.result["pm_v2_surface_coverage"]["total"], 246)
+        expected_count = len(list(Path("reports").glob("daily_report_*.md")))
+        self.assertEqual(self.result["audited_calendar_dates"], expected_count)
+        self.assertEqual(self.result["pm_v2_surface_coverage"]["total"], expected_count)
 
     def test_exact_clock_boundary_never_uses_nearest_date(self) -> None:
         self.assertEqual(self.result["canonical_exact_clock_reports"], 88)
