@@ -273,7 +273,12 @@ def _decorate_reconstruction_page(output_path: Path, record: dict, source_text: 
         '<section class="diagnostics-entry" data-ui-section="diagnostics_entry" data-ui-label="WANT TO SEE WHY?" data-reconstruction-note="true">',
         1,
     )
-    diagnostics_source = REPORTS_DIR / f"engine_diagnostics_{record['report_date']}.md"
+    separate_diagnostics_source = REPORTS_DIR / f"engine_diagnostics_{record['report_date']}.md"
+    diagnostics_source = (
+        separate_diagnostics_source
+        if separate_diagnostics_source.exists()
+        else REPORTS_DIR / f"daily_report_{record['report_date']}.md"
+    )
     if not diagnostics_source.exists():
         page = re.sub(
             r'<section class="diagnostics-entry" data-ui-section="diagnostics_entry" data-ui-label="WANT TO SEE WHY\?" data-reconstruction-note="true">.*?</section>',

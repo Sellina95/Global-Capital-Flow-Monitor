@@ -429,6 +429,13 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
         diagnostics_text = ""
     diagnostics_hash = sha256_text(diagnostics_text) if diagnostics_text else ""
     diagnostics_values = _legacy_engine_values(diagnostics_text) if diagnostics_text else {}
+
+    # Historical diagnostics storage cutover:
+    # - before 2026-09-02: diagnostics are embedded in daily_report_D.md
+    # - from 2026-09-02: separate engine_diagnostics_D.md is authoritative
+    persisted_diagnostics_text = diagnostics_text or text
+    persisted_diagnostics_path = diagnostics_path if diagnostics_text else path
+    persisted_diagnostics_hash = diagnostics_hash if diagnostics_text else sha256_text(text)
     pm_sector_rows, pm_breadth_rows = _pm_v2_leadership_rows(text)
     market_summary = _persisted_market_summary(text, schema)
     source_hash = sha256_text(text)
@@ -448,6 +455,15 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
             "reason": "Explicit same-date persisted Macro Narrative.",
         }
 
+    coverage = _explicit_label(text, "Coverage")
+    if coverage:
+        supplemental_values["leadership.coverage"] = {
+            "value": coverage,
+            "authority": str(path.relative_to(ROOT)),
+            "authority_sha256": source_hash,
+            "reason": "Explicit same-date persisted leadership coverage.",
+        }
+
     geopolitical = _explicit_label(text, "Geopolitical")
     if geopolitical:
         supplemental_values["constraint.geopolitical"] = {
@@ -457,8 +473,32 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
             "reason": "Explicit same-date persisted Geopolitical state.",
         }
 
-    if diagnostics_text:
-        fed_block = _heading_block(diagnostics_text, "4) Fed Plumbing Filter")
+    if persisted_diagnostics_text:
+        sew_match = re.search(
+            r"(?im)^-\s*\*\*SEW:\*\*\s*STABLE\s*/\s*NORMAL\s*$",
+            persisted_diagnostics_text,
+        )
+        if sew_match:
+            supplemental_values["constraint.exposure_control"] = {
+                "value": "NORMAL",
+                "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": persisted_diagnostics_hash,
+                "reason": "Explicit same-date SEW state: STABLE / NORMAL.",
+            }
+
+        vol_match = re.search(
+            r"(?im)^-\s*Term Structure:\s*VIX3M-VIX=[^\n]*?→\s*(healthy contango / stable structure)\s*$",
+            persisted_diagnostics_text,
+        )
+        if vol_match:
+            supplemental_values["market.vol_structure"] = {
+                "value": "NORMAL",
+                "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": persisted_diagnostics_hash,
+                "reason": "Explicit same-date VIX term structure: healthy contango / stable structure.",
+            }
+
+        fed_block = _heading_block(persisted_diagnostics_text, "4) Fed Plumbing Filter")
         fed_match = re.search(
             r"(?m)^-\s*\*\*판정:\*\*\s*\*\*(.+?)\*\*\s*$",
             fed_block,
@@ -466,12 +506,12 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
         if fed_match:
             supplemental_values["market.fed_plumbing"] = {
                 "value": _clean(fed_match.group(1)),
-                "authority": str(diagnostics_path.relative_to(ROOT)),
-                "authority_sha256": diagnostics_hash,
+                "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": persisted_diagnostics_hash,
                 "reason": "Explicit same-date Fed Plumbing verdict.",
             }
 
-        credit_block = _heading_block(diagnostics_text, "4.5) Credit Stress Filter")
+        credit_block = _heading_block(persisted_diagnostics_text, "4.5) Credit Stress Filter")
         credit_match = re.search(
             r"(?m)^-\s*\*\*판정:\*\*\s*\*\*(.+?)\*\*\s*$",
             credit_block,
@@ -479,45 +519,92 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
         if credit_match:
             supplemental_values["market.credit_structure"] = {
                 "value": _clean(credit_match.group(1)),
-                "authority": str(diagnostics_path.relative_to(ROOT)),
-                "authority_sha256": diagnostics_hash,
+                "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": persisted_diagnostics_hash,
                 "reason": "Explicit same-date Credit Stress verdict.",
             }
 
-        corr_block = _heading_block(diagnostics_text, "6.5) Correlation Break Monitor")
-        if "No significant correlation break detected." in corr_block:
-            supplemental_values["constraint.correlation_break"] = {
-                "value": "No significant correlation break detected.",
-                "authority": str(diagnostics_path.relative_to(ROOT)),
-                "authority_sha256": diagnostics_hash,
-                "reason": "Explicit same-date Correlation Break result.",
-            }
-        elif "Correlation Break Detected" in corr_block:
-            supplemental_values["constraint.correlation_break"] = {
-                "value": "Correlation Break Detected",
-                "authority": str(diagnostics_path.relative_to(ROOT)),
-                "authority_sha256": diagnostics_hash,
-                "reason": "Explicit same-date Correlation Break result.",
-            }
+        # Explicit SEW state -> Exposure Control
+    sew_match = re.search(
+        r"(?im)^-\s*\*\*SEW:\*\*\s*(RISK_COMPRESSION|DEADMAN|STABLE)(?:\s*[|/]\s*[^\n]+)?",
+        persisted_diagnostics_text,
+    )
+    if sew_match:
+        sew_state = sew_match.group(1)
+        exposure_value = "NORMAL" if sew_state == "STABLE" else sew_state
+        supplemental_values["constraint.exposure_control"] = {
+            "value": exposure_value,
+            "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+            "authority_sha256": persisted_diagnostics_hash,
+            "reason": f"Explicit same-date SEW state: {sew_state}.",
+        }
 
-        sector_corr_block = _heading_block(
-            diagnostics_text, "6.6) Sector Correlation Break Monitor"
-        )
-        if "Correlation Break Detected" in sector_corr_block:
-            supplemental_values["constraint.sector_corr_break"] = {
-                "value": "Correlation Break Detected",
-                "authority": str(diagnostics_path.relative_to(ROOT)),
-                "authority_sha256": diagnostics_hash,
-                "reason": "Explicit same-date Sector Correlation Break result.",
-            }
-        elif "No significant correlation break detected." in sector_corr_block:
-            supplemental_values["constraint.sector_corr_break"] = {
-                "value": "No significant correlation break detected.",
-                "authority": str(diagnostics_path.relative_to(ROOT)),
-                "authority_sha256": diagnostics_hash,
-                "reason": "Explicit same-date Sector Correlation Break result.",
-            }
+    # Explicit/stable VIX term structure -> Vol Structure NORMAL
+    vol_explicit = _explicit_label(text, "Vol Structure")
+    if vol_explicit:
+        supplemental_values["constraint.vol_structure"] = {
+            "value": vol_explicit,
+            "authority": str(path.relative_to(ROOT)),
+            "authority_sha256": source_hash,
+            "reason": "Explicit same-date persisted Vol Structure.",
+        }
+    elif re.search(
+        r"(?im)^-\s*Term Structure:.*(?:healthy contango / stable structure|mild contango)\s*$",
+        persisted_diagnostics_text,
+    ):
+        supplemental_values["constraint.vol_structure"] = {
+            "value": "NORMAL",
+            "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+            "authority_sha256": persisted_diagnostics_hash,
+            "reason": "Explicit same-date VIX term structure indicates stable/contango structure.",
+        }
 
+    # Explicit Geo Stress Level
+    geo_level_match = re.search(
+        r"(?im)^-\s*\*\*Geo Stress Score.*?Level:\s*(NORMAL|LOW|ELEVATED|HIGH)",
+        persisted_diagnostics_text,
+    )
+    if geo_level_match and "constraint.geopolitical" not in supplemental_values:
+        supplemental_values["constraint.geopolitical"] = {
+            "value": geo_level_match.group(1),
+            "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+            "authority_sha256": persisted_diagnostics_hash,
+            "reason": "Explicit same-date Geo Stress level.",
+        }
+
+    corr_block = _heading_block(persisted_diagnostics_text, "6.5) Correlation Break Monitor")
+    if "No significant correlation break detected." in corr_block:
+        supplemental_values["constraint.correlation_break"] = {
+            "value": "No significant correlation break detected.",
+            "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+            "authority_sha256": persisted_diagnostics_hash,
+            "reason": "Explicit same-date Correlation Break result.",
+        }
+    elif "Correlation Break Detected" in corr_block:
+        supplemental_values["constraint.correlation_break"] = {
+            "value": "Correlation Break Detected",
+            "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+            "authority_sha256": persisted_diagnostics_hash,
+            "reason": "Explicit same-date Correlation Break result.",
+        }
+
+    sector_corr_block = _heading_block(
+        persisted_diagnostics_text, "6.6) Sector Correlation Break Monitor"
+    )
+    if "Correlation Break Detected" in sector_corr_block:
+        supplemental_values["constraint.sector_corr_break"] = {
+            "value": "Correlation Break Detected",
+            "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+            "authority_sha256": persisted_diagnostics_hash,
+            "reason": "Explicit same-date Sector Correlation Break result.",
+        }
+    elif "No significant sector-level correlation break detected." in sector_corr_block:
+        supplemental_values["constraint.sector_corr_break"] = {
+            "value": "No significant sector-level correlation break detected.",
+            "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+            "authority_sha256": persisted_diagnostics_hash,
+            "reason": "Explicit same-date Sector Correlation Break result.",
+        }
     fields: dict[str, dict[str, str]] = {}
     authority_conflicts: list[dict[str, str]] = []
 
@@ -575,8 +662,8 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
             fields[spec.key] = {
                 "label": spec.label, "section": spec.section, "status": "B",
                 "value": str(diagnostics_values[spec.key]),
-                "authority": str(diagnostics_path.relative_to(ROOT)),
-                "authority_sha256": diagnostics_hash,
+                "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": persisted_diagnostics_hash,
                 "source_clock": data_as_of or report_date,
                 "reason": f"Explicit same-date persisted diagnostics field: {spec.label}.",
             }
@@ -637,8 +724,8 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
         if not sector_weights and diagnostics_values.get("sector_weights"):
             for row in diagnostics_values["sector_weights"]:
                 sector_weights.append({
-                    **row, "status": "B", "authority": str(diagnostics_path.relative_to(ROOT)),
-                    "authority_sha256": diagnostics_hash, "source_clock": data_as_of or report_date,
+                    **row, "status": "B", "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+                    "authority_sha256": persisted_diagnostics_hash, "source_clock": data_as_of or report_date,
                 })
 
     execution_rows: list[dict[str, str]] = []
@@ -677,7 +764,7 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
         "upstream_checks": {
             "canonical_pit_replay": "exact signal_date match" if canonical_row else "no exact signal_date match",
             "same_date_persisted_publication": str(path.relative_to(ROOT)),
-            "same_date_diagnostics": str(diagnostics_path.relative_to(ROOT)) if diagnostics_clock_valid else "not persisted or clock mismatch",
+            "same_date_diagnostics": str(persisted_diagnostics_path.relative_to(ROOT)) if diagnostics_clock_valid else "not persisted or clock mismatch",
             "legacy_engine_adapter": bool(legacy),
         },
     }
@@ -751,6 +838,41 @@ def synthetic_pm_v2_markdown(record: dict) -> str:
         f'{row["rank"]:>4}  {row["sector"]:<26} {row["return"]:>9} {row["relative"]:>10} {row["momentum"]:>10}'
         for row in record.get("leadership_rows", [])
     ) or "Unavailable · no same-date sector observations were reconstructed"
+
+    # ACTIVE CONSTRAINTS follows production semantics:
+    # show only materially active constraints.
+    # NORMAL / benign / unavailable states are not rendered as active risks.
+    active_constraint_specs = (
+        ("Exposure Control", "constraint.exposure_control"),
+        ("Squeeze Risk", "constraint.squeeze_risk"),
+        ("Vol Structure", "constraint.vol_structure"),
+        ("Correlation Break", "constraint.correlation_break"),
+        ("Sector Corr Break", "constraint.sector_corr_break"),
+        ("Rank Control", "constraint.rank_control"),
+        ("Geopolitical", "constraint.geopolitical"),
+    )
+
+    benign_values = {
+        "",
+        UNAVAILABLE,
+        "NORMAL",
+        "STABLE",
+        "NONE",
+        "PASS",
+        "No significant correlation break detected.",
+        "No significant sector-level correlation break detected.",
+    }
+
+    active_constraint_lines = []
+    for label, key in active_constraint_specs:
+        raw = str(value(key)).strip()
+        if raw in benign_values:
+            continue
+        active_constraint_lines.append(f"{label:<22}{raw}")
+
+    active_constraints = "\n".join(active_constraint_lines)
+    if not active_constraints:
+        active_constraints = "No active constraints."
     return f"""# Global Capital Flow – Daily PM View
 **Date:** {record['report_date']}
 **Data as of:** {record['data_as_of'] or 'Unavailable · not recorded in persisted source'}
