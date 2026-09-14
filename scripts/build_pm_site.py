@@ -2623,13 +2623,18 @@ def build(
     </section>
 
     <footer class="footer pm-provenance-footer site-footer" data-ui-section="footer" data-ui-label="PROVENANCE">
-      <div>Persisted report · presentation-only renderer</div>
-      <div class="footer-links">
-        <a href="https://github.com/Sellina95/Global-Capital-Flow-Monitor"
-           target="_blank"
-           rel="noopener noreferrer">
-          GitHub Repository ↗
-        </a>
+      <div class="project-purpose">
+        <div class="footer-kicker">PURPOSE</div>
+        <p>Built as an institutional-style decision system for translating fragmented macro, cross-asset, liquidity, and positioning signals into a daily risk-budget and allocation view.</p>
+        <p class="footer-purpose-note">Designed for strategy and markets workflows — not retail trading signals or return-chasing.</p>
+      </div>
+      <div class="project-signature">
+        <strong>Built by Seyeon Kim</strong>
+        <span>Global Markets Research &amp; Decision Systems</span>
+        <div class="footer-links">
+          <a href="https://www.linkedin.com/in/seyeon8143/" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
+          <a href="https://github.com/Sellina95/Global-Capital-Flow-Monitor" target="_blank" rel="noopener noreferrer">GitHub Repository ↗</a>
+        </div>
       </div>
     </footer>
 
