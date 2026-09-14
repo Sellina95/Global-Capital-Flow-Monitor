@@ -29,6 +29,7 @@ FIELD_SPECS = (
     FieldSpec("decision.action", "top", "PORTFOLIO STANCE", ("Final Action", "Action", "Risk Stance")),
     FieldSpec("decision.regime", "top", "REGIME", ("Operational Phase", "Current Regime", "Phase")),
     FieldSpec("decision.conviction", "top", "CONVICTION", ("Confidence",)),
+    FieldSpec("market.summary", "EXECUTIVE VIEW", "Market Summary"),
     FieldSpec("f13.risk_budget", "DECISION PATH", "Strategic Risk Budget", ("Risk Budget (0~100)",)),
     FieldSpec("f15.recommended_exposure", "DECISION PATH", "Recommended Exposure", ("📊 Recommended Exposure",)),
     FieldSpec("f18.exposure_ceiling", "DECISION PATH", "Exposure Ceiling"),
@@ -36,6 +37,8 @@ FIELD_SPECS = (
     FieldSpec("f18.tactical_reserve", "DECISION PATH", "Tactical Reserve", ("Tactical Reserve (Cap / Unallocated)",)),
     FieldSpec("f18.cash", "DECISION PATH", "Cash"),
     FieldSpec("f15.exposure_control", "DECISION PATH", "Exposure Control"),
+    FieldSpec("f15.vix_control", "DECISION PATH", "VIX Control"),
+    FieldSpec("f15.brake_drivers", "DECISION PATH", "Brake Drivers"),
     FieldSpec("f18.macro_allocation", "DECISION PATH", "Macro Allocation", ("Macro Profile",)),
     FieldSpec("executive.macro_narrative", "EXECUTIVE VIEW", "Macro Narrative"),
     FieldSpec("executive.tactical_signal", "EXECUTIVE VIEW", "Tactical Signal", ("Tactical Action",)),
@@ -125,11 +128,15 @@ def _section(text: str, title: str) -> str:
 def _explicit_label(text: str, label: str) -> str:
     # Only literal labelled lines are accepted. Prose and unlabeled numeric
     # guesses never become historical state.
-    decorated = rf"\**{re.escape(label)}\**"
+    # The opening and closing decorations are paired explicitly.  The old
+    # ``\**`` expression could match zero stars and therefore matched REGIME
+    # inside ``Regime Controller``.  Historical field semantics must never be
+    # selected by a prefix collision.
+    literal = re.escape(label)
     patterns = (
-        rf"(?im)^\s*(?:[-*•]\s*)?{decorated}\s*:\s*\**(.+?)\**\s*$",
-        rf"(?im)^\s*(?:[-*•]\s*)?{decorated}[ \t]+\**(.+?)\**\s*$",
-        rf"(?im)^\s*{re.escape(label)}\s*$\n\s*\**(.+?)\**\s*$",
+        rf"(?im)^\s*(?:[-*•]\s*)?(?:\*\*)?{literal}(?::)?(?:\*\*)?\s*:\s*(?:\*\*)?(.+?)(?:\*\*)?\s*$",
+        rf"(?im)^\s*(?:\*\*{literal}\*\*|{literal})\s*$\n\s*(?:\*\*)?(.+?)(?:\*\*)?\s*$",
+        rf"(?im)^\s*(?:[-*•]\s*)?(?:\*\*{literal}\*\*|{literal})[ \t]+(?:\*\*)?(.+?)(?:\*\*)?\s*$",
     )
     for pattern in patterns:
         match = re.search(pattern, text)
@@ -168,6 +175,177 @@ def _persisted_value(text: str, spec: FieldSpec) -> tuple[str, str] | None:
             if value:
                 return value, label
     return None
+
+
+def _heading_block(text: str, heading: str) -> str:
+    """Return one legacy markdown heading block without crossing its peer."""
+    match = re.search(rf"(?m)^###\s+.*?{re.escape(heading)}.*?$", text)
+    if not match:
+        return ""
+    tail = text[match.end():]
+    following = re.search(r"(?m)^###\s+", tail)
+    return tail[:following.start()].strip() if following else tail.strip()
+
+
+def _markdown_table(block: str) -> tuple[list[str], list[list[str]]]:
+    lines = [line.strip() for line in block.splitlines() if line.strip().startswith("|")]
+    for index in range(len(lines) - 1):
+        header = [_clean(cell) for cell in lines[index].strip("|").split("|")]
+        separator = [cell.strip() for cell in lines[index + 1].strip("|").split("|")]
+        if header and len(header) == len(separator) and all(re.fullmatch(r":?-{3,}:?", cell) for cell in separator):
+            rows: list[list[str]] = []
+            for line in lines[index + 2:]:
+                cells = [_clean(cell) for cell in line.strip("|").split("|")]
+                if len(cells) != len(header):
+                    break
+                rows.append(cells)
+            return header, rows
+    return [], []
+
+
+def _pm_v2_leadership_rows(text: str) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    block = _section(text, "LEADERSHIP & PARTICIPATION")
+    sectors = [
+        {"rank": match.group(1), "sector": match.group(2).strip(), "return": match.group(3), "relative": match.group(4), "momentum": match.group(5)}
+        for match in re.finditer(
+            r"^\s*(\d+)\s+(.+?)\s{2,}([+-]\d+\.\d+%)\s+([+-]\d+\.\d+%)\s+(-?\d+|N/A)\s*$",
+            block,
+            re.MULTILINE,
+        )
+    ]
+    breadth = [
+        {"label": match.group(1), "today": match.group(2), "prev": match.group(3), "change": match.group(4)}
+        for match in re.finditer(
+            r"^(RSP vs SPY|QQQE vs QQQ|SMH vs SPY|IWM vs SPY)\s+Today\s+(.+?)\s+\|\s+Prev\s+(.+?)\s+\|\s+Δ\s+(.+?)\s*$",
+            block,
+            re.MULTILINE,
+        )
+    ]
+    return sectors, breadth
+
+
+def _legacy_engine_values(text: str) -> dict[str, object]:
+    """Map explicit legacy engine outputs into the fixed PM V2 state.
+
+    This is an adapter over same-date persisted evidence, not a calculation.
+    Values are taken only from named engine blocks/labels whose semantics match
+    the current PM V2 field.
+    """
+    values: dict[str, object] = {}
+    f13 = _heading_block(text, "13) Narrative Engine")
+    f15 = _heading_block(text, "15) Volatility-Controlled Exposure")
+    f16 = _heading_block(text, "16) Style Tilt")
+    f17 = _heading_block(text, "17) Factor Layer")
+    f18 = _heading_block(text, "18) Sector Allocation Engine")
+    f185 = _heading_block(text, "18.5) Tactical Asset Allocation")
+    f19 = _heading_block(text, "19) Execution Layer")
+
+    def put(key: str, block: str, *labels: str, transform=None) -> None:
+        for label in labels:
+            raw = _explicit_label(block, label)
+            if raw:
+                values[key] = transform(raw) if transform else raw
+                return
+
+    put("decision.action", f13, "🎯 Final Risk Action", "Final Risk Action")
+    put("decision.regime", f13, "Operational Phase", transform=lambda x: re.sub(r"\s*\(Cap:\s*[^)]+\)\s*$", "", x).strip())
+    put("decision.conviction", text, "Tactical Confidence", "Rally Confidence")
+    put("f13.risk_budget", f13, "Risk Budget (0~100)")
+    put("f15.recommended_exposure", f15, "📊 Recommended Exposure", "Recommended Exposure")
+    put("f15.exposure_control", text, "SEW")
+    vix_level = _explicit_label(f15, "VIX Level")
+    if vix_level:
+        change = _explicit_label(f15, "Change")
+        values["f15.vix_control"] = vix_level + (f" | Change: {change}" if change else "")
+    put("f15.brake_drivers", f15, "Brake Drivers")
+    put("allocation.growth_value", f16, "Growth vs Value")
+    put("allocation.duration_tilt", f16, "Duration Tilt")
+    put("allocation.cyclical_defensive", f16, "Cyclical vs Defensive", "Cyclical Defensive")
+    put("allocation.duration_factor", f17, "Duration Factor")
+    put("allocation.inflation_factor", f17, "Inflation Factor")
+    put("allocation.usd_factor", f17, "USD Factor")
+    put("allocation.credit_factor", f17, "Credit Factor")
+    put("f18.macro_allocation", f18, "Macro Profile")
+    put("f18.exposure_override", f185, "Exposure Override")
+    controller = re.search(r"(?ms)^\*\*Regime Controller:\*\*\s*\n\s*-\s*(.+?)\s*$", f18)
+    if controller:
+        values["f18.regime_controller"] = _clean(controller.group(1))
+
+    strategic = re.search(r"(?m)^-\s*\*\*Strategic Exposure \(15\):\*\*\s*\*\*([^*]+)\*\*\s*→\s*\*\*Regime Adjusted:\*\*\s*\*\*([^*]+)\*\*", f185)
+    if strategic:
+        values["f18.exposure_ceiling"] = _clean(strategic.group(2))
+    header, rows = _markdown_table(f185)
+    allocation_rows: list[dict[str, str]] = []
+    if header:
+        normalized = [re.sub(r"[^a-z]", "", item.casefold()) for item in header]
+        sector_i = normalized.index("sector") if "sector" in normalized else -1
+        weight_i = next((i for i, item in enumerate(normalized) if "weightinportfolio" in item), -1)
+        if sector_i >= 0 and weight_i >= 0:
+            for row in rows:
+                if row[sector_i].casefold() in {"cash", "cash & hedge"}:
+                    values["f18.cash"] = row[weight_i]
+                    continue
+                allocation_rows.append({"sector": row[sector_i], "weight": row[weight_i]})
+    if allocation_rows:
+        values["sector_weights"] = allocation_rows
+        allocated = sum(float(re.search(r"\d+(?:\.\d+)?", row["weight"]).group()) for row in allocation_rows)
+        values["f18.allocated_equity"] = f"{allocated:.1f}%"
+    put("f18.tactical_reserve", f185, "Tactical Reserve (Cap / Unallocated)", "Tactical Reserve")
+    if "f18.cash" not in values:
+        put("f18.cash", f185, "Cash & Hedge", "Cash")
+
+    header, rows = _markdown_table(f19)
+    execution_rows: list[dict[str, str]] = []
+    if header:
+        normalized = [re.sub(r"[^a-z]", "", item.casefold()) for item in header]
+        aliases = {
+            "sector": ("sector",), "etf": ("etf",), "weight": ("weight", "finalweight"),
+            "action": ("action",), "classification": ("classification", "class"),
+            "divergence": ("divergence",),
+        }
+        indices = {key: next((i for i, item in enumerate(normalized) if item in names), -1) for key, names in aliases.items()}
+        if all(indices[key] >= 0 for key in ("sector", "etf", "weight", "action")):
+            for row in rows:
+                execution_rows.append({
+                    key: row[index] if index >= 0 else UNAVAILABLE
+                    for key, index in indices.items()
+                })
+    if execution_rows:
+        values["execution_rows"] = execution_rows
+
+    # Same-date market inputs and explicit derived states used by PM V2.
+    mapping = {
+        "market.financial_conditions": ("\ud604\uc2e4(FCI)",),
+        "market.real_rate": ("\uc720\uc778(Real Rates)",),
+        "market.liquidity_level": ("NET_LIQ level",),
+        "market.flow": ("Flow",), "market.dealer_gamma": ("Gamma",),
+        "market.positioning_z": ("POS_Z",), "market.drift": ("Drift",),
+        "cross.us10y": ("\ubbf8\uad6d 10\ub144\ubb3c \uae08\ub9ac",), "cross.usd": ("\ub2ec\ub7ec \uc778\ub371\uc2a4",),
+        "cross.oil": ("WTI \uc720\uac00",), "cross.vix": ("\ubcc0\ub3d9\uc131 \uc9c0\uc218 (VIX)",),
+        "cross.hy_oas": ("HY_OAS level",),
+    }
+    for key, labels in mapping.items():
+        put(key, text, *labels)
+    for block_name, key in (("12.5) Growth Sustainability", "market.growth"), ("12.6) Flow Authenticity", "market.flow_authenticity"), ("12.7) Leadership Breadth", "market.leadership"), ("12.8) Positioning Stress", "market.positioning")):
+        put(key, _heading_block(text, block_name), "Label")
+    put("market.structure", text, "Structure")
+    put("market.policy_bias", text, "Policy Bias")
+    put("market.liquidity", text, "Liquidity")
+    put("market.credit", text, "Credit")
+    put("market.credit_structure", text, "Credit Stress")
+    put("market.squeeze_risk", text, "Squeeze Risk")
+    put("market.vol_structure", text, "Vol Structure")
+    rotation_rows: list[dict[str, str]] = []
+    for label in ("RSP vs SPY", "QQQE vs QQQ", "SMH vs SPY", "IWM vs SPY"):
+        match = re.search(
+            rf"(?ms)^{re.escape(label)}\s*$.*?^Yesterday:\s*([^\n]+)\s*$.*?^Today:\s*([^\n]+)\s*$.*?^Change:\s*([^\n]+)\s*$",
+            text,
+        )
+        if match:
+            rotation_rows.append({"label": label, "prev": _clean(match.group(1)), "today": _clean(match.group(2)), "change": _clean(match.group(3))})
+    if rotation_rows:
+        values["breadth_rows"] = rotation_rows
+    return values
 
 
 def load_parity() -> tuple[dict[str, dict[str, str]], str]:
@@ -212,6 +390,22 @@ def source_schema(text: str) -> str:
     return "LEGACY_ENGINE" if "### 🧠 13) Narrative Engine" in text else "LEGACY_BASIC"
 
 
+def _persisted_market_summary(text: str, schema: str) -> str:
+    if schema.startswith("PM_V2"):
+        block = _section(text, "EXECUTIVE VIEW")
+        for raw in block.splitlines():
+            line = raw.strip()
+            if line and not re.match(r"^[A-Za-z][A-Za-z ]+\s{2,}", line):
+                return _clean(line)
+    if schema == "LEGACY_ENGINE":
+        match = re.search(r"(?ms)^[^\n]*1\.\s+Executive Summary\s*$\n(.*?)(?=^[^\n]*2\.\s+Macro Regime\s*$)", text)
+        if match:
+            for raw in match.group(1).splitlines():
+                if raw.strip():
+                    return _clean(raw)
+    return ""
+
+
 def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_hash: str) -> dict:
     text = path.read_text(encoding="utf-8")
     report_date = path.stem.removeprefix("daily_report_")
@@ -220,13 +414,38 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
     data_as_of = as_of_match.group(0) if as_of_match else ""
     canonical_row = parity.get(data_as_of) if data_as_of else None
     canonical = _canonical_values(canonical_row) if canonical_row else {}
+    schema = source_schema(text)
+    legacy = _legacy_engine_values(text) if schema == "LEGACY_ENGINE" else {}
+    diagnostics_path = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+    diagnostics_text = diagnostics_path.read_text(encoding="utf-8") if diagnostics_path.exists() else ""
+    diagnostics_date = _metadata(diagnostics_text, "Date") if diagnostics_text else ""
+    diagnostics_as_of_raw = _metadata(diagnostics_text, "Data as of") if diagnostics_text else ""
+    diagnostics_as_of_match = re.search(r"\d{4}-\d{2}-\d{2}", diagnostics_as_of_raw)
+    diagnostics_as_of = diagnostics_as_of_match.group(0) if diagnostics_as_of_match else ""
+    diagnostics_clock_valid = bool(
+        diagnostics_text and diagnostics_date == report_date and diagnostics_as_of == data_as_of
+    )
+    if diagnostics_text and not diagnostics_clock_valid:
+        diagnostics_text = ""
+    diagnostics_hash = sha256_text(diagnostics_text) if diagnostics_text else ""
+    diagnostics_values = _legacy_engine_values(diagnostics_text) if diagnostics_text else {}
+    pm_sector_rows, pm_breadth_rows = _pm_v2_leadership_rows(text)
+    market_summary = _persisted_market_summary(text, schema)
     source_hash = sha256_text(text)
     fields: dict[str, dict[str, str]] = {}
     authority_conflicts: list[dict[str, str]] = []
 
     for spec in FIELD_SPECS:
+        if spec.key == "market.summary" and market_summary:
+            fields[spec.key] = {
+                "label": spec.label, "section": spec.section, "status": "B", "value": market_summary,
+                "authority": str(path.relative_to(ROOT)), "authority_sha256": source_hash,
+                "source_clock": data_as_of or report_date,
+                "reason": "Explicit same-date persisted executive summary.",
+            }
+            continue
         if spec.key in canonical and canonical[spec.key] != UNAVAILABLE:
-            persisted = _persisted_value(text, spec)
+            persisted = (str(legacy[spec.key]), f"legacy engine adapter: {spec.label}") if spec.key in legacy else _persisted_value(text, spec)
             if persisted and spec.key in {
                 "f13.risk_budget", "f15.recommended_exposure", "f18.exposure_ceiling",
                 "f18.allocated_equity", "f18.tactical_reserve", "f18.cash",
@@ -257,7 +476,7 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
                 "reason": "Exact persisted Data as-of matched frozen canonical PIT signal_date.",
             }
             continue
-        persisted = _persisted_value(text, spec)
+        persisted = (str(legacy[spec.key]), f"legacy engine adapter: {spec.label}") if spec.key in legacy else _persisted_value(text, spec)
         if persisted:
             value, matched_label = persisted
             fields[spec.key] = {
@@ -266,12 +485,28 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
                 "source_clock": data_as_of or report_date,
                 "reason": f"Explicit same-date persisted label: {matched_label}.",
             }
+        elif spec.key in diagnostics_values:
+            fields[spec.key] = {
+                "label": spec.label, "section": spec.section, "status": "B",
+                "value": str(diagnostics_values[spec.key]),
+                "authority": str(diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": diagnostics_hash,
+                "source_clock": data_as_of or report_date,
+                "reason": f"Explicit same-date persisted diagnostics field: {spec.label}.",
+            }
         else:
             fields[spec.key] = {
                 "label": spec.label, "section": spec.section, "status": "C", "value": UNAVAILABLE,
                 "authority": str(path.relative_to(ROOT)), "authority_sha256": source_hash,
                 "source_clock": data_as_of or "not recorded",
-                "reason": "No exact-clock canonical value and no explicit same-date persisted field.",
+                "reason": "Historical source unavailable after canonical PIT replay, same-date persisted publication, and same-date diagnostics checks.",
+                "sources_checked": [
+                    str(PARITY_PATH.relative_to(ROOT)),
+                    str(path.relative_to(ROOT)),
+                    f"reports/engine_diagnostics_{report_date}.md",
+                ],
+                "required_evidence": f"Exact-clock production-semantic source for {spec.key}",
+                "reconstruction_possible": False,
             }
 
     sector_weights: list[dict[str, str]] = []
@@ -281,6 +516,13 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
                 "sector": name, "weight": value, "status": "A",
                 "authority": str(PARITY_PATH.relative_to(ROOT)), "authority_sha256": parity_hash,
                 "source_clock": data_as_of,
+            })
+    elif legacy.get("sector_weights"):
+        collection = legacy["sector_weights"]
+        for row in collection:
+            sector_weights.append({
+                **row, "status": "B", "authority": str(path.relative_to(ROOT)),
+                "authority_sha256": source_hash, "source_clock": data_as_of or report_date,
             })
     else:
         allocation = _section(text, "PORTFOLIO ALLOCATION")
@@ -294,33 +536,100 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
                         "authority": str(path.relative_to(ROOT)), "authority_sha256": source_hash,
                         "source_clock": data_as_of or report_date,
                     })
+        if not sector_weights and diagnostics_values.get("sector_weights"):
+            for row in diagnostics_values["sector_weights"]:
+                sector_weights.append({
+                    **row, "status": "B", "authority": str(diagnostics_path.relative_to(ROOT)),
+                    "authority_sha256": diagnostics_hash, "source_clock": data_as_of or report_date,
+                })
 
     execution_rows: list[dict[str, str]] = []
-    execution = _section(text, "EXECUTION")
-    for line in execution.splitlines():
-        cells = [cell.strip() for cell in line.split("|")]
-        if len(cells) == 6 and cells[0] not in {"Sector", ""}:
-            sector, etf, weight, action, classification, divergence = cells
-            execution_rows.append({
-                "sector": sector, "etf": etf, "weight": weight, "action": action,
-                "classification": classification, "divergence": divergence, "status": "B",
-                "authority": str(path.relative_to(ROOT)), "authority_sha256": source_hash,
-                "source_clock": data_as_of or report_date,
-            })
+    raw_execution_rows = list(legacy.get("execution_rows", []))
+    execution_path = path
+    execution_hash = source_hash
+    if not raw_execution_rows:
+        execution = _section(text, "EXECUTION")
+        for line in execution.splitlines():
+            cells = [cell.strip() for cell in line.split("|")]
+            if len(cells) == 6 and cells[0] not in {"Sector", ""}:
+                sector, etf, weight, action, classification, divergence = cells
+                raw_execution_rows.append({
+                    "sector": sector, "etf": etf, "weight": weight, "action": action,
+                    "classification": classification, "divergence": divergence,
+                })
+    if not raw_execution_rows and diagnostics_values.get("execution_rows"):
+        raw_execution_rows = list(diagnostics_values["execution_rows"])
+        execution_path = diagnostics_path
+        execution_hash = diagnostics_hash
+    for row in raw_execution_rows:
+        execution_rows.append({
+            **row, "status": "B", "authority": str(execution_path.relative_to(ROOT)),
+            "authority_sha256": execution_hash, "source_clock": data_as_of or report_date,
+        })
 
     return {
         "contract": CONTRACT_ID, "report_date": report_date, "data_as_of": data_as_of,
-        "source_schema": source_schema(text), "source_path": str(path.relative_to(ROOT)),
+        "source_schema": schema, "source_path": str(path.relative_to(ROOT)),
         "source_sha256": source_hash, "canonical_exact_clock": bool(canonical_row),
         "canonical_signal_date": data_as_of if canonical_row else None,
         "fields": fields, "sector_weights": sector_weights, "execution_rows": execution_rows,
+        "leadership_rows": pm_sector_rows,
+        "breadth_rows": pm_breadth_rows or legacy.get("breadth_rows", []) or diagnostics_values.get("breadth_rows", []),
         "authority_conflicts": authority_conflicts,
+        "upstream_checks": {
+            "canonical_pit_replay": "exact signal_date match" if canonical_row else "no exact signal_date match",
+            "same_date_persisted_publication": str(path.relative_to(ROOT)),
+            "same_date_diagnostics": str(diagnostics_path.relative_to(ROOT)) if diagnostics_clock_valid else "not persisted or clock mismatch",
+            "legacy_engine_adapter": bool(legacy),
+        },
     }
 
 
 def build_population() -> list[dict]:
     parity, parity_hash = load_parity()
-    return [reconstruct_report(path, parity, parity_hash) for path in sorted(REPORTS_DIR.glob("daily_report_????-??-??.md"))]
+    population = [reconstruct_report(path, parity, parity_hash) for path in sorted(REPORTS_DIR.glob("daily_report_????-??-??.md"))]
+
+    def number(raw: str) -> float | None:
+        match = re.fullmatch(r"(\d+(?:\.\d+)?)%", str(raw).strip())
+        return float(match.group(1)) if match else None
+
+    def snapshot(record: dict) -> dict[str, object] | None:
+        allocated = number(record["fields"]["f18.allocated_equity"]["value"])
+        reserve = number(record["fields"]["f18.tactical_reserve"]["value"])
+        cash = number(record["fields"]["f18.cash"]["value"])
+        weights = {row["sector"].casefold(): (row["sector"], number(row["weight"])) for row in record["sector_weights"]}
+        if None in (allocated, reserve, cash) or any(value is None for _, value in weights.values()):
+            return None
+        if abs(sum(value for _, value in weights.values()) - allocated) > 0.35 or abs(allocated + cash - 100) > 0.11:
+            return None
+        return {"weights": weights, "totals": {"Allocated Equity": allocated, "Tactical Reserve": reserve, "Cash": cash}}
+
+    previous_record: dict | None = None
+    previous_snapshot: dict[str, object] | None = None
+    for record in population:
+        current = snapshot(record)
+        comparison = {"available": False, "previous_date": previous_record["report_date"] if previous_record else None, "deltas": {}, "exits": []}
+        if current is not None and previous_snapshot is not None and previous_record is not None:
+            current_weights = current["weights"]
+            previous_weights = previous_snapshot["weights"]
+            deltas = {
+                name: current_weights.get(name, ("", 0.0))[1] - previous_weights.get(name, ("", 0.0))[1]
+                for name in set(current_weights) | set(previous_weights)
+            }
+            exits = [display for name, (display, value) in previous_weights.items() if value > 0 and name not in current_weights]
+            total_deltas = {
+                key: current["totals"][key] - previous_snapshot["totals"][key]
+                for key in current["totals"]
+            }
+            comparison = {
+                "available": True, "previous_date": previous_record["report_date"],
+                "deltas": deltas, "total_deltas": total_deltas, "exits": exits,
+                "authority": "adjacent HistoricalPMV2State snapshots with independently validated same-date allocation authority",
+            }
+        record["target_comparison"] = comparison
+        previous_record = record
+        previous_snapshot = current
+    return population
 
 
 def synthetic_pm_v2_markdown(record: dict) -> str:
@@ -336,6 +645,14 @@ def synthetic_pm_v2_markdown(record: dict) -> str:
         execution = "Sector | ETF | Weight | Action | Classification | Divergence\n" + execution
     else:
         execution = "Unavailable · F19 rows require explicit same-date execution evidence"
+    breadth = "\n".join(
+        f'{row["label"]:<18} Today {row["today"]} | Prev {row["prev"]} | Δ {row["change"]}'
+        for row in record.get("breadth_rows", [])
+    ) or "Unavailable · no exact-clock breadth observations were reconstructed"
+    leadership = "\n".join(
+        f'{row["rank"]:>4}  {row["sector"]:<26} {row["return"]:>9} {row["relative"]:>10} {row["momentum"]:>10}'
+        for row in record.get("leadership_rows", [])
+    ) or "Unavailable · no same-date sector observations were reconstructed"
     return f"""# Global Capital Flow – Daily PM View
 **Date:** {record['report_date']}
 **Data as of:** {record['data_as_of'] or 'Unavailable · not recorded in persisted source'}
@@ -361,10 +678,12 @@ Allocated Equity      {value('f18.allocated_equity')}
 Tactical Reserve      {value('f18.tactical_reserve')}
 Cash                  {value('f18.cash')}
 Exposure Control      {value('f15.exposure_control')}
+VIX Control           {value('f15.vix_control')}
+Brake Drivers         {value('f15.brake_drivers')}
 Macro Allocation      {value('f18.macro_allocation')}
 
 2. EXECUTIVE VIEW
-Historical PM V2 reconstruction. Every displayed state is exact-clock canonical, explicit same-date persisted, or unavailable.
+{value('market.summary')}
 Macro Narrative      {value('executive.macro_narrative')}
 Tactical Signal      {value('executive.tactical_signal')}
 
@@ -404,10 +723,10 @@ HY OAS               {value('cross.hy_oas')}
 Coverage             {value('leadership.coverage')}
 
 Today's Sector Leaders
-Unavailable · rows are not synthesized from incomplete history
+{leadership}
 
 Breadth & Leadership
-Unavailable · rows are not synthesized from incomplete history
+{breadth}
 
 6. ALLOCATION CONTEXT
 Growth vs Value       {value('allocation.growth_value')}

@@ -33,7 +33,7 @@ class HistoricalPmV2ReconstructionTest(unittest.TestCase):
                     self.assertEqual(field["source_clock"], record["data_as_of"])
 
     def test_every_inventory_field_has_provenance(self) -> None:
-        self.assertEqual(len(FIELD_SPECS), 62)
+        self.assertEqual(len(FIELD_SPECS), 65)
         for record in self.population:
             self.assertEqual(len(record["fields"]), len(FIELD_SPECS))
             for field in record["fields"].values():

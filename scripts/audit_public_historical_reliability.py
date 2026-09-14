@@ -390,7 +390,7 @@ def audit(site_dir: Path) -> dict:
                 vix_match = re.search(r"\*\*VIX Level:\*\*\s*([^|\n]+)", diag)
                 if vix_match:
                     checks += 1
-                    displayed = re.search(r"VIX Control · <b>(.*?)</b>", page)
+                    displayed = re.search(r"VIX Control · <b[^>]*>(.*?)</b>", page)
                     if not displayed or html.unescape(displayed.group(1)).strip() != vix_match.group(1).strip():
                         add_issue(issues, "false_fallback_default", report_date, "F15 VIX control is stale or unsupported")
 

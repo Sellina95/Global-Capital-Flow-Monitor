@@ -269,22 +269,25 @@ def _decorate_reconstruction_page(output_path: Path, record: dict, source_text: 
     )
     page = page.replace("</header>", "</header>" + top_notice, 1)
     page = page.replace(
-        '<section class="diagnostics-entry">',
-        '<section class="diagnostics-entry" data-reconstruction-note="true">',
+        '<section class="diagnostics-entry" data-ui-section="diagnostics_entry" data-ui-label="WANT TO SEE WHY?">',
+        '<section class="diagnostics-entry" data-ui-section="diagnostics_entry" data-ui-label="WANT TO SEE WHY?" data-reconstruction-note="true">',
         1,
     )
     diagnostics_source = REPORTS_DIR / f"engine_diagnostics_{record['report_date']}.md"
     if not diagnostics_source.exists():
         page = re.sub(
-            r'<section class="diagnostics-entry" data-reconstruction-note="true">.*?</section>',
-            '<section class="diagnostics-entry" data-reconstruction-note="true"><p>Unavailable · no separate same-date diagnostics artifact was persisted.</p></section>',
+            r'<section class="diagnostics-entry" data-ui-section="diagnostics_entry" data-ui-label="WANT TO SEE WHY\?" data-reconstruction-note="true">.*?</section>',
+            '<section class="diagnostics-entry" data-ui-section="diagnostics_entry" data-ui-label="WANT TO SEE WHY?" data-reconstruction-note="true">'
+            '<div class="diagnostics-entry-kicker" data-ui-field="diagnostics.kicker" data-ui-label="WANT TO SEE WHY?">WANT TO SEE WHY?</div>'
+            '<div class="diagnostics-entry-link" data-ui-field="diagnostics.link" data-ui-label="Engine Diagnostics"><a class="diagnostics-destination pm-unavailable" aria-disabled="true" data-availability="unavailable">Unavailable</a></div>'
+            '<p data-ui-field="diagnostics.description" data-ui-label="Diagnostics description">No separate same-date diagnostics artifact was persisted.</p></section>',
             page,
             count=1,
             flags=re.DOTALL,
         )
     if not record["sector_weights"]:
         page = page.replace('class="shell reconstruction-page"', 'class="shell reconstruction-page reconstruction-unavailable"', 1)
-        page = page.replace('<strong>100%</strong><span>PORTFOLIO</span>', '<strong>Unavailable</strong><span>ALLOCATION</span>', 1)
+        page = page.replace('<strong data-ui-field="portfolio.total" data-ui-label="PORTFOLIO">100%</strong><span>PORTFOLIO</span>', '<strong data-ui-field="portfolio.total" data-ui-label="PORTFOLIO">Unavailable</strong><span>PORTFOLIO</span>', 1)
 
     def mark_exact_unavailable(match: re.Match[str]) -> str:
         tag = match.group("tag")
@@ -308,7 +311,11 @@ def _decorate_reconstruction_page(output_path: Path, record: dict, source_text: 
         mark_exact_unavailable,
         page,
     )
-    page = page.replace('<footer class="footer pm-provenance-footer">', panel + '<footer class="footer pm-provenance-footer">', 1)
+    page = page.replace(
+        '<footer class="footer pm-provenance-footer" data-ui-section="footer" data-ui-label="PROVENANCE">',
+        panel + '<footer class="footer pm-provenance-footer" data-ui-section="footer" data-ui-label="PROVENANCE">',
+        1,
+    )
     output_path.write_text(page, encoding="utf-8")
 
 
@@ -1627,6 +1634,7 @@ def build(
     source: Path | None = None,
     output_path: Path | None = None,
     build_diagnostics: bool = True,
+    reconstruction_record: dict | None = None,
 ) -> None:
     """
     Build one PM view from an already-persisted daily report artifact.
@@ -1674,6 +1682,8 @@ def build(
         decision_path,
         "Exposure Control",
     )
+    persisted_vix_control = field(decision_path, "VIX Control")
+    persisted_brake_drivers = field(decision_path, "Brake Drivers")
     macro_allocation_profile = field(
         decision_path,
         "Macro Allocation",
@@ -2109,21 +2119,16 @@ def build(
         )
     diag = parse_diagnostics_v1(diag_text)
 
-    optional_f15_controls = []
-    if diag["f15_vix_control"] != "N/A":
-        optional_f15_controls.append(
-            f'VIX Control · <b>{html.escape(diag["f15_vix_control"])}</b><br>'
-        )
-    if diag["f15_positioning_control"] != "N/A":
-        optional_f15_controls.append(
-            "Positioning Control · <b>"
-            f'{html.escape(diag["f15_positioning_control"])}</b><br>'
-        )
-    if diag["f15_brake_drivers"] != "N/A":
-        optional_f15_controls.append(
-            f'Brake Drivers · <b>{html.escape(diag["f15_brake_drivers"])}</b><br>'
-        )
-    f15_controls_html = "".join(optional_f15_controls)
+    # 2026-09-12 is the fixed product template: these two F15 rows are always
+    # present. Historical source absence changes only the value.
+    f15_vix_control = persisted_vix_control if is_reconstruction else diag["f15_vix_control"]
+    f15_brake_drivers = persisted_brake_drivers if is_reconstruction else diag["f15_brake_drivers"]
+    f15_controls_html = (
+        'VIX Control · <b data-ui-field="decision.f15.vix_control" data-ui-label="VIX Control">'
+        + html.escape(f15_vix_control) + '</b><br>'
+        + 'Brake Drivers · <b data-ui-field="decision.f15.brake_drivers" data-ui-label="Brake Drivers">'
+        + html.escape(f15_brake_drivers) + '</b><br>'
+    )
 
 
     # Presentation-only semantic coloring. No numeric thresholds or new market states.
@@ -2201,7 +2206,7 @@ def build(
             continue
         m = re.match(
             r"^(.+?)\s*\|\s*([A-Z]{2,6})\s*\|\s*"
-            r"(?:[0-9]+(?:\.[0-9]+)?%\s*\|\s*)?"
+            r"(?:([0-9]+(?:\.[0-9]+)?%)\s*\|\s*)?"
             r"(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)$",
             line,
         )
@@ -2209,9 +2214,10 @@ def build(
             execution_rows.append({
                 "sector": m.group(1).strip(),
                 "etf": m.group(2).strip(),
-                "action": m.group(3).strip(),
-                "classification": m.group(4).strip(),
-                "divergence": m.group(5).strip(),
+                "weight": (m.group(3) or "").strip(),
+                "action": m.group(4).strip(),
+                "classification": m.group(5).strip(),
+                "divergence": m.group(6).strip(),
             })
 
     execution_by_sector = {
@@ -2223,6 +2229,10 @@ def build(
         sector_name = row["sector"]
         weight = row["weight"]
         exec_row = execution_by_sector.get(sector_name.upper(), {})
+        if exec_row.get("weight") and exec_row["weight"] != weight:
+            # Do not attach an original-publication F19 decision to a
+            # different canonical-replay F18 weight.
+            exec_row = {}
         portfolio_rows.append({
             "sector": sector_name,
             "weight": weight,
@@ -2258,13 +2268,27 @@ def build(
 
     target_delta, target_exits, target_note = target_weight_comparison(text, report_date)
     if is_reconstruction:
+        target_style = target_note.split("</style>", 1)[0] + "</style>" if "</style>" in target_note else ""
+        comparison = (reconstruction_record or {}).get("target_comparison", {})
+
         def reconstruction_delta(name, total=False):
-            return '<span class="target-delta target-flat">Unavailable</span>'
+            if not comparison.get("available"):
+                return '<span class="target-delta target-unavailable pm-unavailable" data-availability="unavailable">Unavailable</span>'
+            if total:
+                delta = comparison["total_deltas"].get(name)
+            else:
+                delta = comparison["deltas"].get(name.casefold())
+            if delta is None:
+                return '<span class="target-delta target-unavailable pm-unavailable" data-availability="unavailable">Unavailable</span>'
+            tone = "up" if delta > 0 else "down" if delta < 0 else "flat"
+            label = f"{delta:+.1f} pp" if delta else "0.0 pp"
+            return f'<span class="target-delta target-{tone}">{label}</span>'
         target_delta = reconstruction_delta
-        target_exits = []
-        target_note = (
-            '<p class="target-comparison-note">Previous-target comparison is unavailable '
-            'unless both dates have complete same-date allocation authority.</p>'
+        target_exits = comparison.get("exits", []) if comparison.get("available") else []
+        target_note = target_style + (
+            f'<p class="target-comparison-note">Target weight change · vs {esc(comparison["previous_date"])} · pp = percentage points · not executed trades</p>'
+            if comparison.get("available") else
+            '<p class="target-comparison-note">Previous-target comparison is unavailable unless both dates have complete same-date allocation authority.</p>'
         )
 
     portfolio_table = "\n".join(
@@ -2286,19 +2310,21 @@ def build(
 
 
     if target_exits:
+        exit_missing = "Unavailable" if is_reconstruction else "—"
         portfolio_table += "".join(
             '<div class="pm-portfolio-row">'
             '<div><strong>' + esc(name)
             + '</strong><span>Removed from target</span></div>'
             '<strong>0.0%</strong><span>' + target_delta(name)
-            + '</span><span>—</span><span>—</span><span>—</span></div>'
+            + '</span><span>' + exit_missing + '</span><span>' + exit_missing
+            + '</span><span>' + exit_missing + '</span></div>'
             for name in target_exits
         )
 
     risk_monitor_html = (
         risk_monitor_ui(diag_text, is_latest_page)[0]
         if diag_text
-        else '<div class="empty-state">Unavailable · no same-date engine diagnostics artifact was persisted.</div>'
+        else '<div class="tape-break-wrap"><div class="tape-break-label">CORRELATION BREAK</div><div class="tape-break-chips"><span class="pm-unavailable" data-availability="unavailable">Unavailable</span></div></div>'
     )
 
     page = f"""<!doctype html>
@@ -2347,6 +2373,11 @@ def build(
     .pm-confirm-grid>div{{padding:13px;border:1px solid rgba(148,163,184,.15);border-radius:10px}}
     .pm-confirm-grid span{{display:block;font-size:11px;opacity:.65;margin-bottom:6px}}
     .pm-wti{{color:var(--pm-amber)!important}}
+    .tape-break-wrap{{margin-top:16px;padding-top:13px;border-top:1px solid rgba(148,163,184,.18)}}
+    .tape-break-label{{font-size:10px;font-weight:700;letter-spacing:.09em;opacity:.7;margin-bottom:9px}}
+    .tape-break-chips{{display:flex;flex-wrap:wrap;gap:8px}}
+    .tape-break-chip{{display:inline-flex;align-items:center;gap:8px;max-width:100%;box-sizing:border-box;padding:7px 11px;border-radius:11px;border:1px solid rgba(232,143,162,.25);background:rgba(232,143,162,.10);color:#f2b1bd;font-size:12px;font-weight:600;line-height:1.5;overflow-wrap:anywhere}}
+    .tape-break-dot{{width:5px;height:5px;flex:0 0 5px;border-radius:50%;background:currentColor}}
     @media(max-width:900px){{
       .pm-construction-grid,.pm-state-pair{{grid-template-columns:1fr}}
       .pm-target-wrap{{grid-template-columns:1fr}}
@@ -2367,7 +2398,7 @@ def build(
 </head>
 <body>
   <main class="shell">
-    <header class="topbar">
+    <header class="topbar" data-ui-section="header" data-ui-label="Global Capital Flow Monitor">
       <div>
         <div class="eyebrow">INDEPENDENT MARKET RESEARCH</div>
         <h1>🌍 Global Capital Flow Monitor</h1>
@@ -2378,11 +2409,11 @@ def build(
           {previous_control}
           <button class="report-date-trigger" id="report-date-trigger" type="button"
                   aria-expanded="false" aria-controls="report-calendar">
-            <span>{esc(report_date)}</span><span class="report-date-caret">▾</span>
+            <span data-ui-field="header.report_date" data-ui-label="REPORT DATE">{esc(report_date)}</span><span class="report-date-caret">▾</span>
           </button>
           {next_control}
         </div>
-        <strong>DATA AS OF {esc(data_as_of)}</strong>
+        <strong data-ui-field="header.data_as_of" data-ui-label="DATA AS OF">DATA AS OF {esc(data_as_of)}</strong>
         <div class="report-calendar" id="report-calendar" hidden>
           <div class="calendar-header">
             <button type="button" class="calendar-month-nav" id="calendar-prev-month">‹</button>
@@ -2395,95 +2426,95 @@ def build(
       </div>
     </header>
 
-    <section class="pm-decision-hero">
+    <section class="pm-decision-hero" data-ui-section="portfolio_decision" data-ui-label="TODAY'S PORTFOLIO DECISION">
       <div class="section-kicker">TODAY'S PORTFOLIO DECISION</div>
       <div class="pm-decision-grid">
-        <div class="pm-decision-primary"><span class="label">ACTION</span><strong class="pm-action">{esc(stance.split("·", 1)[0].strip())}</strong></div>
-        <div class="pm-decision-primary"><span class="label">EXPOSURE CEILING</span><strong class="pm-exposure">{esc(exposure_ceiling)}</strong></div>
-        <div class="pm-decision-context"><span class="label">REGIME</span><strong>{esc(regime)}</strong></div>
-        <div class="pm-decision-context"><span class="label">CONVICTION</span><strong>{esc(conviction)}</strong></div>
+        <div class="pm-decision-primary" data-ui-field="decision.action" data-ui-label="ACTION"><span class="label">ACTION</span><strong class="pm-action">{esc(stance.split("·", 1)[0].strip())}</strong></div>
+        <div class="pm-decision-primary" data-ui-field="decision.exposure_ceiling" data-ui-label="EXPOSURE CEILING"><span class="label">EXPOSURE CEILING</span><strong class="pm-exposure">{esc(exposure_ceiling)}</strong></div>
+        <div class="pm-decision-context" data-ui-field="decision.regime" data-ui-label="REGIME"><span class="label">REGIME</span><strong>{esc(regime)}</strong></div>
+        <div class="pm-decision-context" data-ui-field="decision.conviction" data-ui-label="CONVICTION"><span class="label">CONVICTION</span><strong>{esc(conviction)}</strong></div>
       </div>
     </section>
 
-    <section class="pm-market-synthesis">
+    <section class="pm-market-synthesis" data-ui-section="market_synthesis" data-ui-label="TODAY'S MARKET" data-ui-field="market.summary" data-ui-field-label="TODAY'S MARKET">
       <div class="section-kicker">TODAY'S MARKET</div>
       <p>{esc(market_sentence)}</p>
     </section>
 
-    <section class="pm-construction-grid">
-      <article class="panel pm-decision-path">
+    <section class="pm-construction-grid" data-ui-section="construction" data-ui-label="PM CONSTRUCTION">
+      <article class="panel pm-decision-path" data-ui-section="decision_path" data-ui-label="Risk Budget → Exposure → Allocation">
         <div class="section-kicker">DECISION PATH</div>
         <h2>Risk Budget → Exposure → Allocation</h2>
         <div class="pm-chain">
 
-          <div class="pm-chain-node">
+          <div class="pm-chain-node" data-ui-field="decision.f13" data-ui-label="F13 · STRATEGIC RISK BUDGET">
             <div class="node-head">
               <span>F13 · STRATEGIC RISK BUDGET</span>
               <strong>{esc(strategic_risk_budget)}</strong>
             </div>
-            <p><b>RISK BUDGET BUILD</b></p>
-            <p>
+            <p data-ui-field="decision.f13.build" data-ui-label="RISK BUDGET BUILD"><b>RISK BUDGET BUILD</b></p>
+            <p data-ui-field="decision.f13.components" data-ui-label="Sentiment | Structure / Policy | Credit | Net Liquidity | Structural v2 | Drift | Flow / Gamma | Macro | Positioning">
               Sentiment · Structure / Policy · Credit · Net Liquidity<br>
               Structural v2 · Drift · Flow / Gamma · Macro · Positioning<br>
-              → Phase Cap → <b>{esc(strategic_risk_budget)}</b>
+              <span data-ui-field="decision.f13.phase_cap" data-ui-label="Phase Cap">→ Phase Cap → <b>{esc(strategic_risk_budget)}</b></span>
             </p>
           </div>
 
           <div class="pm-chain-arrow">↓</div>
 
-          <div class="pm-chain-node">
+          <div class="pm-chain-node" data-ui-field="decision.f15" data-ui-label="F15 · RECOMMENDED EXPOSURE">
             <div class="node-head">
               <span>F15 · RECOMMENDED EXPOSURE</span>
               <strong>{esc(recommended_exposure)}</strong>
             </div>
-            <p><b>EXPOSURE BRAKE</b></p>
+            <p data-ui-field="decision.f15.brake" data-ui-label="EXPOSURE BRAKE"><b>EXPOSURE BRAKE</b></p>
             <p>
-              Input Budget · <b>{esc(strategic_risk_budget)}</b><br>
+              <span data-ui-field="decision.f15.input_budget" data-ui-label="Input Budget">Input Budget · <b>{esc(strategic_risk_budget)}</b></span><br>
               {f15_controls_html}
-              Persisted Output · <b>{esc(strategic_risk_budget)} → {esc(recommended_exposure)}</b>
+              <span data-ui-field="decision.f15.persisted_output" data-ui-label="Persisted Output">Persisted Output · <b>{esc(strategic_risk_budget)} → {esc(recommended_exposure)}</b></span>
             </p>
           </div>
 
           <div class="pm-chain-arrow">↓</div>
 
-          <div class="pm-chain-node">
+          <div class="pm-chain-node" data-ui-field="decision.f18" data-ui-label="F18 · EXPOSURE CEILING">
             <div class="node-head">
               <span>F18 · EXPOSURE CEILING</span>
               <strong>{esc(exposure_ceiling)}</strong>
             </div>
-            <p><b>PORTFOLIO DEPLOYMENT</b></p>
+            <p data-ui-field="decision.f18.deployment" data-ui-label="PORTFOLIO DEPLOYMENT"><b>PORTFOLIO DEPLOYMENT</b></p>
             <p>
-              Input Exposure · <b>{esc(recommended_exposure)}</b><br>
-              Regime Controller · <b>{esc(regime_controller)}</b><br>
-              Exposure Override · <b>{esc(exposure_override)}</b><br>
-              Allocated Equity · <b>{esc(allocated_equity)}</b><br>
-              Tactical Reserve · <b>{esc(tactical_reserve)}</b><br>
-              Cash · <b>{esc(cash_weight)}</b><br>
-              → Sector Weights / ETF Execution
+              <span data-ui-field="decision.f18.input_exposure" data-ui-label="Input Exposure">Input Exposure · <b>{esc(recommended_exposure)}</b></span><br>
+              <span data-ui-field="decision.f18.regime_controller" data-ui-label="Regime Controller">Regime Controller · <b>{esc(regime_controller)}</b></span><br>
+              <span data-ui-field="decision.f18.exposure_override" data-ui-label="Exposure Override">Exposure Override · <b>{esc(exposure_override)}</b></span><br>
+              <span data-ui-field="decision.f18.allocated_equity" data-ui-label="Allocated Equity">Allocated Equity · <b>{esc(allocated_equity)}</b></span><br>
+              <span data-ui-field="decision.f18.tactical_reserve" data-ui-label="Tactical Reserve">Tactical Reserve · <b>{esc(tactical_reserve)}</b></span><br>
+              <span data-ui-field="decision.f18.cash" data-ui-label="Cash">Cash · <b>{esc(cash_weight)}</b></span><br>
+              <span data-ui-field="decision.f18.execution_path" data-ui-label="Sector Weights / ETF Execution">→ Sector Weights / ETF Execution</span>
             </p>
           </div>
 
         </div>        </div>
       </article>
 
-      <article class="panel pm-target-portfolio">
+      <article class="panel pm-target-portfolio" data-ui-section="target_portfolio" data-ui-label="TARGET PORTFOLIO">
         <div class="section-kicker">F18 ALLOCATION · F19 EXECUTION</div>
         <h2>TARGET PORTFOLIO</h2>
         {target_note}
-        <div class="pm-target-wrap">
+        <div class="pm-target-wrap" data-ui-field="portfolio.composition" data-ui-label="PORTFOLIO COMPOSITION">
           <div class="pm-target-donut">
-            <div class="pm-target-center"><strong>100%</strong><span>PORTFOLIO</span></div>
+            <div class="pm-target-center"><strong data-ui-field="portfolio.total" data-ui-label="PORTFOLIO">100%</strong><span>PORTFOLIO</span></div>
           </div>
           <div class="pm-target-summary">
-            <div><span>Allocated Equity</span><strong>{esc(allocated_equity)} {target_delta("Allocated Equity", total=True)}</strong></div>
-            <div><span>Tactical Reserve</span><strong>{esc(tactical_reserve)} {target_delta("Tactical Reserve", total=True)}</strong></div>
-            <div><span>Cash</span><strong>{esc(cash_weight)} {target_delta("Cash", total=True)}</strong></div>
+            <div data-ui-field="portfolio.allocated_equity" data-ui-label="Allocated Equity"><span>Allocated Equity</span><strong>{esc(allocated_equity)} {target_delta("Allocated Equity", total=True)}</strong></div>
+            <div data-ui-field="portfolio.tactical_reserve" data-ui-label="Tactical Reserve"><span>Tactical Reserve</span><strong>{esc(tactical_reserve)} {target_delta("Tactical Reserve", total=True)}</strong></div>
+            <div data-ui-field="portfolio.cash" data-ui-label="Cash"><span>Cash</span><strong>{esc(cash_weight)} {target_delta("Cash", total=True)}</strong></div>
           </div>
         </div>
-        <div class="pm-portfolio-table">
-          <div class="pm-portfolio-row"><strong>SECTOR / ETF</strong><strong>WEIGHT</strong><strong>Δ vs Prev</strong><strong>ACTION</strong><strong>CLASS</strong><strong>DIVERGENCE</strong></div>
+        <div class="pm-portfolio-table" data-ui-field="portfolio.rows" data-ui-label="F18 ALLOCATION / F19 EXECUTION ROWS">
+          <div class="pm-portfolio-row" data-ui-field="portfolio.columns" data-ui-label="SECTOR / ETF | WEIGHT | Δ vs Prev | ACTION | CLASS | DIVERGENCE"><strong>SECTOR / ETF</strong><strong>WEIGHT</strong><strong>Δ vs Prev</strong><strong>ACTION</strong><strong>CLASS</strong><strong>DIVERGENCE</strong></div>
           {portfolio_table}
-          <div class="pm-portfolio-row">
+          <div class="pm-portfolio-row" data-ui-field="portfolio.cash_row" data-ui-label="Cash / Reserve included">
             <div><strong>Cash</strong><span>Reserve included</span></div>
             <strong>{esc(cash_weight)}</strong><span>{target_delta("Cash", total=True)}</span><span>{"Unavailable" if is_reconstruction else "HOLD"}</span><span>{"Unavailable" if is_reconstruction else "LIQUIDITY"}</span><span>{"Unavailable" if is_reconstruction else "—"}</span>
           </div>
@@ -2491,62 +2522,62 @@ def build(
       </article>
     </section>
 
-    <section class="pm-state-pair">
-      <article class="panel">
+    <section class="pm-state-pair" data-ui-section="macro_market" data-ui-label="MACRO / MARKET">
+      <article class="panel" data-ui-section="macro_liquidity" data-ui-label="Macro State">
         <div class="section-kicker">MACRO &amp; LIQUIDITY</div>
         <h2>Macro State</h2>
         <div class="pm-state-list">
-          <div><span>Macro Narrative</span><strong class="{pm_semantic(macro_state_narrative)}">{esc(macro_state_narrative)}</strong></div>
-          <div><span>Policy Bias</span><strong class="{pm_semantic(policy_bias)}">{esc(policy_bias)}</strong></div>
-          <div><span>Financial Conditions</span><strong class="{pm_semantic(financial_conditions)}">{esc(financial_conditions)}</strong></div>
-          <div><span>Real Rate</span><strong class="{pm_semantic(real_rate)}">{esc(real_rate)}</strong></div>
-          <div><span>Liquidity</span><strong class="{pm_semantic(liquidity)}">{esc(liquidity)}</strong></div>
-          <div><span>Liquidity Level</span><strong>{esc(liquidity_level)}</strong></div>
-          <div><span>Credit</span><strong class="{pm_semantic(credit)}">{esc(credit)}</strong></div>
-          <div><span>Credit Structure</span><strong class="{pm_semantic(credit_structure)}">{esc(credit_structure)}</strong></div>
-          <div><span>Structure</span><strong class="{pm_semantic(structure)}">{esc(structure)}</strong></div>
-          <div><span>Growth</span><strong class="{pm_semantic(growth_sustainability)}">{esc(growth_sustainability)}</strong></div>
+          <div data-ui-field="macro.narrative" data-ui-label="Macro Narrative"><span>Macro Narrative</span><strong class="{pm_semantic(macro_state_narrative)}">{esc(macro_state_narrative)}</strong></div>
+          <div data-ui-field="macro.policy_bias" data-ui-label="Policy Bias"><span>Policy Bias</span><strong class="{pm_semantic(policy_bias)}">{esc(policy_bias)}</strong></div>
+          <div data-ui-field="macro.financial_conditions" data-ui-label="Financial Conditions"><span>Financial Conditions</span><strong class="{pm_semantic(financial_conditions)}">{esc(financial_conditions)}</strong></div>
+          <div data-ui-field="macro.real_rate" data-ui-label="Real Rate"><span>Real Rate</span><strong class="{pm_semantic(real_rate)}">{esc(real_rate)}</strong></div>
+          <div data-ui-field="macro.liquidity" data-ui-label="Liquidity"><span>Liquidity</span><strong class="{pm_semantic(liquidity)}">{esc(liquidity)}</strong></div>
+          <div data-ui-field="macro.liquidity_level" data-ui-label="Liquidity Level"><span>Liquidity Level</span><strong>{esc(liquidity_level)}</strong></div>
+          <div data-ui-field="macro.credit" data-ui-label="Credit"><span>Credit</span><strong class="{pm_semantic(credit)}">{esc(credit)}</strong></div>
+          <div data-ui-field="macro.credit_structure" data-ui-label="Credit Structure"><span>Credit Structure</span><strong class="{pm_semantic(credit_structure)}">{esc(credit_structure)}</strong></div>
+          <div data-ui-field="macro.structure" data-ui-label="Structure"><span>Structure</span><strong class="{pm_semantic(structure)}">{esc(structure)}</strong></div>
+          <div data-ui-field="macro.growth" data-ui-label="Growth"><span>Growth</span><strong class="{pm_semantic(growth_sustainability)}">{esc(growth_sustainability)}</strong></div>
         </div>
       </article>
 
-      <article class="panel">
+      <article class="panel" data-ui-section="market_quality" data-ui-label="Participation &amp; Risk Quality">
         <div class="section-kicker">MARKET QUALITY</div>
         <h2>Participation &amp; Risk Quality</h2>
         <div class="pm-state-list">
-          <div><span>Institutional Flow</span><strong class="{pm_semantic(flow)}">{esc(flow)}</strong></div>
-          <div><span>Flow Authenticity</span><strong class="{pm_semantic(flow_authenticity)}">{esc(flow_authenticity)}</strong></div>
-          <div><span>Participation Quality</span><strong class="{pm_semantic(participation_quality)}">{esc(participation_quality)}</strong></div>
-          <div><span>Participation Mode</span><strong>{esc(participation_mode)}</strong></div>
-          <div><span>Leadership</span><strong class="{pm_semantic(leadership_state)}">{esc(leadership_state)}</strong></div>
-          <div><span>Positioning</span><strong class="{pm_semantic(positioning_state)}">{esc(positioning_state)}</strong></div>
-          <div><span>Dealer Gamma</span><strong class="{pm_semantic(dealer_gamma)}">{esc(dealer_gamma)}</strong></div>
-          <div><span>Squeeze Risk</span><strong class="{pm_semantic(squeeze_risk)}">{esc(squeeze_risk)}</strong></div>
-          <div><span>Vol Structure</span><strong class="{pm_semantic(vol_structure)}">{esc(vol_structure)}</strong></div>
-          <div><span>Drift</span><strong class="{pm_semantic(drift)}">{esc(drift)}</strong></div>
+          <div data-ui-field="market.institutional_flow" data-ui-label="Institutional Flow"><span>Institutional Flow</span><strong class="{pm_semantic(flow)}">{esc(flow)}</strong></div>
+          <div data-ui-field="market.flow_authenticity" data-ui-label="Flow Authenticity"><span>Flow Authenticity</span><strong class="{pm_semantic(flow_authenticity)}">{esc(flow_authenticity)}</strong></div>
+          <div data-ui-field="market.participation_quality" data-ui-label="Participation Quality"><span>Participation Quality</span><strong class="{pm_semantic(participation_quality)}">{esc(participation_quality)}</strong></div>
+          <div data-ui-field="market.participation_mode" data-ui-label="Participation Mode"><span>Participation Mode</span><strong>{esc(participation_mode)}</strong></div>
+          <div data-ui-field="market.leadership" data-ui-label="Leadership"><span>Leadership</span><strong class="{pm_semantic(leadership_state)}">{esc(leadership_state)}</strong></div>
+          <div data-ui-field="market.positioning" data-ui-label="Positioning"><span>Positioning</span><strong class="{pm_semantic(positioning_state)}">{esc(positioning_state)}</strong></div>
+          <div data-ui-field="market.dealer_gamma" data-ui-label="Dealer Gamma"><span>Dealer Gamma</span><strong class="{pm_semantic(dealer_gamma)}">{esc(dealer_gamma)}</strong></div>
+          <div data-ui-field="market.squeeze_risk" data-ui-label="Squeeze Risk"><span>Squeeze Risk</span><strong class="{pm_semantic(squeeze_risk)}">{esc(squeeze_risk)}</strong></div>
+          <div data-ui-field="market.vol_structure" data-ui-label="Vol Structure"><span>Vol Structure</span><strong class="{pm_semantic(vol_structure)}">{esc(vol_structure)}</strong></div>
+          <div data-ui-field="market.drift" data-ui-label="Drift"><span>Drift</span><strong class="{pm_semantic(drift)}">{esc(drift)}</strong></div>
         </div>
       </article>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-ui-section="market_confirmation" data-ui-label="Cross-Asset Tape">
       <div class="section-kicker">MARKET CONFIRMATION</div>
       <h2>Cross-Asset Tape</h2>
       <div class="pm-confirm-grid">
-        <div><span>US10Y</span>{cross_asset_display(us10y, "🔴")}</div>
-        <div><span>USD</span>{cross_asset_display(usd, "🟢")}</div>
-        <div><span>WTI</span>{cross_asset_display(oil, "🟡")}</div>
-        <div><span>VIX</span>{cross_asset_display(volatility, "🟢")}</div>
-        <div><span>HY OAS</span>{cross_asset_display(hy_oas, "🟢")}</div>
+        <div data-ui-field="confirmation.us10y" data-ui-label="US10Y"><span>US10Y</span>{cross_asset_display(us10y, "🔴")}</div>
+        <div data-ui-field="confirmation.usd" data-ui-label="USD"><span>USD</span>{cross_asset_display(usd, "🟢")}</div>
+        <div data-ui-field="confirmation.wti" data-ui-label="WTI"><span>WTI</span>{cross_asset_display(oil, "🟡")}</div>
+        <div data-ui-field="confirmation.vix" data-ui-label="VIX"><span>VIX</span>{cross_asset_display(volatility, "🟢")}</div>
+        <div data-ui-field="confirmation.hy_oas" data-ui-label="HY OAS"><span>HY OAS</span>{cross_asset_display(hy_oas, "🟢")}</div>
       </div>
-    {risk_monitor_html}
+    <div data-ui-field="confirmation.correlation_break" data-ui-label="CORRELATION BREAK">{risk_monitor_html}</div>
     </section>
 
 
 
-    <section class="panel">
+    <section class="panel" data-ui-section="leadership_participation" data-ui-label="Sector Leadership">
       <div class="section-kicker">LEADERSHIP &amp; PARTICIPATION</div>
       <h2>Sector Leadership</h2>
-      <div class="coverage">{esc(coverage)}</div>
-      <div class="sector-table">{sector_html}</div>
+      <div class="coverage" data-ui-field="leadership.coverage" data-ui-label="Coverage">{esc(coverage)}</div>
+      <div class="sector-table" data-ui-field="leadership.sector_rows" data-ui-label="Today's Sector Leaders">{sector_html}</div>
 
       <div class="leadership-divider"></div>
 
@@ -2554,26 +2585,26 @@ def build(
         Breadth &amp; Leadership Confirmation
       </h3>
 
-      <div class="breadth-table">{breadth_html}</div>
+      <div class="breadth-table" data-ui-field="leadership.breadth_rows" data-ui-label="Breadth &amp; Leadership Confirmation">{breadth_html}</div>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-ui-section="active_constraints" data-ui-label="Current Portfolio Constraints">
       <div class="section-kicker">ACTIVE CONSTRAINTS</div>
       <h2>Current Portfolio Constraints</h2>
       <div class="pm-state-list">
-        <div>
+        <div data-ui-field="constraints.positioning_risk" data-ui-label="Positioning Risk">
           <span>Positioning Risk</span>
           <strong class="{pm_semantic(positioning_state)}">
             {esc(positioning_state)} · Z {esc(positioning if is_reconstruction else diag["positioning_z"])}
           </strong>
         </div>
-        <div>
+        <div data-ui-field="constraints.squeeze_risk" data-ui-label="Squeeze Risk">
           <span>Squeeze Risk</span>
           <strong class="{pm_semantic(constraint_squeeze)}">
             {esc(constraint_squeeze)}
           </strong>
         </div>
-        <div>
+        <div data-ui-field="constraints.geo_stress" data-ui-label="Geo Stress">
           <span>Geo Stress</span>
           <strong class="{pm_semantic(geopolitical)}">
             {esc(geopolitical if is_reconstruction else diag["geo_level"] + " · " + diag["geo_score"])}
@@ -2582,16 +2613,16 @@ def build(
       </div>
     </section>
 
-    <section class="diagnostics-entry">
-      <div class="diagnostics-entry-kicker">WANT TO SEE WHY?</div>
-      <div class="diagnostics-entry-link">{diagnostics_link}</div>
-      <p>
+    <section class="diagnostics-entry" data-ui-section="diagnostics_entry" data-ui-label="WANT TO SEE WHY?">
+      <div class="diagnostics-entry-kicker" data-ui-field="diagnostics.kicker" data-ui-label="WANT TO SEE WHY?">WANT TO SEE WHY?</div>
+      <div class="diagnostics-entry-link" data-ui-field="diagnostics.link" data-ui-label="Engine Diagnostics">{diagnostics_link}</div>
+      <p data-ui-field="diagnostics.description" data-ui-label="Diagnostics description">
         Trace the signals, constraints, and engine states behind today's
         portfolio decision.
       </p>
     </section>
 
-    <footer class="footer pm-provenance-footer">
+    <footer class="footer pm-provenance-footer" data-ui-section="footer" data-ui-label="PROVENANCE">
       <div>Persisted report · presentation-only renderer</div>
     </footer>
 
@@ -3272,7 +3303,7 @@ def build_historical_pm_pages() -> int:
         with tempfile.TemporaryDirectory(prefix="gcf-pm-v2-") as temp_dir:
             synthetic = Path(temp_dir) / f"daily_report_{report_date}.md"
             synthetic.write_text(synthetic_pm_v2_markdown(record), encoding="utf-8")
-            build(source=synthetic, output_path=output_path, build_diagnostics=False)
+            build(source=synthetic, output_path=output_path, build_diagnostics=False, reconstruction_record=record)
         _decorate_reconstruction_page(output_path, record, source_text)
 
         diagnostics = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"

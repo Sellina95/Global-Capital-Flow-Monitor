@@ -114,7 +114,7 @@ def audit(site_dir: Path) -> dict:
                     "absent allocation is rendered as a numeric portfolio",
                 )
             if not record["execution_rows"] and record["sector_weights"]:
-                portfolio = re.search(r'<div class="pm-portfolio-table">(.*?)</article>', cockpit, re.DOTALL)
+                portfolio = re.search(r'<div class="pm-portfolio-table"[^>]*>(.*?)</article>', cockpit, re.DOTALL)
                 check(
                     bool(portfolio) and portfolio.group(1).count('data-availability="unavailable"') >= 4 * len(record["sector_weights"]),
                     "f19_final_state_consistency",
@@ -139,15 +139,25 @@ def audit(site_dir: Path) -> dict:
             check(bool(item["authority_sha256"] and item["reason"]), "field_provenance_missing", report_date, f"{key}: incomplete provenance")
             if item["status"] == "C":
                 check(item["value"] == UNAVAILABLE, "fabricated_default_value", report_date, f"{key}: C carries value")
-                check("No exact-clock canonical value" in item["reason"], "unavailable_semantics", report_date, f"{key}: absence reason missing")
+                check(
+                    "Historical source unavailable" in item["reason"]
+                    and len(item.get("sources_checked", [])) >= 3
+                    and item.get("reconstruction_possible") is False,
+                    "unavailable_semantics", report_date, f"{key}: absence proof missing",
+                )
             elif item["status"] == "A":
                 check(record["canonical_exact_clock"], "pit_clock_integrity", report_date, f"{key}: A without exact clock")
                 check(record["data_as_of"] in parity, "pit_clock_integrity", report_date, f"{key}: nearest/noncanonical clock")
                 check(item["authority"] == str(PARITY_PATH.relative_to(ROOT)) and item["authority_sha256"] == parity_hash,
                       "canonical_identity_mismatch", report_date, f"{key}: wrong frozen authority")
             else:
-                check(item["authority"] == record["source_path"] and item["authority_sha256"] == record["source_sha256"],
-                      "persisted_source_mismatch", report_date, f"{key}: wrong persisted authority")
+                diagnostics_authority = f"reports/engine_diagnostics_{report_date}.md"
+                allowed = {record["source_path"]: record["source_sha256"]}
+                diagnostics_path = ROOT / diagnostics_authority
+                if diagnostics_path.exists():
+                    allowed[diagnostics_authority] = hashlib.sha256(diagnostics_path.read_bytes()).hexdigest()
+                check(item["authority"] in allowed and item["authority_sha256"] == allowed.get(item["authority"]),
+                      "persisted_source_mismatch", report_date, f"{key}: wrong same-date persisted authority")
             if record["source_schema"] != "PM_V2_COMPLETE":
                 needle = f"<td>{html.escape(item['label'])}</td><td><strong>{item['status']}</strong></td><td>{html.escape(item['value'])}</td>"
                 check(needle in page, "displayed_field_mismatch", report_date, f"{key}: display/provenance mismatch")

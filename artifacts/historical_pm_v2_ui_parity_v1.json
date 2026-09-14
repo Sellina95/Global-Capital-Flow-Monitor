@@ -1,0 +1,170 @@
+{
+  "contract": "GCF_HISTORICAL_PM_V2_UI_PARITY_V1",
+  "verdict": "PASS",
+  "template": {
+    "date": "2026-09-12",
+    "sections": 14,
+    "fields": 69
+  },
+  "calendar_dates": 246,
+  "reports": 246,
+  "structural_parity": "246/246",
+  "phase_coverage": "246/246",
+  "f13_f15_f18_structure": "246/246",
+  "allocation_structure": "246/246",
+  "f19_structure": "246/246",
+  "macro_market_constraint_structure": "246/246",
+  "field_provenance": {
+    "C": 7827,
+    "B": 7107,
+    "A": 1056
+  },
+  "unavailable": 7827,
+  "variable_collection_provenance": {
+    "C": 598,
+    "A": 81,
+    "B": 305
+  },
+  "unavailable_by_schema": {
+    "LEGACY_BASIC": 2963,
+    "LEGACY_ENGINE": 4754,
+    "PM_V2_TRANSITIONAL": 75,
+    "PM_V2_COMPLETE": 35
+  },
+  "unavailable_root_causes": {
+    "Exact-clock production-semantic source for decision.action": 50,
+    "Exact-clock production-semantic source for decision.regime": 42,
+    "Exact-clock production-semantic source for decision.conviction": 110,
+    "Exact-clock production-semantic source for market.summary": 157,
+    "Exact-clock production-semantic source for f13.risk_budget": 54,
+    "Exact-clock production-semantic source for f15.recommended_exposure": 54,
+    "Exact-clock production-semantic source for f18.exposure_ceiling": 84,
+    "Exact-clock production-semantic source for f18.allocated_equity": 84,
+    "Exact-clock production-semantic source for f18.tactical_reserve": 84,
+    "Exact-clock production-semantic source for f18.cash": 84,
+    "Exact-clock production-semantic source for f15.exposure_control": 84,
+    "Exact-clock production-semantic source for f15.vix_control": 54,
+    "Exact-clock production-semantic source for f15.brake_drivers": 123,
+    "Exact-clock production-semantic source for f18.macro_allocation": 84,
+    "Exact-clock production-semantic source for executive.macro_narrative": 147,
+    "Exact-clock production-semantic source for executive.tactical_signal": 111,
+    "Exact-clock production-semantic source for market.macro_narrative": 152,
+    "Exact-clock production-semantic source for market.policy_bias": 50,
+    "Exact-clock production-semantic source for market.financial_conditions": 32,
+    "Exact-clock production-semantic source for market.real_rate": 32,
+    "Exact-clock production-semantic source for market.liquidity": 145,
+    "Exact-clock production-semantic source for market.liquidity_level": 28,
+    "Exact-clock production-semantic source for market.dollar_liquidity": 240,
+    "Exact-clock production-semantic source for market.fed_plumbing": 240,
+    "Exact-clock production-semantic source for market.structure": 103,
+    "Exact-clock production-semantic source for market.growth": 132,
+    "Exact-clock production-semantic source for market.flow": 111,
+    "Exact-clock production-semantic source for market.flow_authenticity": 133,
+    "Exact-clock production-semantic source for market.participation_quality": 240,
+    "Exact-clock production-semantic source for market.participation_mode": 240,
+    "Exact-clock production-semantic source for market.leadership": 133,
+    "Exact-clock production-semantic source for market.positioning": 133,
+    "Exact-clock production-semantic source for market.dealer_gamma": 110,
+    "Exact-clock production-semantic source for market.squeeze_risk": 240,
+    "Exact-clock production-semantic source for market.vol_structure": 240,
+    "Exact-clock production-semantic source for market.positioning_z": 162,
+    "Exact-clock production-semantic source for market.credit": 134,
+    "Exact-clock production-semantic source for market.credit_structure": 240,
+    "Exact-clock production-semantic source for market.drift": 110,
+    "Exact-clock production-semantic source for cross.hy_oas": 32,
+    "Exact-clock production-semantic source for leadership.coverage": 235,
+    "Exact-clock production-semantic source for allocation.growth_value": 54,
+    "Exact-clock production-semantic source for allocation.duration_tilt": 54,
+    "Exact-clock production-semantic source for allocation.cyclical_defensive": 54,
+    "Exact-clock production-semantic source for allocation.duration_factor": 54,
+    "Exact-clock production-semantic source for allocation.inflation_factor": 54,
+    "Exact-clock production-semantic source for allocation.usd_factor": 54,
+    "Exact-clock production-semantic source for allocation.credit_factor": 54,
+    "Exact-clock production-semantic source for f18.regime_controller": 125,
+    "Exact-clock production-semantic source for f18.exposure_override": 125,
+    "Exact-clock production-semantic source for constraint.exposure_control": 246,
+    "Exact-clock production-semantic source for constraint.squeeze_risk": 240,
+    "Exact-clock production-semantic source for constraint.vol_structure": 245,
+    "Exact-clock production-semantic source for constraint.correlation_break": 246,
+    "Exact-clock production-semantic source for constraint.sector_corr_break": 246,
+    "Exact-clock production-semantic source for constraint.rank_control": 246,
+    "Exact-clock production-semantic source for constraint.geopolitical": 246,
+    "Exact-clock production-semantic source for rationale.decision": 102,
+    "Exact-clock production-semantic source for rationale.exposure": 102,
+    "Exact-clock production-semantic source for rationale.tactical_signal": 111,
+    "Exact-clock production-semantic source for rationale.conviction": 110,
+    "Exact-clock production-semantic source for cross.usd": 4,
+    "Exact-clock production-semantic source for cross.us10y": 1,
+    "Exact-clock production-semantic source for cross.oil": 1
+  },
+  "fabricated_defaults": 0,
+  "checks": 35344,
+  "existing_reconstruction_checks": 91475,
+  "existing_reliability_checks": 90515,
+  "representative_dates": [
+    {
+      "report_date": "2025-12-11",
+      "structural_parity": true,
+      "data_as_of": "",
+      "source_schema": "LEGACY_BASIC",
+      "field_classes": {
+        "C": 61,
+        "B": 4
+      },
+      "sector_rows": 0,
+      "f19_rows": 0
+    },
+    {
+      "report_date": "2026-06-22",
+      "structural_parity": true,
+      "data_as_of": "2026-06-18",
+      "source_schema": "LEGACY_ENGINE",
+      "field_classes": {
+        "B": 38,
+        "A": 12,
+        "C": 15
+      },
+      "sector_rows": 3,
+      "f19_rows": 7
+    },
+    {
+      "report_date": "2026-08-28",
+      "structural_parity": true,
+      "data_as_of": "2026-08-27",
+      "source_schema": "LEGACY_ENGINE",
+      "field_classes": {
+        "B": 48,
+        "C": 17
+      },
+      "sector_rows": 6,
+      "f19_rows": 6
+    },
+    {
+      "report_date": "2026-09-02",
+      "structural_parity": true,
+      "data_as_of": "2026-09-01",
+      "source_schema": "PM_V2_TRANSITIONAL",
+      "field_classes": {
+        "B": 50,
+        "C": 15
+      },
+      "sector_rows": 3,
+      "f19_rows": 3
+    },
+    {
+      "report_date": "2026-09-12",
+      "structural_parity": true,
+      "data_as_of": "2026-09-11",
+      "source_schema": "PM_V2_COMPLETE",
+      "field_classes": {
+        "B": 59,
+        "C": 6
+      },
+      "sector_rows": 5,
+      "f19_rows": 5
+    }
+  ],
+  "failure_total": 0,
+  "failure_classes": {},
+  "issues": []
+}
