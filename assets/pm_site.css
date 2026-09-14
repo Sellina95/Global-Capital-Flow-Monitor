@@ -3622,3 +3622,38 @@ body {
   font-size: 11px;
   letter-spacing: 0.04em;
 }
+
+/* FOOTER READABILITY POLISH */
+.site-footer {
+  margin-top: 40px;
+  padding-top: 34px;
+  font-size: 14px;
+}
+
+.footer-kicker {
+  font-size: 12px;
+}
+
+.project-purpose p {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.project-signature strong {
+  font-size: 16px;
+}
+
+.project-signature > span {
+  font-size: 13px;
+}
+
+.footer-links {
+  margin-top: 14px;
+}
+
+.footer-links a {
+  min-height: 40px;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 750;
+}
