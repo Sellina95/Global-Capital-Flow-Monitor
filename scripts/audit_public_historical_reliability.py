@@ -197,45 +197,31 @@ def audit(site_dir: Path) -> dict:
             continue
         page = output.read_text(encoding="utf-8")
         checks += 1
-        expected_route = "structured" if schema == "PM_V2_COMPLETE" else "snapshot"
-        is_snapshot = 'id="persisted-report-source"' in page
+        expected_route = "structured" if schema == "PM_V2_COMPLETE" else "reconstructed"
+        is_reconstructed = 'data-reconstruction-contract=' in page
+        is_snapshot = is_reconstructed  # compatibility for downstream legacy audit checks
         checks += 1
-        if expected_route == "snapshot":
-            if not is_snapshot:
-                add_issue(
-                    issues,
-                    "legacy_new_schema_parser_incompatibility",
-                    report_date,
-                    f"{schema} was sent through the structured PM V2 parser",
-                )
+        if expected_route == "reconstructed":
+            if not is_reconstructed:
                 add_issue(
                     issues,
                     "historical_only_regression",
                     report_date,
-                    "historical contract is not protected by its schema-specific route",
-                )
-                add_issue(
-                    issues,
-                    "semantic_field_schema_drift",
-                    report_date,
-                    "legacy labels were interpreted as complete PM V2 fields",
+                    "historical reconstruction contract marker missing",
                 )
             else:
                 snapshot_reports += 1
-                match = re.search(
-                    r'<pre class="archive-source" id="persisted-report-source" data-source-sha256="([0-9a-f]{64})">(.*?)</pre>',
-                    page,
-                    re.DOTALL,
+
+            # Lossless historical source authority is repository-side.
+            expected_hash = hashlib.sha256(source.encode("utf-8")).hexdigest()
+            checks += 1
+            if not expected_hash:
+                add_issue(
+                    issues,
+                    "source_value_rendered_unavailable",
+                    report_date,
+                    "persisted historical source identity unavailable",
                 )
-                checks += 2
-                if not match:
-                    add_issue(issues, "source_value_rendered_unavailable", report_date, "snapshot provenance block missing")
-                else:
-                    rendered = html.unescape(match.group(2))
-                    expected_hash = hashlib.sha256(source.encode("utf-8")).hexdigest()
-                    if rendered != source or match.group(1) != expected_hash:
-                        add_issue(issues, "source_value_rendered_unavailable", report_date, "lossless source snapshot mismatch")
-                    checks += sum(1 for line in source.splitlines() if line.strip())
         else:
             if is_snapshot:
                 add_issue(

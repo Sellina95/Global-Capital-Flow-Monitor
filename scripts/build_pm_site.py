@@ -224,13 +224,13 @@ def _decorate_reconstruction_page(output_path: Path, record: dict, source_text: 
             '<section class="reconstruction-top-notice"><strong>CANONICAL REPLAY · NOT THE ORIGINAL PUBLICATION</strong>'
             f'<p>{len(record.get("authority_conflicts", []))} replay/persisted authority differences are disclosed below. '
             'The cockpit uses exact-clock canonical reconstruction where available; the original publication is preserved losslessly.</p>'
-            '<a href="#reconstruction-provenance">Review authority and provenance</a></section>'
+            '</section>'
         )
     else:
         top_notice = (
             '<section class="reconstruction-top-notice"><strong>PERSISTED-SOURCE RECONSTRUCTION</strong>'
             '<p>No exact-clock frozen canonical replay exists for this report. Only explicit same-date persisted fields are shown; all other fields remain unavailable.</p>'
-            '<a href="#reconstruction-provenance">Review authority and provenance</a></section>'
+            '</section>'
         )
     panel = (
         f'<script type="application/json" '

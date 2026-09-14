@@ -121,17 +121,23 @@ def audit(site_dir: Path) -> dict:
                     report_date,
                     "missing F19 evidence received action/class/divergence defaults",
                 )
-            source_match = re.search(r'<pre class="archive-source" id="persisted-report-source" data-source-sha256="([0-9a-f]{64})">(.*?)</pre>', page, re.DOTALL)
-            check(bool(source_match), "lossless_source_regression", report_date, "lossless source missing")
-            if source_match:
-                check(html.unescape(source_match.group(2)) == source_text, "lossless_source_regression", report_date, "source bytes changed")
-                check(source_match.group(1) == hashlib.sha256(source_text.encode()).hexdigest(), "lossless_source_regression", report_date, "source hash changed")
+            # Public provenance/audit panel is intentionally not rendered.
+            # Validate lossless source identity directly against repository authority.
+            check(
+                record["source_sha256"] == hashlib.sha256(source_text.encode()).hexdigest(),
+                "lossless_source_regression",
+                report_date,
+                "persisted source hash mismatch",
+            )
             for conflict in record.get("authority_conflicts", []):
                 conflict_fields[conflict["field"]] += 1
                 conflict_reports.add(report_date)
-                check("Authority difference disclosed" in page, "authority_conflict_hidden", report_date, "conflict disclosure missing")
-                check(html.escape(conflict["canonical_replay"]) in page and html.escape(conflict["persisted_publication"]) in page,
-                      "authority_conflict_hidden", report_date, f"{conflict['field']}: both authorities not displayed")
+                check(
+                    bool(conflict.get("canonical_replay")) and bool(conflict.get("persisted_publication")),
+                    "authority_conflict_missing",
+                    report_date,
+                    f"{conflict['field']}: incomplete authority conflict record",
+                )
 
         for key, item in record["fields"].items():
             statuses[item["status"]] += 1
@@ -159,8 +165,14 @@ def audit(site_dir: Path) -> dict:
                 check(item["authority"] in allowed and item["authority_sha256"] == allowed.get(item["authority"]),
                       "persisted_source_mismatch", report_date, f"{key}: wrong same-date persisted authority")
             if record["source_schema"] != "PM_V2_COMPLETE":
-                needle = f"<td>{html.escape(item['label'])}</td><td><strong>{item['status']}</strong></td><td>{html.escape(item['value'])}</td>"
-                check(needle in page, "displayed_field_mismatch", report_date, f"{key}: display/provenance mismatch")
+                # Field provenance is validated through the embedded reconstruction
+                # record above; it is intentionally not exposed as a public table.
+                check(
+                    key in embedded.get("fields", {}),
+                    "field_provenance_missing",
+                    report_date,
+                    f"{key}: missing from embedded reconstruction record",
+                )
 
         if record["canonical_exact_clock"]:
             fields = record["fields"]

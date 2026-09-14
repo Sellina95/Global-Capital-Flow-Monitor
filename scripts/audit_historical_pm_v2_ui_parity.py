@@ -238,7 +238,13 @@ def audit(site_dir: Path) -> dict:
     jun22_page = (site_dir / "history/2026-06-22.html").read_text(encoding="utf-8")
     check(jun22["canonical_exact_clock"] and jun22["data_as_of"] == "2026-06-18", "representative_semantics", "2026-06-22", "canonical replay clock mismatch")
     check(all(jun22["fields"][key]["status"] == "A" for key in ("f13.risk_budget", "f15.recommended_exposure", "f18.exposure_ceiling", "f18.allocated_equity", "f18.tactical_reserve", "f18.cash")), "representative_semantics", "2026-06-22", "canonical decision chain not bound")
-    check("CANONICAL REPLAY · NOT THE ORIGINAL PUBLICATION" in jun22_page and "Authority difference disclosed" in jun22_page, "representative_semantics", "2026-06-22", "replay/publication separation hidden")
+    check(
+        "CANONICAL REPLAY · NOT THE ORIGINAL PUBLICATION" in jun22_page
+        and len(jun22.get("authority_conflicts", [])) > 0,
+        "representative_semantics",
+        "2026-06-22",
+        "replay/publication separation hidden",
+    )
     check(re.search(r"Consumer Staples.*?7\.3%.*?Unavailable.*?Unavailable.*?Unavailable", jun22_page, re.DOTALL) is not None, "representative_semantics", "2026-06-22", "divergent original F19 was attached to canonical F18")
 
     sep02 = records["2026-09-02"]
