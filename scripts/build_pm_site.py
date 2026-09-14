@@ -2622,8 +2622,15 @@ def build(
       </p>
     </section>
 
-    <footer class="footer pm-provenance-footer" data-ui-section="footer" data-ui-label="PROVENANCE">
+    <footer class="footer pm-provenance-footer site-footer" data-ui-section="footer" data-ui-label="PROVENANCE">
       <div>Persisted report · presentation-only renderer</div>
+      <div class="footer-links">
+        <a href="https://github.com/Sellina95/Global-Capital-Flow-Monitor"
+           target="_blank"
+           rel="noopener noreferrer">
+          GitHub Repository ↗
+        </a>
+      </div>
     </footer>
 
     <script>
