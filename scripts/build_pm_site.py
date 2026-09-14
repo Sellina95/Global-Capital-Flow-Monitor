@@ -312,8 +312,8 @@ def _decorate_reconstruction_page(output_path: Path, record: dict, source_text: 
         page,
     )
     page = page.replace(
-        '<footer class="footer pm-provenance-footer" data-ui-section="footer" data-ui-label="PROVENANCE">',
-        panel + '<footer class="footer pm-provenance-footer" data-ui-section="footer" data-ui-label="PROVENANCE">',
+        '<footer class="footer pm-provenance-footer site-footer" data-ui-section="footer" data-ui-label="PROVENANCE">',
+        panel + '<footer class="footer pm-provenance-footer site-footer" data-ui-section="footer" data-ui-label="PROVENANCE">',
         1,
     )
     output_path.write_text(page, encoding="utf-8")
