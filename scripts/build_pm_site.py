@@ -232,22 +232,10 @@ def _decorate_reconstruction_page(output_path: Path, record: dict, source_text: 
             '<p>No exact-clock frozen canonical replay exists for this report. Only explicit same-date persisted fields are shown; all other fields remain unavailable.</p>'
             '<a href="#reconstruction-provenance">Review authority and provenance</a></section>'
         )
-    panel = f"""
-    <section class="panel reconstruction-contract" id="reconstruction-provenance">
-      <div class="section-kicker">HISTORICAL PM V2 RECONSTRUCTION</div>
-      <h2>Truth &amp; Provenance Contract</h2>
-      <p>Field authority: A = exact-clock frozen canonical PIT replay; B = explicit same-date persisted source; C = legitimately unavailable. No nearest-date, current, neutral, zero, or inferred backfill is permitted.</p>
-      <div class="reconstruction-counts"><strong>A {counts['A']}</strong><strong>B {counts['B']}</strong><strong>C {counts['C']}</strong></div>
-      {conflict_panel}
-      <details><summary>Field-level provenance</summary>
-        <div class="reconstruction-table-wrap"><table class="reconstruction-table"><thead><tr><th>Section</th><th>Field</th><th>Class</th><th>Displayed value</th><th>Authority reason</th></tr></thead><tbody>{rows}</tbody></table></div>
-      </details>
-      <details><summary>Lossless persisted same-date source</summary>
-        <pre class="archive-source" id="persisted-report-source" data-source-sha256="{source_hash}">{html.escape(source_text)}</pre>
-      </details>
-    </section>
-    <script type="application/json" id="historical-pm-v2-reconstruction-record">{record_json}</script>
-    """
+    panel = (
+        f'<script type="application/json" '
+        f'id="historical-pm-v2-reconstruction-record">{record_json}</script>'
+    )
     style = """
     <style>
       .reconstruction-contract{margin-top:18px}.reconstruction-counts{display:flex;gap:14px;margin:12px 0}
