@@ -37,13 +37,13 @@
 - **Flow:** 🌱 LIGHT TRACE / score=1
 - **Gamma:** 🟢 POSITIVE GAMMA
 - **Tactical Action:** HOLD / NONE / LOW
-- **Positioning:** pos_z=1.48
+- **Positioning:** pos_z=1.49
 - **Warning Score:** 4 (6.5 상관관계 붕괴, 6.6 섹터 상관관계 붕괴)
 - **Tactical Why:** No actionable alignment
 - **Why:** SEW STABLE → 실시간 이상징후 없음 → Divergence ALIGNED → 구조·가격·수급 정렬 → Narrative Action=HOLD 반영 → Warning Score 3+ → 공격적 확장 금지 / 총노출 추가 감산 없이 방어적 배분 → Tactical=HOLD / Flow=🌱 LIGHT TRACE(1) / Drift=WEAK DRIFT (노이즈 가능)(1) / Gamma=🟢 POSITIVE GAMMA → Tactical HOLD/MONITOR → 최종판단 변경 없음
 
 ### 🚩 Market Regime Status
-- **국면 전환 감지:** 🚨 **TRANSITION / MIXED (전환·혼조)** → **TRANSITION / MIXED**
+- **Operational Phase:** ✅ **TRANSITION / MIXED**
 - **Structural Regime:** **UNKNOWN_TRANSITION**
 
 ---
@@ -145,9 +145,9 @@
 - **정의:** 누적 흐름 + ATR 기반 강도 감지
 
 - **SPY:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.46% / 5D=-1.22% | Strength: LOW
-- **WTI:** 🟢 UP | Short-term: SHORT UP | 1D=+1.84% / 5D=+11.00% | Strength: HIGH
-- **DXY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.16% / 5D=+0.79% | Strength: LOW
-- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.31% / 5D=-1.27% | Strength: LOW
+- **WTI:** 🟢 UP | Short-term: MIXED | 1D=+1.83% / 5D=+10.99% | Strength: HIGH
+- **DXY:** 🟢 UP | Short-term: SHORT UP | 1D=+0.18% / 5D=+0.81% | Strength: LOW
+- **GOLD:** 🔴 DOWN | Short-term: SHORT DOWN | 1D=-0.41% / 5D=-1.36% | Strength: LOW
 
 - **Drift Score:** 1
 - **State:** **WEAK DRIFT (노이즈 가능)**
@@ -156,7 +156,7 @@
 
 - **Market Drift Summary:**
   - Equity (SPY): 🔴 DOWN / SHORT DOWN
-  - Oil (WTI): 🟢 UP / SHORT UP
+  - Oil (WTI): 🟢 UP / MIXED
   - Dollar (DXY): 🟢 UP / SHORT UP
   - Gold (GOLD): 🔴 DOWN / SHORT DOWN
 
@@ -234,17 +234,17 @@ So What?
 - **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지
 
 - **Raw Flow State:** **🌱 LIGHT TRACE**
-- **Transition State:** **FLOW_FADE**
-- **Flow Delta:** -6 (prev=7 → current=1)
-- **Persistence Days:** 3
-- **Transition Note:** 기관성 흐름은 남아 있으나 강도 약화
+- **Transition State:** **NO_FLOW_BASE**
+- **Flow Delta:** +0 (prev=1 → current=1)
+- **Persistence Days:** 0
+- **Transition Note:** 기관성 흐름 부재 상태 지속
 - **Confidence:** **LOW-MEDIUM**
 - **Action Bias:** **OBSERVE**
 
 - **Drift:** WEAK DRIFT (노이즈 가능) / NEUTRAL / NONE
 - **Gamma:** 🟢 POSITIVE GAMMA / 🟢 STABLE FLOW
 - **SEW:** STABLE / NORMAL
-- **Positioning (POS_Z):** 1.48
+- **Positioning (POS_Z):** 1.49
 - **Validation Score:** 0 (boost applied: +0)
 
 - **Drivers:**
@@ -363,19 +363,19 @@ So What?
 - **Drift:** WEAK DRIFT (노이즈 가능) / NEUTRAL / NONE
 - **Drift Score:** 1
 - **Flow Score:** 1
-- **Flow Continuity:** CONFIRMED_FLOW → 🌱 LIGHT TRACE (N/A, tilt=+0)
+- **Flow Continuity:** FLOW_FADE → 🌱 LIGHT TRACE (N/A, tilt=+0)
 - **Flow Regime Tilt:** +1 / Flow-Gamma Tilt: +0
 
 - **🎯 Final Risk Action:** **HOLD**
 - **Risk Budget (0~100):** **65**
-- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=WEAK DRIFT (노이즈 가능) (NEUTRAL) / 수급=1.48 → Phase=TRANSITION / MIXED
+- **Narrative:** 구조=MIXED / 심리=NEUTRAL / 유동성=증가/중간 / 크레딧=안정 / 드리프트=WEAK DRIFT (노이즈 가능) (NEUTRAL) / 수급=1.49 → Phase=TRANSITION / MIXED
 
 ### ⚠ 14) Divergence Monitor (Macro vs Positioning)
 - **추가이유:** 시장 가격과 정책 사이의 괴리 및 수급의 '질'을 파악하여 폭발적 반전 가능성 진단
 - **핵심질문:** 정책은 이런데 주가는 왜 반대로 가지?(Anomaly) 그 뒤에 숨은 수급 주체(CTA, Dealer)들은 지금 어떤 상태인가?
 
 - **Structure(3번):** `MIXED` | **Price(Regime):** `TRANSITION / MIXED` | **Bucket:** `MIXED` | **VIX:** `17.10`
-- **Positioning Data:** Z-Score: `1.48` (>1.8 시 Run) | Gamma: `0.70` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
+- **Positioning Data:** Z-Score: `1.49` (>1.8 시 Run) | Gamma: `0.70` (<0.5 시 Run) | CTA: `1.0` (추세 변곡점 확인)
 - **Status:** **ALIGNED** -> **해석:** 구조와 가격, 수급이 조화를 이루며 추세 유지 중
 - **Action Signal:** 🚨 **STAY (포지션 유지)**
 
@@ -547,8 +547,8 @@ So What?
 ### EMB
 - **Crash?** False
 - **Risk Level:** HIGH
-- **Z-Score (1d):** -0.3126851782700844
-- **Z-Score (5d):** -2.356438061434401
+- **Z-Score (1d):** -0.3126853118273848
+- **Z-Score (5d):** -2.3564386595651734
 
 ### EWJ
 - **Crash?** False

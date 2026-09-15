@@ -25,7 +25,7 @@ Exposure Control      NORMAL
 Macro Allocation      BALANCED
 
 2. EXECUTIVE VIEW
-The current strategic phase is TRANSITION / MIXED. Liquidity is ↑ Improving, while flow is 🌱 LIGHT TRACE. Positioning Z is 1.48 and credit is Calm. The canonical portfolio decision is REDUCE with an 55% exposure ceiling.
+The current strategic phase is TRANSITION / MIXED. Liquidity is ↑ Improving, while flow is 🌱 LIGHT TRACE. Positioning Z is 1.49 and credit is Calm. The canonical portfolio decision is REDUCE with an 55% exposure ceiling.
 Macro Narrative      UNKNOWN_TRANSITION
 Tactical Signal      HOLD / NONE
 
@@ -48,7 +48,7 @@ Leadership            FAILED_BREADTH
 Positioning           SQUEEZE_RISK
 Squeeze Risk          HIGH
 Vol Structure         COMPRESSION
-Positioning Z         1.48
+Positioning Z         1.49
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
 Dealer Gamma          🟢 POSITIVE GAMMA
