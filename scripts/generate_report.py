@@ -28,7 +28,7 @@ from filters.strategist_filters import (
     geopolitical_early_warning_filter,
     sector_correlation_break_filter,
     sector_correlation_break_state,
-    attach_drift_data_layer, 
+    attach_drift_data_layer,
     pseudo_gamma_filter,
     institutional_flow_engine_filter,
     final_action_engine,
@@ -143,7 +143,7 @@ def normalize_market_data_structure(market_data):
                 normalized[key] = value
 
     return normalized
-    
+
 # macro_data.csv에 들어있는 키들 (여기서 추가된 지표는 자동으로 읽히지만,
 # 필수 daily macro 라인은 이 KEYS를 기준으로 출력)
 KEYS = ["US10Y", "DXY", "WTI", "VIX", "USDKRW"]
@@ -165,10 +165,10 @@ def evaluate_growth_sustainability(
 
     if isinstance(hy_oas, dict):
         hy_oas = hy_oas.get("today")
-    
+
     if isinstance(real_rate, dict):
         real_rate = real_rate.get("today")
-    
+
     if isinstance(dxy, dict):
         dxy = dxy.get("today")
 
@@ -217,8 +217,8 @@ def evaluate_short_covering_risk(
 
     if isinstance(vix_change, dict):
         vix_change = vix_change.get("pct_change")
-  
-    
+
+
     score = 0
     reasons = []
 
@@ -285,13 +285,13 @@ def evaluate_financing_condition(
 
     if isinstance(us10y, dict):
         us10y = us10y.get("today")
-    
+
     if isinstance(real_rate, dict):
         real_rate = real_rate.get("today")
-    
+
     if isinstance(hy_oas, dict):
         hy_oas = hy_oas.get("today")
-        
+
     score = 0
     reasons = []
 
@@ -386,7 +386,7 @@ def build_strategic_interpretation(
         or final_action_result.get("final_exposure")
         or "N/A"
     )
-    
+
     # ---------------------------------------------------
     # 1) Header
     # ---------------------------------------------------
@@ -522,7 +522,7 @@ def build_strategic_interpretation(
             "추가 확대는 breadth와 flow confirmation 이후가 더 안전합니다. "
             f"현재 실행 기준 노출은 약 **{final_exposure}%**입니다."
         )
-        
+
     # ---------------------------------------------------
     # 7) Structural Interpretation Layer
     # ---------------------------------------------------
@@ -569,7 +569,7 @@ def build_strategic_interpretation(
         market_data.get("participation_signal")
         or market_data.get("PARTICIPATION_SIGNAL")
         or market_data.get("leadership_participation_signal")
-    ) 
+    )
 
     positioning_state = (
         market_data.get("positioning_state")
@@ -644,23 +644,23 @@ def interpret_sew_event(event_type: str) -> str:
 
     mapping = {
         "NORMAL": "정상 상태 / 구조적 리스크 없음",
-        
+
         "RISK_OFF_SHOCK": "전면 리스크오프 충격 / 시장 전반 디레버리징",
-        
+
         "LIQUIDATION_SHOCK": "강제 청산 발생 / 포지션 붕괴 / 급락 리스크",
-        
+
         "TECH_DELEVERAGING": "기술주 중심 디레버리징 / 성장주 압력",
-        
+
         "TECH_STRESS": "기술 섹터 약세 / 초기 균열 신호",
-        
+
         "MACRO_FLOW_DISLOCATION": "매크로 흐름 왜곡 / 오일·달러 비정상 움직임",
-        
+
         "MACRO_UNWIND": "글로벌 자금 언와인딩 / 레버리지 축소 진행",
-        
+
         "RISK_ON_SQUEEZE": "리스크온 숏스퀴즈 / 상승 압력 확대",
-        
+
         "VOL_CRUSH_SQUEEZE": "변동성 압축 기반 상승 / 감마 구조 영향",
-        
+
         "POSITION_UNWIND_RISK": "포지션 과열 상태 / 향후 급격한 언와인딩 위험",
     }
 
@@ -971,7 +971,7 @@ def load_macro_df() -> pd.DataFrame:
         raise ValueError("macro_data에 유효한 date row가 없습니다.")
 
     return df
-    
+
 def load_fred_extras_df() -> pd.DataFrame:
     csv_path = DATA_DIR / "fred_macro_sctorallo.csv"
     expected_cols = [
@@ -1041,8 +1041,8 @@ def merge_sovereign_spreads_into_macro_df(df_macro: pd.DataFrame) -> pd.DataFram
     # remove duplicates if any
     out = out.loc[:, ~out.columns.duplicated()].copy()
     return out
-    
-   
+
+
 def attach_breadth_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
@@ -1206,7 +1206,7 @@ def attach_leadership_layer(
 })
 
     return market_data
-    
+
 def attach_growth_sustainability_layer(
     market_data: Dict[str, Any],
     df: pd.DataFrame,
@@ -1281,7 +1281,7 @@ def attach_volatility_structure_layer(
 
     # VIX는 build_market_data에서 이미 today/prev/pct_change dict로 들어옴.
     # 여기서 덮어쓰지 않는다.
-    
+
     for col in ["VIX3M", "VIX9D"]:
         try:
             val = row.get(col) if col in df.columns else None
@@ -1297,7 +1297,7 @@ def attach_volatility_structure_layer(
 
     return market_data
 
-    
+
 def attach_sector_momentum_layer(market_data: Dict[str, Any], df: pd.DataFrame, today_idx: int) -> Dict[str, Any]:
     """
     Sector Momentum & Relative Strength Layer (v1)
@@ -1591,7 +1591,7 @@ def attach_fred_extras_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
         _attach_one(extra_key, f"_{extra_key}_ASOF")
 
     return market_data
-    
+
 def load_liquidity_df() -> pd.DataFrame:
     csv_path = DATA_DIR / "liquidity_data.csv"
     if not csv_path.exists():
@@ -1633,8 +1633,8 @@ def load_credit_spread_df() -> pd.DataFrame:
 
 def load_fred_data_from_csv() -> pd.DataFrame:
     csv_path = "data/fred_macro_sctorallo.csv"
-    
-  
+
+
     target_cols = ["T10Y2Y", "T10YIE", "DFII10", "DGS2"]
     all_cols = ["date"] + target_cols
 
@@ -2030,7 +2030,7 @@ def attach_liquidity_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
     return market_data
-    
+
 
 def attach_credit_spread_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -2522,8 +2522,8 @@ def generate_war_room_history(institutional_flow: dict | None = None):
 
     except Exception as e:
         print(f"❌ 데이터팩 생성 중 에러: {e}")
-    
-    
+
+
 def generate_daily_report() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -2587,7 +2587,7 @@ def generate_daily_report() -> None:
             f"Previous market data is not ready yet. Stop report generation."
         )
         return
-        
+
     print("[DEBUG] effective today_idx =", today_idx)
     print("[DEBUG] report_date (KST) =", report_date)
     print("[DEBUG] data_as_of_date =", data_as_of_date)
@@ -2599,8 +2599,8 @@ def generate_daily_report() -> None:
 
 
     market_data = build_market_data(df, today_idx)
- 
-    
+
+
 
     # -----------------------------
     # 2) Detect stale / market closed
@@ -2625,14 +2625,14 @@ def generate_daily_report() -> None:
     # -----------------------------
     market_data = attach_liquidity_layer(market_data) or market_data
 
-    
+
     # ✅ POS_SLOPE 주입: 15번 실행 전에 반드시 들어가야 함
     market_data["POS_SLOPE"] = get_recent_pos_slope("data/positioning_data.csv")
     print("[DEBUG][POS_SLOPE ATTACHED]")
     print("POS_SLOPE =", market_data.get("POS_SLOPE"))
-    
-    
-  
+
+
+
     market_data = attach_credit_spread_layer(market_data) or market_data
     market_data = attach_fred_extras_layer(market_data) or market_data
     market_data = attach_sovereign_spread_layer(market_data) or market_data
@@ -2662,10 +2662,10 @@ def generate_daily_report() -> None:
     print("DEALER_GAMMA_BIAS =", market_data.get("DEALER_GAMMA_BIAS"))
     print("CTA_MOMENTUM_SCORE =", market_data.get("CTA_MOMENTUM_SCORE"))
     print("_POS_ASOF =", market_data.get("_POS_ASOF"))
-    
+
     # generate_report.py
     # attach layer 전부 끝난 뒤 / FINAL_STATE 전에 딱 1번 추가
-    
+
     #market_data = normalize_market_data_structure(market_data)
     # Regime change monitor
     regime_result = check_regime_change_and_alert(market_data, data_as_of_date)
@@ -2681,7 +2681,7 @@ def generate_daily_report() -> None:
 
     if not df_fred_extra.empty:
         latest_fred = df_fred_extra.iloc[-1]
-    
+
         market_data["_FRED_EXTRA"] = {
             "T10Y2Y": float(latest_fred["T10Y2Y"]) if pd.notna(latest_fred["T10Y2Y"]) else 0.0,
             "T10YIE": float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else 0.0,
@@ -2689,15 +2689,15 @@ def generate_daily_report() -> None:
             "VIX": _latest_value(market_data.get("VIX"), 20.0),
             "DXY": _latest_value(market_data.get("DXY"), 100.0),
         }
-    
+
         print("[DEBUG] Fred Extra Saved:", market_data["_FRED_EXTRA"])
         print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
     else:
         print("[DEBUG] Fred Extra Saved: skipped (empty fred df)")
-    
+
     print("[DEBUG BEFORE COMMENTARY] FINAL_STATE:", market_data.get("FINAL_STATE"))
 
-   
+
     # -------------------------
     # 5) SEW 먼저 로드
     # -------------------------
@@ -2776,8 +2776,7 @@ def generate_daily_report() -> None:
     # -------------------------
     commentary_block = build_strategist_commentary(market_data)
 
-    # Apply Geo overlay only after F13 has created canonical FINAL_STATE.
-    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
+
 
     # Filter15 실행 후 갱신된 state를 다음 Production run용으로 저장.
     save_filter15_state(
@@ -2844,13 +2843,13 @@ def generate_daily_report() -> None:
     div_full_text = divergence_monitor_filter(market_data)
     div_status = "N/A"
     div_action = "N/A"
-    
+
     for line in div_full_text.split("\n"):
         if "**Status:**" in line:
             div_status = line.split("**Status:**")[-1].strip()
         if "**Action Signal:**" in line:
             div_action = line.split("**Action Signal:**")[-1].strip()
-    
+
 # F15 structured output is authoritative.
     # Never reconstruct decision state from presentation text.
     recommended_exposure = market_data.get("RECOMMENDED_EXPOSURE")
@@ -2865,7 +2864,7 @@ def generate_daily_report() -> None:
     # -------------------------
     if "FINAL_STATE" not in market_data or not isinstance(market_data.get("FINAL_STATE"), dict):
         market_data["FINAL_STATE"] = {}
-    
+
     if not market_data["FINAL_STATE"].get("phase") or market_data["FINAL_STATE"].get("phase") == "N/A":
         fallback_phase = (
             market_data.get("MARKET_REGIME")
@@ -2873,46 +2872,46 @@ def generate_daily_report() -> None:
             or "N/A"
         )
         market_data["FINAL_STATE"]["phase"] = fallback_phase
-    
-    
+
+
     print("[DEBUG][FINAL_STATE FIXED] FINAL_STATE =", market_data["FINAL_STATE"])
-    
+
     # -------------------------
     # 9) Divergence state 정제
     # -------------------------
     clean_div_status = div_status.replace("✅", "").replace("🚨", "").strip()
-    
+
     if "ALIGNED" in clean_div_status.upper():
         clean_div_status = "ALIGNED"
     elif "DISALIGNED" in clean_div_status.upper():
         clean_div_status = "DISALIGNED"
     else:
         clean_div_status = "N/A"
-    
+
     clean_div_action = div_action.replace("🚨", "").replace("✅", "").strip()
-    
+
     market_data["DIVERGENCE_STATE"] = {
         "status": clean_div_status,
         "action": clean_div_action,
     }
-    
+
     market_data["RECOMMENDED_EXPOSURE"] = recommended_exposure
-    
+
     # -------------------------
     # 10) 6.5 / 6.6 결과 생성
     # -------------------------
     correlation_break_text = correlation_break_filter(market_data)
     sector_corr_break_text = sector_correlation_break_filter(market_data)
-    
+
     corr65_state = correlation_break_state(market_data)
     corr66_state = sector_correlation_break_state(market_data)
-    
+
     # -------------------------
     # 11) Warning signals
     # -------------------------
     geo_state = market_data.get("GEO_EW", {}) or {}
     geo_level = str(geo_state.get("level", "NORMAL")).upper()
-    
+
     market_data["WARNING_SIGNALS"] = {
         "corr65_break": corr65_state["break"],
         "corr66_break": corr66_state["break"],
@@ -2920,7 +2919,7 @@ def generate_daily_report() -> None:
         "corr66_score": corr66_state["score"],
         "geo_level": geo_level,
     }
-    
+
     # -------------------------
     # -------------------------
     # 12) Final Action Engine 먼저 계산
@@ -2968,9 +2967,9 @@ def generate_daily_report() -> None:
     # 13.5) PM Final Brief
     # -------------------------
     pm_brief_block = generate_pm_final_brief(market_data)
-    
 
-    
+
+
     # -------------------------
     # 14) 워룸 상태
     # -------------------------
@@ -2980,31 +2979,31 @@ def generate_daily_report() -> None:
         or (clean_div_status != "ALIGNED")
         or (sew_status in ["WATCH", "ALERT", "DEADMAN"])
     )
-    
+
     war_room_emoji = "🚨" if is_war_room_alert else "✅"
     war_room_state = "ALERT" if is_war_room_alert else "STABLE"
-    
+
     if is_deadman_activated or sew_deadman:
         war_room_summary = "데드맨 스위치 발동 / 자산 보호 모드 강제 전환"
-    
+
     elif clean_div_status == "ALIGNED" and sew_status == "STABLE":
         war_room_summary = "구조-가격-수급 정렬 / 실시간 이상징후 없음 / 데드맨 정상"
-    
+
     elif sew_status == "RISK_COMPRESSION":
         war_room_summary = "포지셔닝 과열 감지 / Hard Deadman은 아니나 추격보다 리스크 축소 우선"
-    
+
     elif clean_div_status != "ALIGNED":
         war_room_summary = "구조·수급 괴리 및 추세 피로 감지 / 반전 가능성 모니터링 필요"
-    
+
     elif sew_status == "WATCH":
         war_room_summary = "구조는 유지되나 실시간 수급 이상반응 초기 감지 / 모니터링 필요"
-    
+
     elif sew_status == "ALERT":
         war_room_summary = "실시간 발작 감지 / 구조 또는 수급 레벨에서 즉시 점검 필요"
-    
+
     else:
         war_room_summary = "구조 또는 실시간 수급에 경미한 이상징후 존재 / 모니터링 필요"
-    
+
     # -------------------------
     # 15) Report assembly
     # -------------------------
@@ -3030,7 +3029,7 @@ def generate_daily_report() -> None:
     lines.append(f"**Date:** {report_date}")
     lines.append(f"**Data as of:** {data_as_of_date}")
     lines.append("")
-    
+
     lines.append("## ⚡ Strategic War Room (통합 대응)")
     lines.append(f"> **시스템 상태: {war_room_emoji} {war_room_state}**")
     lines.append(f"> **판단 요약: {war_room_summary}**")
@@ -3038,10 +3037,10 @@ def generate_daily_report() -> None:
     # 🔥 generate_report.py
     # 아래 한 줄:
     # deadman_log = get_recent_deadman_log(hours=24)
-    
+
     # ❌ 이거 지우고
-    
-    deadman_log = get_today_deadman_log()    
+
+    deadman_log = get_today_deadman_log()
 
     if deadman_log:
         lines.append("")
@@ -3058,14 +3057,14 @@ def generate_daily_report() -> None:
             lines.append("👉 해석: 오늘 장중 리스크 이벤트 이력이 있어 사후 복기용으로 기록합니다.")
 
         lines.append("")
-    
+
     lines.append("### 🎯 Exposure Framework")
     lines.append(f"- **Base Exposure (전략 기준): {base_exposure_display}%**")
     lines.append(f"- **Final Exposure (실행 기준): {final_exposure_display}%**")
     lines.append("")
     lines.append(f"- **Portfolio Stance:** {final_action_display} / {final_exposure_display}%")
     lines.append("")
-    
+
     lines.append(f"- **[14번 구조·수급 괴리]:** {war_room_emoji} {div_status}")
     lines.append("### 🟢 Current SEW Status")
     lines.append(f"- **SEW:** {sew_status} | {sew_summary}")
@@ -3074,17 +3073,17 @@ def generate_daily_report() -> None:
     if sew_deadman_reason and sew_deadman_reason != "Normal Operation":
         lines.append(f"- **Current Reason:** {sew_deadman_reason}")
     lines.append("")
-    
-    
+
+
     if is_deadman_activated or sew_deadman:
         lines.append("- **[15번 데드맨]:** 🚨 ACTIVATED")
     else:
         lines.append("- **[15번 Hard Deadman]:** ✅ PASS")
-   
-    
+
+
     lines.append(f"- **[14번 수급 시그널]:** {div_action}")
     lines.append("")
-    
+
     # ✅ Interpretation
     # ✅ Strategic Interpretation / PM Summary
     final_state = market_data.get("FINAL_STATE", {}) or {}
@@ -3100,7 +3099,7 @@ def generate_daily_report() -> None:
             "PARTICIPATION"
         ]):
             print(k, "=", market_data.get(k))
-    
+
     exposure_interp_lines = build_strategic_interpretation(
         market_data,
         final_state,
@@ -3120,12 +3119,12 @@ def generate_daily_report() -> None:
         lines.append("### 🔬 Structural Layer (12.5~12.8)")
         lines.extend(structural_lines)
         lines.append("")
-    
+
     #lines.append("### 🧠 Strategic Interpretation (PM Summary)")
     #lines.extend(exposure_interp_lines)
     #lines.append("")
-    
-    
+
+
     # ✅ Final Action Engine
     #lines.append("### 🎯 Final Action Engine(Raw Signal)")
     #lines.append(f"- **Action:** {final_action_name}")
@@ -3136,13 +3135,13 @@ def generate_daily_report() -> None:
         #for r in final_action_reasons:
             #lines.append(f"  - {r}")
     #lines.append("")
-    
+
     # ✅ War Room Final Decision (🔥 핵심)
     lines.append(final_decision_text)
     lines.append("")
 
- 
-    
+
+
     # -------------------------
     # 🚩 Market Regime Status (여기 넣기)
     # -------------------------
@@ -3150,28 +3149,28 @@ def generate_daily_report() -> None:
 
     current_operational = market_data.get("MARKET_REGIME", "N/A")
     current_structural = market_data.get("MACRO_NARRATIVE", "N/A")
-    
+
     if regime_result.get("status") == "DETECTED":
         lines.append(
             f"- **국면 전환 감지:** 🚨 **{regime_result.get('prev_regime')}** → **{current_operational}**"
         )
     else:
         lines.append(f"- **Operational Phase:** ✅ **{current_operational}**")
-    
+
     lines.append(f"- **Structural Regime:** **{current_structural}**")
     lines.append("")
     lines.append("---")
     lines.append("")
-    
+
     # -------------------------
     # 📊 Daily Macro Signals (여기 넣기)
     # -------------------------
     lines.append("## 📊 Daily Macro Signals")
     lines.append("")
-    
+
         # -------------------------
-    
-    
+
+
     # daily core signals
     if "US10Y" in market_data and market_data["US10Y"].get("today") is not None:
         prev = market_data["US10Y"].get("prev")
@@ -3204,23 +3203,23 @@ def generate_daily_report() -> None:
     # 문제 원인:
     # VIX dict key가 prev가 아니라 yesterday / previous / 혹은 normalize 후 다른 이름일 가능성 높음
     # 그래서 prev=None → fallback → 현재값만 출력
-    
+
     # =========================================
     # 가장 안전한 수정 (키 호환성 확장)
     # 기존 VIX 블록 통째로 교체
     # =========================================
-    
+
     if "VIX" in market_data and market_data["VIX"].get("today") is not None:
         vix_data = market_data["VIX"]
-    
+
         prev = (
             vix_data.get("prev")
             or vix_data.get("yesterday")
             or vix_data.get("previous")
         )
-    
+
         pct = vix_data.get("pct_change")
-    
+
         if prev is not None and pct is not None:
             lines.append(
                 f"- **변동성 지수 (VIX)**: {vix_data['today']:.3f} "
@@ -3230,8 +3229,8 @@ def generate_daily_report() -> None:
             lines.append(
                 f"- **변동성 지수 (VIX)**: {vix_data['today']:.3f}"
             )
-    
-    
+
+
 # =========================================
 # 추가 디버그 (하루만 확인 후 삭제 추천)
 # =========================================
@@ -3241,9 +3240,9 @@ def generate_daily_report() -> None:
 # =========================================
 # 기대 결과:
 # - **변동성 지수 (VIX)**: 17.990 (-2.12% vs 18.380)
-# =========================================  
-	
-    
+# =========================================
+
+
     if "USDKRW" in market_data and market_data["USDKRW"].get("today") is not None:
         prev = market_data["USDKRW"].get("prev")
         pct = market_data["USDKRW"].get("pct_change")
@@ -3297,8 +3296,8 @@ def generate_daily_report() -> None:
 
     return market_data
 
-    
-    
+
+
 """def generate_final_state_history():
     BACKTEST_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -3351,14 +3350,14 @@ def generate_daily_report() -> None:
                         float(latest_fred["T10YIE"]) if pd.notna(latest_fred["T10YIE"]) else None
                     )
                     market_data["FINAL_STATE"]["VIX"] = (
-                        float(market_data["VIX"]["today"]) if "VIX" in market_data and market_data["VIX"] is not None 
+                        float(market_data["VIX"]["today"]) if "VIX" in market_data and market_data["VIX"] is not None
                         else (float(latest_fred["VIX"]) if pd.notna(latest_fred["VIX"]) else market_data["FINAL_STATE"].get("VIX"))
                     )
                     market_data["FINAL_STATE"]["DFII10"] = (
                         float(latest_fred["DFII10"]) if pd.notna(latest_fred["DFII10"]) else None
                     )
                     market_data["FINAL_STATE"]["DXY"] = (
-                        float(market_data["DXY"]["today"]) if "DXY" in market_data and market_data["DXY"] is not None 
+                        float(market_data["DXY"]["today"]) if "DXY" in market_data and market_data["DXY"] is not None
                         else (float(latest_fred["DXY"]) if pd.notna(latest_fred["DXY"]) else None)
                     )
                     market_data["FINAL_STATE"]["DGS2"] = (
@@ -3375,7 +3374,7 @@ def generate_daily_report() -> None:
             narrative_engine_filter(market_data)
 
             # Geo overlay 반영
-            market_data = apply_geo_overlay_to_final_state(market_data) or market_data
+
             final_state = market_data.get("FINAL_STATE", {}) or {}
 
             rows.append({
@@ -3439,9 +3438,9 @@ def generate_daily_report() -> None:
     print(out_df.tail(5).to_string(index=False))
 
     return out_df"""
-        
-            
-          
+
+
+
 #if __name__ == "__main__":
     # =========================
     # 🔥 ETF 백테스트 실행 (원본 + CSV 저장)
@@ -3452,10 +3451,10 @@ def generate_daily_report() -> None:
     #generate_final_state_history()
     #generate_war_room_history()
 
-   
+
 if __name__ == "__main__":
     #백테스트
-    
+
     """generate_final_state_history()"""
     # 기존 리포트 실행
     real_market_data = generate_daily_report()
@@ -3465,7 +3464,7 @@ if __name__ == "__main__":
     # =========================
     """print("\n" + "=" * 60)
     print("🚀 ETF BACKTEST DEBUG START")
-   
+
 
     try:
         from etf_returns import (
@@ -3560,4 +3559,4 @@ if __name__ == "__main__":
     print("🚀 ETF BACKTEST DEBUG END")
     print("=" * 60)"""
 
-    
+

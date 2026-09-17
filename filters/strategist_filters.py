@@ -7939,45 +7939,87 @@ def executive_summary_filter(market_data: Dict[str, Any], debug: bool = False) -
     return result["report"]
     
 
-def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
+def apply_geo_exposure_constraint(market_data: Dict[str, Any]) -> str:
     """
-    Geo EW를 FINAL_STATE 위에 'overlay'로 반영.
+    Independent Geo / Event-Risk exposure constraint.
 
-    - Narrative Engine이 만든 FINAL_STATE를 보수적으로 조정
-    - risk_budget / risk_action 조정
-    - 조정 내역을 market_data["GEO_OVERLAY"]에 기록
+    Authority:
+      F13 -> Strategic Risk Budget
+      F15 -> Market-Based Exposure
+      GEO -> Event-Risk Constraint
+      F18 -> Allocation
+
+    Geo does NOT mutate F13 risk_budget.
+    Geo only constrains F15 exposure when market transmission is confirmed.
     """
 
     if market_data is None:
-        return market_data
+        return "### Geo / Event-Risk Constraint\n- Status: N/A"
 
     state = market_data.get("FINAL_STATE", {}) or {}
     geo = market_data.get("GEO_EW", {}) or {}
 
     level = str(geo.get("level", "N/A")).upper()
-    score = geo.get("score", None)
-
-    # 주말 / 휴장 감지
+    score = geo.get("score")
     is_stale = bool(market_data.get("_STALE", False))
 
-    base_budget = state.get("risk_budget", None)
-    base_action = str(state.get("risk_action", "HOLD"))
+    try:
+        base_exposure = float(market_data.get("RECOMMENDED_EXPOSURE"))
+    except (TypeError, ValueError):
+        base_exposure = None
 
-    overlay = {
-        "level": level,
-        "score": score,
-        "stale": is_stale,
-        "base_budget": base_budget,
-        "base_action": base_action,
-        "budget_delta": 0,
-        "final_budget": base_budget,
-        "final_action": base_action,
-        "note": "",
-    }
+    def _num(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
 
-    # -------------------------
-    # Geo Penalty Rules
-    # -------------------------
+    # -----------------------------------------------------
+    # Market-transmission evidence
+    # Geo headline/state alone must never reduce exposure.
+    # -----------------------------------------------------
+    transmission_signals = []
+
+    vix = _num(
+        market_data.get("VIX")
+        if market_data.get("VIX") is not None
+        else state.get("VIX")
+    )
+    if vix is not None and vix >= 22:
+        transmission_signals.append("VIX>=22")
+
+    hy_status = str(
+        market_data.get("HY_OAS_STATUS")
+        or state.get("HY_OAS_STATUS")
+        or ""
+    ).upper()
+    if hy_status in ("HOT", "FRACTURE"):
+        transmission_signals.append(f"HY_OAS={hy_status}")
+
+    flow_signal = str(market_data.get("FLOW_SIGNAL", "")).upper()
+    if flow_signal in ("PRE_SHOCK", "SHOCK"):
+        transmission_signals.append(f"FLOW={flow_signal}")
+
+    sew_state = str(market_data.get("SEW_STATE", "")).upper()
+    if sew_state in ("ALERT", "DEADMAN"):
+        transmission_signals.append(f"SEW={sew_state}")
+
+    drift_label = str(
+        market_data.get("DRIFT_LABEL")
+        or state.get("DRIFT_LABEL")
+        or ""
+    ).upper()
+    if drift_label in (
+        "OIL_SHOCK",
+        "SYSTEMIC_HEDGE",
+        "TIGHTENING_PRESSURE",
+    ):
+        transmission_signals.append(f"DRIFT={drift_label}")
+
+    transmission_confirmed = bool(transmission_signals)
+
+    # Preserve previous severity schedule, but apply it to
+    # exposure rather than Strategic Risk Budget.
     penalty_map = {
         "NORMAL": 0,
         "ELEVATED": -10,
@@ -7987,339 +8029,83 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
 
     penalty = penalty_map.get(level, 0)
 
-    # 주말이면 신호 반감
+    # Stale / weekend evidence gets half weight.
     if is_stale and penalty != 0:
         penalty = int(penalty / 2)
 
-    # -------------------------
-    # Budget Adjustment
-    # -------------------------
-    if isinstance(base_budget, int):
+    final_exposure = base_exposure
+    applied = False
 
-        new_budget = max(0, min(100, base_budget + penalty))
-
-        overlay["budget_delta"] = penalty
-        overlay["final_budget"] = new_budget
-
-        state["risk_budget"] = new_budget
-
-        # -------------------------
-        # Action Conservative Shift
-        # -------------------------
-        if level in ("ELEVATED", "HIGH", "CONFLICT"):
-
-            if base_action == "INCREASE":
-                state["risk_action"] = "HOLD"
-                overlay["final_action"] = "HOLD"
-
-            elif base_action == "HOLD" and level in ("HIGH", "CONFLICT"):
-                state["risk_action"] = "REDUCE"
-                overlay["final_action"] = "REDUCE"
-
-        overlay["note"] = f"GeoEW={level} overlay applied ({penalty}% budget adj)"
-
-    else:
-
-        overlay["note"] = (
-            f"GeoEW={level} detected but base_budget not int → no budget change"
+    if (
+        base_exposure is not None
+        and penalty < 0
+        and transmission_confirmed
+    ):
+        final_exposure = max(
+            0.0,
+            min(100.0, base_exposure + penalty),
         )
+        final_exposure = round(final_exposure, 1)
+        market_data["RECOMMENDED_EXPOSURE"] = final_exposure
+        applied = True
 
-    market_data["FINAL_STATE"] = state
-    market_data["GEO_OVERLAY"] = overlay
-
-    return market_data
-
-
-from scripts.monitor_sew import load_previous_flow_state, classify_flow_transition 
-
-def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
-    """
-    Institutional Flow Engine (v2-minimal)
-
-    목적:
-    - 기관성 자금 축적 흔적을 점수화
-    - 뉴스/쇼크 이전의 방향성 흐름 탐지
-    - 기존 로직 유지 + breadth / validation 최소 추가
-    """
-
-    drift = market_data.get("DRIFT", {}) or {}
-    drift_score = drift.get("score", 0)
-    drift_state = str(drift.get("state", "N/A") or "N/A")
-    drift_label = str(drift.get("label", "N/A") or "N/A")
-    combo_signal = str(drift.get("combo_signal", "NONE") or "NONE")
-
-    gamma_state = str(market_data.get("GAMMA_STATE", "UNKNOWN") or "UNKNOWN")
-    gamma_combo = str(market_data.get("GAMMA_COMBO", "NONE") or "NONE")
-
-    sew_status = str(market_data.get("SEW_STATUS", "N/A") or "N/A").upper()
-    sew_event_type = str(market_data.get("SEW_EVENT_TYPE", "N/A") or "N/A").upper()
-
-    pos_z = market_data.get("SP500_POS_Z", 0.0)
-    try:
-        pos_z = float(pos_z)
-    except Exception:
-        pos_z = 0.0
-
-    drift_data = market_data.get("DRIFT_DATA", {}) or {}
-
-    def g(asset: str, key: str):
-        try:
-            return drift_data.get(asset, {}).get(key)
-        except Exception:
-            return None
-
-    # -----------------------------
-    # 기존 short-horizon inputs
-    # -----------------------------
-    spy_15m = g("SPY", "ret_15m")
-    spy_30m = g("SPY", "ret_30m")
-    wti_15m = g("WTI", "ret_15m")
-    wti_30m = g("WTI", "ret_30m")
-    gold_15m = g("GOLD", "ret_15m")
-    gold_30m = g("GOLD", "ret_30m")
-    dxy_15m = g("DXY", "ret_15m")
-    dxy_30m = g("DXY", "ret_30m")
-
-    flow_score = 0
-    reasons = []
-
-    # 1) Drift core
-    if drift_score >= 4:
-        flow_score += 3
-        reasons.append("Drift strong")
-    elif drift_score >= 3:
-        flow_score += 2
-        reasons.append("Drift building")
-    elif drift_score >= 2:
-        flow_score += 1
-        reasons.append("Drift early")
-
-    # 2) Label quality
-    if drift_label in ["DISINFLATION_RISK_ON", "SYSTEMIC_HEDGE", "TIGHTENING_PRESSURE", "OIL_SHOCK"]:
-        flow_score += 1
-        reasons.append(f"Clear flow label: {drift_label}")
-
-    # 3) Short-horizon pre-move cluster
-    short_hits = 0
-
-    if spy_15m is not None and spy_15m >= 0.25:
-        short_hits += 1
-    if spy_30m is not None and spy_30m >= 0.40:
-        short_hits += 1
-
-    if wti_15m is not None and abs(wti_15m) >= 0.60:
-        short_hits += 1
-    if wti_30m is not None and abs(wti_30m) >= 0.90:
-        short_hits += 1
-
-    if gold_15m is not None and abs(gold_15m) >= 0.30:
-        short_hits += 1
-    if gold_30m is not None and abs(gold_30m) >= 0.45:
-        short_hits += 1
-
-    if dxy_15m is not None and abs(dxy_15m) >= 0.10:
-        short_hits += 1
-    if dxy_30m is not None and abs(dxy_30m) >= 0.15:
-        short_hits += 1
-
-    if short_hits >= 3:
-        flow_score += 2
-        reasons.append("Short-horizon pre-move cluster")
-    elif short_hits >= 2:
-        flow_score += 1
-        reasons.append("Short-horizon pre-move")
-
-    # 4) Gamma context
-    if "TRANSITION" in gamma_state:
-        flow_score += 1
-        reasons.append("Gamma transition")
-    elif "NEGATIVE" in gamma_state:
-        flow_score += 1
-        reasons.append("Gamma acceleration regime")
-
-    # 5) SEW relationship
-    if sew_status == "STABLE":
-        flow_score += 1
-        reasons.append("No shock yet")
-    elif sew_status in ["WATCH", "ALERT"]:
-        flow_score -= 1
-        reasons.append("Shock already leaking into tape")
-
-    # 6) Positioning penalty
-    if pos_z >= 2.0:
-        flow_score -= 2
-        reasons.append("Positioning overheated")
-    elif pos_z >= 1.5:
-        flow_score -= 1
-        reasons.append("Positioning somewhat stretched")
-
-    # --------------------------------------------------
-    # 6.5) Validation Layer (NEW, minimal additive only)
-    # --------------------------------------------------
-    validation_score = 0
-
-    hyg_1d = g("HYG", "ret_1d")
-    lqd_1d = g("LQD", "ret_1d")
-    eem_1d = g("EEM", "ret_1d")
-    fxi_1d = g("FXI", "ret_1d")
-
-    xlk_1d = g("XLK", "ret_1d")
-    xli_1d = g("XLI", "ret_1d")
-    xlf_1d = g("XLF", "ret_1d")
-    xly_1d = g("XLY", "ret_1d")
-    xlp_1d = g("XLP", "ret_1d")
-    xlu_1d = g("XLU", "ret_1d")
-
-    # 6.5-1) Cross-asset risk participation
-    risk_participation_hits = 0
-
-    if hyg_1d is not None and hyg_1d > 0:
-        risk_participation_hits += 1
-    if eem_1d is not None and eem_1d > 0:
-        risk_participation_hits += 1
-    if fxi_1d is not None and fxi_1d > 0:
-        risk_participation_hits += 1
-
-    if risk_participation_hits >= 2:
-        validation_score += 1
-        reasons.append("Cross-asset risk participation")
-
-    # 6.5-2) Credit confirmation
-    if hyg_1d is not None and lqd_1d is not None and hyg_1d >= lqd_1d:
-        validation_score += 1
-        reasons.append("Credit confirms risk appetite")
-
-    # 6.5-3) Sector leadership breadth
-    leadership_hits = 0
-    for v in [xlk_1d, xli_1d, xlf_1d, xly_1d]:
-        if v is not None and v > 0:
-            leadership_hits += 1
-
-    if leadership_hits >= 2:
-        validation_score += 1
-        reasons.append("Leadership breadth expanding")
-
-    # 6.5-4) Cyclical vs defensive check
-    defensive_weak = 0
-    for v in [xlp_1d, xlu_1d]:
-        if v is not None and v <= 0:
-            defensive_weak += 1
-
-    cyclical_strong = 0
-    for v in [xli_1d, xly_1d, xlk_1d]:
-        if v is not None and v > 0:
-            cyclical_strong += 1
-
-    if cyclical_strong >= 2 and defensive_weak >= 1:
-        validation_score += 1
-        reasons.append("Cyclical leadership over defensives")
-
-    # Validation score는 최대 +2까지만 반영 (과적합 방지)
-    validation_boost = min(validation_score, 2)
-    flow_score += validation_boost
-
-        
-        # 7) Flow state
-    if flow_score >= 7:
-        flow_state = "🔥 BUILDING HARD"
-        confidence = "HIGH"
-        interpretation = "뉴스 전 방향성 자금 축적 가능성 높음"
-        action_bias = "EARLY PREP"
-    
-    elif flow_score >= 5:
-        flow_state = "⚡ BUILDING"
-        confidence = "MEDIUM-HIGH"
-        interpretation = "기관성 흐름 형성 가능성"
-        action_bias = "WATCHLIST"
-    
-    elif flow_score >= 3:
-        flow_state = "👀 EARLY TRACE"
-        confidence = "MEDIUM"
-        interpretation = "흔적은 있으나 확신은 이르다"
-        action_bias = "MONITOR"
-    
-    elif flow_score >= 1:
-        flow_state = "🌱 LIGHT TRACE"
-        confidence = "LOW-MEDIUM"
-        interpretation = "약한 초기 수급 흔적은 있으나 확정적 기관 흐름은 아님"
-        action_bias = "OBSERVE"
-    
-    else:
-        flow_state = "NO CLEAR FLOW"
-        confidence = "LOW"
-        interpretation = "기관성 축적 흔적 불충분"
-        action_bias = "IGNORE"
-    
-    prev_flow = load_previous_flow_state()
-
-    prev_flow_state = str(prev_flow.get("flow_state", "N/A") or "N/A")
-    try:
-        prev_flow_score = int(float(prev_flow.get("flow_score", 0) or 0))
-    except Exception:
-        prev_flow_score = 0
-    
-    prev_persistence_days = int(prev_flow.get("persistence_days", 0) or 0)
-    
-    transition_info = classify_flow_transition(
-        prev_flow_state=prev_flow_state,
-        prev_flow_score=prev_flow_score,
-        current_flow_state=flow_state,
-        current_flow_score=flow_score,
-        prev_persistence_days=prev_persistence_days,
-    )
-
-    market_data["INSTITUTIONAL_FLOW"] = {
-        "score": flow_score,
-        "state": flow_state,
-        "confidence": confidence,
-        "interpretation": interpretation,
-        "action_bias": action_bias,
-        "reasons": reasons,
-        "drift_label": drift_label,
-        "combo_signal": combo_signal,
-        "gamma_state": gamma_state,
-        "gamma_combo": gamma_combo,
-        "sew_status": sew_status,
-        "sew_event_type": sew_event_type,
-        "validation_score": validation_score,
-        "validation_boost": validation_boost,
+    constraint = {
+        "level": level,
+        "score": score,
+        "stale": is_stale,
+        "base_f15_exposure": base_exposure,
+        "transmission_confirmed": transmission_confirmed,
+        "transmission_signals": transmission_signals,
+        "exposure_delta": penalty if applied else 0,
+        "final_exposure": final_exposure,
+        "applied": applied,
     }
 
-    print("[FLOW ENGINE FINAL]", market_data["INSTITUTIONAL_FLOW"])
+    if level in ("ELEVATED", "HIGH", "CONFLICT") and not transmission_confirmed:
+        constraint["status"] = "WATCH_ONLY"
+        constraint["note"] = (
+            f"GeoEW={level}; no confirmed market transmission -> no exposure change"
+        )
+    elif applied:
+        constraint["status"] = "CONSTRAINED"
+        constraint["note"] = (
+            f"GeoEW={level}; transmission confirmed -> "
+            f"{penalty}% exposure constraint"
+        )
+    else:
+        constraint["status"] = "INACTIVE"
+        constraint["note"] = "No active Geo exposure constraint"
 
-    lines = []
-    lines.append("### 🏦 Institutional Flow Engine (v2-minimal)")
-    lines.append("- **정의:** 기관성 자금이 뉴스 전에 남기는 흔적을 구조적으로 탐지")
-    lines.append("")
-    lines.append(f"- **Raw Flow State:** **{flow_state}**")
-    lines.append(f"- **Transition State:** **{transition_info.get('flow_state', flow_state)}**")
-    lines.append(
-        f"- **Flow Delta:** {transition_info.get('flow_delta', 0):+d} "
-        f"(prev={prev_flow_score} → current={flow_score})"
+    market_data["GEO_EXPOSURE_CONSTRAINT"] = constraint
+
+    # Backward-compatible observability key only.
+    # This no longer means F13 budget mutation.
+    market_data["GEO_OVERLAY"] = constraint
+
+    state["geo_constraint_status"] = constraint["status"]
+    state["geo_base_f15_exposure"] = base_exposure
+    state["geo_final_exposure"] = final_exposure
+    state["geo_transmission_confirmed"] = transmission_confirmed
+    market_data["FINAL_STATE"] = state
+
+    signal_text = (
+        ", ".join(transmission_signals)
+        if transmission_signals
+        else "None"
     )
-    lines.append(f"- **Persistence Days:** {transition_info.get('persistence_days', 0)}")
-    lines.append(f"- **Transition Note:** {transition_info.get('transition_note', interpretation)}")
-    lines.append(f"- **Confidence:** **{confidence}**")
-    lines.append(f"- **Action Bias:** **{action_bias}**")
-    lines.append("")
-    lines.append(f"- **Drift:** {drift_state} / {drift_label} / {combo_signal}")
-    lines.append(f"- **Gamma:** {gamma_state} / {gamma_combo}")
-    lines.append(f"- **SEW:** {sew_status} / {sew_event_type}")
-    lines.append(f"- **Positioning (POS_Z):** {pos_z}")
-    lines.append(f"- **Validation Score:** {validation_score} (boost applied: +{validation_boost})")
 
-    if reasons:
-        lines.append("")
-        lines.append("- **Drivers:**")
-        for r in reasons:
-            lines.append(f"  - {r}")
+    return (
+        "### Geo / Event-Risk Constraint\n"
+        f"- Geo Level: {level}\n"
+        f"- Market Transmission: "
+        f"{'CONFIRMED' if transmission_confirmed else 'NOT CONFIRMED'}\n"
+        f"- Transmission Evidence: {signal_text}\n"
+        f"- F15 Base Exposure: {base_exposure if base_exposure is not None else 'N/A'}\n"
+        f"- Final Executable Exposure: "
+        f"{final_exposure if final_exposure is not None else 'N/A'}\n"
+        f"- Status: {constraint['status']}"
+    )
 
-    return "\n".join(lines)
-
-
-    
-    # -------------------------
- 
 
 
 def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -8641,6 +8427,8 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append(divergence_monitor_filter(market_data))
     sections.append("")
     sections.append(volatility_controlled_exposure_filter(market_data))
+    sections.append("")
+    sections.append(apply_geo_exposure_constraint(market_data))
     sections.append("")
     sections.append(style_tilt_filter(market_data))
     sections.append("")
