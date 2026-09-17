@@ -3,6 +3,8 @@
 
 **Global Capital Flow Monitor** is an independent macro-to-execution research framework that translates global market structure and cross-asset capital flows into systematic portfolio decisions.
 
+🔗 **[Live PM Cockpit](https://sellina95.github.io/Global-Capital-Flow-Monitor/)** — Latest portfolio stance, market regime, cross-asset confirmation, leadership, allocation, and risk constraints.
+
 The core transmission chain is:
 
 **Structure  
@@ -15,8 +17,6 @@ The core transmission chain is:
 → F18 Tactical Allocation\
 → Execution Reconciliation\
 → ETF Execution**
-
-🔗 **[Live PM Cockpit](https://sellina95.github.io/Global-Capital-Flow-Monitor/)** — Latest portfolio stance, market regime, cross-asset confirmation, leadership, allocation, and risk constraints.
 
 It is designed not to predict markets, but to systematically interpret capital flow, control portfolio risk, and translate macro information into disciplined positioning.
 
