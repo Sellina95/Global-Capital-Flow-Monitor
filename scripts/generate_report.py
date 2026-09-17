@@ -2776,9 +2776,6 @@ def generate_daily_report() -> None:
     # -------------------------
     commentary_block = build_strategist_commentary(market_data)
 
-    # Apply Geo overlay only after F13 has created canonical FINAL_STATE.
-    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
-
     # Filter15 실행 후 갱신된 state를 다음 Production run용으로 저장.
     save_filter15_state(
         market_data=market_data,
@@ -3374,8 +3371,6 @@ def generate_daily_report() -> None:
             # Narrative Engine이 FINAL_STATE 생성
             narrative_engine_filter(market_data)
 
-            # Geo overlay 반영
-            market_data = apply_geo_overlay_to_final_state(market_data) or market_data
             final_state = market_data.get("FINAL_STATE", {}) or {}
 
             rows.append({

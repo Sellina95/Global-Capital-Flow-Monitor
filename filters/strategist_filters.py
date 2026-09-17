@@ -7941,11 +7941,11 @@ def executive_summary_filter(market_data: Dict[str, Any], debug: bool = False) -
 
 def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Geo EW를 FINAL_STATE 위에 'overlay'로 반영.
+    Geo / Event-Risk exposure constraint.
 
-    - Narrative Engine이 만든 FINAL_STATE를 보수적으로 조정
-    - risk_budget / risk_action 조정
-    - 조정 내역을 market_data["GEO_OVERLAY"]에 기록
+    F13 risk_budget is preserved.
+    Geo may constrain F15 RECOMMENDED_EXPOSURE only when
+    market transmission is confirmed, before F18 allocation.
     """
 
     if market_data is None:
@@ -7956,73 +7956,121 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
 
     level = str(geo.get("level", "N/A")).upper()
     score = geo.get("score", None)
-
-    # 주말 / 휴장 감지
     is_stale = bool(market_data.get("_STALE", False))
 
-    base_budget = state.get("risk_budget", None)
-    base_action = str(state.get("risk_action", "HOLD"))
+    try:
+        base_exposure = float(market_data.get("RECOMMENDED_EXPOSURE"))
+    except (TypeError, ValueError):
+        base_exposure = None
 
-    overlay = {
-        "level": level,
-        "score": score,
-        "stale": is_stale,
-        "base_budget": base_budget,
-        "base_action": base_action,
-        "budget_delta": 0,
-        "final_budget": base_budget,
-        "final_action": base_action,
-        "note": "",
-    }
+    signals = []
 
-    # -------------------------
-    # Geo Penalty Rules
-    # -------------------------
+    try:
+        vix = float(
+            market_data.get("VIX")
+            if market_data.get("VIX") is not None
+            else state.get("VIX")
+        )
+    except (TypeError, ValueError):
+        vix = None
+
+    if vix is not None and vix >= 22:
+        signals.append("VIX>=22")
+
+    hy_status = str(
+        market_data.get("HY_OAS_STATUS")
+        or state.get("HY_OAS_STATUS")
+        or ""
+    ).upper()
+    if hy_status in ("HOT", "FRACTURE"):
+        signals.append(f"HY_OAS={hy_status}")
+
+    flow_signal = str(market_data.get("FLOW_SIGNAL", "")).upper()
+    if flow_signal in ("PRE_SHOCK", "SHOCK"):
+        signals.append(f"FLOW={flow_signal}")
+
+    sew_status = str(
+        market_data.get("SEW_STATUS")
+        or market_data.get("SEW_STATE")
+        or ""
+    ).upper()
+    if sew_status in ("WATCH", "ALERT", "DEADMAN"):
+        signals.append(f"SEW={sew_status}")
+
+    drift = market_data.get("DRIFT", {}) or {}
+    drift_label = str(
+        drift.get("label")
+        or market_data.get("DRIFT_LABEL")
+        or ""
+    ).upper()
+    if drift_label in ("OIL_SHOCK", "SYSTEMIC_HEDGE", "TIGHTENING_PRESSURE"):
+        signals.append(f"DRIFT={drift_label}")
+
+    transmission_confirmed = bool(signals)
+
     penalty_map = {
         "NORMAL": 0,
         "ELEVATED": -10,
         "HIGH": -20,
         "CONFLICT": -25,
     }
-
     penalty = penalty_map.get(level, 0)
 
-    # 주말이면 신호 반감
     if is_stale and penalty != 0:
         penalty = int(penalty / 2)
 
-    # -------------------------
-    # Budget Adjustment
-    # -------------------------
-    if isinstance(base_budget, int):
+    final_exposure = base_exposure
+    applied = False
 
-        new_budget = max(0, min(100, base_budget + penalty))
-
-        overlay["budget_delta"] = penalty
-        overlay["final_budget"] = new_budget
-
-        state["risk_budget"] = new_budget
-
-        # -------------------------
-        # Action Conservative Shift
-        # -------------------------
-        if level in ("ELEVATED", "HIGH", "CONFLICT"):
-
-            if base_action == "INCREASE":
-                state["risk_action"] = "HOLD"
-                overlay["final_action"] = "HOLD"
-
-            elif base_action == "HOLD" and level in ("HIGH", "CONFLICT"):
-                state["risk_action"] = "REDUCE"
-                overlay["final_action"] = "REDUCE"
-
-        overlay["note"] = f"GeoEW={level} overlay applied ({penalty}% budget adj)"
-
-    else:
-
-        overlay["note"] = (
-            f"GeoEW={level} detected but base_budget not int → no budget change"
+    if (
+        base_exposure is not None
+        and penalty < 0
+        and transmission_confirmed
+    ):
+        final_exposure = round(
+            max(0.0, min(100.0, base_exposure + penalty)),
+            1,
         )
+        market_data["RECOMMENDED_EXPOSURE"] = final_exposure
+        applied = True
+
+    if level in ("ELEVATED", "HIGH", "CONFLICT") and not transmission_confirmed:
+        status = "WATCH_ONLY"
+    elif applied:
+        status = "CONSTRAINED"
+    else:
+        status = "INACTIVE"
+
+    overlay = {
+        "level": level,
+        "score": score,
+        "stale": is_stale,
+
+        # Backward-compatible F13 observability only; never mutated.
+        "base_budget": state.get("risk_budget"),
+        "base_action": state.get("risk_action"),
+        "budget_delta": 0,
+        "final_budget": state.get("risk_budget"),
+        "final_action": state.get("risk_action"),
+
+        # New executable exposure authority.
+        "base_f15_exposure": base_exposure,
+        "exposure_delta": penalty if applied else 0,
+        "final_exposure": final_exposure,
+        "transmission_confirmed": transmission_confirmed,
+        "transmission_signals": signals,
+        "status": status,
+        "note": (
+            f"GeoEW={level}; exposure constrained by {penalty}pp"
+            if applied
+            else f"GeoEW={level}; no executable exposure change"
+        ),
+    }
+
+    state["geo_constraint_status"] = status
+    state["geo_base_f15_exposure"] = base_exposure
+    state["geo_final_exposure"] = final_exposure
+    state["geo_transmission_confirmed"] = transmission_confirmed
 
     market_data["FINAL_STATE"] = state
     market_data["GEO_OVERLAY"] = overlay
@@ -8642,6 +8690,7 @@ def build_strategist_commentary(market_data: Dict[str, Any]) -> str:
     sections.append("")
     sections.append(volatility_controlled_exposure_filter(market_data))
     sections.append("")
+    apply_geo_overlay_to_final_state(market_data)
     sections.append(style_tilt_filter(market_data))
     sections.append("")
     sections.append(factor_layer_filter(market_data))
