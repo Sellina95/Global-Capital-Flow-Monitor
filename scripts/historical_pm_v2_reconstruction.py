@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 REPORTS_DIR = ROOT / "reports"
 PARITY_PATH = ROOT / "data/backtest/results/final_13_15_18_parity_closeout/final_13_15_18_parity_daily.csv"
+ACTION_LOG_RECOVERY_PATH = ROOT / "data/historical/action_log_recovery_2026-09-02_2026-09-06.json"
 CONTRACT_ID = "GCF_HISTORICAL_PM_V2_RECONSTRUCTION_V1"
 UNAVAILABLE = "Unavailable"
 
@@ -446,6 +447,46 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
     # calculate, infer, or backfill new historical state.
     supplemental_values: dict[str, dict[str, str]] = {}
 
+    # Exact same-date production outputs recovered from historical GitHub
+    # Actions logs. This is persisted historical evidence, not a replay and
+    # not a recalculation with current code. It is lower priority than frozen
+    # canonical PIT, the public report, and same-date engine diagnostics.
+    if ACTION_LOG_RECOVERY_PATH.exists():
+        recovery_raw = ACTION_LOG_RECOVERY_PATH.read_text(encoding="utf-8")
+        recovery_doc = json.loads(recovery_raw)
+        recovery_item = recovery_doc.get("dates", {}).get(report_date, {})
+        recovery_fields = recovery_item.get("fields", {})
+        if recovery_fields:
+            recovery_hash = sha256_text(recovery_raw)
+            run_id = recovery_item.get("run_id", "")
+            head_sha = recovery_item.get("head_sha", "")
+            for recovery_key, recovery_value in recovery_fields.items():
+                if recovery_value in ("", None):
+                    continue
+
+                recovered_item = {
+                    "value": str(recovery_value),
+                    "authority": str(ACTION_LOG_RECOVERY_PATH.relative_to(ROOT)),
+                    "authority_sha256": recovery_hash,
+                    "reason": (
+                        "Exact same-date production value recovered from "
+                        f"GitHub Actions Daily Macro Report run {run_id} "
+                        f"at historical head {head_sha}."
+                    ),
+                }
+                supplemental_values[recovery_key] = recovered_item
+
+                # ACTIVE CONSTRAINTS exposes the same persisted engine states
+                # under separate PM V2 field keys. Bind them without
+                # recalculating or changing their historical semantics.
+                constraint_alias = {
+                    "market.squeeze_risk": "constraint.squeeze_risk",
+                    "market.vol_structure": "constraint.vol_structure",
+                }.get(recovery_key)
+
+                if constraint_alias:
+                    supplemental_values[constraint_alias] = dict(recovered_item)
+
     macro_narrative = _explicit_label(text, "Macro Narrative")
     if macro_narrative:
         supplemental_values["market.macro_narrative"] = {
@@ -540,24 +581,28 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
         }
 
     # Explicit/stable VIX term structure -> Vol Structure NORMAL
-    vol_explicit = _explicit_label(text, "Vol Structure")
-    if vol_explicit:
-        supplemental_values["constraint.vol_structure"] = {
-            "value": vol_explicit,
-            "authority": str(path.relative_to(ROOT)),
-            "authority_sha256": source_hash,
-            "reason": "Explicit same-date persisted Vol Structure.",
-        }
-    elif re.search(
-        r"(?im)^-\s*Term Structure:.*(?:healthy contango / stable structure|mild contango)\s*$",
-        persisted_diagnostics_text,
-    ):
-        supplemental_values["constraint.vol_structure"] = {
-            "value": "NORMAL",
-            "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
-            "authority_sha256": persisted_diagnostics_hash,
-            "reason": "Explicit same-date VIX term structure indicates stable/contango structure.",
-        }
+    # Preserve stronger exact same-date recovered engine state when present.
+    # Generic publication/term-structure evidence may fill a gap, but must not
+    # overwrite an already recovered production-semantic Vol Structure state.
+    if "constraint.vol_structure" not in supplemental_values:
+        vol_explicit = _explicit_label(text, "Vol Structure")
+        if vol_explicit:
+            supplemental_values["constraint.vol_structure"] = {
+                "value": vol_explicit,
+                "authority": str(path.relative_to(ROOT)),
+                "authority_sha256": source_hash,
+                "reason": "Explicit same-date persisted Vol Structure.",
+            }
+        elif re.search(
+            r"(?im)^-\s*Term Structure:.*(?:healthy contango / stable structure|mild contango)\s*$",
+            persisted_diagnostics_text,
+        ):
+            supplemental_values["constraint.vol_structure"] = {
+                "value": "NORMAL",
+                "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
+                "authority_sha256": persisted_diagnostics_hash,
+                "reason": "Explicit same-date VIX term structure indicates stable/contango structure.",
+            }
 
     # Explicit Geo Stress Level
     geo_level_match = re.search(

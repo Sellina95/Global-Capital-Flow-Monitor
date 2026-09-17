@@ -1,0 +1,76 @@
+{
+  "contract": "GCF_ACTION_LOG_HISTORICAL_RECOVERY_V1",
+  "policy": "Values below are exact production outputs recovered from the same-date Daily Macro Report GitHub Actions logs. They are persisted evidence, not values recomputed with current code.",
+  "dates": {
+    "2026-09-02": {
+      "run_id": 33594431679,
+      "head_sha": "4f959f3e0a5fbf17005daf89394ac40a926d26de",
+      "fields": {
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.squeeze_risk": "HIGH",
+        "market.vol_structure": "COMPRESSION"
+      },
+      "evidence": [
+        "[DEBUG][18_PARTICIPATION_META] participation_quality=COMPRESSED_OR_FAILED; participation_mode=FAILED_BREADTH_MODE",
+        "[DEBUG][18_MARKET_QUALITY_CONTEXT] squeeze_risk=HIGH; vol_structure=COMPRESSION"
+      ]
+    },
+    "2026-09-03": {
+      "run_id": 33718790629,
+      "head_sha": "03310fa4e55453f81d3364b8f0c003a141b87573",
+      "fields": {
+        "market.participation_quality": "BROAD_BUT_WATCH",
+        "market.participation_mode": "SELECTIVE_EXPANSION",
+        "market.squeeze_risk": "MEDIUM",
+        "market.vol_structure": "NORMAL"
+      },
+      "evidence": [
+        "[DEBUG][18_PARTICIPATION_META] participation_quality=BROAD_BUT_WATCH; participation_mode=SELECTIVE_EXPANSION",
+        "[DEBUG][18_MARKET_QUALITY_CONTEXT] squeeze_risk=MEDIUM; vol_structure=NORMAL"
+      ]
+    },
+    "2026-09-04": {
+      "run_id": 33859051002,
+      "head_sha": "925a054aa4be79a924f4c542fb09aa0b95f863db",
+      "fields": {
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.participation_mode": "DEFENSIVE_SELECTIVE",
+        "market.squeeze_risk": "MEDIUM",
+        "market.vol_structure": "NORMAL"
+      },
+      "evidence": [
+        "[DEBUG][18_PARTICIPATION_META] participation_quality=FRAGILE_PARTICIPATION; participation_mode=DEFENSIVE_SELECTIVE",
+        "[DEBUG][18_MARKET_QUALITY_CONTEXT] squeeze_risk=MEDIUM; vol_structure=NORMAL"
+      ]
+    },
+    "2026-09-05": {
+      "run_id": 33946588598,
+      "head_sha": "7b9f94ea130c3a1ab7547267be3dbb2b4ba78a20",
+      "fields": {
+        "market.participation_quality": "BROAD_BUT_WATCH",
+        "market.participation_mode": "SELECTIVE_EXPANSION",
+        "market.squeeze_risk": "MEDIUM",
+        "market.vol_structure": "NORMAL"
+      },
+      "evidence": [
+        "[DEBUG][18_PARTICIPATION_META] participation_quality=BROAD_BUT_WATCH; participation_mode=SELECTIVE_EXPANSION",
+        "[DEBUG][18_MARKET_QUALITY_CONTEXT] squeeze_risk=MEDIUM; vol_structure=NORMAL"
+      ]
+    },
+    "2026-09-06": {
+      "run_id": 34014007786,
+      "head_sha": "04015400af2633593a4e7cd981373d9a279afad4",
+      "fields": {
+        "market.participation_quality": "BROAD_BUT_WATCH",
+        "market.participation_mode": "SELECTIVE_EXPANSION",
+        "market.squeeze_risk": "MEDIUM",
+        "market.vol_structure": "NORMAL"
+      },
+      "evidence": [
+        "[DEBUG][18_PARTICIPATION_META] participation_quality=BROAD_BUT_WATCH; participation_mode=SELECTIVE_EXPANSION",
+        "[DEBUG][18_MARKET_QUALITY_CONTEXT] squeeze_risk=MEDIUM; vol_structure=NORMAL"
+      ]
+    }
+  }
+}
