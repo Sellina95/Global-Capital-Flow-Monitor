@@ -7719,6 +7719,25 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
             etf_weights = {}
             cash_weight = 100.0
             final_exposure = 0.0
+
+        # Reconcile PM observability with executable ETF state.
+        executed_equity = round(sum(float(v) for v in etf_weights.values()), 1)
+        executed_cash = round(100.0 - executed_equity, 1)
+
+        market_data["PM_FINAL_ALLOCATION"] = {
+            "exposure_ceiling": round(_execution_ceiling, 1),
+            "allocated_equity": executed_equity,
+            "tactical_reserve": max(
+                0.0,
+                round(_execution_ceiling - executed_equity, 1),
+            ),
+            "cash_weight": executed_cash,
+            "sector_weights": dict(weights),
+            "etf_weights": dict(etf_weights),
+        }
+
+        cash_weight = executed_cash
+        final_exposure = executed_equity
     
         save_trade_log(
             prev_weights=prev_etf_weights,

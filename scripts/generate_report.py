@@ -2673,7 +2673,6 @@ def generate_daily_report() -> None:
     # -------------------------
     # 4) FINAL_STATE 이후 overlay / RAROC 먼저 반영
     # -------------------------
-    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
 
     # -------------------------
     # 4.5) Inject FRED sector-allocation extras
@@ -2777,6 +2776,9 @@ def generate_daily_report() -> None:
     # -------------------------
     commentary_block = build_strategist_commentary(market_data)
 
+    # Apply Geo overlay only after F13 has created canonical FINAL_STATE.
+    market_data = apply_geo_overlay_to_final_state(market_data) or market_data
+
     # Filter15 실행 후 갱신된 state를 다음 Production run용으로 저장.
     save_filter15_state(
         market_data=market_data,
@@ -2849,18 +2851,15 @@ def generate_daily_report() -> None:
         if "**Action Signal:**" in line:
             div_action = line.split("**Action Signal:**")[-1].strip()
     
-    recommended_exposure = 100
-    is_deadman_activated = False
-    
-    for line in commentary_block.split("\n"):
-        if "Recommended Exposure:" in line:
-            try:
-                recommended_exposure = int("".join(filter(str.isdigit, line)))
-            except Exception:
-                pass
-        if "DEAD MAN'S SWITCH ACTIVATED" in line:
-            is_deadman_activated = True
-    
+# F15 structured output is authoritative.
+    # Never reconstruct decision state from presentation text.
+    recommended_exposure = market_data.get("RECOMMENDED_EXPOSURE")
+    if recommended_exposure is None:
+        raise RuntimeError("F15 RECOMMENDED_EXPOSURE missing after strategist filters")
+    recommended_exposure = float(recommended_exposure)
+
+    is_deadman_activated = "DEAD MAN'S SWITCH ACTIVATED" in commentary_block
+
     # -------------------------
     # 8.5) FINAL_STATE 보정
     # -------------------------
@@ -2875,8 +2874,6 @@ def generate_daily_report() -> None:
         )
         market_data["FINAL_STATE"]["phase"] = fallback_phase
     
-    if not market_data["FINAL_STATE"].get("risk_budget") or market_data["FINAL_STATE"].get("risk_budget") == "N/A":
-        market_data["FINAL_STATE"]["risk_budget"] = recommended_exposure
     
     print("[DEBUG][FINAL_STATE FIXED] FINAL_STATE =", market_data["FINAL_STATE"])
     
