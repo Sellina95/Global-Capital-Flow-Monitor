@@ -7,9 +7,13 @@ The core transmission chain is:
 
 **Structure  
 → Capital Flow  
-→ Risk Budget  
-→ Volatility-Controlled Exposure  
-→ Tactical Allocation  
+→ Market Regime\
+→ F13 Strategic Risk Budget\
+→ F15 Base Market-Based Exposure\
+→ Geo / Event-Risk Constraint\
+→ Final Executable Exposure\
+→ F18 Tactical Allocation\
+→ Execution Reconciliation\
 → ETF Execution**
 
 🔗 **[Live PM Cockpit](https://sellina95.github.io/Global-Capital-Flow-Monitor/)** — Latest portfolio stance, market regime, cross-asset confirmation, leadership, allocation, and risk constraints.
@@ -109,10 +113,12 @@ Markets are interpreted through hierarchical layers:
 7. Market / Macro Regime
 8. Risk Budget Construction
 9. Divergence / Fragility Monitoring
-10. Volatility-Controlled Exposure
-11. Sector Allocation
-12. Tactical Portfolio Construction
-13. ETF Execution
+10. F15 Base Market-Based Exposure
+11. Geo / Event-Risk Constraint
+12. Final Executable Exposure
+13. Sector Allocation
+14. Tactical Portfolio Construction
+15. Execution Reconciliation & ETF Execution
 
 The framework separates:
 
@@ -131,35 +137,29 @@ The purpose is to prevent a single indicator or narrative from directly determin
 
 # ⚙️ System Architecture
 
+![Global Capital Flow Monitor — Production Decision Architecture](global-capital-flow-monitor-production-decision.svg)
+
 ```text
-Macro Structure
+Sources → Ingestion → Normalized Data
         ↓
-Liquidity & Credit Conditions
+Structural & Flow Analysis → Market Regime
         ↓
-Cross-Asset Confirmation
+F13 Strategic Risk Budget
         ↓
-Drift Monitor
+F15 Base Market-Based Exposure
         ↓
-Institutional Flow Engine
+Geo / Event-Risk Constraint
         ↓
-Macro / Market Regime
+Final Executable Exposure
         ↓
-Narrative Engine — Risk Budget
+F18 Tactical Allocation
         ↓
-Divergence / Fragility Monitor
+Execution Reconciliation / ETF Execution
         ↓
-Volatility-Controlled Exposure
-        ↓
-Sector Allocation Engine
-        ↓
-Tactical Allocation Builder
-        ↓
-Capital Ceiling Reconciliation
-        ↓
-ETF Execution Layer
+War Room Decision Overlay → Daily PM Report → PM V2 Cockpit
 ```
 
-Each component contributes to a structured **daily strategist report** while preserving an explicit hierarchy between interpretation, risk control, allocation, and execution.
+Structural and flow analysis includes liquidity, credit, cross-asset confirmation, drift and institutional flow. Each component contributes to a structured **daily strategist report** while preserving an explicit hierarchy between interpretation, risk control, allocation, execution and publication.
 
 ---
 
@@ -216,6 +216,7 @@ Research artifacts and diagnostic outputs are intentionally separated from produ
 13. Narrative Engine — Risk Budget Core  
 14. Divergence / Fragility Monitor  
 15. Volatility-Controlled Exposure  
+Geo / Event-Risk Exposure Constraint — post-F15 / pre-F18\
 16. Style Tilt  
 17. Factor Layer  
 18. Sector Allocation Engine  
@@ -312,6 +313,8 @@ Rather than attempting to predict geopolitical events, the framework observes ho
 
 The objective is to identify **market transmission patterns associated with geopolitical stress**, rather than convert news headlines directly into trading signals.
 
+In production, Geo runs **after F15 and before F18**. It preserves F13 `risk_budget` and constrains F15 `RECOMMENDED_EXPOSURE` only when a Geo risk level carries a penalty **and** market transmission is confirmed by at least one of VIX, HY OAS, Flow, SEW or Drift. Its states are `WATCH_ONLY` (elevated Geo risk without confirmed transmission), `CONSTRAINED` (the exposure penalty is applied), and `INACTIVE` (no constraint applies). The resulting exposure is the **final executable exposure** passed downstream to allocation.
+
 ---
 
 # 🧭 Risk Budget — Filter 13
@@ -330,15 +333,14 @@ Inputs may include:
 - structural conditions
 - institutional flow
 - positioning
-- event risk
 
-The resulting Risk Budget becomes an upstream constraint for portfolio exposure.
+The resulting Risk Budget becomes an upstream constraint for portfolio exposure. Geo does not rewrite F13 `risk_budget`; its executable constraint is applied after F15.
 
 ---
 
 # ⚠️ Volatility-Controlled Exposure — Filter 15
 
-Filter 15 translates the Risk Budget into an executable exposure recommendation.
+Filter 15 translates the Risk Budget into a **base market-based exposure** recommendation (`RECOMMENDED_EXPOSURE` before Geo).
 
 It evaluates risk conditions including:
 
@@ -353,11 +355,13 @@ Its purpose is not to generate alpha independently.
 
 It acts as a **risk-control layer between strategic conviction and portfolio allocation.**
 
+After F15, the Geo / Event-Risk Constraint may reduce that base exposure when market transmission is confirmed. The post-Geo result is the **final executable exposure** used by F18.
+
 ---
 
 # 📊 Sector Allocation — Filter 18
 
-Filter 18 translates permitted portfolio exposure into sector-level allocation.
+Filter 18 translates the **final executable exposure** permitted after Geo into sector-level allocation and tactical construction.
 
 The process incorporates:
 
@@ -376,9 +380,13 @@ The execution contract is:
 ```text
 Filter 13 Risk Budget
         ↓
-Filter 15 Exposure Control
+Filter 15 Base Market-Based Exposure
         ↓
-Filter 18 Sector Allocation
+Geo / Event-Risk Constraint
+        ↓
+Final Executable Exposure
+        ↓
+Filter 18 Tactical Allocation
         ↓
 Rank Persistence
         ↓
@@ -394,8 +402,11 @@ with the invariant:
 ```text
 Actual ETF Sector Exposure
 ≤ Filter 18 Allowed Exposure
-≤ Filter 15 Exposure
+≤ Final Executable Exposure
+≤ Filter 15 Base Exposure
 ```
+
+This ordering applies when the Geo constraint is applied; without a constraint, final executable exposure equals F15 base exposure.
 
 ---
 
@@ -483,11 +494,15 @@ Macro Classification
         ↓
 Portfolio Regime
         ↓
-Risk Budget
+F13 Strategic Risk Budget
         ↓
-Exposure
+F15 Base Market-Based Exposure
         ↓
-Sector Allocation
+Geo / Event-Risk Constraint
+        ↓
+Final Executable Exposure
+        ↓
+F18 Tactical Allocation
         ↓
 Executed Equity Allocation
 ```
@@ -565,13 +580,15 @@ Institutional Flow
 Credit Conditions
 Positioning Risk
 Risk Budget
-Final Exposure
-Sector Allocation
+F15 Base Market-Based Exposure
+Geo Constraint Status / Transmission
+Final Executable Exposure
+F18 Sector / Tactical Allocation
 Cash Allocation
 Execution Mapping
 ```
 
-The daily output represents a **structured research interpretation**, not a trading signal.
+The War Room feeds the persisted Daily PM Report, which is rendered in the PM V2 Cockpit. The daily output represents a **structured research interpretation**, not a trading signal.
 
 ---
 
@@ -586,10 +603,14 @@ Its primary distinction is the attempt to maintain an explicit transmission hier
 ```text
 Macro
 → Flow
-→ Risk Budget
-→ Exposure
-→ Allocation
-→ ETF Execution
+→ Market Regime
+→ F13 Risk Budget
+→ F15 Base Exposure
+→ Geo / Event-Risk Constraint
+→ Final Executable Exposure
+→ F18 Allocation
+→ Execution Reconciliation
+→ ETF Execution / PM Report
 ```
 
 Each downstream decision remains constrained by upstream risk decisions.
@@ -600,7 +621,7 @@ The framework incorporates financial-system liquidity conditions including TGA, 
 
 ### 3. Risk & Allocation Hierarchy
 
-Portfolio conviction is translated into explicit Risk Budget and Exposure layers before capital reaches sector allocation.
+Portfolio conviction is translated into explicit F13 Risk Budget and F15 base exposure layers. Confirmed Geo transmission may constrain final executable exposure before capital reaches F18 sector allocation.
 
 ### 4. Stateful Decision Architecture
 
