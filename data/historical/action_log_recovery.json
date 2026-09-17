@@ -1,0 +1,598 @@
+{
+  "contract": "GCF_ACTION_LOG_HISTORICAL_RECOVERY_V1",
+  "policy": "Values below are exact production outputs recovered from same-date Daily Macro Report GitHub Actions logs. They are persisted historical evidence, not values recomputed with current code. Recovery authority is lower priority than exact-clock canonical PIT, the original same-date public report, and same-date engine diagnostics.",
+  "dates": {
+    "2026-08-01": {
+      "run_id": 30683659958,
+      "head_sha": "d8161fbf0efd3ce82eeead7081e29d8281663729",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "REFLATION",
+        "market.macro_narrative": "REFLATION",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 30683659958.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-02": {
+      "run_id": 30743371377,
+      "head_sha": "b4a1c8f1cd1c3c610b757f5f43cf93b64ae4577c",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "REFLATION",
+        "market.macro_narrative": "REFLATION",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 30743371377.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-03": {
+      "run_id": 30784431777,
+      "head_sha": "fc856c6435613658658bfaa4378a3f1b68d5f8ac",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "REFLATION",
+        "market.macro_narrative": "REFLATION",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 30784431777.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-05": {
+      "run_id": 30973661584,
+      "head_sha": "1a567a7abd67e853f4c1aa258537720d640a11f6",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "UNKNOWN_TRANSITION",
+        "market.macro_narrative": "UNKNOWN_TRANSITION",
+        "market.participation_mode": "VOL_STRUCTURE_DEFENSE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 30973661584.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-07": {
+      "run_id": 31145362453,
+      "head_sha": "8c34980d156d2b37b85919fe5df721755055ed14",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "INFLATION_PRESSURE",
+        "market.macro_narrative": "INFLATION_PRESSURE",
+        "market.participation_mode": "COMPRESSED_SQUEEZE",
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 31145362453.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-08": {
+      "run_id": 31235930035,
+      "head_sha": "8ea652e3f5ec62bb1f9db38f1c35876eaee1c14f",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "DISINFLATION",
+        "market.macro_narrative": "DISINFLATION",
+        "market.participation_mode": "VOL_STRUCTURE_DEFENSE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 31235930035.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-09": {
+      "run_id": 31291488655,
+      "head_sha": "ebe221176d5d8dafa73c4d33156c9505bd74f3d0",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "POLICY_EASING",
+        "market.macro_narrative": "POLICY_EASING",
+        "market.participation_mode": "VOL_STRUCTURE_DEFENSE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 31291488655.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-10": {
+      "run_id": 31351746216,
+      "head_sha": "2c8f4d015e35140e35d42ba8758221bc0e12399d",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "POLICY_EASING",
+        "market.macro_narrative": "POLICY_EASING",
+        "market.participation_mode": "VOL_STRUCTURE_DEFENSE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 31351746216.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-11": {
+      "run_id": 31454138396,
+      "head_sha": "8c55851b956f3a89179f761095a2ea83a5a1a347",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "INFLATION_PRESSURE",
+        "market.macro_narrative": "INFLATION_PRESSURE",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 31454138396.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-12": {
+      "run_id": 31559785033,
+      "head_sha": "d8a1d1ac0fa41de65189677b6278ed7f2786f1e0",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "UNKNOWN_TRANSITION",
+        "market.macro_narrative": "UNKNOWN_TRANSITION",
+        "market.participation_mode": "VOL_STRUCTURE_DEFENSE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 31559785033.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-13": {
+      "run_id": 31663788754,
+      "head_sha": "32cd8e231f8ee0828f2506b7f05b7244be09fb74",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "UNKNOWN_TRANSITION",
+        "market.macro_narrative": "UNKNOWN_TRANSITION",
+        "market.participation_mode": "VOL_STRUCTURE_DEFENSE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 31663788754.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-14": {
+      "run_id": 31766563727,
+      "head_sha": "587bf878151cb9a66771987eb64a30c42918325d",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "DISINFLATION",
+        "market.macro_narrative": "DISINFLATION",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 31766563727.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-15": {
+      "run_id": 31858527779,
+      "head_sha": "2b991d89caed2ec1819a5f8bf5d5f1fe6eb734fe",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "REFLATION",
+        "market.macro_narrative": "REFLATION",
+        "market.participation_mode": "DEFENSIVE_SELECTIVE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 31858527779.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-16": {
+      "run_id": 31921609503,
+      "head_sha": "75f5762ed35447bb9199beeefc465a6884442d9c",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "REFLATION",
+        "market.macro_narrative": "REFLATION",
+        "market.participation_mode": "DEFENSIVE_SELECTIVE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 31921609503.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-17": {
+      "run_id": 31987527449,
+      "head_sha": "809b5c975bec3cbb9f4e4749ad4c38e3c496eb2f",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "REFLATION",
+        "market.macro_narrative": "REFLATION",
+        "market.participation_mode": "DEFENSIVE_SELECTIVE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 31987527449.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-18": {
+      "run_id": 32091049084,
+      "head_sha": "dea8b593c23bcc8a769c06be3f983d4bccc00eda",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "REFLATION",
+        "market.macro_narrative": "REFLATION",
+        "market.participation_mode": "DEFENSIVE_SELECTIVE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 32091049084.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-19": {
+      "run_id": 32207936387,
+      "head_sha": "8eb27486fd5284335baf9361dd2272ebd082b434",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "UNKNOWN_TRANSITION",
+        "market.macro_narrative": "UNKNOWN_TRANSITION",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 32207936387.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-20": {
+      "run_id": 32323919409,
+      "head_sha": "f8163a372b7fbef0cefb562667d0a9e33db60739",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "DISINFLATION",
+        "market.macro_narrative": "DISINFLATION",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 32323919409.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-21": {
+      "run_id": 32439539947,
+      "head_sha": "f13ef30633b1793f0a6829376c8ed8a517c93491",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "REFLATION",
+        "market.macro_narrative": "REFLATION",
+        "market.participation_mode": "SELECTIVE_ONLY",
+        "market.participation_quality": "NARROW_PARTICIPATION",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 32439539947.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-22": {
+      "run_id": 32545647189,
+      "head_sha": "6e606c6495c35ad1bb7b5b9d7757d2d578e76631",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "TIGHTENING_GROWTH_SCARE",
+        "market.macro_narrative": "TIGHTENING_GROWTH_SCARE",
+        "market.participation_mode": "DEFENSIVE_SELECTIVE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 32545647189.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-23": {
+      "run_id": 32612651453,
+      "head_sha": "3a756a1885d3d133f3ef454aec53bf4151edbdf4",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "INFLATION_PRESSURE",
+        "market.macro_narrative": "INFLATION_PRESSURE",
+        "market.participation_mode": "DEFENSIVE_SELECTIVE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 32612651453.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-24": {
+      "run_id": 32682727629,
+      "head_sha": "f82b77211019baa6654888ace5831f37749ee03a",
+      "fields": {
+        "constraint.squeeze_risk": "HIGH",
+        "executive.macro_narrative": "INFLATION_PRESSURE",
+        "market.macro_narrative": "INFLATION_PRESSURE",
+        "market.participation_mode": "DEFENSIVE_SELECTIVE",
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.squeeze_risk": "HIGH"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 32682727629.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-25": {
+      "run_id": 32800734637,
+      "head_sha": "a4bddacfebd036330d135501dc93cf588491779d",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "UNKNOWN_TRANSITION",
+        "market.macro_narrative": "UNKNOWN_TRANSITION",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 32800734637.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-26": {
+      "run_id": 32922466838,
+      "head_sha": "f19c9a4ce93980e74d32ade4ed16b68203134913",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "DISINFLATION",
+        "market.macro_narrative": "DISINFLATION",
+        "market.participation_mode": "BALANCED",
+        "market.participation_quality": "NEUTRAL_PARTICIPATION",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 32922466838.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-27": {
+      "run_id": 33064814337,
+      "head_sha": "db435f1499beba2cc8c73964310c62eada9ba757",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "TIGHTENING_GROWTH_SCARE",
+        "market.macro_narrative": "TIGHTENING_GROWTH_SCARE",
+        "market.participation_mode": "SELECTIVE_ONLY",
+        "market.participation_quality": "NARROW_PARTICIPATION",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 33064814337.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-28": {
+      "run_id": 33171120839,
+      "head_sha": "1efaebbe566c5b66fffe609d5a07fadca1c1b857",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "REFLATION",
+        "market.macro_narrative": "REFLATION",
+        "market.participation_mode": "SELECTIVE_ONLY",
+        "market.participation_quality": "NARROW_PARTICIPATION",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 33171120839.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-30": {
+      "run_id": 33296287386,
+      "head_sha": "f4ca90fb851862b2220029b885c34628bb76c8f3",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "TIGHTENING_GROWTH_SCARE",
+        "market.macro_narrative": "TIGHTENING_GROWTH_SCARE",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 33296287386.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-08-31": {
+      "run_id": 33364791675,
+      "head_sha": "a23c4fe3ec03da44c64a1b8072195cc1d2cdda4b",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "TIGHTENING_GROWTH_SCARE",
+        "market.macro_narrative": "TIGHTENING_GROWTH_SCARE",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 33364791675.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-09-01": {
+      "run_id": 33475649184,
+      "head_sha": "558c82f662e2e43fcc58a5291466c742ed9c85af",
+      "fields": {
+        "constraint.squeeze_risk": "MEDIUM",
+        "executive.macro_narrative": "REFLATION",
+        "market.macro_narrative": "REFLATION",
+        "market.participation_mode": "SELECTIVE_ONLY",
+        "market.participation_quality": "NARROW_PARTICIPATION",
+        "market.squeeze_risk": "MEDIUM"
+      },
+      "evidence": [
+        "Exact executed runtime evidence recovered from Daily Macro Report run 33475649184.",
+        "Participation fields sourced from [DEBUG][18_PARTICIPATION_META].",
+        "Squeeze-risk fields sourced from [DEBUG][18_MARKET_QUALITY_CONTEXT].",
+        "Macro narrative sourced from the executed rendered Macro Narrative runtime line."
+      ]
+    },
+    "2026-09-02": {
+      "run_id": 33594431679,
+      "head_sha": "4f959f3e0a5fbf17005daf89394ac40a926d26de",
+      "fields": {
+        "market.participation_quality": "COMPRESSED_OR_FAILED",
+        "market.participation_mode": "FAILED_BREADTH_MODE",
+        "market.squeeze_risk": "HIGH",
+        "market.vol_structure": "COMPRESSION"
+      },
+      "evidence": [
+        "[DEBUG][18_PARTICIPATION_META] participation_quality=COMPRESSED_OR_FAILED; participation_mode=FAILED_BREADTH_MODE",
+        "[DEBUG][18_MARKET_QUALITY_CONTEXT] squeeze_risk=HIGH; vol_structure=COMPRESSION"
+      ]
+    },
+    "2026-09-03": {
+      "run_id": 33718790629,
+      "head_sha": "03310fa4e55453f81d3364b8f0c003a141b87573",
+      "fields": {
+        "market.participation_quality": "BROAD_BUT_WATCH",
+        "market.participation_mode": "SELECTIVE_EXPANSION",
+        "market.squeeze_risk": "MEDIUM",
+        "market.vol_structure": "NORMAL"
+      },
+      "evidence": [
+        "[DEBUG][18_PARTICIPATION_META] participation_quality=BROAD_BUT_WATCH; participation_mode=SELECTIVE_EXPANSION",
+        "[DEBUG][18_MARKET_QUALITY_CONTEXT] squeeze_risk=MEDIUM; vol_structure=NORMAL"
+      ]
+    },
+    "2026-09-04": {
+      "run_id": 33859051002,
+      "head_sha": "925a054aa4be79a924f4c542fb09aa0b95f863db",
+      "fields": {
+        "market.participation_quality": "FRAGILE_PARTICIPATION",
+        "market.participation_mode": "DEFENSIVE_SELECTIVE",
+        "market.squeeze_risk": "MEDIUM",
+        "market.vol_structure": "NORMAL"
+      },
+      "evidence": [
+        "[DEBUG][18_PARTICIPATION_META] participation_quality=FRAGILE_PARTICIPATION; participation_mode=DEFENSIVE_SELECTIVE",
+        "[DEBUG][18_MARKET_QUALITY_CONTEXT] squeeze_risk=MEDIUM; vol_structure=NORMAL"
+      ]
+    },
+    "2026-09-05": {
+      "run_id": 33946588598,
+      "head_sha": "7b9f94ea130c3a1ab7547267be3dbb2b4ba78a20",
+      "fields": {
+        "market.participation_quality": "BROAD_BUT_WATCH",
+        "market.participation_mode": "SELECTIVE_EXPANSION",
+        "market.squeeze_risk": "MEDIUM",
+        "market.vol_structure": "NORMAL"
+      },
+      "evidence": [
+        "[DEBUG][18_PARTICIPATION_META] participation_quality=BROAD_BUT_WATCH; participation_mode=SELECTIVE_EXPANSION",
+        "[DEBUG][18_MARKET_QUALITY_CONTEXT] squeeze_risk=MEDIUM; vol_structure=NORMAL"
+      ]
+    },
+    "2026-09-06": {
+      "run_id": 34014007786,
+      "head_sha": "04015400af2633593a4e7cd981373d9a279afad4",
+      "fields": {
+        "market.participation_quality": "BROAD_BUT_WATCH",
+        "market.participation_mode": "SELECTIVE_EXPANSION",
+        "market.squeeze_risk": "MEDIUM",
+        "market.vol_structure": "NORMAL"
+      },
+      "evidence": [
+        "[DEBUG][18_PARTICIPATION_META] participation_quality=BROAD_BUT_WATCH; participation_mode=SELECTIVE_EXPANSION",
+        "[DEBUG][18_MARKET_QUALITY_CONTEXT] squeeze_risk=MEDIUM; vol_structure=NORMAL"
+      ]
+    }
+  }
+}

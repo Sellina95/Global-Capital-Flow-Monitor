@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 REPORTS_DIR = ROOT / "reports"
 PARITY_PATH = ROOT / "data/backtest/results/final_13_15_18_parity_closeout/final_13_15_18_parity_daily.csv"
-ACTION_LOG_RECOVERY_PATH = ROOT / "data/historical/action_log_recovery_2026-09-02_2026-09-06.json"
+ACTION_LOG_RECOVERY_PATH = ROOT / "data/historical/action_log_recovery.json"
 CONTRACT_ID = "GCF_HISTORICAL_PM_V2_RECONSTRUCTION_V1"
 UNAVAILABLE = "Unavailable"
 
