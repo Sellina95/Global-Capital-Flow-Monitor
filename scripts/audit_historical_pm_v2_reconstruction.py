@@ -11,10 +11,10 @@ from pathlib import Path
 
 try:
     from scripts.audit_public_historical_reliability import audit as audit_v1
-    from scripts.historical_pm_v2_reconstruction import CONTRACT_ID, FIELD_SPECS, PARITY_PATH, REPORTS_DIR, ROOT, UNAVAILABLE, build_population, load_parity
+    from scripts.historical_pm_v2_reconstruction import ACTION_LOG_RECOVERY_PATH, CONTRACT_ID, FIELD_SPECS, PARITY_PATH, REPORTS_DIR, ROOT, UNAVAILABLE, build_population, load_parity
 except ModuleNotFoundError:
     from audit_public_historical_reliability import audit as audit_v1  # type: ignore
-    from historical_pm_v2_reconstruction import CONTRACT_ID, FIELD_SPECS, PARITY_PATH, REPORTS_DIR, ROOT, UNAVAILABLE, build_population, load_parity  # type: ignore
+    from historical_pm_v2_reconstruction import ACTION_LOG_RECOVERY_PATH, CONTRACT_ID, FIELD_SPECS, PARITY_PATH, REPORTS_DIR, ROOT, UNAVAILABLE, build_population, load_parity  # type: ignore
 
 
 DEFAULT_SITE_DIR = ROOT / "_site"
@@ -162,6 +162,18 @@ def audit(site_dir: Path) -> dict:
                 diagnostics_path = ROOT / diagnostics_authority
                 if diagnostics_path.exists():
                     allowed[diagnostics_authority] = hashlib.sha256(diagnostics_path.read_bytes()).hexdigest()
+
+                # Frozen same-date production evidence recovered from historical
+                # GitHub Actions may serve as persisted authority only for dates
+                # explicitly present in the recovery artifact. Identity remains
+                # SHA-verified; this does not authorize arbitrary supplemental files.
+                if ACTION_LOG_RECOVERY_PATH.exists():
+                    recovery_raw = ACTION_LOG_RECOVERY_PATH.read_bytes()
+                    recovery_doc = json.loads(recovery_raw.decode("utf-8"))
+                    if report_date in recovery_doc.get("dates", {}):
+                        recovery_authority = str(ACTION_LOG_RECOVERY_PATH.relative_to(ROOT))
+                        allowed[recovery_authority] = hashlib.sha256(recovery_raw).hexdigest()
+
                 check(item["authority"] in allowed and item["authority_sha256"] == allowed.get(item["authority"]),
                       "persisted_source_mismatch", report_date, f"{key}: wrong same-date persisted authority")
             if record["source_schema"] != "PM_V2_COMPLETE":
