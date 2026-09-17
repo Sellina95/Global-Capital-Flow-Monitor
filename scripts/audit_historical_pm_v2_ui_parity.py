@@ -12,10 +12,10 @@ from pathlib import Path
 
 try:
     from scripts.audit_historical_pm_v2_reconstruction import audit as reconstruction_audit
-    from scripts.historical_pm_v2_reconstruction import FIELD_SPECS, REPORTS_DIR, ROOT, UNAVAILABLE, build_population
+    from scripts.historical_pm_v2_reconstruction import ACTION_LOG_RECOVERY_PATH, FIELD_SPECS, REPORTS_DIR, ROOT, UNAVAILABLE, build_population
 except ModuleNotFoundError:
     from audit_historical_pm_v2_reconstruction import audit as reconstruction_audit  # type: ignore
-    from historical_pm_v2_reconstruction import FIELD_SPECS, REPORTS_DIR, ROOT, UNAVAILABLE, build_population  # type: ignore
+    from historical_pm_v2_reconstruction import ACTION_LOG_RECOVERY_PATH, FIELD_SPECS, REPORTS_DIR, ROOT, UNAVAILABLE, build_population  # type: ignore
 
 
 CONTRACT_ID = "GCF_HISTORICAL_PM_V2_UI_PARITY_V1"
@@ -178,7 +178,26 @@ def audit(site_dir: Path) -> dict:
             if item["status"] == "A":
                 check(record["canonical_exact_clock"] and item["source_clock"] == record["data_as_of"], "canonical_clock", report_date, f"{key}: non-exact canonical binding")
             elif item["status"] == "B":
-                check(item["authority"] in {record["source_path"], f"reports/engine_diagnostics_{report_date}.md"}, "persisted_authority", report_date, f"{key}: not bound to same-date persisted evidence")
+                allowed_authorities = {
+                    record["source_path"],
+                    f"reports/engine_diagnostics_{report_date}.md",
+                }
+
+                if ACTION_LOG_RECOVERY_PATH.exists():
+                    recovery = json.loads(
+                        ACTION_LOG_RECOVERY_PATH.read_text(encoding="utf-8")
+                    )
+                    if report_date in recovery.get("dates", {}):
+                        allowed_authorities.add(
+                            str(ACTION_LOG_RECOVERY_PATH.relative_to(ROOT))
+                        )
+
+                check(
+                    item["authority"] in allowed_authorities,
+                    "persisted_authority",
+                    report_date,
+                    f"{key}: not bound to same-date persisted evidence",
+                )
             else:
                 unavailable_causes[item["required_evidence"]] += 1
                 unavailable_by_schema[record["source_schema"]] += 1
