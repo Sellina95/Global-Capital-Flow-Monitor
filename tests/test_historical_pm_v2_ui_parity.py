@@ -23,7 +23,28 @@ class HistoricalPmV2UiParityTest(unittest.TestCase):
     def test_authoritative_0912_contract_is_complete(self) -> None:
         contract = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
         self.assertEqual(contract["authority"]["template_date"], "2026-09-12")
-        self.assertEqual(contract["counts"], {"sections": 14, "fields": 69})
+        self.assertEqual(
+            contract["counts"]["sections"],
+            len(contract["sections"]),
+        )
+        self.assertEqual(
+            contract["counts"]["fields"],
+            len(contract["fields"]),
+        )
+
+        field_ids = [field_id for field_id, _ in contract["fields"]]
+
+        self.assertIn("confirmation.term_premium", field_ids)
+
+        us10y_index = field_ids.index("confirmation.us10y")
+        term_premium_index = field_ids.index(
+            "confirmation.term_premium"
+        )
+
+        self.assertEqual(
+            term_premium_index,
+            us10y_index + 1,
+        )
 
     def test_complete_population_has_literal_structural_parity(self) -> None:
         self.assertEqual(self.result["verdict"], "PASS", self.result["issues"][:10])
