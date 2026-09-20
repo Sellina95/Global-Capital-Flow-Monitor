@@ -7,113 +7,438 @@
     "rule": "All historical dates use this fixed rendered PM V2 structure; only historically sourced values and variable collection rows may differ."
   },
   "sections": [
-    ["header", "Global Capital Flow Monitor"],
-    ["portfolio_decision", "TODAY'S PORTFOLIO DECISION"],
-    ["market_synthesis", "TODAY'S MARKET"],
-    ["construction", "PM CONSTRUCTION"],
-    ["decision_path", "Risk Budget → Exposure → Allocation"],
-    ["target_portfolio", "TARGET PORTFOLIO"],
-    ["macro_market", "MACRO / MARKET"],
-    ["macro_liquidity", "Macro State"],
-    ["market_quality", "Participation & Risk Quality"],
-    ["market_confirmation", "Cross-Asset Tape"],
-    ["leadership_participation", "Sector Leadership"],
-    ["active_constraints", "Current Portfolio Constraints"],
-    ["diagnostics_entry", "WANT TO SEE WHY?"],
-    ["footer", "PROVENANCE"]
+    [
+      "header",
+      "Global Capital Flow Monitor"
+    ],
+    [
+      "portfolio_decision",
+      "TODAY'S PORTFOLIO DECISION"
+    ],
+    [
+      "market_synthesis",
+      "TODAY'S MARKET"
+    ],
+    [
+      "construction",
+      "PM CONSTRUCTION"
+    ],
+    [
+      "decision_path",
+      "Risk Budget → Exposure → Allocation"
+    ],
+    [
+      "target_portfolio",
+      "TARGET PORTFOLIO"
+    ],
+    [
+      "macro_market",
+      "MACRO / MARKET"
+    ],
+    [
+      "macro_liquidity",
+      "Macro State"
+    ],
+    [
+      "market_quality",
+      "Participation & Risk Quality"
+    ],
+    [
+      "market_confirmation",
+      "Cross-Asset Tape"
+    ],
+    [
+      "leadership_participation",
+      "Sector Leadership"
+    ],
+    [
+      "active_constraints",
+      "Current Portfolio Constraints"
+    ],
+    [
+      "diagnostics_entry",
+      "WANT TO SEE WHY?"
+    ],
+    [
+      "footer",
+      "PROVENANCE"
+    ]
   ],
   "section_hierarchy": [
-    ["header", "Global Capital Flow Monitor", null],
-    ["portfolio_decision", "TODAY'S PORTFOLIO DECISION", null],
-    ["market_synthesis", "TODAY'S MARKET", null],
-    ["construction", "PM CONSTRUCTION", null],
-    ["decision_path", "Risk Budget → Exposure → Allocation", "construction"],
-    ["target_portfolio", "TARGET PORTFOLIO", "construction"],
-    ["macro_market", "MACRO / MARKET", null],
-    ["macro_liquidity", "Macro State", "macro_market"],
-    ["market_quality", "Participation & Risk Quality", "macro_market"],
-    ["market_confirmation", "Cross-Asset Tape", null],
-    ["leadership_participation", "Sector Leadership", null],
-    ["active_constraints", "Current Portfolio Constraints", null],
-    ["diagnostics_entry", "WANT TO SEE WHY?", null],
-    ["footer", "PROVENANCE", null]
+    [
+      "header",
+      "Global Capital Flow Monitor",
+      null
+    ],
+    [
+      "portfolio_decision",
+      "TODAY'S PORTFOLIO DECISION",
+      null
+    ],
+    [
+      "market_synthesis",
+      "TODAY'S MARKET",
+      null
+    ],
+    [
+      "construction",
+      "PM CONSTRUCTION",
+      null
+    ],
+    [
+      "decision_path",
+      "Risk Budget → Exposure → Allocation",
+      "construction"
+    ],
+    [
+      "target_portfolio",
+      "TARGET PORTFOLIO",
+      "construction"
+    ],
+    [
+      "macro_market",
+      "MACRO / MARKET",
+      null
+    ],
+    [
+      "macro_liquidity",
+      "Macro State",
+      "macro_market"
+    ],
+    [
+      "market_quality",
+      "Participation & Risk Quality",
+      "macro_market"
+    ],
+    [
+      "market_confirmation",
+      "Cross-Asset Tape",
+      null
+    ],
+    [
+      "leadership_participation",
+      "Sector Leadership",
+      null
+    ],
+    [
+      "active_constraints",
+      "Current Portfolio Constraints",
+      null
+    ],
+    [
+      "diagnostics_entry",
+      "WANT TO SEE WHY?",
+      null
+    ],
+    [
+      "footer",
+      "PROVENANCE",
+      null
+    ]
   ],
   "fields": [
-    ["header.report_date", "REPORT DATE"],
-    ["header.data_as_of", "DATA AS OF"],
-    ["decision.action", "ACTION"],
-    ["decision.exposure_ceiling", "EXPOSURE CEILING"],
-    ["decision.regime", "REGIME"],
-    ["decision.conviction", "CONVICTION"],
-    ["market.summary", "TODAY'S MARKET"],
-    ["decision.f13", "F13 · STRATEGIC RISK BUDGET"],
-    ["decision.f13.build", "RISK BUDGET BUILD"],
-    ["decision.f13.components", "Sentiment | Structure / Policy | Credit | Net Liquidity | Structural v2 | Drift | Flow / Gamma | Macro | Positioning"],
-    ["decision.f13.phase_cap", "Phase Cap"],
-    ["decision.f15", "F15 · RECOMMENDED EXPOSURE"],
-    ["decision.f15.brake", "EXPOSURE BRAKE"],
-    ["decision.f15.input_budget", "Input Budget"],
-    ["decision.f15.vix_control", "VIX Control"],
-    ["decision.f15.brake_drivers", "Brake Drivers"],
-    ["decision.f15.persisted_output", "Persisted Output"],
-    ["decision.f18", "F18 · EXPOSURE CEILING"],
-    ["decision.f18.deployment", "PORTFOLIO DEPLOYMENT"],
-    ["decision.f18.input_exposure", "Input Exposure"],
-    ["decision.f18.regime_controller", "Regime Controller"],
-    ["decision.f18.exposure_override", "Exposure Override"],
-    ["decision.f18.allocated_equity", "Allocated Equity"],
-    ["decision.f18.tactical_reserve", "Tactical Reserve"],
-    ["decision.f18.cash", "Cash"],
-    ["decision.f18.execution_path", "Sector Weights / ETF Execution"],
-    ["portfolio.composition", "PORTFOLIO COMPOSITION"],
-    ["portfolio.total", "PORTFOLIO"],
-    ["portfolio.allocated_equity", "Allocated Equity"],
-    ["portfolio.tactical_reserve", "Tactical Reserve"],
-    ["portfolio.cash", "Cash"],
-    ["portfolio.rows", "F18 ALLOCATION / F19 EXECUTION ROWS"],
-    ["portfolio.columns", "SECTOR / ETF | WEIGHT | Δ vs Prev | ACTION | CLASS | DIVERGENCE"],
-    ["portfolio.cash_row", "Cash / Reserve included"],
-    ["macro.narrative", "Macro Narrative"],
-    ["macro.policy_bias", "Policy Bias"],
-    ["macro.financial_conditions", "Financial Conditions"],
-    ["macro.real_rate", "Real Rate"],
-    ["macro.liquidity", "Liquidity"],
-    ["macro.liquidity_level", "Liquidity Level"],
-    ["macro.credit", "Credit"],
-    ["macro.credit_structure", "Credit Structure"],
-    ["macro.structure", "Structure"],
-    ["macro.growth", "Growth"],
-    ["market.institutional_flow", "Institutional Flow"],
-    ["market.flow_authenticity", "Flow Authenticity"],
-    ["market.participation_quality", "Participation Quality"],
-    ["market.participation_mode", "Participation Mode"],
-    ["market.leadership", "Leadership"],
-    ["market.positioning", "Positioning"],
-    ["market.dealer_gamma", "Dealer Gamma"],
-    ["market.squeeze_risk", "Squeeze Risk"],
-    ["market.vol_structure", "Vol Structure"],
-    ["market.drift", "Drift"],
-    ["confirmation.us10y", "US10Y"],
-    ["confirmation.usd", "USD"],
-    ["confirmation.wti", "WTI"],
-    ["confirmation.vix", "VIX"],
-    ["confirmation.hy_oas", "HY OAS"],
-    ["confirmation.correlation_break", "CORRELATION BREAK"],
-    ["leadership.coverage", "Coverage"],
-    ["leadership.sector_rows", "Today's Sector Leaders"],
-    ["leadership.breadth_rows", "Breadth & Leadership Confirmation"],
-    ["constraints.positioning_risk", "Positioning Risk"],
-    ["constraints.squeeze_risk", "Squeeze Risk"],
-    ["constraints.geo_stress", "Geo Stress"],
-    ["diagnostics.kicker", "WANT TO SEE WHY?"],
-    ["diagnostics.link", "Engine Diagnostics"],
-    ["diagnostics.description", "Diagnostics description"]
+    [
+      "header.report_date",
+      "REPORT DATE"
+    ],
+    [
+      "header.data_as_of",
+      "DATA AS OF"
+    ],
+    [
+      "decision.action",
+      "ACTION"
+    ],
+    [
+      "decision.exposure_ceiling",
+      "EXPOSURE CEILING"
+    ],
+    [
+      "decision.regime",
+      "REGIME"
+    ],
+    [
+      "decision.conviction",
+      "CONVICTION"
+    ],
+    [
+      "market.summary",
+      "TODAY'S MARKET"
+    ],
+    [
+      "decision.f13",
+      "F13 · STRATEGIC RISK BUDGET"
+    ],
+    [
+      "decision.f13.build",
+      "RISK BUDGET BUILD"
+    ],
+    [
+      "decision.f13.components",
+      "Sentiment | Structure / Policy | Credit | Net Liquidity | Structural v2 | Drift | Flow / Gamma | Macro | Positioning"
+    ],
+    [
+      "decision.f13.phase_cap",
+      "Phase Cap"
+    ],
+    [
+      "decision.f15",
+      "F15 · RECOMMENDED EXPOSURE"
+    ],
+    [
+      "decision.f15.brake",
+      "EXPOSURE BRAKE"
+    ],
+    [
+      "decision.f15.input_budget",
+      "Input Budget"
+    ],
+    [
+      "decision.f15.vix_control",
+      "VIX Control"
+    ],
+    [
+      "decision.f15.brake_drivers",
+      "Brake Drivers"
+    ],
+    [
+      "decision.f15.persisted_output",
+      "Persisted Output"
+    ],
+    [
+      "decision.f18",
+      "F18 · EXPOSURE CEILING"
+    ],
+    [
+      "decision.f18.deployment",
+      "PORTFOLIO DEPLOYMENT"
+    ],
+    [
+      "decision.f18.input_exposure",
+      "Input Exposure"
+    ],
+    [
+      "decision.f18.regime_controller",
+      "Regime Controller"
+    ],
+    [
+      "decision.f18.exposure_override",
+      "Exposure Override"
+    ],
+    [
+      "decision.f18.allocated_equity",
+      "Allocated Equity"
+    ],
+    [
+      "decision.f18.tactical_reserve",
+      "Tactical Reserve"
+    ],
+    [
+      "decision.f18.cash",
+      "Cash"
+    ],
+    [
+      "decision.f18.execution_path",
+      "Sector Weights / ETF Execution"
+    ],
+    [
+      "portfolio.composition",
+      "PORTFOLIO COMPOSITION"
+    ],
+    [
+      "portfolio.total",
+      "PORTFOLIO"
+    ],
+    [
+      "portfolio.allocated_equity",
+      "Allocated Equity"
+    ],
+    [
+      "portfolio.tactical_reserve",
+      "Tactical Reserve"
+    ],
+    [
+      "portfolio.cash",
+      "Cash"
+    ],
+    [
+      "portfolio.rows",
+      "F18 ALLOCATION / F19 EXECUTION ROWS"
+    ],
+    [
+      "portfolio.columns",
+      "SECTOR / ETF | WEIGHT | Δ vs Prev | ACTION | CLASS | DIVERGENCE"
+    ],
+    [
+      "portfolio.cash_row",
+      "Cash / Reserve included"
+    ],
+    [
+      "macro.narrative",
+      "Macro Narrative"
+    ],
+    [
+      "macro.policy_bias",
+      "Policy Bias"
+    ],
+    [
+      "macro.financial_conditions",
+      "Financial Conditions"
+    ],
+    [
+      "macro.real_rate",
+      "Real Rate"
+    ],
+    [
+      "macro.liquidity",
+      "Liquidity"
+    ],
+    [
+      "macro.liquidity_level",
+      "Liquidity Level"
+    ],
+    [
+      "macro.credit",
+      "Credit"
+    ],
+    [
+      "macro.credit_structure",
+      "Credit Structure"
+    ],
+    [
+      "macro.structure",
+      "Structure"
+    ],
+    [
+      "macro.growth",
+      "Growth"
+    ],
+    [
+      "market.institutional_flow",
+      "Institutional Flow"
+    ],
+    [
+      "market.flow_authenticity",
+      "Flow Authenticity"
+    ],
+    [
+      "market.participation_quality",
+      "Participation Quality"
+    ],
+    [
+      "market.participation_mode",
+      "Participation Mode"
+    ],
+    [
+      "market.leadership",
+      "Leadership"
+    ],
+    [
+      "market.positioning",
+      "Positioning"
+    ],
+    [
+      "market.dealer_gamma",
+      "Dealer Gamma"
+    ],
+    [
+      "market.squeeze_risk",
+      "Squeeze Risk"
+    ],
+    [
+      "market.vol_structure",
+      "Vol Structure"
+    ],
+    [
+      "market.drift",
+      "Drift"
+    ],
+    [
+      "confirmation.us10y",
+      "US10Y"
+    ],
+    [
+      "confirmation.term_premium",
+      "10Y TERM PREMIUM"
+    ],
+    [
+      "confirmation.usd",
+      "USD"
+    ],
+    [
+      "confirmation.wti",
+      "WTI"
+    ],
+    [
+      "confirmation.vix",
+      "VIX"
+    ],
+    [
+      "confirmation.hy_oas",
+      "HY OAS"
+    ],
+    [
+      "confirmation.correlation_break",
+      "CORRELATION BREAK"
+    ],
+    [
+      "leadership.coverage",
+      "Coverage"
+    ],
+    [
+      "leadership.sector_rows",
+      "Today's Sector Leaders"
+    ],
+    [
+      "leadership.breadth_rows",
+      "Breadth & Leadership Confirmation"
+    ],
+    [
+      "constraints.positioning_risk",
+      "Positioning Risk"
+    ],
+    [
+      "constraints.squeeze_risk",
+      "Squeeze Risk"
+    ],
+    [
+      "constraints.geo_stress",
+      "Geo Stress"
+    ],
+    [
+      "diagnostics.kicker",
+      "WANT TO SEE WHY?"
+    ],
+    [
+      "diagnostics.link",
+      "Engine Diagnostics"
+    ],
+    [
+      "diagnostics.description",
+      "Diagnostics description"
+    ]
   ],
   "variable_collections": [
-    {"field": "portfolio.rows", "row": "sector / ETF allocation-execution", "container_required": true},
-    {"field": "leadership.sector_rows", "row": "sector leadership observation", "container_required": true},
-    {"field": "leadership.breadth_rows", "row": "breadth observation", "container_required": true},
-    {"field": "confirmation.correlation_break", "row": "correlation-break alert", "container_required": true}
+    {
+      "field": "portfolio.rows",
+      "row": "sector / ETF allocation-execution",
+      "container_required": true
+    },
+    {
+      "field": "leadership.sector_rows",
+      "row": "sector leadership observation",
+      "container_required": true
+    },
+    {
+      "field": "leadership.breadth_rows",
+      "row": "breadth observation",
+      "container_required": true
+    },
+    {
+      "field": "confirmation.correlation_break",
+      "row": "correlation-break alert",
+      "container_required": true
+    }
   ],
   "classification": {
     "required_sections": "all entries in sections, in listed order and hierarchy",
@@ -127,17 +452,64 @@
     "absence_rule": "A variable collection container and header remain required when it has zero rows; its value area displays Historical Source Unavailable."
   },
   "field_section_ranges": [
-    ["header", 0, 2],
-    ["portfolio_decision", 2, 6],
-    ["market_synthesis", 6, 7],
-    ["decision_path", 7, 26],
-    ["target_portfolio", 26, 34],
-    ["macro_liquidity", 34, 44],
-    ["market_quality", 44, 54],
-    ["market_confirmation", 54, 60],
-    ["leadership_participation", 60, 63],
-    ["active_constraints", 63, 66],
-    ["diagnostics_entry", 66, 69]
+    [
+      "header",
+      0,
+      2
+    ],
+    [
+      "portfolio_decision",
+      2,
+      6
+    ],
+    [
+      "market_synthesis",
+      6,
+      7
+    ],
+    [
+      "decision_path",
+      7,
+      26
+    ],
+    [
+      "target_portfolio",
+      26,
+      34
+    ],
+    [
+      "macro_liquidity",
+      34,
+      44
+    ],
+    [
+      "market_quality",
+      44,
+      54
+    ],
+    [
+      "market_confirmation",
+      54,
+      61
+    ],
+    [
+      "leadership_participation",
+      61,
+      64
+    ],
+    [
+      "active_constraints",
+      64,
+      67
+    ],
+    [
+      "diagnostics_entry",
+      67,
+      70
+    ]
   ],
-  "counts": {"sections": 14, "fields": 69}
+  "counts": {
+    "sections": 14,
+    "fields": 70
+  }
 }

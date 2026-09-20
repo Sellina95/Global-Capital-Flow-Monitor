@@ -491,6 +491,20 @@ def generate_pm_final_brief(market_data):
     vix_today, vix_change = _obs("VIX")
     hy_today, hy_change = _obs("HY_OAS")
 
+    term_premium = market_data.get("ACM_TERM_PREMIUM", {}) or {}
+    if not isinstance(term_premium, dict):
+        term_premium = {}
+
+    term_premium_available = bool(
+        term_premium.get("available", False)
+    )
+    term_premium_value = _float_or_none(
+        term_premium.get("value_pct")
+    )
+    term_premium_delta = _float_or_none(
+        term_premium.get("delta_bp")
+    )
+
     us10y_value = _float_or_none(us10y_today)
     dxy_value = _float_or_none(dxy_today)
     wti_value = _float_or_none(wti_today)
@@ -508,6 +522,24 @@ def generate_pm_final_brief(market_data):
         lines.append(
             f"US10Y Yield          ⚪ N/A · "
             f"{render_direction(us10y_dir, 'Rising', 'Falling')}"
+        )
+
+    if term_premium_available and term_premium_value is not None:
+        if term_premium_delta is None:
+            term_premium_display = (
+                f"{term_premium_value:.2f}% · change unavailable"
+            )
+        else:
+            term_premium_display = (
+                f"{term_premium_value:.2f}% · "
+                f"{term_premium_delta:+.0f} bp d/d"
+            )
+        lines.append(
+            f"10Y Term Premium     {term_premium_display}"
+        )
+    else:
+        lines.append(
+            "10Y Term Premium     Unavailable"
         )
 
     if dxy_value is not None:

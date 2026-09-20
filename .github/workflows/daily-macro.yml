@@ -58,6 +58,11 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_macro_data.py
 
+      - name: Fetch ACM term premium
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          python scripts/fetch_acm_term_premium.py
+
       - name: Debug macro_data after fetch
         run: |
           echo "== macro_data tail after fetch =="
