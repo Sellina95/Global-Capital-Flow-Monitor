@@ -382,8 +382,29 @@ def audit(site_dir: Path) -> dict:
 
         page_nas = len(re.findall(r"\bN/A\b", page))
         source_nas = len(re.findall(r"\bN/A\b", source))
-        if not is_snapshot and page_nas > source_nas:
-            for index in range(page_nas - source_nas):
+
+        # Same-date diagnostics may be an authoritative UI source.
+        diag_path_for_na = REPORTS_DIR / f"engine_diagnostics_{report_date}.md"
+        diag_text_for_na = (
+            diag_path_for_na.read_text(encoding="utf-8")
+            if diag_path_for_na.exists()
+            else source
+        )
+
+        geo_na_backed = bool(
+            re.search(
+                r'data-ui-field="constraints\.geo_stress"[\s\S]*?<strong[^>]*>\s*N/A\s*·',
+                page,
+            )
+            and re.search(
+                r'Geo Stress Score \(z-composite\):.*?\(Level:\s*N/A\)',
+                diag_text_for_na,
+            )
+        )
+
+        allowed_source_nas = source_nas + int(geo_na_backed)
+        if not is_snapshot and page_nas > allowed_source_nas:
+            for index in range(page_nas - allowed_source_nas):
                 add_issue(
                     issues,
                     "source_value_rendered_unavailable",
