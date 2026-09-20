@@ -709,10 +709,36 @@ def get_today_deadman_log(log_path="insights/alerts.log"):
 
             ts_str = line.split("]")[0].replace("[", "").strip()
 
-            # 현재 alerts.log는 UTC처럼 기록되는 구조 가능성 높음
-            # → UTC로 가정 후 KST 변환
-            ts_utc = pd.Timestamp(ts_str, tz="UTC")
-            ts_kst = ts_utc.tz_convert("Asia/Seoul")
+            # Newer alerts may carry an explicit "KST" suffix.
+            # Pandas does not reliably parse the KST abbreviation itself,
+            # so map it explicitly. Legacy timezone-naive alerts are UTC.
+            if ts_str.endswith(" KST"):
+                parsed = pd.Timestamp(
+                    ts_str.removesuffix(" KST")
+                )
+                ts_kst = parsed.tz_localize("Asia/Seoul")
+
+            elif ts_str.endswith(" UTC"):
+                parsed = pd.Timestamp(
+                    ts_str.removesuffix(" UTC")
+                )
+                ts_kst = (
+                    parsed
+                    .tz_localize("UTC")
+                    .tz_convert("Asia/Seoul")
+                )
+
+            else:
+                parsed = pd.Timestamp(ts_str)
+
+                if parsed.tzinfo is None:
+                    ts_kst = (
+                        parsed
+                        .tz_localize("UTC")
+                        .tz_convert("Asia/Seoul")
+                    )
+                else:
+                    ts_kst = parsed.tz_convert("Asia/Seoul")
 
             if ts_kst >= cutoff_kst and "SEW=DEADMAN" in line:
                 return line.strip()
