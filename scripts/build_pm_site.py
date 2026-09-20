@@ -1732,6 +1732,11 @@ def build(
     dealer_gamma = field(market, "Dealer Gamma")
 
     us10y = field(cross_asset, "US10Y Yield")
+    term_premium = field(
+        cross_asset,
+        "10Y Term Premium",
+        default="Unavailable",
+    )
     usd = field(cross_asset, "USD")
     oil = field(cross_asset, "Oil")
     volatility = field(cross_asset, "Volatility")
@@ -2564,6 +2569,7 @@ def build(
       <h2>Cross-Asset Tape</h2>
       <div class="pm-confirm-grid">
         <div data-ui-field="confirmation.us10y" data-ui-label="US10Y"><span>US10Y</span>{cross_asset_display(us10y, "🔴")}</div>
+        <div data-ui-field="confirmation.term_premium" data-ui-label="10Y TERM PREMIUM"><span>10Y TERM PREMIUM</span><strong class="{pm_semantic(term_premium)}"{' data-availability="unavailable"' if term_premium == "Unavailable" else ""}>{esc(term_premium)}</strong></div>
         <div data-ui-field="confirmation.usd" data-ui-label="USD"><span>USD</span>{cross_asset_display(usd, "🟢")}</div>
         <div data-ui-field="confirmation.wti" data-ui-label="WTI"><span>WTI</span>{cross_asset_display(oil, "🟡")}</div>
         <div data-ui-field="confirmation.vix" data-ui-label="VIX"><span>VIX</span>{cross_asset_display(volatility, "🟢")}</div>

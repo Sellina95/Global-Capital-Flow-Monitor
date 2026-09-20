@@ -3,3 +3,4 @@ scripts/.DS_Store
 __pycache__/
 *.pyc
 backups/
+data/acm_term_premium_latest.csv

@@ -43,6 +43,7 @@ from scripts.fetch_sentiment import fetch_cnn_fear_greed
 from scripts.risk_alerts import check_regime_change_and_alert
 from scripts.fetch_positioning_data import get_recent_pos_slope
 from scripts.pm_final_brief import generate_pm_final_brief
+from scripts.acm_term_premium_adapter import load_acm_term_premium
 
 
 
@@ -2964,6 +2965,15 @@ def generate_daily_report() -> None:
     # -------------------------
     # 13.5) PM Final Brief
     # -------------------------
+    # Informational-only NY Fed ACM term premium.
+    # Attached AFTER all production decision logic is complete.
+    # No regime / F13 / F15 / F18 / allocation consumer.
+    market_data["ACM_TERM_PREMIUM"] = load_acm_term_premium()
+    print(
+        "[DEBUG][ACM TERM PREMIUM]",
+        market_data["ACM_TERM_PREMIUM"],
+    )
+
     pm_brief_block = generate_pm_final_brief(market_data)
     
 
