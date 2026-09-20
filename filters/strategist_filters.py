@@ -2327,10 +2327,10 @@ GEO_FACTORS = [
 ]
 
 GEO_THRESHOLDS = [
-    ("NORMAL",   -0.75, 0.75),
+    ("NORMAL",   float("-inf"), 0.75),
     ("ELEVATED",  0.75, 1.50),
     ("HIGH",      1.50, 2.50),
-    ("CONFLICT",  2.50, 99.0),
+    ("CONFLICT",  2.50, float("inf")),
 ]
 
 
