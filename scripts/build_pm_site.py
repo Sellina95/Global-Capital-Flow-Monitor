@@ -6,6 +6,7 @@ import json
 import re
 import tempfile
 from collections import Counter
+from datetime import datetime, timedelta
 from pathlib import Path
 
 
@@ -590,6 +591,66 @@ def load_recent_sew_events(
 
     return events
 
+
+
+def load_sew_events_for_report_date(
+    report_date: str,
+    filepath: str = "insights/sew_events.log",
+    limit: int = 5,
+) -> list[dict[str, str]]:
+    """
+    Presentation-only historical lifecycle reader.
+
+    Historical report D receives only persisted DEADMAN lifecycle events
+    from the 24-hour window ending at the scheduled Daily Macro cutoff:
+    D 10:00 KST.
+
+    This prevents current/future lifecycle state from leaking backward
+    into historical reports.
+    """
+    path = Path(filepath)
+    if not path.exists():
+        return []
+
+    try:
+        cutoff_kst = datetime.fromisoformat(
+            f"{report_date}T10:00:00+09:00"
+        )
+        window_start = cutoff_kst - timedelta(hours=24)
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return []
+
+    events = []
+
+    for line in lines:
+        parts = [part.strip() for part in line.split(" | ", 5)]
+        if len(parts) != 6:
+            continue
+
+        utc_ts, kst_ts, system, transition, event_type, reason = parts
+
+        if system != "DEADMAN":
+            continue
+
+        try:
+            event_kst = datetime.fromisoformat(kst_ts)
+        except ValueError:
+            continue
+
+        if not (window_start <= event_kst <= cutoff_kst):
+            continue
+
+        events.append({
+            "timestamp_utc": utc_ts,
+            "timestamp_kst": kst_ts,
+            "transition": transition,
+            "event_type": event_type,
+            "reason": reason,
+        })
+
+    events.sort(key=lambda event: event["timestamp_kst"], reverse=True)
+    return events[:limit]
 
 
 def risk_monitor_ui(text, latest=False):
@@ -2715,34 +2776,34 @@ def build(
         vix_change = diag_change_parts(diag["vix"])
         wti_change = diag_change_parts(diag["wti"])
 
-        recent_sew_events = (
-            load_recent_sew_events() if report_date == latest_date else []
-        )
+        if report_date == latest_date:
+            recent_sew_events = load_recent_sew_events()
+        else:
+            recent_sew_events = load_sew_events_for_report_date(report_date)
 
         if recent_sew_events:
             recent_alerts_html = "".join(
                 f"""
                 <div class="diag-alert-event">
-                  <strong>{esc(event["transition"])}</strong>
-                  <span>{esc(event["event_type"])}</span>
+                  <strong>DEADMAN · {esc(event["transition"])}</strong>
+                  <span>{esc(event["reason"])}</span>
                   <small>{esc(event["timestamp_kst"])}</small>
                 </div>
                 """
                 for event in recent_sew_events
             )
-        else:
+        elif report_date == latest_date:
             recent_alerts_html = """
                 <div class="diag-alert-event">
                   <strong>NO RECORDED LIFECYCLE EVENTS</strong>
                   <span>Current history begins with verified persisted events.</span>
                 </div>
             """
-
-        if report_date != latest_date:
+        else:
             recent_alerts_html = (
                 '<div class="diag-alert-event">'
                 '<strong>HISTORICAL EVENT LOG UNAVAILABLE</strong>'
-                '<span>Current lifecycle events are not shown on historical reports.</span>'
+                '<span>No verified lifecycle event exists in this report window.</span>'
                 '</div>'
             )
 
