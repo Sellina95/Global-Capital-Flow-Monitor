@@ -1448,6 +1448,11 @@ def parse_diagnostics_v1(text: str) -> dict[str, str]:
             r"\*\*Tactical Reserve \(Cap / Unallocated\):\*\*\s*"
             r"(-?[0-9]+(?:\.[0-9]+)?%)",
         ),
+        "participation_quality_cap": diag_match(
+            text,
+            r"- \*\*Participation / Quality Cap Applied:\*\*\s*\n"
+            r"((?:\s{2,}- [^\n]+\n?)+)",
+        ),
     }
 
 
@@ -2186,6 +2191,36 @@ def build(
         )
     diag = parse_diagnostics_v1(diag_text)
 
+    # Presentation-only explanation of persisted F18.5 cap provenance.
+    # No allocation, threshold, signal, or historical recomputation occurs here.
+    tactical_reserve_reason_html = ""
+    cap_block = diag.get("participation_quality_cap", "")
+
+    if cap_block and str(cap_block).strip().upper() != "UNAVAILABLE":
+        cap_rows = []
+        for raw_line in str(cap_block).splitlines():
+            match = re.match(r"\s*-\s*([^:]+):\s*(.+?)\s*$", raw_line)
+            if match:
+                cap_rows.append((match.group(1).strip(), match.group(2).strip()))
+
+        if cap_rows:
+            cap_colors = ("#60a5fa", "#34d399", "#c084fc", "#f472b6")
+            cap_lines = []
+            for idx, (sector, detail) in enumerate(cap_rows):
+                color = cap_colors[idx % len(cap_colors)]
+                cap_lines.append(
+                    f'<span style="color:{color}">'
+                    f'{html.escape(sector)} · {html.escape(detail)}'
+                    '</span><br>'
+                )
+
+            tactical_reserve_reason_html = (
+                '<span style="color:#f59e0b"><b>'
+                'Participation / Quality Cap Applied'
+                '</b></span><br>'
+                + "".join(cap_lines)
+            )
+
     # 2026-09-12 is the fixed product template: these two F15 rows are always
     # present. Historical source absence changes only the value.
     f15_vix_control = persisted_vix_control if is_reconstruction else diag["f15_vix_control"]
@@ -2555,7 +2590,9 @@ def build(
               <span data-ui-field="decision.f18.regime_controller" data-ui-label="Regime Controller">Regime Controller · <b>{esc(regime_controller)}</b></span><br>
               <span data-ui-field="decision.f18.exposure_override" data-ui-label="Exposure Override">Exposure Override · <b>{esc(exposure_override)}</b></span><br>
               <span data-ui-field="decision.f18.allocated_equity" data-ui-label="Allocated Equity">Allocated Equity · <b>{esc(allocated_equity)}</b></span><br>
-              <span data-ui-field="decision.f18.tactical_reserve" data-ui-label="Tactical Reserve">Tactical Reserve · <b>{esc(tactical_reserve)}</b></span><br>
+              <span data-ui-field="decision.f18.tactical_reserve" data-ui-label="Tactical Reserve" style="color:#fbbf24">Tactical Reserve · <b>{esc(tactical_reserve)}</b></span><br>
+              {tactical_reserve_reason_html}
+              <span style="color:#94a3b8">Tactical Reserve is undeployed capacity within the Exposure Ceiling and is included in Cash.</span><br>
               <span data-ui-field="decision.f18.cash" data-ui-label="Cash">Cash · <b>{esc(cash_weight)}</b></span><br>
               <span data-ui-field="decision.f18.execution_path" data-ui-label="Sector Weights / ETF Execution">→ Sector Weights / ETF Execution</span>
             </p>
