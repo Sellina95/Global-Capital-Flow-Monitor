@@ -30,6 +30,13 @@ Macro Narrative      UNKNOWN_TRANSITION
 Tactical Signal      HOLD / NONE
 
 EVENT RISK CONTEXT
+US Core PCE · 2026-09-30 · 12:30 PM GMT
+Core YoY      Consensus 3.4%   Previous 3.3%
+Core MoM      Consensus 0.3%   Previous 0.2%
+
+US GDP Growth · 2026-09-30 · 12:30 PM GMT
+GDP QoQ       Consensus 1.6%   Previous 2.1%
+
 US CPI · 2026-10-14 · 12:30 PM GMT
 Headline YoY  Consensus —      Previous 3.4%
 Headline MoM  Consensus —      Previous 0.4%
@@ -63,7 +70,7 @@ Drift                 ⚡ STRUCTURAL DRIFT
 
 4. CROSS-ASSET CONFIRMATION
 US10Y Yield          🔴 5.18% · ↑ Rising (+0.43%)
-10Y Term Premium     0.73% · +8 bp d/d
+10Y Term Premium     Unavailable
 USD                  🟡 100.97 · ↓ Weaker (-0.32%)
 Oil                  $92.41 · ↓ Falling (-2.33%)
 Volatility           🟢 14.87 · ↓ Falling (-5.11%)
