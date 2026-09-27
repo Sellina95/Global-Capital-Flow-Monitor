@@ -3585,7 +3585,7 @@ def build(
 
 
 
-    {spy_gex_shadow_ui(report_date) or f"""
+    {spy_gex_shadow_ui(report_date) or """
     <section class="panel">
       <div class="section-kicker">ALLOCATION CONTEXT</div>
       <h2>Style / Factor Context</h2>
