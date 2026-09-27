@@ -1841,6 +1841,10 @@ def spy_gex_shadow_ui(report_date: str) -> str | None:
     return f"""
     <section class="panel gex-shadow-panel">
       <style>
+        .gex-shadow-panel {{
+          width:min(100%, 520px);
+          box-sizing:border-box;
+        }}
         .gex-shadow-panel .gex-spot-line {{
           display:flex;
           justify-content:space-between;
@@ -1868,9 +1872,9 @@ def spy_gex_shadow_ui(report_date: str) -> str | None:
         }}
         .gex-shadow-panel .gex-map-row {{
           display:grid;
-          grid-template-columns:54px minmax(0,1fr) 92px;
+          grid-template-columns:42px minmax(0,1fr) 82px;
           align-items:center;
-          gap:10px;
+          gap:8px;
         }}
         .gex-shadow-panel .gex-map-strike {{
           font-weight:700;
@@ -1925,6 +1929,15 @@ def spy_gex_shadow_ui(report_date: str) -> str | None:
           font-size:.72rem;
           line-height:1.5;
           opacity:.58;
+        }}
+        @media(max-width:600px) {{
+          .gex-shadow-panel {{
+            width:100%;
+          }}
+          .gex-shadow-panel .gex-map-row {{
+            grid-template-columns:38px minmax(0,1fr) 76px;
+            gap:7px;
+          }}
         }}
       </style>
 
