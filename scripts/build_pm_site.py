@@ -1768,6 +1768,23 @@ def build(
     macro_narrative = field(executive, "Macro Narrative")
     tactical_signal = field(executive, "Tactical Signal")
 
+    # Presentation-only Event Risk Context.
+    # It lives inside the persisted EXECUTIVE VIEW block but is rendered
+    # separately from the canonical PM decision/state sections.
+    event_risk_lines = []
+
+    if "EVENT RISK CONTEXT" in executive:
+        event_risk_block = executive.split(
+            "EVENT RISK CONTEXT",
+            1,
+        )[1].strip()
+
+        event_risk_lines = [
+            line.strip()
+            for line in event_risk_block.splitlines()
+            if line.strip()
+        ]
+
     # PM Contract V2 — canonical 1~19 state inventory.
     macro_state_narrative = field(market, "Macro Narrative")
     policy_bias = field(market, "Policy Bias")
@@ -2429,6 +2446,27 @@ def build(
         else '<div class="tape-break-wrap"><div class="tape-break-label">CORRELATION BREAK</div><div class="tape-break-chips"><span class="pm-unavailable" data-availability="unavailable">Unavailable</span></div></div>'
     )
 
+    event_risk_html = ""
+
+    if event_risk_lines:
+        event_title = event_risk_lines[0]
+        event_rows = event_risk_lines[1:]
+
+        rows_html = "".join(
+            '<div class="pm-event-risk-row">' + esc(line) + '</div>'
+            for line in event_rows
+        )
+
+        event_risk_html = (
+            '<section class="panel pm-event-risk" '
+            'data-ui-section="event_risk" '
+            'data-ui-label="EVENT RISK CONTEXT">'
+            '<div class="section-kicker">EVENT RISK CONTEXT</div>'
+            '<h2>' + esc(event_title) + '</h2>'
+            + rows_html
+            + '</section>'
+        )
+
     page = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -2542,6 +2580,8 @@ def build(
       <div class="section-kicker">TODAY'S MARKET</div>
       <p>{esc(market_sentence)}</p>
     </section>
+
+    {event_risk_html}
 
     <section class="pm-construction-grid" data-ui-section="construction" data-ui-label="PM CONSTRUCTION">
       <article class="panel pm-decision-path" data-ui-section="decision_path" data-ui-label="Risk Budget → Exposure → Allocation">
