@@ -279,48 +279,29 @@ def generate_pm_final_brief(market_data):
     )
     lines.append("")
 
-    # ==================================================
+        # ==================================================
     # Event Risk Context — presentation only
     # ==================================================
 
-    cpi_context = market_data.get("CPI_EVENT_CONTEXT", {}) or {}
+    def event_value(value):
+        return value if value not in (None, "", "N/A") else "—"
 
-    if cpi_context.get("available"):
-        headline_yoy = cpi_context.get("headline_yoy") or {}
-        headline_mom = cpi_context.get("headline_mom") or {}
-        core_yoy = cpi_context.get("core_yoy") or {}
-        core_mom = cpi_context.get("core_mom") or {}
-
-        event_date = (
-            headline_yoy.get("release_date")
-            or headline_mom.get("release_date")
-            or core_yoy.get("release_date")
-            or core_mom.get("release_date")
-            or "N/A"
+    def render_event_rows(title, items):
+        first_item = next(
+            (item for _, item in items if item),
+            {},
         )
 
-        event_time = (
-            headline_yoy.get("release_time_gmt")
-            or headline_mom.get("release_time_gmt")
-            or core_yoy.get("release_time_gmt")
-            or core_mom.get("release_time_gmt")
-            or "N/A"
-        )
+        event_date = first_item.get("release_date") or "N/A"
+        event_time = first_item.get("release_time_gmt") or "N/A"
 
-        def event_value(value):
-            return value if value not in (None, "", "N/A") else "—"
-
-        lines.append("EVENT RISK CONTEXT")
         lines.append(
-            f"US CPI · {event_date} · {event_time} GMT"
+            f"{title} · {event_date} · {event_time} GMT"
         )
 
-        for label, item in (
-            ("Headline YoY", headline_yoy),
-            ("Headline MoM", headline_mom),
-            ("Core YoY", core_yoy),
-            ("Core MoM", core_mom),
-        ):
+        for label, item in items:
+            item = item or {}
+
             actual = event_value(item.get("actual"))
             consensus = event_value(item.get("consensus"))
             previous = event_value(item.get("previous"))
@@ -339,7 +320,58 @@ def generate_pm_final_brief(market_data):
 
         lines.append("")
 
-    # ==================================================
+    event_blocks = []
+
+    pce_context = market_data.get("PCE_EVENT_CONTEXT", {}) or {}
+    if pce_context.get("available"):
+        event_blocks.append(
+            (
+                "US Core PCE",
+                [
+                    ("Core YoY", pce_context.get("core_yoy") or {}),
+                    ("Core MoM", pce_context.get("core_mom") or {}),
+                ],
+            )
+        )
+
+    gdp_context = market_data.get("GDP_EVENT_CONTEXT", {}) or {}
+    if gdp_context.get("available"):
+        event_blocks.append(
+            (
+                "US GDP Growth",
+                [
+                    ("GDP QoQ", gdp_context.get("gdp_qoq") or {}),
+                ],
+            )
+        )
+
+    cpi_context = market_data.get("CPI_EVENT_CONTEXT", {}) or {}
+    if cpi_context.get("available"):
+        event_blocks.append(
+            (
+                "US CPI",
+                [
+                    (
+                        "Headline YoY",
+                        cpi_context.get("headline_yoy") or {},
+                    ),
+                    (
+                        "Headline MoM",
+                        cpi_context.get("headline_mom") or {},
+                    ),
+                    ("Core YoY", cpi_context.get("core_yoy") or {}),
+                    ("Core MoM", cpi_context.get("core_mom") or {}),
+                ],
+            )
+        )
+
+    if event_blocks:
+        lines.append("EVENT RISK CONTEXT")
+
+        for title, items in event_blocks:
+            render_event_rows(title, items)
+
+# ==================================================
     # Market State
     # ==================================================
 
