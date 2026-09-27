@@ -2458,9 +2458,7 @@ def build(
         )
 
         event_risk_html = (
-            '<section class="panel pm-event-risk" '
-            'data-ui-section="event_risk" '
-            'data-ui-label="EVENT RISK CONTEXT">'
+            '<section class="panel pm-event-risk">'
             '<div class="section-kicker">EVENT RISK CONTEXT</div>'
             '<h2>' + esc(event_title) + '</h2>'
             + rows_html
