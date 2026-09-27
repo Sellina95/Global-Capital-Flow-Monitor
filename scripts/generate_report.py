@@ -44,6 +44,7 @@ from scripts.risk_alerts import check_regime_change_and_alert
 from scripts.fetch_positioning_data import get_recent_pos_slope
 from scripts.pm_final_brief import generate_pm_final_brief
 from scripts.acm_term_premium_adapter import load_acm_term_premium
+from scripts.fetch_cpi_event_context import fetch_cpi_event_context
 
 
 
@@ -2998,6 +2999,15 @@ def generate_daily_report() -> None:
     print(
         "[DEBUG][ACM TERM PREMIUM]",
         market_data["ACM_TERM_PREMIUM"],
+    )
+
+    # Presentation-only US CPI event context.
+    # Attached AFTER all production decision logic is complete.
+    # No regime / F13 / F15 / F18 / allocation consumer.
+    market_data["CPI_EVENT_CONTEXT"] = fetch_cpi_event_context()
+    print(
+        "[DEBUG][CPI EVENT CONTEXT]",
+        market_data["CPI_EVENT_CONTEXT"],
     )
 
     pm_brief_block = generate_pm_final_brief(market_data)

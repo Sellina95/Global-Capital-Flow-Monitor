@@ -280,6 +280,66 @@ def generate_pm_final_brief(market_data):
     lines.append("")
 
     # ==================================================
+    # Event Risk Context — presentation only
+    # ==================================================
+
+    cpi_context = market_data.get("CPI_EVENT_CONTEXT", {}) or {}
+
+    if cpi_context.get("available"):
+        headline_yoy = cpi_context.get("headline_yoy") or {}
+        headline_mom = cpi_context.get("headline_mom") or {}
+        core_yoy = cpi_context.get("core_yoy") or {}
+        core_mom = cpi_context.get("core_mom") or {}
+
+        event_date = (
+            headline_yoy.get("release_date")
+            or headline_mom.get("release_date")
+            or core_yoy.get("release_date")
+            or core_mom.get("release_date")
+            or "N/A"
+        )
+
+        event_time = (
+            headline_yoy.get("release_time_gmt")
+            or headline_mom.get("release_time_gmt")
+            or core_yoy.get("release_time_gmt")
+            or core_mom.get("release_time_gmt")
+            or "N/A"
+        )
+
+        def event_value(value):
+            return value if value not in (None, "", "N/A") else "—"
+
+        lines.append("EVENT RISK CONTEXT")
+        lines.append(
+            f"US CPI · {event_date} · {event_time} GMT"
+        )
+
+        for label, item in (
+            ("Headline YoY", headline_yoy),
+            ("Headline MoM", headline_mom),
+            ("Core YoY", core_yoy),
+            ("Core MoM", core_mom),
+        ):
+            actual = event_value(item.get("actual"))
+            consensus = event_value(item.get("consensus"))
+            previous = event_value(item.get("previous"))
+
+            if actual != "—":
+                lines.append(
+                    f"{label:<13} Actual {actual:<6} "
+                    f"Consensus {consensus:<6} "
+                    f"Previous {previous}"
+                )
+            else:
+                lines.append(
+                    f"{label:<13} Consensus {consensus:<6} "
+                    f"Previous {previous}"
+                )
+
+        lines.append("")
+
+    # ==================================================
     # Market State
     # ==================================================
 
