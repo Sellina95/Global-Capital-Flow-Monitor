@@ -1790,7 +1790,19 @@ def spy_gex_shadow_ui(report_date: str) -> str | None:
 
     rows = []
 
-    for index, zone in enumerate(zones):
+    # Preserve concentration ranking before sorting by strike for map display.
+    major_strikes = {
+        zone["strike"]
+        for zone in zones[:3]
+    }
+
+    display_zones = sorted(
+        zones,
+        key=lambda zone: zone["strike"],
+        reverse=True,
+    )
+
+    for zone in display_zones:
         relative = (
             zone["unsigned_gex"] / max_gex
             if max_gex > 0
@@ -1798,16 +1810,14 @@ def spy_gex_shadow_ui(report_date: str) -> str | None:
         )
 
         width = max(8.0, relative * 100.0)
+        is_major = zone["strike"] in major_strikes
 
-        label = (
-            "MAJOR ZONE"
-            if index < 3
-            else "SECONDARY"
-        )
+        label = "MAJOR ZONE" if is_major else "SECONDARY"
+        zone_class = "major" if is_major else "secondary"
 
         rows.append(
             f"""
-            <div class="gex-map-row">
+            <div class="gex-map-row {zone_class}">
               <div class="gex-map-strike">
                 {zone["strike"]:.0f}
               </div>
@@ -1830,11 +1840,99 @@ def spy_gex_shadow_ui(report_date: str) -> str | None:
 
     return f"""
     <section class="panel gex-shadow-panel">
+      <style>
+        .gex-shadow-panel .gex-spot-line {{
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:16px;
+          margin:16px 0 18px;
+          padding:12px 14px;
+          border:1px solid rgba(34,197,94,.28);
+          border-radius:10px;
+          background:rgba(34,197,94,.06);
+        }}
+        .gex-shadow-panel .gex-spot-line span {{
+          opacity:.72;
+          font-size:.78rem;
+          letter-spacing:.08em;
+        }}
+        .gex-shadow-panel .gex-spot-line strong {{
+          color:#4ade80;
+          font-size:1.15rem;
+        }}
+        .gex-shadow-panel .gex-map {{
+          display:grid;
+          gap:12px;
+          margin-top:8px;
+        }}
+        .gex-shadow-panel .gex-map-row {{
+          display:grid;
+          grid-template-columns:54px minmax(0,1fr) 92px;
+          align-items:center;
+          gap:10px;
+        }}
+        .gex-shadow-panel .gex-map-strike {{
+          font-weight:700;
+          text-align:right;
+        }}
+        .gex-shadow-panel .gex-map-track {{
+          height:14px;
+          border-radius:999px;
+          background:rgba(148,163,184,.16);
+          overflow:hidden;
+          box-shadow:inset 0 0 0 1px rgba(148,163,184,.08);
+        }}
+        .gex-shadow-panel .gex-map-bar {{
+          height:100%;
+          border-radius:999px;
+        }}
+        .gex-shadow-panel .gex-map-row.major .gex-map-bar {{
+          background:linear-gradient(90deg,#f97316,#ef4444);
+          box-shadow:0 0 12px rgba(239,68,68,.38);
+        }}
+        .gex-shadow-panel .gex-map-row.secondary .gex-map-bar {{
+          background:linear-gradient(90deg,#06b6d4,#3b82f6);
+          box-shadow:0 0 8px rgba(59,130,246,.26);
+        }}
+        .gex-shadow-panel .gex-map-row.major .gex-map-strike,
+        .gex-shadow-panel .gex-map-row.major .gex-map-label {{
+          color:#f87171;
+        }}
+        .gex-shadow-panel .gex-map-row.secondary .gex-map-label {{
+          color:#67e8f9;
+        }}
+        .gex-shadow-panel .gex-map-label {{
+          font-size:.68rem;
+          font-weight:700;
+          letter-spacing:.05em;
+        }}
+        .gex-shadow-panel .gex-map-meta {{
+          display:flex;
+          flex-wrap:wrap;
+          gap:8px 18px;
+          margin-top:18px;
+          padding-top:12px;
+          border-top:1px solid rgba(148,163,184,.12);
+          font-size:.76rem;
+          opacity:.78;
+        }}
+        .gex-shadow-panel .gex-map-meta strong {{
+          margin-left:5px;
+        }}
+        .gex-shadow-panel .gex-shadow-note {{
+          margin:12px 0 0;
+          font-size:.72rem;
+          line-height:1.5;
+          opacity:.58;
+        }}
+      </style>
+
       <div class="section-kicker">
         OPTIONS GEX SHADOW · SPY
       </div>
 
-      <h2>Gamma Concentration Map</h2>
+      <h2>🗺️ Gamma Concentration Map</h2>
 
       <div class="gex-spot-line">
         <span>SPY SPOT</span>
@@ -2807,21 +2905,42 @@ def build(
       text-align:right;
     }}
     .gex-map-track{{
-      height:12px;
+      height:14px;
       border-radius:999px;
-      background:rgba(148,163,184,.10);
+      background:rgba(148,163,184,.16);
       overflow:hidden;
+      box-shadow:inset 0 0 0 1px rgba(148,163,184,.08);
     }}
     .gex-map-bar{{
       height:100%;
       border-radius:999px;
-      background:currentColor;
-      opacity:.72;
+    }}
+    .gex-map-row.major .gex-map-bar{{
+      background:linear-gradient(90deg,#f97316,#ef4444);
+      box-shadow:0 0 12px rgba(239,68,68,.34);
+    }}
+    .gex-map-row.secondary .gex-map-bar{{
+      background:linear-gradient(90deg,#06b6d4,#3b82f6);
+      box-shadow:0 0 8px rgba(59,130,246,.22);
+    }}
+    .gex-map-row.major .gex-map-strike,
+    .gex-map-row.major .gex-map-label{{
+      color:#f87171;
+    }}
+    .gex-map-row.secondary .gex-map-label{{
+      color:#67e8f9;
     }}
     .gex-map-label{{
       font-size:.68rem;
+      font-weight:700;
       letter-spacing:.05em;
-      opacity:.65;
+    }}
+    .gex-spot-line{{
+      background:rgba(34,197,94,.06);
+      border-color:rgba(34,197,94,.28) !important;
+    }}
+    .gex-spot-line strong{{
+      color:#4ade80;
     }}
     .gex-map-meta{{
       display:flex;
