@@ -2449,20 +2449,85 @@ def build(
     event_risk_html = ""
 
     if event_risk_lines:
-        event_title = event_risk_lines[0]
-        event_rows = event_risk_lines[1:]
+        event_groups = []
+        current_event = None
 
-        rows_html = "".join(
-            '<div class="pm-event-risk-row">' + esc(line) + '</div>'
-            for line in event_rows
-        )
+        for line in event_risk_lines:
+            if " · " in line and line.endswith(" GMT"):
+                if current_event:
+                    event_groups.append(current_event)
+
+                parts = line.split(" · ")
+                current_event = {
+                    "title": parts[0],
+                    "datetime": " · ".join(parts[1:]),
+                    "rows": [],
+                }
+            elif current_event:
+                current_event["rows"].append(line)
+
+        if current_event:
+            event_groups.append(current_event)
+
+        event_blocks_html = []
+
+        for idx, event in enumerate(event_groups):
+            title = event["title"]
+
+            if "PCE" in title:
+                tone = "pce"
+                badge = "PCE"
+            elif "GDP" in title:
+                tone = "gdp"
+                badge = "GDP"
+            elif "CPI" in title:
+                tone = "cpi"
+                badge = "CPI"
+            else:
+                tone = "neutral"
+                badge = "MACRO"
+
+            next_badge = (
+                '<span class="pm-event-next">NEXT</span>'
+                if idx == 0
+                else ""
+            )
+
+            rows_html = "".join(
+                '<div class="pm-event-risk-row">'
+                + esc(row)
+                + '</div>'
+                for row in event["rows"]
+            )
+
+            event_blocks_html.append(
+                '<div class="pm-event-block pm-event-' + tone + '">'
+                '<div class="pm-event-head">'
+                '<div>'
+                '<div class="pm-event-badges">'
+                '<span class="pm-event-type">' + badge + '</span>'
+                + next_badge +
+                '</div>'
+                '<h3>' + esc(title) + '</h3>'
+                '<div class="pm-event-time">'
+                + esc(event["datetime"])
+                + '</div>'
+                '</div>'
+                '</div>'
+                '<div class="pm-event-rows">'
+                + rows_html +
+                '</div>'
+                '</div>'
+            )
 
         event_risk_html = (
             '<section class="panel pm-event-risk">'
             '<div class="section-kicker">EVENT RISK CONTEXT</div>'
-            '<h2>' + esc(event_title) + '</h2>'
-            + rows_html
-            + '</section>'
+            '<h2>Upcoming Macro Events</h2>'
+            '<div class="pm-event-grid">'
+            + "".join(event_blocks_html) +
+            '</div>'
+            '</section>'
         )
 
     page = f"""<!doctype html>
@@ -2485,6 +2550,24 @@ def build(
     .pm-neutral{{color:var(--pm-neutral)!important}}
     .pm-unavailable{{color:var(--pm-unavailable)!important;font-style:italic}}
     .pm-unavailable::before{{content:"NO SOURCE";display:inline-block;margin-right:6px;padding:2px 5px;border:1px dashed currentColor;border-radius:5px;font-size:8px;font-style:normal;letter-spacing:.07em;vertical-align:middle}}
+    .pm-event-risk{{padding:20px 22px}}
+    .pm-event-risk>h2{{margin:7px 0 16px;font-size:20px}}
+    .pm-event-grid{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}}
+    .pm-event-block{{padding:14px 15px;border:1px solid rgba(148,163,184,.16);border-radius:10px;background:rgba(15,23,42,.28);border-left:3px solid var(--pm-neutral)}}
+    .pm-event-pce{{border-left-color:#73d0b2}}
+    .pm-event-gdp{{border-left-color:#e4b95b}}
+    .pm-event-cpi{{border-left-color:#76a9fa}}
+    .pm-event-head h3{{margin:7px 0 3px;font-size:15px;line-height:1.25}}
+    .pm-event-badges{{display:flex;align-items:center;gap:6px}}
+    .pm-event-type{{font-size:9px;font-weight:700;letter-spacing:.12em;opacity:.82}}
+    .pm-event-pce .pm-event-type{{color:#73d0b2}}
+    .pm-event-gdp .pm-event-type{{color:#e4b95b}}
+    .pm-event-cpi .pm-event-type{{color:#76a9fa}}
+    .pm-event-next{{font-size:8px;font-weight:700;letter-spacing:.1em;padding:2px 5px;border-radius:4px;background:rgba(86,197,150,.12);color:var(--pm-green);border:1px solid rgba(86,197,150,.28)}}
+    .pm-event-time{{font-size:11px;color:var(--pm-neutral);opacity:.72;margin-bottom:11px}}
+    .pm-event-rows{{display:grid;gap:5px}}
+    .pm-event-risk-row{{font-size:11px;line-height:1.45;color:#d7dee9}}
+    @media(max-width:900px){{.pm-event-grid{{grid-template-columns:1fr}}}}
     .pm-construction-grid{{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:18px;margin:18px 0}}
     .pm-chain{{display:grid;gap:10px;margin-top:16px}}
     .pm-chain-node{{padding:15px 16px;border:1px solid rgba(148,163,184,.18);border-radius:12px;background:rgba(15,23,42,.35)}}
