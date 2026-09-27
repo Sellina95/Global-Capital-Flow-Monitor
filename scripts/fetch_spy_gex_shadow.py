@@ -360,7 +360,10 @@ def fetch_spy_gex_shadow() -> Dict[str, Any]:
     }
 
 
-def save_spy_gex_snapshot(result: Dict[str, Any]) -> str:
+def save_spy_gex_snapshot(
+    result: Dict[str, Any],
+    snapshot_date: str | None = None,
+) -> str:
     """
     Persist one immutable daily GEX Shadow snapshot.
 
@@ -369,9 +372,10 @@ def save_spy_gex_snapshot(result: Dict[str, Any]) -> str:
     import json
     from pathlib import Path
 
-    snapshot_date = str(
-        result["snapshot_timestamp_utc"]
-    )[:10]
+    if snapshot_date is None:
+        snapshot_date = str(
+            result["snapshot_timestamp_utc"]
+        )[:10]
 
     out_dir = Path("data/options_gex_shadow/spy")
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -402,9 +406,21 @@ def save_spy_gex_snapshot(result: Dict[str, Any]) -> str:
 
 
 if __name__ == "__main__":
+    import argparse
     import json
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--report-date",
+        default=None,
+        help="Snapshot date YYYY-MM-DD; daily Production passes KST report date.",
+    )
+    args = parser.parse_args()
+
     result = fetch_spy_gex_shadow()
-    save_spy_gex_snapshot(result)
+    save_spy_gex_snapshot(
+        result,
+        snapshot_date=args.report_date,
+    )
 
     print(json.dumps(result, indent=2, default=str))

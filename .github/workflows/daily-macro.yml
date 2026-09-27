@@ -153,7 +153,15 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/fetch_positioning_data.py
 
-      - name: Run SEW Monitor
+      - name: Fetch SPY Options GEX Shadow
+    continue-on-error: true
+    run: |
+      export PYTHONPATH="$GITHUB_WORKSPACE"
+      REPORT_DATE=$(TZ=Asia/Seoul date +%F)
+      echo "SPY GEX report date (KST): $REPORT_DATE"
+      python scripts/fetch_spy_gex_shadow.py --report-date "$REPORT_DATE"
+
+  - name: Run SEW Monitor
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM: ${{ secrets.RESEND_FROM }}
@@ -302,7 +310,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add reports/*.md || true
+          git add data/options_gex_shadow/spy/*.json || true
+      git add reports/*.md || true
           git add data/*.csv || true
           git add data/market_data_history.csv || true
           git add insights/*.json || true
