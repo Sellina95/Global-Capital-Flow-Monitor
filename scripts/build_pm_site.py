@@ -3255,6 +3255,24 @@ def build(
         else:
             f13_positioning_impact = 0
 
+        diagnostics_context_html = spy_gex_shadow_ui(report_date)
+        if diagnostics_context_html is None:
+            diagnostics_context_html = f"""
+    <section class="panel">
+      <div class="section-kicker">ALLOCATION CONTEXT</div>
+      <h2>Style / Factor Context</h2>
+      <div class="pm-state-list">
+        <div><span>Growth vs Value</span><strong>{esc(growth_value_tilt)}</strong></div>
+        <div><span>Duration Tilt</span><strong>{esc(duration_tilt)}</strong></div>
+        <div><span>Cyclical / Defensive</span><strong>{esc(cyclical_defensive)}</strong></div>
+        <div><span>Duration Factor</span><strong>{esc(duration_factor)}</strong></div>
+        <div><span>Inflation Factor</span><strong>{esc(inflation_factor)}</strong></div>
+        <div><span>USD Factor</span><strong>{esc(usd_factor)}</strong></div>
+        <div><span>Credit Factor</span><strong>{esc(credit_factor)}</strong></div>
+      </div>
+    </section>
+"""
+
         diag_page = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -3585,21 +3603,7 @@ def build(
 
 
 
-    {spy_gex_shadow_ui(report_date) or """
-    <section class="panel">
-      <div class="section-kicker">ALLOCATION CONTEXT</div>
-      <h2>Style / Factor Context</h2>
-      <div class="pm-state-list">
-        <div><span>Growth vs Value</span><strong>{esc(growth_value_tilt)}</strong></div>
-        <div><span>Duration Tilt</span><strong>{esc(duration_tilt)}</strong></div>
-        <div><span>Cyclical / Defensive</span><strong>{esc(cyclical_defensive)}</strong></div>
-        <div><span>Duration Factor</span><strong>{esc(duration_factor)}</strong></div>
-        <div><span>Inflation Factor</span><strong>{esc(inflation_factor)}</strong></div>
-        <div><span>USD Factor</span><strong>{esc(usd_factor)}</strong></div>
-        <div><span>Credit Factor</span><strong>{esc(credit_factor)}</strong></div>
-      </div>
-    </section>
-    """}
+    {diagnostics_context_html}
 
     {risk_monitor_ui(diag_text)[2]}
 
