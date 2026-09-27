@@ -1689,6 +1689,187 @@ def target_weight_comparison(text, report_date):
     return badge, exits, note
 
 
+
+def load_spy_gex_shadow(report_date: str) -> dict | None:
+    """
+    Load a same-date SPY GEX Shadow snapshot.
+
+    Presentation-only.
+    Missing, malformed, or invalid data must never fail the PM site build.
+    """
+    import json
+
+    path = (
+        ROOT
+        / "data"
+        / "options_gex_shadow"
+        / "spy"
+        / f"{report_date}.json"
+    )
+
+    if not path.exists():
+        return None
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+
+        if data.get("contract") != "SPY_OPTIONS_GEX_SHADOW_V0":
+            return None
+
+        if data.get("status") != "OK":
+            return None
+
+        spot = float(data["spot"])
+        zones = data.get("major_gamma_zones", [])
+
+        if spot <= 0 or not zones:
+            return None
+
+        valid_zones = []
+
+        for zone in zones[:5]:
+            strike = float(zone["strike"])
+            gex = float(zone["unsigned_gex"])
+            distance = float(zone["distance_pct"])
+
+            if strike <= 0 or gex < 0:
+                continue
+
+            valid_zones.append(
+                {
+                    "strike": strike,
+                    "unsigned_gex": gex,
+                    "distance_pct": distance,
+                }
+            )
+
+        if not valid_zones:
+            return None
+
+        return {
+            "spot": spot,
+            "zones": valid_zones,
+            "top3_concentration_share": float(
+                data.get("top3_concentration_share", 0.0)
+            ),
+            "contracts_valid": int(
+                data.get("contracts_valid", 0)
+            ),
+            "expiries_successful": int(
+                data.get("expiries_successful", 0)
+            ),
+        }
+
+    except Exception as exc:
+        print(
+            f"[WARN][SPY GEX UI] "
+            f"{report_date} snapshot unavailable: {exc}"
+        )
+        return None
+
+
+def spy_gex_shadow_ui(report_date: str) -> str | None:
+    """
+    Render a model-neutral SPY gamma concentration map.
+
+    No dealer sign is inferred.
+    No Production decision fields are consumed or modified.
+    """
+    data = load_spy_gex_shadow(report_date)
+
+    if data is None:
+        return None
+
+    spot = data["spot"]
+    zones = data["zones"]
+
+    max_gex = max(
+        zone["unsigned_gex"]
+        for zone in zones
+    )
+
+    rows = []
+
+    for index, zone in enumerate(zones):
+        relative = (
+            zone["unsigned_gex"] / max_gex
+            if max_gex > 0
+            else 0.0
+        )
+
+        width = max(8.0, relative * 100.0)
+
+        label = (
+            "MAJOR ZONE"
+            if index < 3
+            else "SECONDARY"
+        )
+
+        rows.append(
+            f"""
+            <div class="gex-map-row">
+              <div class="gex-map-strike">
+                {zone["strike"]:.0f}
+              </div>
+              <div class="gex-map-track">
+                <div
+                  class="gex-map-bar"
+                  style="width:{width:.1f}%"
+                ></div>
+              </div>
+              <div class="gex-map-label">
+                {label}
+              </div>
+            </div>
+            """
+        )
+
+    concentration = (
+        data["top3_concentration_share"] * 100.0
+    )
+
+    return f"""
+    <section class="panel gex-shadow-panel">
+      <div class="section-kicker">
+        OPTIONS GEX SHADOW · SPY
+      </div>
+
+      <h2>Gamma Concentration Map</h2>
+
+      <div class="gex-spot-line">
+        <span>SPY SPOT</span>
+        <strong>{spot:.2f}</strong>
+      </div>
+
+      <div class="gex-map">
+        {''.join(rows)}
+      </div>
+
+      <div class="gex-map-meta">
+        <span>
+          Top 3 concentration
+          <strong>{concentration:.1f}%</strong>
+        </span>
+        <span>
+          Valid contracts
+          <strong>{data["contracts_valid"]:,}</strong>
+        </span>
+        <span>
+          Expiries
+          <strong>{data["expiries_successful"]}</strong>
+        </span>
+      </div>
+
+      <p class="gex-shadow-note">
+        Unsigned option-gamma concentration ·
+        No dealer long/short positioning inferred ·
+        Context only · No impact on Score / Allocation
+      </p>
+    </section>
+    """
+
+
+
 def build(
     source: Path | None = None,
     output_path: Path | None = None,
@@ -2590,6 +2771,78 @@ def build(
     .pm-state-list{{display:grid;gap:0;margin-top:12px}}
     .pm-state-list>div{{display:flex;justify-content:space-between;gap:18px;padding:10px 0;border-top:1px solid rgba(148,163,184,.12)}}
     .pm-state-list span{{opacity:.67}} .pm-state-list strong{{text-align:right}}
+
+    /* SPY Options GEX Shadow — presentation only */
+    .gex-shadow-panel .gex-spot-line{{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      margin:16px 0 18px;
+      padding:12px 14px;
+      border:1px solid rgba(148,163,184,.16);
+      border-radius:10px;
+    }}
+    .gex-spot-line span{{
+      opacity:.67;
+      font-size:.78rem;
+      letter-spacing:.08em;
+    }}
+    .gex-spot-line strong{{
+      font-size:1.15rem;
+    }}
+    .gex-map{{
+      display:grid;
+      gap:10px;
+      margin-top:8px;
+    }}
+    .gex-map-row{{
+      display:grid;
+      grid-template-columns:54px minmax(0,1fr) 92px;
+      align-items:center;
+      gap:10px;
+    }}
+    .gex-map-strike{{
+      font-weight:700;
+      text-align:right;
+    }}
+    .gex-map-track{{
+      height:12px;
+      border-radius:999px;
+      background:rgba(148,163,184,.10);
+      overflow:hidden;
+    }}
+    .gex-map-bar{{
+      height:100%;
+      border-radius:999px;
+      background:currentColor;
+      opacity:.72;
+    }}
+    .gex-map-label{{
+      font-size:.68rem;
+      letter-spacing:.05em;
+      opacity:.65;
+    }}
+    .gex-map-meta{{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 18px;
+      margin-top:18px;
+      padding-top:12px;
+      border-top:1px solid rgba(148,163,184,.12);
+      font-size:.76rem;
+      opacity:.75;
+    }}
+    .gex-map-meta strong{{
+      margin-left:5px;
+      opacity:1;
+    }}
+    .gex-shadow-note{{
+      margin:12px 0 0;
+      font-size:.72rem;
+      line-height:1.5;
+      opacity:.55;
+    }}
     .pm-confirm-grid{{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}}
     .pm-confirm-grid>div{{padding:13px;border:1px solid rgba(148,163,184,.15);border-radius:10px}}
     .pm-confirm-grid span{{display:block;font-size:11px;opacity:.65;margin-bottom:6px}}
@@ -3332,6 +3585,7 @@ def build(
 
 
 
+    {spy_gex_shadow_ui(report_date) or f"""
     <section class="panel">
       <div class="section-kicker">ALLOCATION CONTEXT</div>
       <h2>Style / Factor Context</h2>
@@ -3345,6 +3599,7 @@ def build(
         <div><span>Credit Factor</span><strong>{esc(credit_factor)}</strong></div>
       </div>
     </section>
+    """}
 
     {risk_monitor_ui(diag_text)[2]}
 
