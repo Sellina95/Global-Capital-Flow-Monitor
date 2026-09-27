@@ -18,9 +18,9 @@ LOW
 Strategic Risk Budget 65.0%
 Recommended Exposure  61.0%
 Exposure Ceiling      61.0%
-Allocated Equity      58.1%
-Tactical Reserve      2.9%
-Cash                  41.9%
+Allocated Equity      55.8%
+Tactical Reserve      5.2%
+Cash                  44.2%
 Exposure Control      NORMAL
 Macro Allocation      BALANCED
 
@@ -28,6 +28,13 @@ Macro Allocation      BALANCED
 The current strategic phase is TRANSITION / MIXED. Liquidity is ↓ Tightening, while flow is ⚡ BUILDING. Positioning Z is 1.72 and credit is Calm. The canonical portfolio decision is REDUCE with an 61% exposure ceiling.
 Macro Narrative      UNKNOWN_TRANSITION
 Tactical Signal      HOLD / NONE
+
+EVENT RISK CONTEXT
+US CPI · 2026-10-14 · 12:30 PM GMT
+Headline YoY  Consensus —      Previous 3.4%
+Headline MoM  Consensus —      Previous 0.4%
+Core YoY      Consensus —      Previous 2.4%
+Core MoM      Consensus —      Previous 0.3%
 
 3. MARKET STATE
 Macro Narrative       UNKNOWN_TRANSITION
@@ -65,19 +72,14 @@ HY OAS               🟢 2.80% · COOL (+2.56%)
 5. LEADERSHIP & PARTICIPATION
 
 Today's Sector Leaders
-Coverage             11/11 · same-date observations only
+Coverage             6/11 · same-date observations only
 Rank  Sector                     1D Return   vs SPY     Momentum
    1  Industrials                  +0.95%      +0.40%         -2
    2  Technology                   +0.80%      +0.26%          1
    3  Financials                   +0.57%      +0.02%         -1
-   4  Health Care                  +0.49%      -0.05%          0
-   5  Consumer Staples             +0.44%      -0.10%          0
-   6  Utilities                    +0.38%      -0.16%          0
-   7  Materials                    +0.24%      -0.30%          0
-   8  Consumer Discretionary       +0.22%      -0.33%         -2
-   9  Real Estate                  -0.22%      -0.76%         -2
-  10  Energy                       -0.89%      -1.44%          1
-  11  Communication Services       -0.90%      -1.45%          0
+   4  Consumer Discretionary       +0.22%      -0.33%         -2
+   5  Real Estate                  -0.22%      -0.76%         -2
+   6  Energy                       -0.89%      -1.44%          2
 
 Breadth & Leadership
 RSP vs SPY         Today -0.14% | Prev -0.41% | Δ +0.28%
@@ -99,15 +101,15 @@ Exposure Override     BALANCED → Sector Weight Only (No Exposure Change)
 
 6. PORTFOLIO ALLOCATION
 Exposure Ceiling      61.0%
-Allocated Equity      58.1%
-Tactical Reserve      2.9%
-Cash                  41.9%
+Allocated Equity      55.8%
+Tactical Reserve      5.2%
+Cash                  44.2%
 
 Sector Allocation
-Consumer Staples         20.2%
-Health Care              20.2%
+Consumer Staples         17.9%
+Health Care              17.9%
+Energy                   10.0%
 Technology               10.0%
-Energy                   7.7%
 
 Note: Tactical Reserve is undeployed capacity within the Exposure Ceiling and is included in Cash.
 
@@ -118,10 +120,10 @@ Squeeze Risk         HIGH
 
 9. EXECUTION
 Sector | ETF | Weight | Action | Classification | Divergence
-Consumer Staples | XLP | 20.2% | WATCHLIST_SMALL | FLOW_WEAK | NEGATIVE_DIVERGENCE
-Health Care | XLV | 20.2% | WATCHLIST_SMALL | FLOW_WEAK | NEGATIVE_DIVERGENCE
+Consumer Staples | XLP | 17.9% | WATCHLIST_SMALL | FLOW_WEAK | NEGATIVE_DIVERGENCE
+Health Care | XLV | 17.9% | WATCHLIST_SMALL | FLOW_WEAK | NEGATIVE_DIVERGENCE
+Energy | XLE | 10.0% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
 Technology | XLK | 10.0% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
-Energy | XLE | 7.7% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
 8. DECISION RATIONALE
 Decision             REDUCE
 Exposure Ceiling     61%

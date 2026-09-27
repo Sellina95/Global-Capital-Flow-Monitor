@@ -196,24 +196,24 @@ So What?
 ### 🛰️ 7.2) Geopolitical Early Warning Monitor (FX/Commodities Composite)
 ⚠ Market Closed / Stale Data → Price-based geo signals muted.
 
-- **Geo Stress Score (z-composite):** **-0.33**  *(Level: NORMAL)*
+- **Geo Stress Score (z-composite):** **-0.31**  *(Level: NORMAL)*
 - **Coverage:** 100% *(used weight: 1.30 / defined weight: 1.30)*
-- **3D Avg Score:** -0.34
-- **Geo Momentum:** +0.01 *(Status: FLAT)*
+- **3D Avg Score:** -0.23
+- **Geo Momentum:** -0.09 *(Status: FLAT)*
 
 **Historical Pattern Match (Cosine Similarity):**
 - **Closest Historical Match:** Taiwan_Tension
-- **Cosine Similarity Score:** 0.068
+- **Cosine Similarity Score:** 0.069
 - **Similarity Signal:** Weak Historical Match
 - **Top Similarity Matches:**
-  - Taiwan_Tension: 0.068
-  - China_Trade_2018: -0.091
-  - Ukraine_2022: -0.187
+  - Taiwan_Tension: 0.069
+  - China_Trade_2018: -0.093
+  - Ukraine_2022: -0.182
 - **Top Drivers:**
-  - USDCNH: z_used=+2.44 (z1d=+2.35, z5d=+2.57, raw_w=0.18, norm_w=0.14) → contrib=+0.34
-  - KR10Y_SPREAD: z_used=-2.76 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.17
-  - DE10Y_SPREAD: z_used=-2.95 (mode=level, raw_w=0.06, norm_w=0.05) → contrib=-0.14
-  - JP10Y_SPREAD: z_used=-2.94 (mode=level, raw_w=0.06, norm_w=0.05) → contrib=-0.14
+  - USDCNH: z_used=+2.38 (z1d=+2.34, z5d=+2.45, raw_w=0.18, norm_w=0.14) → contrib=+0.33
+  - KR10Y_SPREAD: z_used=-2.72 (mode=level, raw_w=0.08, norm_w=0.06) → contrib=-0.17
+  - DE10Y_SPREAD: z_used=-2.90 (mode=level, raw_w=0.06, norm_w=0.05) → contrib=-0.13
+  - JP10Y_SPREAD: z_used=-2.89 (mode=level, raw_w=0.06, norm_w=0.05) → contrib=-0.13
 - **Missing/Skipped:** None
 - **Sovereign Spread factors included:** KR10Y_SPREAD, JP10Y_SPREAD, DE10Y_SPREAD, IL10Y_SPREAD
 
@@ -243,7 +243,7 @@ So What?
 - **Raw Flow State:** **⚡ BUILDING**
 - **Transition State:** **CONFIRMED_FLOW**
 - **Flow Delta:** +0 (prev=5 → current=5)
-- **Persistence Days:** 3
+- **Persistence Days:** 4
 - **Transition Note:** 기관성 흐름이 높은 강도로 확인
 - **Confidence:** **MEDIUM-HIGH**
 - **Action Bias:** **WATCHLIST**
@@ -365,7 +365,7 @@ So What?
 - **추가 이유:** 지표는 많지만 전략가는 결국 ‘리스크를 늘릴지/줄일지/유지할지’를 판단해야 하기 때문
 
 - **Structure Bias:** Policy Bias: MIXED (혼조) (WEAK, score=-0.5) | REAL_RATEΔ +0.000 / FCI value=-0.555 (low-frequency) / DXYΔ -0.320 / US10YΔ +0.022 (정상)
-- **Sentiment (Fear&Greed):** 70.44638365415373 (GREED)
+- **Sentiment (Fear&Greed):** 71.28105472655263 (GREED)
 - **Credit Calm:** True
 - **Liquidity (NET_LIQ):** DOWN (MID)
 - **Structural Regime:** UNKNOWN_TRANSITION
@@ -374,7 +374,7 @@ So What?
 - **Drift:** ⚡ STRUCTURAL DRIFT / NEUTRAL / 🟢 EARLY FLOW WITHOUT SHOCK
 - **Drift Score:** 5
 - **Flow Score:** 5
-- **Flow Continuity:** TRACE_BUILDING → ⚡ BUILDING (FLOW_PERSISTENCE, tilt=+1)
+- **Flow Continuity:** CONFIRMED_FLOW → ⚡ BUILDING (FLOW_PERSISTENCE, tilt=+1)
 - **Flow Regime Tilt:** +3 / Flow-Gamma Tilt: +2
 
 - **🎯 Final Risk Action:** **HOLD**
@@ -430,15 +430,15 @@ So What?
 **Flow Overlay:** flow_score=5 / flow_state=⚡ BUILDING / drift_label=NEUTRAL / gamma=🟡 POSITIVE-TRANSITION
 **Flow Notes:** NEUTRAL + FLOW ACTIVE → XLK/XLI 소폭 가점 | Gamma POSITIVE → 리더 섹터 가점
 
-**Overweight:** Consumer Staples, Health Care, Technology, Energy
+**Overweight:** Consumer Staples, Health Care, Energy, Technology
 
 **Underweight:** Real Estate, Industrials, Financials, Consumer Discretionary
 
 **Scoreboard:**
 - Consumer Staples: +1.4  (+2 LIQ, +0.5 PHASE, = +1.4)
 - Health Care: +1.4  (+2 LIQ, +0.5 PHASE, = +1.4)
+- Energy: +0.6  (+2 MOM, = +0.6)
 - Technology: +0.5  (+2 VOL, -2 LIQ, +1.5 FLOW, +1 MOM, = +0.5)
-- Energy: +0.3  (+1 MOM, = +0.3)
 - Consumer Discretionary: -0.6  (+1 VOL, -1 LIQ, -2 MOM, = -0.6)
 - Financials: -0.9  (+2 CURVE, -1 MOM, = -0.9)
 - Industrials: -1.4  (+1 CURVE, +1 FLOW, -2 MOM, = -1.4)
@@ -451,16 +451,16 @@ So What?
 - OW Health Care: FLOW_WEAK → 이론상 우호하나 실제 자금 유입 확인 부족
 - OW Health Care: +2: 유동성 긴축 → 안정적 현금흐름 선호
 - OW Health Care: +0.5: Balanced Macro Profile → 퀄리티 보완
+- OW Energy: TACTICAL_MOMENTUM_ONLY → 거시 근거 약하지만 단기 리더십 존재
+- OW Energy: +2: Relative Strength 강세 (vs SPY) → 자금 유입 확인
 - OW Technology: TACTICAL_MOMENTUM_ONLY → 거시 근거 약하지만 단기 리더십 존재
 - OW Technology: +2: VOLATILITY CALM → 성장주 베팅 유효 (absolute mode: VIX 14.9)
 - OW Technology: +1: Gamma Overlay → POSITIVE, 추세 지속 우호
-- OW Energy: TACTICAL_MOMENTUM_ONLY → 거시 근거 약하지만 단기 리더십 존재
-- OW Energy: +1: Relative Strength 강세 (vs SPY) → 자금 유입 확인
 - UW Real Estate: -1.5: 유동성 긴축 → 조달비용 상승 부담
 - UW Real Estate: -2: Relative Strength 약세 (vs SPY) → 소외 섹터
 
 **Regime Controller:**
-- BALANCED (avg_divergence=-0.84, dispersion=1.36)
+- BALANCED (avg_divergence=-0.78, dispersion=1.44)
 - Correlation Break: True / Type=UNCLASSIFIED_SECTOR_BREAK
 - Break Reasons: US10Y ↑ but Technology ↑ | US10Y ↑ but SPY ↑ | US10Y ↑ but XLK ↑
 - Interpretation: 균형 장세 / 강한 방향성보다 선별적 배분 필요
@@ -468,8 +468,8 @@ So What?
 **Divergence / Classification Monitor (Theory vs Flow alignment: 이론과 실제 자금흐름 정렬 여부)**
 - Consumer Staples: FLOW_WEAK (theory=+2.5, flow=+0.0, final=+1.4)
 - Health Care: FLOW_WEAK (theory=+2.5, flow=+0.0, final=+1.4)
+- Energy: TACTICAL_MOMENTUM_ONLY (theory=+0.0, flow=+1.4, final=+0.6)
 - Technology: TACTICAL_MOMENTUM_ONLY (theory=+0.0, flow=+1.1, final=+0.5)
-- Energy: TACTICAL_MOMENTUM_ONLY (theory=+0.0, flow=+0.7, final=+0.3)
 - Communication Services: NEUTRAL (theory=+0.0, flow=+0.0, final=+0.0)
 - Materials: NEUTRAL (theory=+0.0, flow=+0.0, final=+0.0)
 - Utilities: NEUTRAL (theory=+0.0, flow=+0.0, final=+0.0)
@@ -483,43 +483,44 @@ So What?
 
 | Sector | Score | Divergence | **Weight in Portfolio** | **Action** |
 | :--- | :---: | :---: | :---: | :--- |
-| Consumer Staples | +1.4 | NEGATIVE_DIVERGENCE | **20.2%** | HOLD |
-| Health Care | +1.4 | NEGATIVE_DIVERGENCE | **20.2%** | HOLD |
+| Consumer Staples | +1.4 | NEGATIVE_DIVERGENCE | **17.9%** | SMALL ADJUST |
+| Health Care | +1.4 | NEGATIVE_DIVERGENCE | **17.9%** | SMALL ADJUST |
+| Energy | +0.6 | POSITIVE_DIVERGENCE | **10.0%** | SMALL ADJUST |
 | Technology | +0.5 | POSITIVE_DIVERGENCE | **10.0%** | HOLD |
-| Energy | +0.3 | POSITIVE_DIVERGENCE | **7.7%** | HOLD |
-| **Cash & Hedge** | - | - | **41.9%** | DEFENSIVE |
+| **Cash & Hedge** | - | - | **44.2%** | DEFENSIVE |
 
 - **Allocation Check:** Sector Weights + Cash = **100.0%**
 - **Regime Cap Profile:** BALANCED
 - **Participation / Quality Cap Applied:**
-  - Technology: 12.9% → 10.0% (-2.9%)
+  - Energy: 13.8% → 10.0% (-3.8%)
+  - Technology: 11.4% → 10.0% (-1.4%)
 - **Strategic Cash (15):** 39.0%
-- **Tactical Reserve (Cap / Unallocated):** 2.9%
+- **Tactical Reserve (Cap / Unallocated):** 5.2%
 
 
 **Deleveraging Priority Preview:**
 - 기준: Divergence → Momentum → Score → Current Weight
-1. Consumer Staples (priority_score=4.15, score=1.41, weight=20.2%, div=NEGATIVE_DIVERGENCE, mom=0)
-2. Health Care (priority_score=4.15, score=1.41, weight=20.2%, div=NEGATIVE_DIVERGENCE, mom=0)
-3. Energy (priority_score=-3.14, score=0.28, weight=7.7%, div=POSITIVE_DIVERGENCE, mom=1)
-4. Technology (priority_score=-3.23, score=0.47, weight=10.0%, div=POSITIVE_DIVERGENCE, mom=1)
+1. Consumer Staples (priority_score=3.89, score=1.41, weight=17.9%, div=NEGATIVE_DIVERGENCE, mom=0)
+2. Health Care (priority_score=3.89, score=1.41, weight=17.9%, div=NEGATIVE_DIVERGENCE, mom=0)
+3. Technology (priority_score=-3.23, score=0.47, weight=10.0%, div=POSITIVE_DIVERGENCE, mom=1)
+4. Energy (priority_score=-4.29, score=0.57, weight=10.0%, div=POSITIVE_DIVERGENCE, mom=2)
 
 **Leveraging Priority Preview:**
 - 기준: Score → Momentum → Positive Divergence
-1. Technology (priority_score=2.97, score=0.47, weight=10.0%, div=POSITIVE_DIVERGENCE, mom=1)
-2. Energy (priority_score=2.78, score=0.28, weight=7.7%, div=POSITIVE_DIVERGENCE, mom=1)
-3. Consumer Staples (priority_score=-1.59, score=1.41, weight=20.2%, div=NEGATIVE_DIVERGENCE, mom=0)
-4. Health Care (priority_score=-1.59, score=1.41, weight=20.2%, div=NEGATIVE_DIVERGENCE, mom=0)
+1. Energy (priority_score=4.57, score=0.57, weight=10.0%, div=POSITIVE_DIVERGENCE, mom=2)
+2. Technology (priority_score=2.97, score=0.47, weight=10.0%, div=POSITIVE_DIVERGENCE, mom=1)
+3. Consumer Staples (priority_score=-1.59, score=1.41, weight=17.9%, div=NEGATIVE_DIVERGENCE, mom=0)
+4. Health Care (priority_score=-1.59, score=1.41, weight=17.9%, div=NEGATIVE_DIVERGENCE, mom=0)
 - **Divergence Adjustment:** Consumer Staples, Health Care penalized in weight sizing
 
 ### 🧬 19) Execution Layer (ETF Mapping)
 
 | Sector | ETF | Weight | Action | Divergence | Classification |
 | :--- | :---: | :---: | :--- | :--- | :--- |
-| Consumer Staples | XLP | 20.2% | WATCHLIST_SMALL | NEGATIVE_DIVERGENCE | FLOW_WEAK |
-| Health Care | XLV | 20.2% | WATCHLIST_SMALL | NEGATIVE_DIVERGENCE | FLOW_WEAK |
+| Consumer Staples | XLP | 17.9% | WATCHLIST_SMALL | NEGATIVE_DIVERGENCE | FLOW_WEAK |
+| Health Care | XLV | 17.9% | WATCHLIST_SMALL | NEGATIVE_DIVERGENCE | FLOW_WEAK |
+| Energy | XLE | 10.0% | TACTICAL_ONLY | POSITIVE_DIVERGENCE | TACTICAL_MOMENTUM_ONLY |
 | Technology | XLK | 10.0% | TACTICAL_ONLY | POSITIVE_DIVERGENCE | TACTICAL_MOMENTUM_ONLY |
-| Energy | XLE | 7.7% | TACTICAL_ONLY | POSITIVE_DIVERGENCE | TACTICAL_MOMENTUM_ONLY |
 
 
 ### 🧬 19.5) Execution / Style Translation Layer
@@ -553,8 +554,8 @@ So What?
 ### BND
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 1.121371041982293
-- **Z-Score (5d):** -1.2868551755446531
+- **Z-Score (1d):** 1.1213741548443492
+- **Z-Score (5d):** -1.2868562608880032
 
 ### EEM
 - **Crash?** False
@@ -571,8 +572,8 @@ So What?
 ### EMB
 - **Crash?** False
 - **Risk Level:** NORMAL
-- **Z-Score (1d):** 0.15219402201600513
-- **Z-Score (5d):** -1.7840039004989166
+- **Z-Score (1d):** 0.1521945914790447
+- **Z-Score (5d):** -1.7840040612941965
 
 ### EWJ
 - **Crash?** False
