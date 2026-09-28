@@ -554,7 +554,7 @@ def diag_match(
 
 def load_recent_sew_events(
     filepath: str = "insights/sew_events.log",
-    limit: int = 5,
+    limit: int = 1,
 ) -> list[dict[str, str]]:
     """Presentation-only reader for persisted SEW lifecycle events."""
     path = Path(filepath)
@@ -596,7 +596,7 @@ def load_recent_sew_events(
 def load_sew_events_for_report_date(
     report_date: str,
     filepath: str = "insights/sew_events.log",
-    limit: int = 5,
+    limit: int = 1,
 ) -> list[dict[str, str]]:
     """
     Presentation-only historical lifecycle reader.
