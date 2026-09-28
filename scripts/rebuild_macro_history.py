@@ -30,15 +30,21 @@ INDICATORS: Dict[str, str] = {
     "HYG": "HYG",
     "LQD": "LQD",
 
+    # S&P 500 sector ETF universe — keep in sync with generate_report.py
     "XLK": "XLK",
     "XLF": "XLF",
     "XLE": "XLE",
+    "XLI": "XLI",
+    "XLB": "XLB",
+    "XLY": "XLY",
+    "XLP": "XLP",
+    "XLV": "XLV",
+    "XLU": "XLU",
     "XLRE": "XLRE",
+    "XLC": "XLC",
 
     "QQQ": "QQQ",
     "SPY": "SPY",
-    "XLI": "XLI",
-    "XLY": "XLY",
     "RSP": "RSP",
     "QQQE": "QQQE",
     "SMH": "SMH",

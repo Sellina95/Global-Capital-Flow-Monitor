@@ -38,6 +38,26 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python scripts/rebuild_macro_history.py
           
+      - name: Validate 11-sector rebuild coverage
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          python - <<'PY2'
+          import pandas as pd
+
+          sectors = ["XLK","XLF","XLE","XLI","XLB","XLY","XLP","XLV","XLU","XLRE","XLC"]
+          df = pd.read_csv("data/macro_data.csv")
+
+          missing = [c for c in sectors if c not in df.columns]
+          if missing:
+              raise SystemExit(f"FAIL: missing sector columns: {missing}")
+
+          bad = [c for c in sectors if df.tail(2)[c].isna().any()]
+          if bad:
+              raise SystemExit(f"FAIL: incomplete latest sector history: {bad}")
+
+          print("11-SECTOR REBUILD COVERAGE: PASS")
+          PY2
+
       - name: Debug latest market dates
         run: |
           python - <<'PY'

@@ -10,7 +10,9 @@ CSV_PATH = BASE_DIR / "data" / "macro_data.csv"
 EXPECTED_COLS = [
     "date",
     "US10Y", "DXY", "WTI", "VIX", "USDKRW", "HYG", "LQD",
-    "XLK", "XLF", "XLE", "XLRE",
+    # Canonical S&P 500 sector ETF universe
+    "XLK", "XLF", "XLE", "XLI", "XLB", "XLY",
+    "XLP", "XLV", "XLU", "XLRE", "XLC",
 ]
 
 def repair_csv(path: Path) -> None:
