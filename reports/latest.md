@@ -6,7 +6,7 @@ GLOBAL CAPITAL FLOW MONITOR
 DAILY PM VIEW
 
 PORTFOLIO STANCE
-REDUCE · 29%
+STRONG REDUCE · 27%
 
 REGIME
 EVENT-WATCHING / INFLATION
@@ -15,17 +15,17 @@ CONVICTION
 LOW
 
 1. DECISION PATH
-Strategic Risk Budget 36.0%
-Recommended Exposure  29.0%
-Exposure Ceiling      29.0%
-Allocated Equity      11.3%
-Tactical Reserve      17.7%
-Cash                  88.7%
+Strategic Risk Budget 33.0%
+Recommended Exposure  27.0%
+Exposure Ceiling      27.0%
+Allocated Equity      18.0%
+Tactical Reserve      9.0%
+Cash                  82.0%
 Exposure Control      NORMAL
 Macro Allocation      EVENT_TRANSITION
 
 2. EXECUTIVE VIEW
-The current strategic phase is EVENT-WATCHING / INFLATION. Liquidity is ↓ Tightening, while flow is 👀 EARLY TRACE. Positioning Z is 1.54 and credit is Calm. The canonical portfolio decision is REDUCE with an 29% exposure ceiling.
+The current strategic phase is EVENT-WATCHING / INFLATION. Liquidity is ↓ Tightening, while flow is 👀 EARLY TRACE. Positioning Z is 1.58 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 27% exposure ceiling.
 Macro Narrative      INFLATION_PRESSURE
 Tactical Signal      HOLD / NONE
 
@@ -62,7 +62,7 @@ Leadership            FAILED_BREADTH
 Positioning           ELEVATED
 Squeeze Risk          MEDIUM
 Vol Structure         NORMAL
-Positioning Z         1.54
+Positioning Z         1.58
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
 Dealer Gamma          🟡 POSITIVE-TRANSITION
@@ -112,13 +112,13 @@ Regime Controller     DISLOCATION
 Exposure Override     DISLOCATION → Sector Weight Only (No Exposure Change)
 
 6. PORTFOLIO ALLOCATION
-Exposure Ceiling      29.0%
-Allocated Equity      11.3%
-Tactical Reserve      17.7%
-Cash                  88.7%
+Exposure Ceiling      27.0%
+Allocated Equity      18.0%
+Tactical Reserve      9.0%
+Cash                  82.0%
 
 Sector Allocation
-Health Care              11.3%
+Health Care              18.0%
 
 Note: Tactical Reserve is undeployed capacity within the Exposure Ceiling and is included in Cash.
 
@@ -129,10 +129,10 @@ Squeeze Risk         MEDIUM
 
 9. EXECUTION
 Sector | ETF | Weight | Action | Classification | Divergence
-Health Care | XLV | 11.3% | WATCHLIST_SMALL | FLOW_WEAK | NEGATIVE_DIVERGENCE
+Health Care | XLV | 18.0% | WATCHLIST_SMALL | FLOW_WEAK | NEGATIVE_DIVERGENCE
 8. DECISION RATIONALE
-Decision             REDUCE
-Exposure Ceiling     29%
+Decision             STRONG REDUCE
+Exposure Ceiling     27%
 Tactical Signal      HOLD / NONE
 Conviction           LOW
 Rationale

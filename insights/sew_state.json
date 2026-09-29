@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-29 15:58:15 KST",
+  "timestamp": "2026-09-29 20:47:56 KST",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -20,9 +20,9 @@
       "pct_change": 0.07
     },
     "VIX": {
-      "zscore": -0.26,
+      "zscore": 0.09,
       "state": "NORMAL",
-      "pct_change": -0.8
+      "pct_change": -0.5
     },
     "DXY": {
       "zscore": 0.45,
