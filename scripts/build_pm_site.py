@@ -1717,7 +1717,10 @@ def load_spy_gex_shadow(report_date: str) -> dict | None:
             return None
 
         if data.get("status") != "OK":
-            return None
+            return {
+                "unavailable": True,
+                "reason": data.get("reason", "SOURCE / DATA QUALITY UNAVAILABLE"),
+            }
 
         spot = float(data["spot"])
         zones = data.get("major_gamma_zones", [])
@@ -1779,6 +1782,22 @@ def spy_gex_shadow_ui(report_date: str) -> str | None:
 
     if data is None:
         return None
+
+    if data.get("unavailable"):
+        return """
+        <section class="panel gex-shadow-panel">
+          <div class="section-kicker">
+            OPTIONS GEX SHADOW · SPY
+          </div>
+          <h2>⚠️ SOURCE / DATA QUALITY UNAVAILABLE</h2>
+          <p>
+            Gamma map withheld because validation failed.
+          </p>
+          <p class="muted">
+            Context only · Production impact: NONE
+          </p>
+        </section>
+        """
 
     spot = data["spot"]
     zones = data["zones"]
