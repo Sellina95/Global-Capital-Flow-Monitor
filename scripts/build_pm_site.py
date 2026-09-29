@@ -1690,7 +1690,7 @@ def target_weight_comparison(text, report_date):
 
 
 
-def load_spy_gex_shadow(report_date: str) -> dict | None:
+def load_spy_gex_shadow(report_date: str, underlying: str = "SPY") -> dict | None:
     """
     Load a same-date SPY GEX Shadow snapshot.
 
@@ -1703,7 +1703,7 @@ def load_spy_gex_shadow(report_date: str) -> dict | None:
         ROOT
         / "data"
         / "options_gex_shadow"
-        / "spy"
+        / underlying.lower()
         / f"{report_date}.json"
     )
 
@@ -1713,7 +1713,7 @@ def load_spy_gex_shadow(report_date: str) -> dict | None:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
 
-        if data.get("contract") != "SPY_OPTIONS_GEX_SHADOW_V0":
+        if data.get("contract") != f"{underlying}_OPTIONS_GEX_SHADOW_V0":
             return None
 
         if data.get("status") != "OK":
@@ -1771,23 +1771,23 @@ def load_spy_gex_shadow(report_date: str) -> dict | None:
         return None
 
 
-def spy_gex_shadow_ui(report_date: str) -> str | None:
+def spy_gex_shadow_ui(report_date: str, underlying: str = "SPY") -> str | None:
     """
     Render a model-neutral SPY gamma concentration map.
 
     No dealer sign is inferred.
     No Production decision fields are consumed or modified.
     """
-    data = load_spy_gex_shadow(report_date)
+    data = load_spy_gex_shadow(report_date, underlying)
 
     if data is None:
         return None
 
     if data.get("unavailable"):
-        return """
+        return f"""
         <section class="panel gex-shadow-panel">
           <div class="section-kicker">
-            OPTIONS GEX SHADOW · SPY
+            OPTIONS GEX SHADOW · {underlying}
           </div>
           <h2>⚠️ SOURCE / DATA QUALITY UNAVAILABLE</h2>
           <p>
@@ -1961,7 +1961,7 @@ def spy_gex_shadow_ui(report_date: str) -> str | None:
       </style>
 
       <div class="section-kicker">
-        OPTIONS GEX SHADOW · SPY
+        OPTIONS GEX SHADOW · {underlying}
       </div>
 
       <h2>🗺️ Gamma Concentration Map</h2>
@@ -3406,7 +3406,18 @@ def build(
         else:
             f13_positioning_impact = 0
 
-        diagnostics_context_html = spy_gex_shadow_ui(report_date)
+        diagnostics_context_html = (
+    "".join(
+        panel
+        for panel in (
+            spy_gex_shadow_ui(report_date, "SPY"),
+            spy_gex_shadow_ui(report_date, "QQQ"),
+            spy_gex_shadow_ui(report_date, "TLT"),
+        )
+        if panel
+    )
+    or None
+)
         if diagnostics_context_html is None:
             diagnostics_context_html = f"""
     <section class="panel">
