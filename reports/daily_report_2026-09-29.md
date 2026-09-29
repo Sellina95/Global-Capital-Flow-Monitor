@@ -25,7 +25,7 @@ Exposure Control      NORMAL
 Macro Allocation      EVENT_TRANSITION
 
 2. EXECUTIVE VIEW
-The current strategic phase is EVENT-WATCHING / INFLATION. Liquidity is ↓ Tightening, while flow is 👀 EARLY TRACE. Positioning Z is 1.58 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 27% exposure ceiling.
+The current strategic phase is EVENT-WATCHING / INFLATION. Liquidity is ↓ Tightening, while flow is 👀 EARLY TRACE. Positioning Z is 1.59 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 27% exposure ceiling.
 Macro Narrative      INFLATION_PRESSURE
 Tactical Signal      HOLD / NONE
 
@@ -62,7 +62,7 @@ Leadership            FAILED_BREADTH
 Positioning           ELEVATED
 Squeeze Risk          MEDIUM
 Vol Structure         NORMAL
-Positioning Z         1.58
+Positioning Z         1.59
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
 Dealer Gamma          🟡 POSITIVE-TRANSITION
