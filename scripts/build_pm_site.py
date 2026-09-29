@@ -1838,7 +1838,7 @@ def spy_gex_shadow_ui(report_date: str, underlying: str = "SPY") -> str | None:
             f"""
             <div class="gex-map-row {zone_class}">
               <div class="gex-map-strike">
-                {zone["strike"]:.0f}
+                {zone["strike"]:g}
               </div>
               <div class="gex-map-track">
                 <div
@@ -1960,14 +1960,8 @@ def spy_gex_shadow_ui(report_date: str, underlying: str = "SPY") -> str | None:
         }}
       </style>
 
-      <div class="section-kicker">
-        OPTIONS GEX SHADOW · {underlying}
-      </div>
-
-      <h2>🗺️ Gamma Concentration Map</h2>
-
       <div class="gex-spot-line">
-        <span>SPY SPOT</span>
+        <span>{underlying} SPOT</span>
         <strong>{spot:.2f}</strong>
       </div>
 
@@ -3407,16 +3401,23 @@ def build(
             f13_positioning_impact = 0
 
         diagnostics_context_html = (
-    "".join(
-        panel
-        for panel in (
-            spy_gex_shadow_ui(report_date, "SPY"),
-            spy_gex_shadow_ui(report_date, "QQQ"),
-            spy_gex_shadow_ui(report_date, "TLT"),
+    (
+        "<h2>🗺️ Gamma Concentration Map</h2>"
+        + "".join(
+            panel
+            for panel in (
+                spy_gex_shadow_ui(report_date, "SPY"),
+                spy_gex_shadow_ui(report_date, "QQQ"),
+                spy_gex_shadow_ui(report_date, "TLT"),
+            )
+            if panel
         )
-        if panel
     )
-    or None
+    if any(
+        spy_gex_shadow_ui(report_date, ticker)
+        for ticker in ("SPY", "QQQ", "TLT")
+    )
+    else None
 )
         if diagnostics_context_html is None:
             diagnostics_context_html = f"""
