@@ -181,6 +181,22 @@ jobs:
           echo "SPY GEX report date (KST): $REPORT_DATE"
           python scripts/fetch_spy_gex_shadow.py --report-date "$REPORT_DATE"
 
+      - name: Fetch QQQ Options GEX Shadow
+        continue-on-error: true
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          REPORT_DATE=$(TZ=Asia/Seoul date +%F)
+          echo "QQQ GEX report date (KST): $REPORT_DATE"
+          python scripts/fetch_spy_gex_shadow.py --underlying QQQ --report-date "$REPORT_DATE"
+
+      - name: Fetch TLT Options GEX Shadow
+        continue-on-error: true
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE"
+          REPORT_DATE=$(TZ=Asia/Seoul date +%F)
+          echo "TLT GEX report date (KST): $REPORT_DATE"
+          python scripts/fetch_spy_gex_shadow.py --underlying TLT --report-date "$REPORT_DATE"
+
       - name: Run SEW Monitor
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

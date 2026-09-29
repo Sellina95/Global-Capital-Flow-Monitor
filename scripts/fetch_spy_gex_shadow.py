@@ -755,6 +755,558 @@ def save_spy_gex_snapshot(
     print(f"[INFO][SPY GEX] snapshot saved: {out_path}")
     return str(out_path)
 
+
+def _fetch_gex_shadow_yahoo(underlying: str) -> Dict[str, Any]:
+    """Generic Yahoo GEX path for QQQ/TLT. SPY keeps its frozen path."""
+    ticker = yf.Ticker(underlying)
+    price_hist = ticker.history(period="5d")
+
+    if price_hist.empty:
+        raise RuntimeError(f"No {underlying} price data available")
+
+    spot = float(price_hist["Close"].dropna().iloc[-1])
+    rate = _latest_irx_rate()
+
+    # Same dividend-yield normalization contract as SPY.
+    info = ticker.info or {}
+    dividend_yield = info.get("trailingAnnualDividendYield")
+    if dividend_yield is None:
+        dividend_yield = info.get("dividendYield")
+        if dividend_yield is not None:
+            dividend_yield = float(dividend_yield)
+            if dividend_yield > 0.20:
+                dividend_yield /= 100.0
+    dividend_yield = float(dividend_yield or 0.0)
+
+    now_utc = datetime.now(timezone.utc)
+    today = now_utc.date()
+
+    expirations = []
+    for expiry_text in ticker.options:
+        expiry_date = datetime.strptime(expiry_text, "%Y-%m-%d").date()
+        dte = (expiry_date - today).days
+        if 0 <= dte <= MAX_DAYS_TO_EXPIRY:
+            expirations.append(expiry_text)
+
+    if not expirations:
+        raise RuntimeError(
+            f"No {underlying} expirations inside GEX Shadow horizon"
+        )
+
+    rows = []
+    expiries_successful = 0
+    expiries_failed = 0
+
+    for expiry_text in expirations:
+        expiry_date = datetime.strptime(expiry_text, "%Y-%m-%d").date()
+        dte = max((expiry_date - today).days, 0)
+        time_years = max(dte, 0.5) / 365.0
+
+        try:
+            chain = ticker.option_chain(expiry_text)
+            expiries_successful += 1
+        except Exception as exc:
+            expiries_failed += 1
+            print(
+                f"[WARN][{underlying} GEX] "
+                f"{expiry_text} fetch failed: {exc}"
+            )
+            continue
+
+        for option_type, frame in (
+            ("CALL", chain.calls),
+            ("PUT", chain.puts),
+        ):
+            if frame is None or frame.empty:
+                continue
+
+            for _, row in frame.iterrows():
+                strike = row.get("strike")
+                iv = row.get("impliedVolatility")
+                oi = row.get("openInterest")
+
+                missing_oi = pd.isna(oi)
+                missing_iv = pd.isna(iv)
+
+                if pd.isna(strike) or missing_iv or missing_oi:
+                    rows.append({
+                        "expiration": expiry_text,
+                        "option_type": option_type,
+                        "strike": strike,
+                        "iv": iv,
+                        "open_interest": oi,
+                        "gamma": float("nan"),
+                        "unsigned_gex": float("nan"),
+                        "valid": False,
+                        "reason": (
+                            "MISSING_IV" if missing_iv else "MISSING_OI"
+                        ),
+                    })
+                    continue
+
+                strike = float(strike)
+                iv = float(iv)
+                oi = float(oi)
+
+                if iv <= MIN_IV or oi < 0:
+                    rows.append({
+                        "expiration": expiry_text,
+                        "option_type": option_type,
+                        "strike": strike,
+                        "iv": iv,
+                        "open_interest": oi,
+                        "gamma": float("nan"),
+                        "unsigned_gex": float("nan"),
+                        "valid": False,
+                        "reason": "INVALID_IV_OR_OI",
+                    })
+                    continue
+
+                gamma = _option_gamma(
+                    spot=spot,
+                    strike=strike,
+                    iv=iv,
+                    time_years=time_years,
+                    risk_free_rate=rate,
+                    dividend_yield=dividend_yield,
+                )
+
+                unsigned_gex = (
+                    gamma
+                    * oi
+                    * CONTRACT_MULTIPLIER
+                    * spot
+                    * spot
+                    * 0.01
+                )
+
+                rows.append({
+                    "expiration": expiry_text,
+                    "option_type": option_type,
+                    "strike": strike,
+                    "iv": iv,
+                    "open_interest": oi,
+                    "gamma": gamma,
+                    "unsigned_gex": unsigned_gex,
+                    "valid": True,
+                    "reason": "OK",
+                })
+
+    df = pd.DataFrame(rows)
+    if df.empty:
+        raise RuntimeError(f"{underlying} Yahoo produced no contracts")
+
+    valid = df[
+        (df["valid"] == True)
+        & df["unsigned_gex"].notna()
+    ].copy()
+
+    if valid.empty:
+        raise RuntimeError(
+            f"{underlying} Yahoo produced no valid contracts"
+        )
+
+    by_strike = (
+        valid.groupby("strike", as_index=False)["unsigned_gex"]
+        .sum()
+        .sort_values("unsigned_gex", ascending=False)
+    )
+
+    zones = [
+        {
+            "strike": float(row["strike"]),
+            "unsigned_gex": float(row["unsigned_gex"]),
+            "distance_pct": (
+                float(row["strike"]) / spot - 1.0
+            ) * 100.0,
+        }
+        for _, row in by_strike.head(5).iterrows()
+    ]
+
+    total_unsigned_gex = float(valid["unsigned_gex"].sum())
+    top3_share = (
+        float(by_strike.head(3)["unsigned_gex"].sum())
+        / total_unsigned_gex
+        if total_unsigned_gex > 0 else 0.0
+    )
+
+    return {
+        "contract": f"{underlying}_OPTIONS_GEX_SHADOW_V0",
+        "status": "OK",
+        "source": "YAHOO",
+        "snapshot_timestamp_utc": now_utc.isoformat(),
+        "underlying": underlying,
+        "spot": spot,
+        "risk_free_rate": rate,
+        "dividend_yield": dividend_yield,
+        "horizon_days": MAX_DAYS_TO_EXPIRY,
+        "expirations_requested": expirations,
+        "expiries_successful": expiries_successful,
+        "expiries_failed": expiries_failed,
+        "contracts_total": int(len(df)),
+        "contracts_valid": int(len(valid)),
+        "contracts_invalid": int(len(df) - len(valid)),
+        "contracts_missing_oi": int(
+            (df["reason"] == "MISSING_OI").sum()
+        ),
+        "contracts_missing_iv": int(
+            (df["reason"] == "MISSING_IV").sum()
+        ),
+        "total_unsigned_gex": total_unsigned_gex,
+        "top3_concentration_share": top3_share,
+        "major_gamma_zones": zones,
+        "interpretation": (
+            "Unsigned option-gamma concentration map. "
+            "No dealer long/short positioning is inferred."
+        ),
+        "production_impact": "NONE",
+    }
+
+
+def _fetch_gex_shadow_cboe(underlying: str) -> Dict[str, Any]:
+    """Generic Cboe delayed-chain fallback for QQQ/TLT."""
+    url = (
+        "https://cdn.cboe.com/api/global/delayed_quotes/options/"
+        f"{underlying}.json"
+    )
+    req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+
+    with urlopen(req, timeout=30) as response:
+        payload = json.load(response)
+
+    data = payload.get("data") or {}
+    options = data.get("options") or []
+    spot = float(data.get("current_price") or 0.0)
+
+    if spot <= 0 or not options:
+        raise RuntimeError(
+            f"Cboe returned no usable {underlying} option chain"
+        )
+
+    now_utc = datetime.now(timezone.utc)
+    today = now_utc.date()
+
+    pattern = re.compile(
+        rf"^{re.escape(underlying)}(\d{{6}})([CP])(\d{{8}})$"
+    )
+
+    rows = []
+    expirations = set()
+
+    for item in options:
+        match = pattern.match(str(item.get("option", "")))
+        if not match:
+            continue
+
+        expiry = datetime.strptime(match.group(1), "%y%m%d").date()
+        dte = (expiry - today).days
+
+        if not (0 <= dte <= MAX_DAYS_TO_EXPIRY):
+            continue
+
+        expirations.add(expiry.isoformat())
+        strike = int(match.group(3)) / 1000.0
+
+        try:
+            oi = float(item.get("open_interest"))
+            iv = float(item.get("iv"))
+            gamma = float(item.get("gamma"))
+        except (TypeError, ValueError):
+            rows.append({
+                "expiration": expiry.isoformat(),
+                "strike": strike,
+                "open_interest": item.get("open_interest"),
+                "iv": item.get("iv"),
+                "gamma": item.get("gamma"),
+                "unsigned_gex": float("nan"),
+                "valid": False,
+                "reason": "MISSING_OR_INVALID_CBOE_FIELDS",
+            })
+            continue
+
+        valid_row = (
+            strike > 0
+            and oi >= 0
+            and math.isfinite(iv)
+            and math.isfinite(gamma)
+            and iv >= 0
+            and gamma >= 0
+        )
+
+        gex = (
+            gamma
+            * oi
+            * CONTRACT_MULTIPLIER
+            * spot
+            * spot
+            * 0.01
+            if valid_row else float("nan")
+        )
+
+        rows.append({
+            "expiration": expiry.isoformat(),
+            "strike": strike,
+            "open_interest": oi,
+            "iv": iv,
+            "gamma": gamma,
+            "unsigned_gex": gex,
+            "valid": valid_row,
+            "reason": (
+                "OK" if valid_row else "INVALID_CBOE_FIELDS"
+            ),
+        })
+
+    df = pd.DataFrame(rows)
+
+    if df.empty:
+        raise RuntimeError(
+            f"Cboe produced no {underlying} contracts in horizon"
+        )
+
+    valid = df[
+        (df["valid"] == True)
+        & df["unsigned_gex"].notna()
+    ].copy()
+
+    if valid.empty:
+        raise RuntimeError(
+            f"Cboe produced no valid {underlying} contracts"
+        )
+
+    near = valid[
+        (valid["strike"] >= spot * 0.98)
+        & (valid["strike"] <= spot * 1.02)
+    ]
+
+    positive_oi = int((valid["open_interest"] > 0).sum())
+    near_positive_oi = int(
+        (near["open_interest"] > 0).sum()
+    )
+
+    if (
+        positive_oi == 0
+        or len(near) == 0
+        or near_positive_oi == 0
+    ):
+        raise RuntimeError(
+            f"{underlying} Cboe OI failed source quality gate"
+        )
+
+    by_strike = (
+        valid.groupby("strike", as_index=False)["unsigned_gex"]
+        .sum()
+        .sort_values("unsigned_gex", ascending=False)
+    )
+
+    zones = [
+        {
+            "strike": float(row["strike"]),
+            "unsigned_gex": float(row["unsigned_gex"]),
+            "distance_pct": (
+                float(row["strike"]) / spot - 1.0
+            ) * 100.0,
+        }
+        for _, row in by_strike.head(5).iterrows()
+    ]
+
+    total_unsigned_gex = float(valid["unsigned_gex"].sum())
+    top3_share = (
+        float(by_strike.head(3)["unsigned_gex"].sum())
+        / total_unsigned_gex
+        if total_unsigned_gex > 0 else 0.0
+    )
+
+    return {
+        "contract": f"{underlying}_OPTIONS_GEX_SHADOW_V0",
+        "status": "OK",
+        "source": "CBOE_DELAYED",
+        "source_timestamp": payload.get("timestamp"),
+        "snapshot_timestamp_utc": now_utc.isoformat(),
+        "underlying": underlying,
+        "spot": spot,
+        "risk_free_rate": None,
+        "dividend_yield": None,
+        "horizon_days": MAX_DAYS_TO_EXPIRY,
+        "expirations_requested": sorted(expirations),
+        "expiries_successful": len(expirations),
+        "expiries_failed": 0,
+        "contracts_total": int(len(df)),
+        "contracts_valid": int(len(valid)),
+        "contracts_invalid": int(len(df) - len(valid)),
+        "contracts_missing_oi": int(
+            (df["reason"] == "MISSING_OR_INVALID_CBOE_FIELDS").sum()
+        ),
+        "contracts_missing_iv": int(
+            (df["reason"] == "MISSING_OR_INVALID_CBOE_FIELDS").sum()
+        ),
+        "quality": {
+            "positive_oi_contracts": positive_oi,
+            "near_spot_contracts": int(len(near)),
+            "near_spot_positive_oi_contracts": near_positive_oi,
+        },
+        "total_unsigned_gex": total_unsigned_gex,
+        "top3_concentration_share": top3_share,
+        "major_gamma_zones": zones,
+        "interpretation": (
+            "Unsigned option-gamma concentration map. "
+            "No dealer long/short positioning is inferred."
+        ),
+        "production_impact": "NONE",
+    }
+
+
+def fetch_gex_shadow(underlying: str) -> Dict[str, Any]:
+    underlying = underlying.upper()
+
+    if underlying not in {"QQQ", "TLT"}:
+        raise ValueError(
+            f"Generic GEX engine unsupported underlying: {underlying}"
+        )
+
+    failures = []
+
+    try:
+        yahoo = _fetch_gex_shadow_yahoo(underlying)
+        reasons = _gex_quality_reasons(yahoo)
+
+        if not reasons:
+            yahoo["quality_gate"] = {
+                "verdict": "PASS",
+                "reasons": [],
+            }
+            return yahoo
+
+        failures.append({
+            "source": "YAHOO",
+            "reasons": reasons,
+        })
+        print(
+            f"[WARN][{underlying} GEX] "
+            f"Yahoo QC failed: {reasons}"
+        )
+
+    except Exception as exc:
+        failures.append({
+            "source": "YAHOO",
+            "reasons": ["SOURCE_FETCH_FAILED"],
+            "detail": str(exc),
+        })
+        print(
+            f"[WARN][{underlying} GEX] Yahoo failed: {exc}"
+        )
+
+    try:
+        cboe = _fetch_gex_shadow_cboe(underlying)
+        reasons = _gex_quality_reasons(cboe)
+
+        if not reasons:
+            cboe["quality_gate"] = {
+                "verdict": "PASS",
+                "reasons": [],
+                "fallback_from": failures,
+            }
+            return cboe
+
+        failures.append({
+            "source": "CBOE_DELAYED",
+            "reasons": reasons,
+        })
+
+    except Exception as exc:
+        failures.append({
+            "source": "CBOE_DELAYED",
+            "reasons": ["SOURCE_FETCH_FAILED"],
+            "detail": str(exc),
+        })
+
+    return {
+        "contract": f"{underlying}_OPTIONS_GEX_SHADOW_V0",
+        "status": "UNAVAILABLE",
+        "source": None,
+        "snapshot_timestamp_utc": (
+            datetime.now(timezone.utc).isoformat()
+        ),
+        "underlying": underlying,
+        "quality_gate": {
+            "verdict": "FAIL",
+            "reasons": ["ALL_SOURCES_FAILED_QC"],
+            "source_failures": failures,
+        },
+        "major_gamma_zones": [],
+        "interpretation": (
+            "Gamma map withheld because source/data quality "
+            "validation failed."
+        ),
+        "production_impact": "NONE",
+    }
+
+
+def save_gex_snapshot(
+    result: Dict[str, Any],
+    underlying: str,
+    snapshot_date: str | None = None,
+) -> str:
+    underlying = underlying.upper()
+
+    if snapshot_date is None:
+        snapshot_date = str(
+            result["snapshot_timestamp_utc"]
+        )[:10]
+
+    out_dir = Path(
+        f"data/options_gex_shadow/{underlying.lower()}"
+    )
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{snapshot_date}.json"
+
+    if out_path.exists():
+        try:
+            existing = json.loads(out_path.read_text())
+            existing_ok = (
+                existing.get("status") == "OK"
+                and not _gex_quality_reasons(existing)
+            )
+        except Exception:
+            existing_ok = False
+
+        if existing_ok:
+            print(
+                f"[INFO][{underlying} GEX] "
+                f"valid snapshot already exists: {out_path}"
+            )
+            return str(out_path)
+
+    encoded = json.dumps(
+        result,
+        indent=2,
+        default=str,
+    ) + "\n"
+
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=f".{snapshot_date}.",
+        suffix=".tmp",
+        dir=str(out_dir),
+    )
+
+    try:
+        with os.fdopen(fd, "w") as handle:
+            handle.write(encoded)
+            handle.flush()
+            os.fsync(handle.fileno())
+
+        os.replace(tmp_name, out_path)
+
+    finally:
+        if os.path.exists(tmp_name):
+            os.unlink(tmp_name)
+
+    print(
+        f"[INFO][{underlying} GEX] snapshot saved: {out_path}"
+    )
+    return str(out_path)
+
+
+
 if __name__ == "__main__":
     import argparse
     import json
@@ -765,12 +1317,26 @@ if __name__ == "__main__":
         default=None,
         help="Snapshot date YYYY-MM-DD; daily Production passes KST report date.",
     )
+    parser.add_argument(
+        "--underlying",
+        default="SPY",
+        choices=["SPY", "QQQ", "TLT"],
+        help="Underlying for the presentation-only GEX Shadow.",
+    )
     args = parser.parse_args()
 
-    result = fetch_spy_gex_shadow()
-    save_spy_gex_snapshot(
-        result,
-        snapshot_date=args.report_date,
-    )
+    if args.underlying == "SPY":
+        result = fetch_spy_gex_shadow()
+        save_spy_gex_snapshot(
+            result,
+            snapshot_date=args.report_date,
+        )
+    else:
+        result = fetch_gex_shadow(args.underlying)
+        save_gex_snapshot(
+            result,
+            underlying=args.underlying,
+            snapshot_date=args.report_date,
+        )
 
     print(json.dumps(result, indent=2, default=str))
