@@ -25,17 +25,17 @@ Exposure Control      NORMAL
 Macro Allocation      SOFT_RISK_OFF_DISINFLATION
 
 2. EXECUTIVE VIEW
-The current strategic phase is SOFT RISK-OFF. Liquidity is ↓ Tightening, while flow is 👀 EARLY TRACE. Positioning Z is 1.53 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 30% exposure ceiling.
+The current strategic phase is SOFT RISK-OFF. Liquidity is ↓ Tightening, while flow is 👀 EARLY TRACE. Positioning Z is 1.50 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 30% exposure ceiling.
 Macro Narrative      TIGHTENING_GROWTH_SCARE
 Tactical Signal      REDUCE / DEFENSIVE
 
 EVENT RISK CONTEXT
-US Core PCE · 2026-09-30 · 12:30 PM GMT
-Core YoY      Consensus 3.3%   Previous 3.3%
-Core MoM      Consensus 0.3%   Previous 0.2%
+US Core PCE · 2026-10-29 · 12:30 PM GMT
+Core YoY      Consensus —      Previous 3%
+Core MoM      Consensus —      Previous 0.2%
 
-US GDP Growth · 2026-09-30 · 12:30 PM GMT
-GDP QoQ       Consensus 1.5%   Previous 2.1%
+US GDP Growth · 2026-10-29 · 12:30 PM GMT
+GDP QoQ       Consensus —      Previous —
 
 US CPI · 2026-10-14 · 12:30 PM GMT
 Headline YoY  Consensus —      Previous 3.4%
@@ -62,7 +62,7 @@ Leadership            BROAD
 Positioning           ELEVATED
 Squeeze Risk          MEDIUM
 Vol Structure         NORMAL
-Positioning Z         1.53
+Positioning Z         1.50
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
 Dealer Gamma          🟡 POSITIVE-TRANSITION
