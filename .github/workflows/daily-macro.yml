@@ -347,6 +347,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add data/options_gex_shadow/spy/*.json || true
+          git add data/options_gex_shadow/qqq/*.json || true
+          git add data/options_gex_shadow/tlt/*.json || true
           git add reports/*.md || true
           git add data/*.csv || true
           git add data/market_data_history.csv || true
