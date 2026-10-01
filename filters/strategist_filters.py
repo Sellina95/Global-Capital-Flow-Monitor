@@ -4716,7 +4716,7 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
         hard_deadman = True
         hard_deadman_reason = "Structural Credit Stress"
     
-    elif macro_narrative == "STAGFLATION_RISK" and cross_asset_tape.get("VIX_Z", 0) >= 3:
+    elif macro_narrative == "STAGFLATION_RISK" and cross_asset_tape.get("VIX_Z") is not None and cross_asset_tape.get("VIX_Z") >= 3:
         hard_deadman = True
         hard_deadman_reason = "Stagflation Shock + Volatility Spike"
 

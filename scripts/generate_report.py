@@ -1775,6 +1775,34 @@ def build_market_data(df: pd.DataFrame, today_idx: int) -> Dict[str, Any]:
         pct = 0.0 if prev_v == 0 else ((today_v - prev_v) / prev_v) * 100.0
         market_data[col] = {"today": today_v, "prev": prev_v, "pct_change": pct}
 
+    # Cross-Asset Z-score history.
+    # Populate only the four history inputs already consumed by
+    # strategist_filters._compute_zscore_strength().
+    # UNKNOWN semantics are preserved: invalid/missing observations are skipped.
+    for asset in ("US10Y", "DXY", "VIX", "WTI"):
+        history = []
+
+        if asset in df.columns:
+            previous_value = None
+
+            for j in range(0, today_idx + 1):
+                current_value = _to_num(df.iloc[j].get(asset))
+
+                if current_value is None:
+                    continue
+
+                if previous_value is not None:
+                    pct_change = (
+                        0.0
+                        if previous_value == 0
+                        else ((current_value - previous_value) / previous_value) * 100.0
+                    )
+                    history.append(pct_change)
+
+                previous_value = current_value
+
+        market_data[f"{asset}_PCT_HISTORY"] = history
+
     return market_data
 
 
