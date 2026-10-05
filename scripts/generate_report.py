@@ -44,7 +44,6 @@ from scripts.risk_alerts import check_regime_change_and_alert
 from scripts.fetch_positioning_data import get_recent_pos_slope
 from scripts.pm_final_brief import generate_pm_final_brief
 from scripts.acm_term_premium_adapter import load_acm_term_premium
-from scripts.ust10y_mechanism_shadow import build_ust10y_mechanism_shadow
 from scripts.fetch_cpi_event_context import fetch_cpi_event_context
 from scripts.fetch_pce_event_context import fetch_pce_event_context
 from scripts.fetch_gdp_event_context import fetch_gdp_event_context
@@ -3030,37 +3029,6 @@ def generate_daily_report() -> None:
     print(
         "[DEBUG][ACM TERM PREMIUM]",
         market_data["ACM_TERM_PREMIUM"],
-    )
-
-    # Presentation-only UST 10Y mechanism shadow.
-    # Evidence contract: Evidence-and-Mechanisms CASE-002 V0.
-    # Attached AFTER all production decision logic is complete.
-    # Fail-open: unavailable shadow data must never block report generation.
-    # No regime / score / F13 / F15 / F18 / allocation consumer.
-    try:
-        market_data["UST10Y_MECHANISM_SHADOW"] = (
-            build_ust10y_mechanism_shadow()
-        )
-    except Exception as exc:
-        print(
-            "[WARN][UST10Y MECHANISM SHADOW]",
-            repr(exc),
-        )
-        market_data["UST10Y_MECHANISM_SHADOW"] = {
-            "status": "UNAVAILABLE",
-            "classification": "INCONCLUSIVE",
-            "interpretation": "Mechanism classification unavailable.",
-            "reason": f"{type(exc).__name__}: {exc}",
-            "source_date": None,
-            "previous_source_date": None,
-            "inputs_bp": {},
-            "production_impact": "NONE",
-            "evidence_contract": "CASE-002_V0",
-        }
-
-    print(
-        "[DEBUG][UST10Y MECHANISM SHADOW]",
-        market_data["UST10Y_MECHANISM_SHADOW"],
     )
 
     # Presentation-only US CPI event context.
