@@ -3211,7 +3211,7 @@ def build(
       <div class="pm-confirm-grid">
         <div data-ui-field="confirmation.us10y" data-ui-label="US10Y"><span>US10Y</span>{cross_asset_display(us10y, "🔴")}</div>
         <div data-ui-field="confirmation.term_premium" data-ui-label="10Y TERM PREMIUM"><span>10Y TERM PREMIUM</span><strong class="{pm_semantic(term_premium)}"{' data-availability="unavailable"' if term_premium == "Unavailable" else ""}>{esc(term_premium)}</strong></div>
-        <div data-ui-field="confirmation.ust10y_mechanism" data-ui-label="10Y MOVE">
+        <div class="pm-confirm-mechanism" data-ui-label="10Y MOVE">
           <span>10Y MOVE</span>
           <strong class="{pm_semantic(ust10y_mechanism)}">{esc(ust10y_mechanism)}</strong>
           {f'<small>{esc(ust10y_interpretation)}<br>{esc(ust10y_inputs)}<br>as of {esc(ust10y_asof)}</small>' if ust10y_interpretation else ''}
