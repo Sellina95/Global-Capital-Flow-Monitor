@@ -597,6 +597,14 @@ def generate_pm_final_brief(market_data):
         term_premium.get("delta_bp")
     )
 
+    ust10y_shadow = market_data.get(
+        "UST10Y_MECHANISM_SHADOW",
+        {},
+    ) or {}
+
+    if not isinstance(ust10y_shadow, dict):
+        ust10y_shadow = {}
+
     us10y_value = _float_or_none(us10y_today)
     dxy_value = _float_or_none(dxy_today)
     wti_value = _float_or_none(wti_today)
@@ -633,6 +641,73 @@ def generate_pm_final_brief(market_data):
         lines.append(
             "10Y Term Premium     Unavailable"
         )
+
+    # --------------------------------------------------
+    # UST 10Y Mechanism Shadow — presentation only
+    # --------------------------------------------------
+    shadow_status = str(
+        ust10y_shadow.get("status", "UNAVAILABLE")
+    ).upper()
+
+    if shadow_status == "OK":
+        classification = str(
+            ust10y_shadow.get(
+                "classification",
+                "INCONCLUSIVE",
+            )
+        )
+
+        interpretation = str(
+            ust10y_shadow.get(
+                "interpretation",
+                "No clear dominant mechanism.",
+            )
+        )
+
+        source_date = str(
+            ust10y_shadow.get(
+                "source_date",
+                "N/A",
+            )
+        )
+
+        inputs_bp = (
+            ust10y_shadow.get("inputs_bp", {}) or {}
+        )
+
+        def _bp(name):
+            value = _float_or_none(inputs_bp.get(name))
+            if value is None:
+                return "N/A"
+            return f"{value:+.0f}bp"
+
+        lines.append("")
+        lines.append(
+            f"10Y MOVE             {classification}"
+        )
+        lines.append(
+            f"                     {interpretation}"
+        )
+        lines.append(
+            "                     "
+            f"Real {_bp('DFII10')} · "
+            f"BE {_bp('T10YIE')} · "
+            f"2Y {_bp('DGS2')} · "
+            f"30Y {_bp('DGS30')} · "
+            f"TP {_bp('ACMTP10')}"
+        )
+        lines.append(
+            f"                     as of {source_date}"
+        )
+        lines.append("")
+    else:
+        # Fail-open presentation:
+        # do not expose internal exception details in PM report.
+        lines.append("")
+        lines.append(
+            "10Y MOVE             Unavailable"
+        )
+        lines.append("")
 
     if dxy_value is not None:
         lines.append(

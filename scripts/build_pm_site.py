@@ -2125,6 +2125,30 @@ def build(
         "10Y Term Premium",
         default="Unavailable",
     )
+
+    ust10y_mechanism_match = re.search(
+        r"^10Y MOVE\s+([^\n]+)\n"
+        r"\s+([^\n]+)\n"
+        r"\s+([^\n]+)\n"
+        r"\s+as of\s+([^\n]+)",
+        cross_asset,
+        flags=re.MULTILINE,
+    )
+
+    if ust10y_mechanism_match:
+        ust10y_mechanism = ust10y_mechanism_match.group(1).strip()
+        ust10y_interpretation = ust10y_mechanism_match.group(2).strip()
+        ust10y_inputs = ust10y_mechanism_match.group(3).strip()
+        ust10y_asof = ust10y_mechanism_match.group(4).strip()
+    else:
+        ust10y_mechanism = field(
+            cross_asset,
+            "10Y MOVE",
+            default="Unavailable",
+        )
+        ust10y_interpretation = ""
+        ust10y_inputs = ""
+        ust10y_asof = ""
     usd = field(cross_asset, "USD")
     oil = field(cross_asset, "Oil")
     volatility = field(cross_asset, "Volatility")
@@ -3187,6 +3211,11 @@ def build(
       <div class="pm-confirm-grid">
         <div data-ui-field="confirmation.us10y" data-ui-label="US10Y"><span>US10Y</span>{cross_asset_display(us10y, "🔴")}</div>
         <div data-ui-field="confirmation.term_premium" data-ui-label="10Y TERM PREMIUM"><span>10Y TERM PREMIUM</span><strong class="{pm_semantic(term_premium)}"{' data-availability="unavailable"' if term_premium == "Unavailable" else ""}>{esc(term_premium)}</strong></div>
+        <div data-ui-field="confirmation.ust10y_mechanism" data-ui-label="10Y MOVE">
+          <span>10Y MOVE</span>
+          <strong class="{pm_semantic(ust10y_mechanism)}">{esc(ust10y_mechanism)}</strong>
+          {f'<small>{esc(ust10y_interpretation)}<br>{esc(ust10y_inputs)}<br>as of {esc(ust10y_asof)}</small>' if ust10y_interpretation else ''}
+        </div>
         <div data-ui-field="confirmation.usd" data-ui-label="USD"><span>USD</span>{cross_asset_display(usd, "🟢")}</div>
         <div data-ui-field="confirmation.wti" data-ui-label="WTI"><span>WTI</span>{cross_asset_display(oil, "🟡")}</div>
         <div data-ui-field="confirmation.vix" data-ui-label="VIX"><span>VIX</span>{cross_asset_display(volatility, "🟢")}</div>

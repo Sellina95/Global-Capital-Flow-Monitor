@@ -71,6 +71,12 @@ Drift                 ⚡ STRUCTURAL DRIFT
 4. CROSS-ASSET CONFIRMATION
 US10Y Yield          🔴 5.28% · ↑ Rising (+0.76%)
 10Y Term Premium     0.90% · +2 bp d/d
+
+10Y MOVE             POLICY_PATH
+                     Policy-path / real-rate repricing dominant.
+                     Real -5bp · BE +0bp · 2Y -10bp · 30Y -3bp · TP +2bp
+                     as of 2026-10-01
+
 USD                  🟡 101.93 · ↓ Weaker (-0.17%)
 Oil                  $91.11 · ↓ Falling (-1.90%)
 Volatility           🟢 15.31 · ↓ Falling (-6.59%)
