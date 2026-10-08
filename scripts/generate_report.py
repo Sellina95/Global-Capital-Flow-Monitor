@@ -3380,7 +3380,7 @@ def generate_daily_report() -> None:
     diagnostics_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Engine Diagnostics written: {diagnostics_path}")
 
-    # RUN LINEAGE MANIFEST V0
+    # RUN LINEAGE MANIFEST V1
     try:
         import json, subprocess
         from datetime import datetime, timezone
@@ -3398,6 +3398,48 @@ def generate_daily_report() -> None:
 
             return {"exists": True, "timestamp": ts}
 
+        def clean_date(v):
+            if v is None:
+                return None
+            try:
+                if pd.isna(v):
+                    return None
+            except Exception:
+                pass
+            try:
+                return pd.Timestamp(v).strftime("%Y-%m-%d")
+            except Exception:
+                return str(v)
+
+        def entry(
+            name,
+            consumers,
+            runtime_source,
+            status="MISSING",
+            observation_date=None,
+            component_observation_dates=None,
+            state_timestamp=None,
+            raw_clock_hints=None,
+            upstream_ids=None,
+        ):
+            return {
+                "name": name,
+                "consumers": consumers,
+                "runtime_source": runtime_source,
+                "clocks": {
+                    "observation_date": clean_date(observation_date),
+                    "component_observation_dates": component_observation_dates or {},
+                    "available_at": None,
+                    "retrieved_at": None,
+                    "state_timestamp": state_timestamp,
+                    "data_as_of": str(data_as_of_date),
+                },
+                "raw_clock_hints": raw_clock_hints or {},
+                "upstream_ids": upstream_ids or [],
+                "status": status,
+                "decision_logic_changed": False,
+            }
+
         try:
             commit_sha = subprocess.check_output(
                 ["git", "rev-parse", "HEAD"],
@@ -3408,27 +3450,397 @@ def generate_daily_report() -> None:
 
         run_id = os.getenv("GITHUB_RUN_ID", "LOCAL")
 
+        # --------------------------------------------------
+        # Trustworthy component clocks currently available
+        # --------------------------------------------------
+
+        fred_i10 = {}
+        fred_i11 = {}
+        try:
+            fred_df_manifest = load_fred_extras_df()
+            if fred_df_manifest is not None and not fred_df_manifest.empty:
+                fred_last = fred_df_manifest.iloc[-1]
+
+                for k in ("FCI", "REAL_RATE", "T10Y2Y"):
+                    fred_i10[k] = clean_date(
+                        fred_last.get(f"{k}_OBS_DATE")
+                    )
+
+                for k in ("T10YIE", "DFII10", "DGS2", "VIX"):
+                    fred_i11[k] = clean_date(
+                        fred_last.get(f"{k}_OBS_DATE")
+                    )
+        except Exception as e:
+            print(f"[WARN][MANIFEST] FRED observation map failed: {e}")
+
+        country_obs = {}
+        try:
+            _etf_df = pd.read_csv("data/country_etf_data_combined.csv")
+
+            if not _etf_df.empty and "Date" in _etf_df.columns:
+                for c in (
+                    "EIS", "SPY", "EEM", "EMB", "GLD",
+                    "VXX", "FXI", "EWJ", "BND"
+                ):
+                    if c not in _etf_df.columns:
+                        continue
+
+                    valid = pd.to_numeric(
+                        _etf_df[c], errors="coerce"
+                    ).notna()
+
+                    if valid.any():
+                        dt = pd.to_datetime(
+                            _etf_df.loc[valid, "Date"],
+                            errors="coerce",
+                        ).max()
+                        country_obs[c] = clean_date(dt)
+        except Exception as e:
+            print(f"[WARN][MANIFEST] Country ETF clock map failed: {e}")
+
+        sovereign_obs = {}
+        try:
+            _sov_df = load_sovereign_yields_df()
+            if _sov_df is not None and not _sov_df.empty:
+                for c in _sov_df.columns:
+                    if c == "date":
+                        continue
+
+                    valid = pd.to_numeric(
+                        _sov_df[c], errors="coerce"
+                    ).notna()
+
+                    if valid.any():
+                        dt = pd.to_datetime(
+                            _sov_df.loc[valid, "date"],
+                            errors="coerce",
+                        ).max()
+                        sovereign_obs[c] = clean_date(dt)
+        except Exception as e:
+            print(f"[WARN][MANIFEST] Sovereign clock map failed: {e}")
+
+        previous_portfolio_date = None
+        try:
+            _pp = pd.read_csv("data/paper_portfolio_log.csv")
+            if "date" in _pp.columns:
+                prev_rows = _pp[
+                    _pp["date"].astype(str) != str(report_date)
+                ]
+                if not prev_rows.empty:
+                    previous_portfolio_date = clean_date(
+                        pd.to_datetime(
+                            prev_rows["date"],
+                            errors="coerce",
+                        ).max()
+                    )
+        except Exception as e:
+            print(f"[WARN][MANIFEST] Previous portfolio clock failed: {e}")
+
+        flow_state_obj = locals().get("flow_state") or {}
+        sew_state_obj = locals().get("sew_state") or {}
+        filter15_state_obj = locals().get("filter15_state") or {}
+
+        # --------------------------------------------------
+        # Audit I01-I35 ↔ actual run manifest
+        # --------------------------------------------------
+
+        inputs = {
+            "I01": entry(
+                "Canonical macro row / data_as_of_date",
+                ["F13", "F15", "GEO", "F18"],
+                {"kind": "local_variable", "reference": "data_as_of_date"},
+                status="READY",
+                observation_date=data_as_of_date,
+            ),
+
+            "I02": entry(
+                "US10Y / DXY / WTI / VIX",
+                ["F13", "F15", "GEO", "F18"],
+                {"kind": "market_data", "reference": "US10Y,DXY,WTI,VIX"},
+            ),
+
+            "I03": entry(
+                "GOLD / FX / geo market series",
+                ["F13", "GEO"],
+                {"kind": "market_data", "reference": "macro geo inputs"},
+            ),
+
+            "I04": entry(
+                "HYG / LQD daily + live",
+                ["F13", "F15", "F18"],
+                {"kind": "market_data", "reference": "HYG,LQD,DRIFT_DATA"},
+            ),
+
+            "I05": entry(
+                "Correlation price inputs",
+                ["F18"],
+                {"kind": "market_data", "reference": "SPY,QQQ,XLK,XLF,XLE,XLRE"},
+            ),
+
+            "I06": entry(
+                "Breadth",
+                ["F13", "F15", "F18"],
+                {"kind": "market_data", "reference": "BREADTH_*"},
+                raw_clock_hints={
+                    "_BREADTH_ASOF": market_data.get("_BREADTH_ASOF")
+                },
+            ),
+
+            "I07": entry(
+                "Leadership",
+                ["F15", "F18"],
+                {"kind": "market_data", "reference": "LEAD_*"},
+                raw_clock_hints={
+                    "_LEADERSHIP_ASOF": market_data.get("_LEADERSHIP_ASOF")
+                },
+            ),
+
+            "I08": entry(
+                "11-sector momentum",
+                ["F18"],
+                {"kind": "market_data", "reference": "MOMENTUM_SCORES"},
+            ),
+
+            "I09": entry(
+                "VIX3M / VIX9D",
+                ["F18"],
+                {"kind": "market_data", "reference": "VIX3M,VIX9D"},
+            ),
+
+            "I10": entry(
+                "FCI / REAL_RATE / T10Y2Y",
+                ["F13", "F18"],
+                {"kind": "fred_csv", "reference": "fred_macro_sctorallo.csv"},
+                status="PARTIAL",
+                component_observation_dates=fred_i10,
+            ),
+
+            "I11": entry(
+                "T10YIE / DFII10 / DGS2 / FRED VIX",
+                ["F13"],
+                {"kind": "fred_csv", "reference": "fred_macro_sctorallo.csv"},
+                status="PARTIAL",
+                component_observation_dates=fred_i11,
+            ),
+
+            "I12": entry(
+                "TGA / RRP / WALCL / NET_LIQ",
+                ["F13", "F18"],
+                {"kind": "market_data", "reference": "liquidity layer"},
+                status="PARTIAL",
+                observation_date=market_data.get("_LIQ_ASOF"),
+            ),
+
+            "I13": entry(
+                "HY OAS",
+                ["F13", "F15", "F18"],
+                {"kind": "market_data", "reference": "HY_OAS"},
+                status="PARTIAL",
+                observation_date=market_data.get("_HY_ASOF"),
+            ),
+
+            "I14": entry(
+                "Sentiment proxy",
+                ["F13"],
+                {"kind": "market_data", "reference": "SENTIMENT"},
+                status="PARTIAL",
+                observation_date=(
+                    (market_data.get("SENTIMENT") or {}).get("as_of")
+                ),
+            ),
+
+            "I15": entry(
+                "SP500 / US10Y / DXY positioning z",
+                ["F13", "F15", "F18"],
+                {"kind": "market_data", "reference": "positioning z"},
+                raw_clock_hints={
+                    "_POS_ASOF": market_data.get("_POS_ASOF")
+                },
+            ),
+
+            "I16": entry(
+                "Dealer gamma bias proxy",
+                ["F13", "F15", "F18"],
+                {"kind": "market_data", "reference": "DEALER_GAMMA_BIAS"},
+                raw_clock_hints={
+                    "_POS_ASOF": market_data.get("_POS_ASOF")
+                },
+            ),
+
+            "I17": entry(
+                "CTA momentum score",
+                ["F15", "F18"],
+                {"kind": "market_data", "reference": "CTA_MOMENTUM_SCORE"},
+                raw_clock_hints={
+                    "_POS_ASOF": market_data.get("_POS_ASOF")
+                },
+            ),
+
+            "I18": entry(
+                "Positioning slope",
+                ["F15"],
+                {"kind": "market_data", "reference": "POS_SLOPE"},
+            ),
+
+            "I19": entry(
+                "Live drift tape",
+                ["F13", "F15", "GEO", "F18"],
+                {"kind": "market_data", "reference": "DRIFT_DATA/DRIFT"},
+            ),
+
+            "I20": entry(
+                "Pseudo gamma regime",
+                ["F13", "F15", "F18"],
+                {"kind": "derived", "reference": "GAMMA_STATE"},
+                upstream_ids=["I02", "I16", "I19", "I23"],
+            ),
+
+            "I21": entry(
+                "Current institutional flow",
+                ["F13", "F15", "F18"],
+                {"kind": "derived", "reference": "INSTITUTIONAL_FLOW"},
+                upstream_ids=["I04", "I15", "I16", "I17", "I19", "I23"],
+            ),
+
+            "I22": entry(
+                "Previous flow state",
+                ["F13"],
+                {"kind": "state", "reference": "flow_state"},
+                status="READY",
+                state_timestamp=flow_state_obj.get("timestamp"),
+            ),
+
+            "I23": entry(
+                "SEW state",
+                ["F13", "F15", "F18"],
+                {"kind": "state", "reference": "sew_state"},
+                status="READY",
+                state_timestamp=sew_state_obj.get("timestamp"),
+            ),
+
+            "I24": entry(
+                "Filter15 recovery state",
+                ["F15"],
+                {"kind": "state", "reference": "filter15_state pre-run"},
+                status="READY",
+                state_timestamp=filter15_state_obj.get("timestamp"),
+            ),
+
+            "I25": entry(
+                "Filter18 Rank3D consumed state",
+                ["F18"],
+                {"kind": "state", "reference": "filter18_rank_state pre-run"},
+            ),
+
+            "I26": entry(
+                "Previous portfolio exposure / weights",
+                ["F18"],
+                {"kind": "csv", "reference": "paper_portfolio_log.csv"},
+                status="PARTIAL",
+                observation_date=previous_portfolio_date,
+            ),
+
+            "I27": entry(
+                "Country ETF prices",
+                ["GEO"],
+                {"kind": "csv", "reference": "country_etf_data_combined.csv"},
+                status="PARTIAL",
+                component_observation_dates=country_obs,
+            ),
+
+            "I28": entry(
+                "Sovereign yields / spreads",
+                ["GEO"],
+                {"kind": "csv", "reference": "sovereign_yields.csv"},
+                status="PARTIAL",
+                component_observation_dates=sovereign_obs,
+                raw_clock_hints={
+                    "_SOV_ASOF": market_data.get("_SOV_ASOF")
+                },
+            ),
+
+            "I29": entry(
+                "Geo EW score",
+                ["GEO"],
+                {"kind": "derived", "reference": "GEO_EW"},
+                upstream_ids=["I03", "I28"],
+            ),
+
+            "I30": entry(
+                "Post-F15 geo exposure constraint",
+                ["GEO", "F18"],
+                {"kind": "derived", "reference": "GEO_OVERLAY"},
+                upstream_ids=["I19", "I23", "I28", "I29"],
+            ),
+
+            "I31": entry(
+                "Cross-asset tape / macro narrative / market regime",
+                ["F13", "F15", "F18"],
+                {"kind": "derived", "reference": "CROSS_ASSET_TAPE/MACRO_NARRATIVE/MARKET_REGIME"},
+                upstream_ids=["I02", "I13"],
+            ),
+
+            "I32": entry(
+                "Policy bias line",
+                ["F13"],
+                {"kind": "derived", "reference": "POLICY_BIAS_LINE"},
+                upstream_ids=["I02", "I10"],
+            ),
+
+            "I33": entry(
+                "Structural v2 state",
+                ["F13"],
+                {"kind": "derived", "reference": "STRUCT_V2_STATE"},
+                upstream_ids=["I02", "I03", "I10"],
+            ),
+
+            "I34": entry(
+                "Leadership / positioning participation context",
+                ["F15", "F18"],
+                {"kind": "derived", "reference": "participation context"},
+                upstream_ids=["I06", "I07", "I09", "I15", "I16", "I17"],
+            ),
+
+            "I35": entry(
+                "F13 risk budget / F15 exposure",
+                ["F13", "F15", "F18"],
+                {"kind": "decision_state", "reference": "FINAL_STATE/RISK_BUDGET/RECOMMENDED_EXPOSURE"},
+                upstream_ids=[
+                    "I20", "I21", "I22", "I23", "I24",
+                    "I31", "I32", "I33", "I34"
+                ],
+            ),
+        }
+
         manifest = {
-            "version": "GCF_RUN_LINEAGE_V0",
-            "report_date": str(report_date),
-            "data_as_of": str(data_as_of_date),
-            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-            "commit_sha": commit_sha,
-            "github_run_id": run_id,
-            "states": {
-                "filter15": state_meta("insights/filter15_state.json"),
-                "sew": state_meta("insights/sew_state.json"),
-                "flow": state_meta("insights/flow_state.json"),
-                "filter18_rank": state_meta("data/filter18_rank_state.json"),
+            "version": "GCF_RUN_LINEAGE_V1",
+            "run": {
+                "report_date": str(report_date),
+                "data_as_of": str(data_as_of_date),
+                "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+                "commit_sha": commit_sha,
+                "github_run_id": run_id,
+            },
+            "inputs": inputs,
+            "produced_outputs": {
+                "filter15_state": state_meta(
+                    "insights/filter15_state.json"
+                ),
+                "filter18_rank_state": state_meta(
+                    "data/filter18_rank_state.json"
+                ),
             },
         }
 
         out = Path("insights") / f"run_manifest_{report_date}_{run_id}.json"
-        out.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-        print(f"[OK] Run Lineage Manifest written: {out}")
+        out.write_text(
+            json.dumps(manifest, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        print(f"[OK] Run Lineage Manifest V1 written: {out}")
 
     except Exception as e:
-        print(f"[WARN] Run Lineage Manifest failed: {e}")
+        print(f"[WARN] Run Lineage Manifest V1 failed: {e}")
 
     return market_data
 
