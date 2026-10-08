@@ -3023,6 +3023,11 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
     }
     drift_data = {}
+    drift_clocks = {}
+
+    drift_retrieved_at_utc = (
+        pd.Timestamp.now(tz="UTC").isoformat()
+    )
 
     # -----------------------------
     # Helpers
@@ -3060,6 +3065,20 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
                 return None
 
             return s
+        except Exception:
+            return None
+
+    def clean_timestamp(x):
+        try:
+            if x is None:
+                return None
+
+            ts = pd.Timestamp(x)
+
+            if ts.tzinfo is None:
+                return ts.isoformat()
+
+            return ts.isoformat()
         except Exception:
             return None
 
@@ -3112,6 +3131,19 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
             curr = float(intraday_close.iloc[-1])
 
+            intraday_latest_bar = clean_timestamp(
+                intraday_close.index[-1]
+            )
+            daily_latest_bar = clean_timestamp(
+                daily_close.index[-1]
+            )
+
+            drift_clocks[name] = {
+                "ticker": ticker,
+                "intraday_latest_bar": intraday_latest_bar,
+                "daily_latest_bar": daily_latest_bar,
+            }
+
             # intraday
             m15 = float(intraday_close.iloc[-2]) if len(intraday_close) >= 2 else None
             m30 = float(intraday_close.iloc[-3]) if len(intraday_close) >= 3 else None
@@ -3148,10 +3180,30 @@ def attach_drift_data_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
 
         except Exception:
             drift_data[name] = {}
+            drift_clocks.setdefault(
+                name,
+                {
+                    "ticker": ticker,
+                    "intraday_latest_bar": None,
+                    "daily_latest_bar": None,
+                },
+            )
 
     market_data["DRIFT_DATA"] = drift_data
-    
+
+    # Audit-only clock metadata.
+    # Drift calculations / decision logic are unchanged.
+    market_data["_DRIFT_CLOCKS"] = drift_clocks
+    market_data["_DRIFT_RETRIEVED_AT_UTC"] = (
+        drift_retrieved_at_utc
+    )
+
     print("[DRIFT_DATA KEYS]", sorted(drift_data.keys()))
+    print(
+        "[DEBUG][DRIFT CLOCKS]",
+        market_data["_DRIFT_CLOCKS"],
+    )
+
     return market_data
 
 def geopolitical_early_warning_filter(market_data: Dict[str, Any]) -> str:

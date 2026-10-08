@@ -3419,6 +3419,7 @@ def generate_daily_report() -> None:
             observation_date=None,
             component_observation_dates=None,
             state_timestamp=None,
+            retrieved_at=None,
             raw_clock_hints=None,
             upstream_ids=None,
         ):
@@ -3430,7 +3431,7 @@ def generate_daily_report() -> None:
                     "observation_date": clean_date(observation_date),
                     "component_observation_dates": component_observation_dates or {},
                     "available_at": None,
-                    "retrieved_at": None,
+                    "retrieved_at": retrieved_at,
                     "state_timestamp": state_timestamp,
                     "data_as_of": str(data_as_of_date),
                 },
@@ -3759,7 +3760,24 @@ def generate_daily_report() -> None:
             "I19": entry(
                 "Live drift tape",
                 ["F13", "F15", "GEO", "F18"],
-                {"kind": "market_data", "reference": "DRIFT_DATA/DRIFT"},
+                {
+                    "kind": "live_market_data",
+                    "reference": "DRIFT_DATA/DRIFT",
+                },
+                status=(
+                    "PARTIAL"
+                    if market_data.get("_DRIFT_CLOCKS")
+                    else "MISSING"
+                ),
+                retrieved_at=market_data.get(
+                    "_DRIFT_RETRIEVED_AT_UTC"
+                ),
+                raw_clock_hints={
+                    "ticker_bar_clocks": market_data.get(
+                        "_DRIFT_CLOCKS",
+                        {},
+                    )
+                },
             ),
 
             "I20": entry(
