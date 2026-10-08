@@ -351,6 +351,7 @@ jobs:
           git add data/options_gex_shadow/tlt/*.json || true
           git add reports/*.md || true
           git add data/*.csv || true
+          git add data/filter18_rank_state.json || true
           git add data/market_data_history.csv || true
           git add insights/*.json || true
           git add insights/*.log || true
