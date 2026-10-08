@@ -7075,6 +7075,53 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
         except Exception:
             rank_state = {}
 
+        # ----------------------------------------------------
+        # Audit-only:
+        # 이번 F18 실행이 실제로 소비한 PRE-RUN Rank3D state 보존.
+        # 이후 state file이 새 값으로 저장되어도 이 snapshot은 유지된다.
+        # Decision logic is unchanged.
+        # ----------------------------------------------------
+        market_data["_FILTER18_RANK_STATE_CONSUMED"] = {
+            "captured_at_utc": pd.Timestamp.now(
+                tz="UTC"
+            ).isoformat(),
+            "last_processed_date": str(
+                rank_state.get(
+                    "last_processed_date",
+                    "",
+                )
+                or ""
+            ),
+            "accepted_rank": str(
+                rank_state.get(
+                    "accepted_rank",
+                    "",
+                )
+                or ""
+            ),
+            "pending_rank": str(
+                rank_state.get(
+                    "pending_rank",
+                    "",
+                )
+                or ""
+            ),
+            "pending_count": int(
+                rank_state.get(
+                    "pending_count",
+                    0,
+                )
+                or 0
+            ),
+            "last_action": str(
+                rank_state.get(
+                    "last_action",
+                    "UNINITIALIZED",
+                )
+                or "UNINITIALIZED"
+            ),
+        }
+
         accepted_rank = str(
             rank_state.get(
                 "accepted_rank",

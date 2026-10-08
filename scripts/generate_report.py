@@ -3921,7 +3921,37 @@ def generate_daily_report() -> None:
             "I25": entry(
                 "Filter18 Rank3D consumed state",
                 ["F18"],
-                {"kind": "state", "reference": "filter18_rank_state pre-run"},
+                {
+                    "kind": "state",
+                    "reference": "filter18_rank_state pre-run",
+                },
+                status=(
+                    "PARTIAL"
+                    if market_data.get(
+                        "_FILTER18_RANK_STATE_CONSUMED"
+                    )
+                    else "MISSING"
+                ),
+                state_timestamp=(
+                    market_data.get(
+                        "_FILTER18_RANK_STATE_CONSUMED",
+                        {},
+                    ).get("last_processed_date")
+                    or None
+                ),
+                raw_clock_hints={
+                    "freshness": state_freshness_meta(
+                        market_data.get(
+                            "_FILTER18_RANK_STATE_CONSUMED",
+                            {},
+                        ).get("last_processed_date")
+                        or None
+                    ),
+                    "consumed_state": market_data.get(
+                        "_FILTER18_RANK_STATE_CONSUMED",
+                        {},
+                    ),
+                },
             ),
 
             "I26": entry(
