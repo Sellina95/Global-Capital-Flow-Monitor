@@ -3411,6 +3411,91 @@ def generate_daily_report() -> None:
             except Exception:
                 return str(v)
 
+        def state_freshness_meta(timestamp_value):
+            """
+            Audit-only freshness metadata.
+            Decision logic is unchanged.
+
+            - exact timestamp이면 report 실행 시점 대비 age_hours 기록
+            - date-only이면 data_as_of 대비 day delta만 기록
+            """
+            out = {
+                "raw_timestamp": timestamp_value,
+                "parsed_timestamp_utc": None,
+                "age_hours_at_manifest": None,
+                "date_delta_vs_data_as_of": None,
+                "precision": "UNKNOWN",
+            }
+
+            if timestamp_value is None:
+                return out
+
+            raw = str(timestamp_value).strip()
+
+            try:
+                data_as_of_ts = pd.Timestamp(
+                    str(data_as_of_date)
+                ).normalize()
+            except Exception:
+                data_as_of_ts = None
+
+            # date-only state, e.g. 2026-10-07
+            try:
+                if len(raw) == 10 and raw[4] == "-" and raw[7] == "-":
+                    ts = pd.Timestamp(raw).normalize()
+                    out["precision"] = "DATE_ONLY"
+
+                    if data_as_of_ts is not None:
+                        out["date_delta_vs_data_as_of"] = int(
+                            (ts - data_as_of_ts).days
+                        )
+
+                    return out
+            except Exception:
+                pass
+
+            try:
+                parse_raw = raw
+
+                # pandas가 KST abbreviation을 안정적으로 해석하지 못하므로
+                # Asia/Seoul timezone으로 명시 변환
+                if parse_raw.endswith(" KST"):
+                    parse_raw = parse_raw[:-4]
+                    ts = pd.Timestamp(parse_raw)
+
+                    if ts.tzinfo is None:
+                        ts = ts.tz_localize("Asia/Seoul")
+                else:
+                    ts = pd.Timestamp(parse_raw)
+
+                    if ts.tzinfo is None:
+                        ts = ts.tz_localize("UTC")
+
+                ts_utc = ts.tz_convert("UTC")
+
+                out["precision"] = "TIMESTAMP"
+                out["parsed_timestamp_utc"] = ts_utc.isoformat()
+
+                now_utc = pd.Timestamp.now(tz="UTC")
+                out["age_hours_at_manifest"] = round(
+                    (now_utc - ts_utc).total_seconds() / 3600.0,
+                    3,
+                )
+
+                if data_as_of_ts is not None:
+                    state_date = ts.tz_convert(
+                        "Asia/Seoul"
+                    ).tz_localize(None).normalize()
+
+                    out["date_delta_vs_data_as_of"] = int(
+                        (state_date - data_as_of_ts).days
+                    )
+
+            except Exception:
+                pass
+
+            return out
+
         def entry(
             name,
             consumers,
@@ -3800,6 +3885,11 @@ def generate_daily_report() -> None:
                 {"kind": "state", "reference": "flow_state"},
                 status="READY",
                 state_timestamp=flow_state_obj.get("timestamp"),
+                raw_clock_hints={
+                    "freshness": state_freshness_meta(
+                        flow_state_obj.get("timestamp")
+                    )
+                },
             ),
 
             "I23": entry(
@@ -3808,6 +3898,11 @@ def generate_daily_report() -> None:
                 {"kind": "state", "reference": "sew_state"},
                 status="READY",
                 state_timestamp=sew_state_obj.get("timestamp"),
+                raw_clock_hints={
+                    "freshness": state_freshness_meta(
+                        sew_state_obj.get("timestamp")
+                    )
+                },
             ),
 
             "I24": entry(
@@ -3816,6 +3911,11 @@ def generate_daily_report() -> None:
                 {"kind": "state", "reference": "filter15_state pre-run"},
                 status="READY",
                 state_timestamp=filter15_state_obj.get("timestamp"),
+                raw_clock_hints={
+                    "freshness": state_freshness_meta(
+                        filter15_state_obj.get("timestamp")
+                    )
+                },
             ),
 
             "I25": entry(
