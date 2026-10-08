@@ -43,18 +43,39 @@ for col, fred_code in FRED_SERIES.items():
         df = download_fred_csv_series(fred_code)
         df = df[(df["date"] >= START_DATE) & (df["date"] <= END_DATE)]
         df = df.set_index("date")
-        out_df[col] = df[fred_code].reindex(full_index)
+
+        # 원본 관측값
+        series = df[fred_code].reindex(full_index)
+        out_df[col] = series
+
+        # 실제 관측일 보존
+        obs_col = f"{col}_OBS_DATE"
+        obs_dates = pd.Series(pd.NaT, index=full_index, dtype="datetime64[ns]")
+        valid_mask = series.notna()
+        obs_dates.loc[valid_mask] = obs_dates.index[valid_mask]
+        out_df[obs_col] = obs_dates
+
         print(f"[OK] FRED - {col}")
+
     except Exception as e:
         out_df[col] = pd.NA
+        out_df[f"{col}_OBS_DATE"] = pd.NaT
         print(f"[ERROR] FRED - {col}: {e}")
 
-# 최신 유효값 forward fill
+# 기존 Production 값 유지:
+# 값과 실제 관측일을 함께 forward fill
 out_df = out_df.ffill()
 
 # date 컬럼 복원
 out_df = out_df.reset_index().rename(columns={"index": "date"})
 out_df["date"] = out_df["date"].dt.strftime("%Y-%m-%d")
+
+# 관측일 컬럼은 YYYY-MM-DD 형태로 저장
+for col in FRED_SERIES:
+    obs_col = f"{col}_OBS_DATE"
+    out_df[obs_col] = pd.to_datetime(
+        out_df[obs_col], errors="coerce"
+    ).dt.strftime("%Y-%m-%d")
 
 # 저장
 out_df.to_csv("data/fred_macro_sctorallo.csv", index=False, encoding="utf-8-sig")
