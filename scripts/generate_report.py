@@ -3520,8 +3520,11 @@ def generate_daily_report() -> None:
             print(f"[WARN][MANIFEST] Sovereign clock map failed: {e}")
 
         positioning_obs = {}
+        positioning_slope_obs = {}
+
         try:
             _pos_df = pd.read_csv("data/positioning_data.csv")
+
             if not _pos_df.empty:
                 _pos_last = _pos_df.iloc[-1]
 
@@ -3533,6 +3536,33 @@ def generate_daily_report() -> None:
                     "CTA_OBS_DATE",
                 ):
                     positioning_obs[k] = clean_date(_pos_last.get(k))
+
+                # I18 POS_SLOPE는 최근 SP500_POS_Z 최대 3개로 계산된다.
+                # 실제 slope 계산과 동일하게 유효한 SP500_POS_Z 행만 사용한다.
+                if (
+                    "SP500_POS_Z" in _pos_df.columns
+                    and "SP500_POS_OBS_DATE" in _pos_df.columns
+                ):
+                    _slope_rows = _pos_df.copy()
+                    _slope_rows["_SP500_Z_NUM"] = pd.to_numeric(
+                        _slope_rows["SP500_POS_Z"],
+                        errors="coerce",
+                    )
+
+                    _slope_rows = (
+                        _slope_rows[
+                            _slope_rows["_SP500_Z_NUM"].notna()
+                        ]
+                        .tail(3)
+                        .reset_index(drop=True)
+                    )
+
+                    for idx, row in _slope_rows.iterrows():
+                        positioning_slope_obs[
+                            f"source_{idx + 1}"
+                        ] = clean_date(
+                            row.get("SP500_POS_OBS_DATE")
+                        )
 
         except Exception as e:
             print(f"[WARN][MANIFEST] Positioning clock map failed: {e}")
@@ -3710,7 +3740,19 @@ def generate_daily_report() -> None:
             "I18": entry(
                 "Positioning slope",
                 ["F15"],
-                {"kind": "market_data", "reference": "POS_SLOPE"},
+                {
+                    "kind": "derived",
+                    "reference": "POS_SLOPE from recent SP500_POS_Z rows",
+                },
+                status=(
+                    "PARTIAL"
+                    if any(
+                        v is not None
+                        for v in positioning_slope_obs.values()
+                    )
+                    else "MISSING"
+                ),
+                component_observation_dates=positioning_slope_obs,
                 upstream_ids=["I15"],
             ),
 
