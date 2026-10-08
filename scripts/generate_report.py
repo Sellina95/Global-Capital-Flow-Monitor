@@ -3380,6 +3380,56 @@ def generate_daily_report() -> None:
     diagnostics_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Engine Diagnostics written: {diagnostics_path}")
 
+    # RUN LINEAGE MANIFEST V0
+    try:
+        import json, subprocess
+        from datetime import datetime, timezone
+
+        def state_meta(path):
+            fp = Path(path)
+            if not fp.exists():
+                return {"exists": False, "timestamp": None}
+
+            try:
+                obj = json.loads(fp.read_text(encoding="utf-8"))
+                ts = obj.get("timestamp") or obj.get("last_processed_date")
+            except Exception:
+                ts = None
+
+            return {"exists": True, "timestamp": ts}
+
+        try:
+            commit_sha = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                text=True,
+            ).strip()
+        except Exception:
+            commit_sha = "UNKNOWN"
+
+        run_id = os.getenv("GITHUB_RUN_ID", "LOCAL")
+
+        manifest = {
+            "version": "GCF_RUN_LINEAGE_V0",
+            "report_date": str(report_date),
+            "data_as_of": str(data_as_of_date),
+            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "commit_sha": commit_sha,
+            "github_run_id": run_id,
+            "states": {
+                "filter15": state_meta("insights/filter15_state.json"),
+                "sew": state_meta("insights/sew_state.json"),
+                "flow": state_meta("insights/flow_state.json"),
+                "filter18_rank": state_meta("data/filter18_rank_state.json"),
+            },
+        }
+
+        out = Path("insights") / f"run_manifest_{report_date}_{run_id}.json"
+        out.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        print(f"[OK] Run Lineage Manifest written: {out}")
+
+    except Exception as e:
+        print(f"[WARN] Run Lineage Manifest failed: {e}")
+
     return market_data
 
     
