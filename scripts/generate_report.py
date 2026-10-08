@@ -3519,6 +3519,24 @@ def generate_daily_report() -> None:
         except Exception as e:
             print(f"[WARN][MANIFEST] Sovereign clock map failed: {e}")
 
+        positioning_obs = {}
+        try:
+            _pos_df = pd.read_csv("data/positioning_data.csv")
+            if not _pos_df.empty:
+                _pos_last = _pos_df.iloc[-1]
+
+                for k in (
+                    "SP500_POS_OBS_DATE",
+                    "US10Y_POS_OBS_DATE",
+                    "DXY_POS_OBS_DATE",
+                    "GAMMA_VIX_OBS_DATE",
+                    "CTA_OBS_DATE",
+                ):
+                    positioning_obs[k] = clean_date(_pos_last.get(k))
+
+        except Exception as e:
+            print(f"[WARN][MANIFEST] Positioning clock map failed: {e}")
+
         previous_portfolio_date = None
         try:
             _pp = pd.read_csv("data/paper_portfolio_log.csv")
@@ -3652,7 +3670,13 @@ def generate_daily_report() -> None:
             "I15": entry(
                 "SP500 / US10Y / DXY positioning z",
                 ["F13", "F15", "F18"],
-                {"kind": "market_data", "reference": "positioning z"},
+                {"kind": "csv", "reference": "positioning_data.csv"},
+                status="PARTIAL",
+                component_observation_dates={
+                    "SP500_POS_Z": positioning_obs.get("SP500_POS_OBS_DATE"),
+                    "US10Y_POS_Z": positioning_obs.get("US10Y_POS_OBS_DATE"),
+                    "DXY_POS_Z": positioning_obs.get("DXY_POS_OBS_DATE"),
+                },
                 raw_clock_hints={
                     "_POS_ASOF": market_data.get("_POS_ASOF")
                 },
@@ -3661,16 +3685,23 @@ def generate_daily_report() -> None:
             "I16": entry(
                 "Dealer gamma bias proxy",
                 ["F13", "F15", "F18"],
-                {"kind": "market_data", "reference": "DEALER_GAMMA_BIAS"},
+                {"kind": "csv", "reference": "positioning_data.csv"},
+                status="PARTIAL",
+                component_observation_dates={
+                    "VIX": positioning_obs.get("GAMMA_VIX_OBS_DATE")
+                },
                 raw_clock_hints={
-                    "_POS_ASOF": market_data.get("_POS_ASOF")
+                    "_POS_ASOF": market_data.get("_POS_ASOF"),
+                    "option_chain_observation_time": None,
                 },
             ),
 
             "I17": entry(
                 "CTA momentum score",
                 ["F15", "F18"],
-                {"kind": "market_data", "reference": "CTA_MOMENTUM_SCORE"},
+                {"kind": "csv", "reference": "positioning_data.csv"},
+                status="PARTIAL",
+                observation_date=positioning_obs.get("CTA_OBS_DATE"),
                 raw_clock_hints={
                     "_POS_ASOF": market_data.get("_POS_ASOF")
                 },
@@ -3680,6 +3711,7 @@ def generate_daily_report() -> None:
                 "Positioning slope",
                 ["F15"],
                 {"kind": "market_data", "reference": "POS_SLOPE"},
+                upstream_ids=["I15"],
             ),
 
             "I19": entry(

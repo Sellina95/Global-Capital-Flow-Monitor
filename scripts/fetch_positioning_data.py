@@ -85,19 +85,34 @@ def get_recent_pos_slope(csv_path="data/positioning_data.csv", column_name="SP50
         return 0.0
 
 
+def _obs_date_from_index(idx):
+    try:
+        return pd.Timestamp(idx).strftime("%Y-%m-%d")
+    except Exception:
+        return None
+
+
 def get_reliable_z_score(ticker_list, period="1y"):
     """
     FALLBACK 로직: 리스트 내 티커들을 순차적으로 시도하여
-    유효한 데이터가 나오면 Z-Score를 계산합니다.
+    유효한 데이터가 나오면 Z-Score와 실제 마지막 관측일을 반환합니다.
     """
     for ticker in ticker_list:
         try:
             hist = yf.Ticker(ticker).history(period=period)
             if not hist.empty and len(hist) > 20:
                 close = hist["Close"].dropna()
+                if close.empty:
+                    continue
+
                 z_score = (close.iloc[-1] - close.mean()) / close.std()
-                print(f"   ✅ 데이터 수집 성공: {ticker}")
-                return round(z_score, 2)
+                obs_date = _obs_date_from_index(close.index[-1])
+
+                print(
+                    f"   ✅ 데이터 수집 성공: {ticker} "
+                    f"(obs_date={obs_date})"
+                )
+                return round(z_score, 2), obs_date
             else:
                 print(f"   ⚠️ {ticker}: 데이터 부족 또는 empty")
         except Exception as e:
@@ -105,7 +120,7 @@ def get_reliable_z_score(ticker_list, period="1y"):
             continue
 
     print("   ❌ 모든 fallback ticker 실패 → 0.0 반환")
-    return 0.0
+    return 0.0, None
 
 
 def _load_last_positioning_row(output_path: str):
@@ -145,10 +160,15 @@ def _save_positioning_snapshot(results: dict, output_path: str):
     ordered_cols = [
         "date",
         "SP500_POS_Z",
+        "SP500_POS_OBS_DATE",
         "US10Y_POS_Z",
+        "US10Y_POS_OBS_DATE",
         "DXY_POS_Z",
+        "DXY_POS_OBS_DATE",
         "DEALER_GAMMA_BIAS",
+        "GAMMA_VIX_OBS_DATE",
         "CTA_MOMENTUM_SCORE",
+        "CTA_OBS_DATE",
         "GAMMA_FETCH_OK",
         "CTA_FETCH_OK",
     ]
@@ -223,7 +243,11 @@ def fetch_positioning_center():
 
     for name, t_list in tickers_priority.items():
         print(f"\n🔎 {name} 분석 중...")
-        results[f"{name}_Z"] = get_reliable_z_score(t_list)
+
+        z_score, obs_date = get_reliable_z_score(t_list)
+
+        results[f"{name}_Z"] = z_score
+        results[f"{name}_OBS_DATE"] = obs_date
 
     # --- [2] Dealer Gamma Exposure ---
     print("\n🔎 DEALER_GAMMA_BIAS 분석 중...")
@@ -231,8 +255,25 @@ def fetch_positioning_center():
         spy = yf.Ticker("SPY")
 
         vix_hist = yf.Ticker("^VIX").history(period="5d")
-        vix_current = vix_hist["Close"].iloc[-1] if not vix_hist.empty else 20.0
-        print(f"   vix_current = {vix_current}")
+
+        if not vix_hist.empty:
+            vix_close = vix_hist["Close"].dropna()
+        else:
+            vix_close = pd.Series(dtype=float)
+
+        if not vix_close.empty:
+            vix_current = vix_close.iloc[-1]
+            gamma_vix_obs_date = _obs_date_from_index(vix_close.index[-1])
+        else:
+            vix_current = 20.0
+            gamma_vix_obs_date = None
+
+        results["GAMMA_VIX_OBS_DATE"] = gamma_vix_obs_date
+
+        print(
+            f"   vix_current = {vix_current} "
+            f"(obs_date={gamma_vix_obs_date})"
+        )
 
         expirations = spy.options[:2]
         print(f"   expirations = {expirations}")
@@ -316,9 +357,15 @@ def fetch_positioning_center():
         if prev_gamma is not None:
             print(f"   ⚠️ 이전 gamma 값 유지: {prev_gamma}")
             results["DEALER_GAMMA_BIAS"] = prev_gamma
+
+            if last_row is not None:
+                results["GAMMA_VIX_OBS_DATE"] = last_row.get(
+                    "GAMMA_VIX_OBS_DATE"
+                )
         else:
             print("   ⚠️ 이전 gamma 값 없음 → 중립값 1.0 사용")
             results["DEALER_GAMMA_BIAS"] = 1.0
+            results["GAMMA_VIX_OBS_DATE"] = None
 
     # --- [3] CTA Momentum (Trend Following) ---
     print("\n🔎 CTA_MOMENTUM_SCORE 분석 중...")
@@ -330,9 +377,15 @@ def fetch_positioning_center():
             raise ValueError("SPY history empty")
 
         close = spy_hist["Close"].dropna()
+
+        if close.empty:
+            raise ValueError("SPY close history empty")
+
         current = close.iloc[-1]
         ma50 = close.rolling(50).mean().iloc[-1]
         ma200 = close.rolling(200).mean().iloc[-1]
+
+        results["CTA_OBS_DATE"] = _obs_date_from_index(close.index[-1])
 
         print(f"   current = {current:.4f}")
         print(f"   ma50    = {ma50:.4f}")
@@ -370,9 +423,13 @@ def fetch_positioning_center():
         if prev_cta is not None:
             print(f"   ⚠️ 이전 CTA 값 유지: {prev_cta}")
             results["CTA_MOMENTUM_SCORE"] = prev_cta
+
+            if last_row is not None:
+                results["CTA_OBS_DATE"] = last_row.get("CTA_OBS_DATE")
         else:
             print("   ⚠️ 이전 CTA 값 없음 → 0.0 사용")
             results["CTA_MOMENTUM_SCORE"] = 0.0
+            results["CTA_OBS_DATE"] = None
 
     # --- [4] 저장 ---
     _save_positioning_snapshot(results, output_path)
