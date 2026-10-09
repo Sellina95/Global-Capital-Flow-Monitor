@@ -3742,8 +3742,18 @@ def generate_daily_report() -> None:
                 "Breadth",
                 ["F13", "F15", "F18"],
                 {"kind": "market_data", "reference": "BREADTH_*"},
+                status=(
+                    "PARTIAL"
+                    if market_data.get("_BREADTH_ASOF")
+                    else "MISSING"
+                ),
+                observation_date=market_data.get(
+                    "_BREADTH_ASOF"
+                ),
                 raw_clock_hints={
-                    "_BREADTH_ASOF": market_data.get("_BREADTH_ASOF")
+                    "_BREADTH_ASOF": market_data.get(
+                        "_BREADTH_ASOF"
+                    )
                 },
             ),
 
@@ -3751,8 +3761,18 @@ def generate_daily_report() -> None:
                 "Leadership",
                 ["F15", "F18"],
                 {"kind": "market_data", "reference": "LEAD_*"},
+                status=(
+                    "PARTIAL"
+                    if market_data.get("_LEADERSHIP_ASOF")
+                    else "MISSING"
+                ),
+                observation_date=market_data.get(
+                    "_LEADERSHIP_ASOF"
+                ),
                 raw_clock_hints={
-                    "_LEADERSHIP_ASOF": market_data.get("_LEADERSHIP_ASOF")
+                    "_LEADERSHIP_ASOF": market_data.get(
+                        "_LEADERSHIP_ASOF"
+                    )
                 },
             ),
 
