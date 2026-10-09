@@ -3634,6 +3634,7 @@ def generate_daily_report() -> None:
 
         positioning_obs = {}
         positioning_slope_obs = {}
+        gamma_source_run_date = None
 
         try:
             _pos_df = pd.read_csv("data/positioning_data.csv")
@@ -3649,6 +3650,31 @@ def generate_daily_report() -> None:
                     "CTA_OBS_DATE",
                 ):
                     positioning_obs[k] = clean_date(_pos_last.get(k))
+
+                # Legacy gamma rows may not have GAMMA_VIX_OBS_DATE.
+                # In that case, preserve the last successful gamma run date
+                # as provenance for the carried-forward proxy value.
+                if (
+                    "GAMMA_FETCH_OK" in _pos_df.columns
+                    and "date" in _pos_df.columns
+                ):
+                    _gamma_ok = pd.to_numeric(
+                        _pos_df["GAMMA_FETCH_OK"],
+                        errors="coerce",
+                    ).fillna(0)
+
+                    _gamma_rows = _pos_df[
+                        (_gamma_ok == 1)
+                        & pd.to_numeric(
+                            _pos_df["DEALER_GAMMA_BIAS"],
+                            errors="coerce",
+                        ).notna()
+                    ]
+
+                    if not _gamma_rows.empty:
+                        gamma_source_run_date = clean_date(
+                            _gamma_rows.iloc[-1].get("date")
+                        )
 
                 # I18 POS_SLOPE는 최근 SP500_POS_Z 최대 3개로 계산된다.
                 # 실제 slope 계산과 동일하게 유효한 SP500_POS_Z 행만 사용한다.
@@ -3880,9 +3906,11 @@ def generate_daily_report() -> None:
                 component_observation_dates={
                     "VIX": positioning_obs.get("GAMMA_VIX_OBS_DATE")
                 },
+                state_timestamp=gamma_source_run_date,
                 raw_clock_hints={
                     "_POS_ASOF": market_data.get("_POS_ASOF"),
                     "option_chain_observation_time": None,
+                    "last_successful_gamma_run_date": gamma_source_run_date,
                 },
             ),
 
@@ -4108,6 +4136,213 @@ def generate_daily_report() -> None:
             ),
         }
 
+        # --------------------------------------------------
+        # Cross-clock temporal assessment
+        # AUDIT ONLY — does not block or alter Production logic.
+        # --------------------------------------------------
+        temporal_findings = {}
+
+        try:
+            canonical_ts = pd.Timestamp(
+                str(data_as_of_date)
+            ).normalize()
+
+            for input_id, input_meta in inputs.items():
+                clocks = input_meta.get("clocks", {}) or {}
+
+                observed_dates = []
+
+                obs = clocks.get("observation_date")
+                if obs:
+                    observed_dates.append(
+                        ("observation_date", obs)
+                    )
+
+                components = (
+                    clocks.get(
+                        "component_observation_dates",
+                        {}
+                    )
+                    or {}
+                )
+
+                for component_name, component_date in components.items():
+                    if component_date:
+                        observed_dates.append(
+                            (component_name, component_date)
+                        )
+
+                deltas = []
+
+                for label, raw_date in observed_dates:
+                    try:
+                        ts = pd.Timestamp(
+                            str(raw_date)
+                        ).normalize()
+
+                        deltas.append({
+                            "source": label,
+                            "date": str(raw_date),
+                            "delta_days_vs_data_as_of": int(
+                                (ts - canonical_ts).days
+                            ),
+                        })
+                    except Exception:
+                        pass
+
+                has_state_clock = bool(
+                    clocks.get("state_timestamp")
+                )
+                has_retrieved_clock = bool(
+                    clocks.get("retrieved_at")
+                )
+
+                if deltas:
+                    delta_values = [
+                        x["delta_days_vs_data_as_of"]
+                        for x in deltas
+                    ]
+
+                    has_negative = any(
+                        d < 0 for d in delta_values
+                    )
+                    has_positive = any(
+                        d > 0 for d in delta_values
+                    )
+                    all_zero = all(
+                        d == 0 for d in delta_values
+                    )
+
+                    if all_zero:
+                        classification = "ALIGNED"
+                    elif has_negative and has_positive:
+                        classification = "MIXED"
+                    elif has_positive:
+                        classification = "LEADS_CANONICAL"
+                    else:
+                        classification = "LAGGED"
+
+                elif has_state_clock or has_retrieved_clock:
+                    classification = "RUNTIME_CLOCK_ONLY"
+
+                elif input_meta.get("upstream_ids"):
+                    classification = "DERIVED_UPSTREAM"
+
+                else:
+                    classification = "NO_CLOCK"
+
+                temporal_findings[input_id] = {
+                    "classification": classification,
+                    "observed_clocks": deltas,
+                    "has_state_clock": has_state_clock,
+                    "has_retrieved_clock": has_retrieved_clock,
+                }
+
+        except Exception as e:
+            print(
+                f"[WARN][MANIFEST] "
+                f"Cross-clock assessment failed: {e}"
+            )
+
+        temporal_counts = {}
+        for finding in temporal_findings.values():
+            k = finding.get(
+                "classification",
+                "UNKNOWN",
+            )
+            temporal_counts[k] = (
+                temporal_counts.get(k, 0) + 1
+            )
+
+        # --------------------------------------------------
+        # Cross-clock policy V0
+        # AUDIT/WARN ONLY — never changes Production decisions.
+        # --------------------------------------------------
+        temporal_warnings = []
+        temporal_policy = {}
+
+        expected_release_lag_ids = {
+            "I10",  # FRED macro extras
+            "I11",  # FRED rates/inflation extras
+            "I12",  # liquidity
+            "I13",  # HY OAS
+        }
+
+        for input_id, finding in temporal_findings.items():
+            classification = finding.get("classification")
+
+            severity = "INFO"
+            reason = classification
+
+            if classification == "ALIGNED":
+                severity = "PASS"
+                reason = "CLOCK_ALIGNED"
+
+            elif classification == "LEADS_CANONICAL":
+                severity = "WARN"
+                reason = "INPUT_DATE_AFTER_DATA_AS_OF"
+
+            elif classification == "NO_CLOCK":
+                severity = "WARN"
+                reason = "NO_TEMPORAL_PROVENANCE"
+
+            elif (
+                classification == "LAGGED"
+                and input_id in expected_release_lag_ids
+            ):
+                severity = "INFO"
+                reason = "RELEASE_CADENCE_LAG"
+
+            elif classification == "LAGGED":
+                deltas = [
+                    x.get("delta_days_vs_data_as_of")
+                    for x in finding.get("observed_clocks", [])
+                    if isinstance(
+                        x.get("delta_days_vs_data_as_of"),
+                        int,
+                    )
+                ]
+
+                worst_lag = min(deltas) if deltas else 0
+
+                if worst_lag <= -90:
+                    severity = "WARN"
+                    reason = "STALE_COMPONENT_OVER_90D"
+                else:
+                    severity = "INFO"
+                    reason = "OBSERVED_LAG"
+
+            elif classification == "RUNTIME_CLOCK_ONLY":
+                severity = "INFO"
+                reason = "RUNTIME_OR_STATE_CLOCK"
+
+            elif classification == "DERIVED_UPSTREAM":
+                severity = "INFO"
+                reason = "CLOCK_INHERITED_FROM_UPSTREAM"
+
+            temporal_policy[input_id] = {
+                "severity": severity,
+                "reason": reason,
+            }
+
+            if severity == "WARN":
+                temporal_warnings.append({
+                    "input_id": input_id,
+                    "name": inputs[input_id]["name"],
+                    "reason": reason,
+                    "classification": classification,
+                    "observed_clocks": finding.get(
+                        "observed_clocks",
+                        [],
+                    ),
+                })
+
+        temporal_overall_status = (
+            "WARN"
+            if temporal_warnings
+            else "PASS"
+        )
+
         manifest = {
             "version": "GCF_RUN_LINEAGE_V1",
             "run": {
@@ -4118,6 +4353,16 @@ def generate_daily_report() -> None:
                 "github_run_id": run_id,
             },
             "inputs": inputs,
+            "temporal_cross_clock": {
+                "mode": "AUDIT_ONLY",
+                "decision_logic_changed": False,
+                "blocking_enabled": False,
+                "counts": temporal_counts,
+                "overall_status": temporal_overall_status,
+                "policy": temporal_policy,
+                "warnings": temporal_warnings,
+                "findings": temporal_findings,
+            },
             "produced_outputs": {
                 "filter15_state": state_meta(
                     "insights/filter15_state.json"
