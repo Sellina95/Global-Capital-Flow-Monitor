@@ -3718,12 +3718,16 @@ def generate_daily_report() -> None:
                 "US10Y / DXY / WTI / VIX",
                 ["F13", "F15", "GEO", "F18"],
                 {"kind": "market_data", "reference": "US10Y,DXY,WTI,VIX"},
+                status="READY",
+                observation_date=data_as_of_date,
             ),
 
             "I03": entry(
                 "GOLD / FX / geo market series",
                 ["F13", "GEO"],
                 {"kind": "market_data", "reference": "macro geo inputs"},
+                status="READY",
+                observation_date=data_as_of_date,
             ),
 
             "I04": entry(
@@ -3736,6 +3740,8 @@ def generate_daily_report() -> None:
                 "Correlation price inputs",
                 ["F18"],
                 {"kind": "market_data", "reference": "SPY,QQQ,XLK,XLF,XLE,XLRE"},
+                status="READY",
+                observation_date=data_as_of_date,
             ),
 
             "I06": entry(
@@ -3780,12 +3786,16 @@ def generate_daily_report() -> None:
                 "11-sector momentum",
                 ["F18"],
                 {"kind": "market_data", "reference": "MOMENTUM_SCORES"},
+                status="READY",
+                observation_date=data_as_of_date,
             ),
 
             "I09": entry(
                 "VIX3M / VIX9D",
                 ["F18"],
                 {"kind": "market_data", "reference": "VIX3M,VIX9D"},
+                status="READY",
+                observation_date=data_as_of_date,
             ),
 
             "I10": entry(
