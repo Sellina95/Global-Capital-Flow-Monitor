@@ -87,8 +87,21 @@ def main(days: int = 365) -> None:
 
         if not df.empty:
             df = df.rename(columns={sid: col})
+
+            # Audit-only observation date.
+            # Value semantics / decision logic are unchanged.
+            df[f"{col}_OBS_DATE"] = (
+                df["date"]
+                .where(df[col].notna())
+                .dt.strftime("%Y-%m-%d")
+            )
+
             fetched[col] = df
-            print(f"[OK] {col}: rows={len(df)}, last={df['date'].max().date()}")
+
+            print(
+                f"[OK] {col}: rows={len(df)}, "
+                f"last={df['date'].max().date()}"
+            )
         else:
             print(f"[WARN] {col}: no data fetched")
 
@@ -98,19 +111,66 @@ def main(days: int = 365) -> None:
     for col in SERIES.keys():
         new_data = fetched.get(col)
 
+        obs_col = f"{col}_OBS_DATE"
+
         if new_data is not None and not new_data.empty:
-            new_data = new_data[["date", col]].copy()
-            merged = merged.merge(new_data, on="date", how="left")
+            new_data = new_data[
+                ["date", col, obs_col]
+            ].copy()
+
+            merged = merged.merge(
+                new_data,
+                on="date",
+                how="left",
+            )
         else:
             merged[col] = pd.NA
+            merged[obs_col] = pd.NA
 
         if not existing.empty and col in existing.columns:
-            old = existing[["date", col]].copy()
-            old = old.rename(columns={col: f"{col}_old"})
-            merged = merged.merge(old, on="date", how="left")
+            old_cols = ["date", col]
 
-            merged[col] = merged[col].combine_first(merged[f"{col}_old"])
-            merged = merged.drop(columns=[f"{col}_old"])
+            if obs_col in existing.columns:
+                old_cols.append(obs_col)
+
+            old = existing[old_cols].copy()
+
+            rename_map = {
+                col: f"{col}_old",
+            }
+
+            if obs_col in old.columns:
+                rename_map[obs_col] = f"{obs_col}_old"
+
+            old = old.rename(columns=rename_map)
+
+            merged = merged.merge(
+                old,
+                on="date",
+                how="left",
+            )
+
+            merged[col] = merged[col].combine_first(
+                merged[f"{col}_old"]
+            )
+
+            merged = merged.drop(
+                columns=[f"{col}_old"]
+            )
+
+            old_obs_col = f"{obs_col}_old"
+
+            if old_obs_col in merged.columns:
+                merged[obs_col] = (
+                    merged[obs_col]
+                    .combine_first(
+                        merged[old_obs_col]
+                    )
+                )
+
+                merged = merged.drop(
+                    columns=[old_obs_col]
+                )
 
     merged = merged.sort_values("date").drop_duplicates("date", keep="last")
 

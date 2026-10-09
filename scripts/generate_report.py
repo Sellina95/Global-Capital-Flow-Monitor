@@ -3587,23 +3587,50 @@ def generate_daily_report() -> None:
         sovereign_obs = {}
         try:
             _sov_df = load_sovereign_yields_df()
+
             if _sov_df is not None and not _sov_df.empty:
-                for c in _sov_df.columns:
-                    if c == "date":
+
+                for c in (
+                    "US10Y",
+                    "KR10Y",
+                    "JP10Y",
+                    "DE10Y",
+                    "CN10Y",
+                    "IL10Y",
+                    "TR10Y",
+                    "GB10Y",
+                    "MX10Y",
+                ):
+                    if c not in _sov_df.columns:
                         continue
 
+                    obs_col = f"{c}_OBS_DATE"
+
                     valid = pd.to_numeric(
-                        _sov_df[c], errors="coerce"
+                        _sov_df[c],
+                        errors="coerce",
                     ).notna()
 
-                    if valid.any():
-                        dt = pd.to_datetime(
-                            _sov_df.loc[valid, "date"],
-                            errors="coerce",
-                        ).max()
-                        sovereign_obs[c] = clean_date(dt)
+                    if not valid.any():
+                        sovereign_obs[c] = None
+                        continue
+
+                    last_idx = _sov_df.index[valid][-1]
+
+                    if obs_col in _sov_df.columns:
+                        sovereign_obs[c] = clean_date(
+                            _sov_df.loc[last_idx, obs_col]
+                        )
+                    else:
+                        sovereign_obs[c] = clean_date(
+                            _sov_df.loc[last_idx, "date"]
+                        )
+
         except Exception as e:
-            print(f"[WARN][MANIFEST] Sovereign clock map failed: {e}")
+            print(
+                f"[WARN][MANIFEST] "
+                f"Sovereign clock map failed: {e}"
+            )
 
         positioning_obs = {}
         positioning_slope_obs = {}
