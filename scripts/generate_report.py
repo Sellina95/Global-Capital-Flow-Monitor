@@ -3734,6 +3734,23 @@ def generate_daily_report() -> None:
                 "HYG / LQD daily + live",
                 ["F13", "F15", "F18"],
                 {"kind": "market_data", "reference": "HYG,LQD,DRIFT_DATA"},
+                status="PARTIAL",
+                observation_date=data_as_of_date,
+                component_observation_dates={
+                    "HYG_DAILY": data_as_of_date,
+                    "LQD_DAILY": data_as_of_date,
+                },
+                upstream_ids=["I19"],
+                raw_clock_hints={
+                    "daily_clock": data_as_of_date,
+                    "live_drift_clock_source": "I19",
+                    "_DRIFT_RETRIEVED_AT_UTC": market_data.get(
+                        "_DRIFT_RETRIEVED_AT_UTC"
+                    ),
+                    "_DRIFT_CLOCKS": market_data.get(
+                        "_DRIFT_CLOCKS"
+                    ),
+                },
             ),
 
             "I05": entry(
