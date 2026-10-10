@@ -1,0 +1,1742 @@
+{
+  "version": "GCF_RUN_LINEAGE_V1",
+  "run": {
+    "report_date": "2026-10-10",
+    "data_as_of": "2026-10-09",
+    "generated_at_utc": "2026-10-10T06:56:09.765759+00:00",
+    "commit_sha": "546957fb1c6acddf12ee34b4b8b756dbcd1aa766",
+    "github_run_id": "38032517928"
+  },
+  "inputs": {
+    "I01": {
+      "name": "Canonical macro row / data_as_of_date",
+      "consumers": [
+        "F13",
+        "F15",
+        "GEO",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "local_variable",
+        "reference": "data_as_of_date"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "READY",
+      "decision_logic_changed": false
+    },
+    "I02": {
+      "name": "US10Y / DXY / WTI / VIX",
+      "consumers": [
+        "F13",
+        "F15",
+        "GEO",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "market_data",
+        "reference": "US10Y,DXY,WTI,VIX"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "READY",
+      "decision_logic_changed": false
+    },
+    "I03": {
+      "name": "GOLD / FX / geo market series",
+      "consumers": [
+        "F13",
+        "GEO"
+      ],
+      "runtime_source": {
+        "kind": "market_data",
+        "reference": "macro geo inputs"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "READY",
+      "decision_logic_changed": false
+    },
+    "I04": {
+      "name": "HYG / LQD daily + live",
+      "consumers": [
+        "F13",
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "market_data",
+        "reference": "HYG,LQD,DRIFT_DATA"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {
+          "HYG_DAILY": "2026-10-09",
+          "LQD_DAILY": "2026-10-09"
+        },
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "daily_clock": "2026-10-09",
+        "live_drift_clock_source": "I19",
+        "_DRIFT_RETRIEVED_AT_UTC": "2026-10-10T06:56:05.839037+00:00",
+        "_DRIFT_CLOCKS": {
+          "SPY": {
+            "ticker": "SPY",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "WTI": {
+            "ticker": "CL=F",
+            "intraday_latest_bar": "2026-10-09T16:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "DXY": {
+            "ticker": "DX-Y.NYB",
+            "intraday_latest_bar": "2026-10-09T16:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "GOLD": {
+            "ticker": "GC=F",
+            "intraday_latest_bar": "2026-10-09T16:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "HYG": {
+            "ticker": "HYG",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "LQD": {
+            "ticker": "LQD",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "EEM": {
+            "ticker": "EEM",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "FXI": {
+            "ticker": "FXI",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLK": {
+            "ticker": "XLK",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLI": {
+            "ticker": "XLI",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLF": {
+            "ticker": "XLF",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLY": {
+            "ticker": "XLY",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLP": {
+            "ticker": "XLP",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLU": {
+            "ticker": "XLU",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          }
+        }
+      },
+      "upstream_ids": [
+        "I19"
+      ],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I05": {
+      "name": "Correlation price inputs",
+      "consumers": [
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "market_data",
+        "reference": "SPY,QQQ,XLK,XLF,XLE,XLRE"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "READY",
+      "decision_logic_changed": false
+    },
+    "I06": {
+      "name": "Breadth",
+      "consumers": [
+        "F13",
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "market_data",
+        "reference": "BREADTH_*"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "_BREADTH_ASOF": "2026-10-09"
+      },
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I07": {
+      "name": "Leadership",
+      "consumers": [
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "market_data",
+        "reference": "LEAD_*"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "_LEADERSHIP_ASOF": "2026-10-09"
+      },
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I08": {
+      "name": "11-sector momentum",
+      "consumers": [
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "market_data",
+        "reference": "MOMENTUM_SCORES"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "READY",
+      "decision_logic_changed": false
+    },
+    "I09": {
+      "name": "VIX3M / VIX9D",
+      "consumers": [
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "market_data",
+        "reference": "VIX3M,VIX9D"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "READY",
+      "decision_logic_changed": false
+    },
+    "I10": {
+      "name": "FCI / REAL_RATE / T10Y2Y",
+      "consumers": [
+        "F13",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "fred_csv",
+        "reference": "fred_macro_sctorallo.csv"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {
+          "FCI": "2026-10-02",
+          "REAL_RATE": "2026-10-08",
+          "T10Y2Y": "2026-10-09"
+        },
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I11": {
+      "name": "T10YIE / DFII10 / DGS2 / FRED VIX",
+      "consumers": [
+        "F13"
+      ],
+      "runtime_source": {
+        "kind": "fred_csv",
+        "reference": "fred_macro_sctorallo.csv"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {
+          "T10YIE": "2026-10-09",
+          "DFII10": "2026-10-08",
+          "DGS2": "2026-10-08",
+          "VIX": "2026-10-08"
+        },
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I12": {
+      "name": "TGA / RRP / WALCL / NET_LIQ",
+      "consumers": [
+        "F13",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "market_data",
+        "reference": "liquidity layer"
+      },
+      "clocks": {
+        "observation_date": "2026-10-07",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I13": {
+      "name": "HY OAS",
+      "consumers": [
+        "F13",
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "market_data",
+        "reference": "HY_OAS"
+      },
+      "clocks": {
+        "observation_date": "2026-10-08",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I14": {
+      "name": "Sentiment proxy",
+      "consumers": [
+        "F13"
+      ],
+      "runtime_source": {
+        "kind": "market_data",
+        "reference": "SENTIMENT"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I15": {
+      "name": "SP500 / US10Y / DXY positioning z",
+      "consumers": [
+        "F13",
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "csv",
+        "reference": "positioning_data.csv"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {
+          "SP500_POS_Z": "2026-10-09",
+          "US10Y_POS_Z": "2026-10-09",
+          "DXY_POS_Z": "2026-10-09"
+        },
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "_POS_ASOF": "2026-10-10"
+      },
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I16": {
+      "name": "Dealer gamma bias proxy",
+      "consumers": [
+        "F13",
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "csv",
+        "reference": "positioning_data.csv"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {
+          "VIX": "2026-10-09"
+        },
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": "2026-10-10",
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "_POS_ASOF": "2026-10-10",
+        "option_chain_observation_time": null,
+        "last_successful_gamma_run_date": "2026-10-10"
+      },
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I17": {
+      "name": "CTA momentum score",
+      "consumers": [
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "csv",
+        "reference": "positioning_data.csv"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "_POS_ASOF": "2026-10-10"
+      },
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I18": {
+      "name": "Positioning slope",
+      "consumers": [
+        "F15"
+      ],
+      "runtime_source": {
+        "kind": "derived",
+        "reference": "POS_SLOPE from recent SP500_POS_Z rows"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {
+          "source_1": null,
+          "source_2": "2026-10-09",
+          "source_3": "2026-10-09"
+        },
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [
+        "I15"
+      ],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I19": {
+      "name": "Live drift tape",
+      "consumers": [
+        "F13",
+        "F15",
+        "GEO",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "live_market_data",
+        "reference": "DRIFT_DATA/DRIFT"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": "2026-10-10T06:56:05.839037+00:00",
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "ticker_bar_clocks": {
+          "SPY": {
+            "ticker": "SPY",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "WTI": {
+            "ticker": "CL=F",
+            "intraday_latest_bar": "2026-10-09T16:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "DXY": {
+            "ticker": "DX-Y.NYB",
+            "intraday_latest_bar": "2026-10-09T16:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "GOLD": {
+            "ticker": "GC=F",
+            "intraday_latest_bar": "2026-10-09T16:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "HYG": {
+            "ticker": "HYG",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "LQD": {
+            "ticker": "LQD",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "EEM": {
+            "ticker": "EEM",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "FXI": {
+            "ticker": "FXI",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLK": {
+            "ticker": "XLK",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLI": {
+            "ticker": "XLI",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLF": {
+            "ticker": "XLF",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLY": {
+            "ticker": "XLY",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLP": {
+            "ticker": "XLP",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          },
+          "XLU": {
+            "ticker": "XLU",
+            "intraday_latest_bar": "2026-10-09T15:45:00-04:00",
+            "daily_latest_bar": "2026-10-09T00:00:00"
+          }
+        }
+      },
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I20": {
+      "name": "Pseudo gamma regime",
+      "consumers": [
+        "F13",
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "derived",
+        "reference": "GAMMA_STATE"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [
+        "I02",
+        "I16",
+        "I19",
+        "I23"
+      ],
+      "status": "MISSING",
+      "decision_logic_changed": false
+    },
+    "I21": {
+      "name": "Current institutional flow",
+      "consumers": [
+        "F13",
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "derived",
+        "reference": "INSTITUTIONAL_FLOW"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [
+        "I04",
+        "I15",
+        "I16",
+        "I17",
+        "I19",
+        "I23"
+      ],
+      "status": "MISSING",
+      "decision_logic_changed": false
+    },
+    "I22": {
+      "name": "Previous flow state",
+      "consumers": [
+        "F13"
+      ],
+      "runtime_source": {
+        "kind": "state",
+        "reference": "flow_state"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": "2026-10-10 15:54:39 KST",
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "freshness": {
+          "raw_timestamp": "2026-10-10 15:54:39 KST",
+          "parsed_timestamp_utc": "2026-10-10T06:54:39+00:00",
+          "age_hours_at_manifest": 0.025,
+          "date_delta_vs_data_as_of": 1,
+          "precision": "TIMESTAMP"
+        }
+      },
+      "upstream_ids": [],
+      "status": "READY",
+      "decision_logic_changed": false
+    },
+    "I23": {
+      "name": "SEW state",
+      "consumers": [
+        "F13",
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "state",
+        "reference": "sew_state"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": "2026-10-10 15:54:39 KST",
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "freshness": {
+          "raw_timestamp": "2026-10-10 15:54:39 KST",
+          "parsed_timestamp_utc": "2026-10-10T06:54:39+00:00",
+          "age_hours_at_manifest": 0.025,
+          "date_delta_vs_data_as_of": 1,
+          "precision": "TIMESTAMP"
+        }
+      },
+      "upstream_ids": [],
+      "status": "READY",
+      "decision_logic_changed": false
+    },
+    "I24": {
+      "name": "Filter15 recovery state",
+      "consumers": [
+        "F15"
+      ],
+      "runtime_source": {
+        "kind": "state",
+        "reference": "filter15_state pre-run"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": "2026-10-08",
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "freshness": {
+          "raw_timestamp": "2026-10-08",
+          "parsed_timestamp_utc": null,
+          "age_hours_at_manifest": null,
+          "date_delta_vs_data_as_of": -1,
+          "precision": "DATE_ONLY"
+        }
+      },
+      "upstream_ids": [],
+      "status": "READY",
+      "decision_logic_changed": false
+    },
+    "I25": {
+      "name": "Filter18 Rank3D consumed state",
+      "consumers": [
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "state",
+        "reference": "filter18_rank_state pre-run"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": "2026-10-09",
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "freshness": {
+          "raw_timestamp": "2026-10-09",
+          "parsed_timestamp_utc": null,
+          "age_hours_at_manifest": null,
+          "date_delta_vs_data_as_of": 0,
+          "precision": "DATE_ONLY"
+        },
+        "consumed_state": {
+          "captured_at_utc": "2026-10-10T06:56:08.725345+00:00",
+          "last_processed_date": "2026-10-09",
+          "accepted_rank": "Technology|Health Care|Consumer Staples|Energy",
+          "pending_rank": "",
+          "pending_count": 0,
+          "last_action": "INITIAL_ACCEPT"
+        }
+      },
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I26": {
+      "name": "Previous portfolio exposure / weights",
+      "consumers": [
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "csv",
+        "reference": "paper_portfolio_log.csv"
+      },
+      "clocks": {
+        "observation_date": "2026-10-09",
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I27": {
+      "name": "Country ETF prices",
+      "consumers": [
+        "GEO"
+      ],
+      "runtime_source": {
+        "kind": "csv",
+        "reference": "country_etf_data_combined.csv"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {
+          "EIS": "2026-10-09",
+          "SPY": "2026-10-09",
+          "EEM": "2026-10-09",
+          "EMB": "2026-10-09",
+          "GLD": "2026-10-09",
+          "VXX": "2026-10-09",
+          "FXI": "2026-10-09",
+          "EWJ": "2026-10-09",
+          "BND": "2026-10-09"
+        },
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I28": {
+      "name": "Sovereign yields / spreads",
+      "consumers": [
+        "GEO"
+      ],
+      "runtime_source": {
+        "kind": "csv",
+        "reference": "sovereign_yields.csv"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {
+          "US10Y": "2026-10-08",
+          "KR10Y": "2026-08-01",
+          "JP10Y": "2026-08-01",
+          "DE10Y": "2026-08-01",
+          "CN10Y": null,
+          "IL10Y": "2026-08-01",
+          "TR10Y": "2026-08-01",
+          "GB10Y": "2026-08-01",
+          "MX10Y": "2026-08-01"
+        },
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {
+        "_SOV_ASOF": "2026-10-10"
+      },
+      "upstream_ids": [],
+      "status": "PARTIAL",
+      "decision_logic_changed": false
+    },
+    "I29": {
+      "name": "Geo EW score",
+      "consumers": [
+        "GEO"
+      ],
+      "runtime_source": {
+        "kind": "derived",
+        "reference": "GEO_EW"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [
+        "I03",
+        "I28"
+      ],
+      "status": "MISSING",
+      "decision_logic_changed": false
+    },
+    "I30": {
+      "name": "Post-F15 geo exposure constraint",
+      "consumers": [
+        "GEO",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "derived",
+        "reference": "GEO_OVERLAY"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [
+        "I19",
+        "I23",
+        "I28",
+        "I29"
+      ],
+      "status": "MISSING",
+      "decision_logic_changed": false
+    },
+    "I31": {
+      "name": "Cross-asset tape / macro narrative / market regime",
+      "consumers": [
+        "F13",
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "derived",
+        "reference": "CROSS_ASSET_TAPE/MACRO_NARRATIVE/MARKET_REGIME"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [
+        "I02",
+        "I13"
+      ],
+      "status": "MISSING",
+      "decision_logic_changed": false
+    },
+    "I32": {
+      "name": "Policy bias line",
+      "consumers": [
+        "F13"
+      ],
+      "runtime_source": {
+        "kind": "derived",
+        "reference": "POLICY_BIAS_LINE"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [
+        "I02",
+        "I10"
+      ],
+      "status": "MISSING",
+      "decision_logic_changed": false
+    },
+    "I33": {
+      "name": "Structural v2 state",
+      "consumers": [
+        "F13"
+      ],
+      "runtime_source": {
+        "kind": "derived",
+        "reference": "STRUCT_V2_STATE"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [
+        "I02",
+        "I03",
+        "I10"
+      ],
+      "status": "MISSING",
+      "decision_logic_changed": false
+    },
+    "I34": {
+      "name": "Leadership / positioning participation context",
+      "consumers": [
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "derived",
+        "reference": "participation context"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [
+        "I06",
+        "I07",
+        "I09",
+        "I15",
+        "I16",
+        "I17"
+      ],
+      "status": "MISSING",
+      "decision_logic_changed": false
+    },
+    "I35": {
+      "name": "F13 risk budget / F15 exposure",
+      "consumers": [
+        "F13",
+        "F15",
+        "F18"
+      ],
+      "runtime_source": {
+        "kind": "decision_state",
+        "reference": "FINAL_STATE/RISK_BUDGET/RECOMMENDED_EXPOSURE"
+      },
+      "clocks": {
+        "observation_date": null,
+        "component_observation_dates": {},
+        "available_at": null,
+        "retrieved_at": null,
+        "state_timestamp": null,
+        "data_as_of": "2026-10-09"
+      },
+      "raw_clock_hints": {},
+      "upstream_ids": [
+        "I20",
+        "I21",
+        "I22",
+        "I23",
+        "I24",
+        "I31",
+        "I32",
+        "I33",
+        "I34"
+      ],
+      "status": "MISSING",
+      "decision_logic_changed": false
+    }
+  },
+  "temporal_cross_clock": {
+    "mode": "AUDIT_ONLY",
+    "decision_logic_changed": false,
+    "blocking_enabled": false,
+    "counts": {
+      "ALIGNED": 16,
+      "LAGGED": 5,
+      "RUNTIME_CLOCK_ONLY": 5,
+      "DERIVED_UPSTREAM": 9
+    },
+    "overall_status": "PASS",
+    "policy": {
+      "I01": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I02": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I03": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I04": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I05": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I06": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I07": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I08": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I09": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I10": {
+        "severity": "INFO",
+        "reason": "RELEASE_CADENCE_LAG"
+      },
+      "I11": {
+        "severity": "INFO",
+        "reason": "RELEASE_CADENCE_LAG"
+      },
+      "I12": {
+        "severity": "INFO",
+        "reason": "RELEASE_CADENCE_LAG"
+      },
+      "I13": {
+        "severity": "INFO",
+        "reason": "RELEASE_CADENCE_LAG"
+      },
+      "I14": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I15": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I16": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I17": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I18": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I19": {
+        "severity": "INFO",
+        "reason": "RUNTIME_OR_STATE_CLOCK"
+      },
+      "I20": {
+        "severity": "INFO",
+        "reason": "CLOCK_INHERITED_FROM_UPSTREAM"
+      },
+      "I21": {
+        "severity": "INFO",
+        "reason": "CLOCK_INHERITED_FROM_UPSTREAM"
+      },
+      "I22": {
+        "severity": "INFO",
+        "reason": "RUNTIME_OR_STATE_CLOCK"
+      },
+      "I23": {
+        "severity": "INFO",
+        "reason": "RUNTIME_OR_STATE_CLOCK"
+      },
+      "I24": {
+        "severity": "INFO",
+        "reason": "RUNTIME_OR_STATE_CLOCK"
+      },
+      "I25": {
+        "severity": "INFO",
+        "reason": "RUNTIME_OR_STATE_CLOCK"
+      },
+      "I26": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I27": {
+        "severity": "PASS",
+        "reason": "CLOCK_ALIGNED"
+      },
+      "I28": {
+        "severity": "INFO",
+        "reason": "OBSERVED_LAG"
+      },
+      "I29": {
+        "severity": "INFO",
+        "reason": "CLOCK_INHERITED_FROM_UPSTREAM"
+      },
+      "I30": {
+        "severity": "INFO",
+        "reason": "CLOCK_INHERITED_FROM_UPSTREAM"
+      },
+      "I31": {
+        "severity": "INFO",
+        "reason": "CLOCK_INHERITED_FROM_UPSTREAM"
+      },
+      "I32": {
+        "severity": "INFO",
+        "reason": "CLOCK_INHERITED_FROM_UPSTREAM"
+      },
+      "I33": {
+        "severity": "INFO",
+        "reason": "CLOCK_INHERITED_FROM_UPSTREAM"
+      },
+      "I34": {
+        "severity": "INFO",
+        "reason": "CLOCK_INHERITED_FROM_UPSTREAM"
+      },
+      "I35": {
+        "severity": "INFO",
+        "reason": "CLOCK_INHERITED_FROM_UPSTREAM"
+      }
+    },
+    "warnings": [],
+    "findings": {
+      "I01": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I02": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I03": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I04": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "HYG_DAILY",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "LQD_DAILY",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I05": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I06": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I07": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I08": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I09": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I10": {
+        "classification": "LAGGED",
+        "observed_clocks": [
+          {
+            "source": "FCI",
+            "date": "2026-10-02",
+            "delta_days_vs_data_as_of": -7
+          },
+          {
+            "source": "REAL_RATE",
+            "date": "2026-10-08",
+            "delta_days_vs_data_as_of": -1
+          },
+          {
+            "source": "T10Y2Y",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I11": {
+        "classification": "LAGGED",
+        "observed_clocks": [
+          {
+            "source": "T10YIE",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "DFII10",
+            "date": "2026-10-08",
+            "delta_days_vs_data_as_of": -1
+          },
+          {
+            "source": "DGS2",
+            "date": "2026-10-08",
+            "delta_days_vs_data_as_of": -1
+          },
+          {
+            "source": "VIX",
+            "date": "2026-10-08",
+            "delta_days_vs_data_as_of": -1
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I12": {
+        "classification": "LAGGED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-07",
+            "delta_days_vs_data_as_of": -2
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I13": {
+        "classification": "LAGGED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-08",
+            "delta_days_vs_data_as_of": -1
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I14": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I15": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "SP500_POS_Z",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "US10Y_POS_Z",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "DXY_POS_Z",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I16": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "VIX",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": true,
+        "has_retrieved_clock": false
+      },
+      "I17": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I18": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "source_2",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "source_3",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I19": {
+        "classification": "RUNTIME_CLOCK_ONLY",
+        "observed_clocks": [],
+        "has_state_clock": false,
+        "has_retrieved_clock": true
+      },
+      "I20": {
+        "classification": "DERIVED_UPSTREAM",
+        "observed_clocks": [],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I21": {
+        "classification": "DERIVED_UPSTREAM",
+        "observed_clocks": [],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I22": {
+        "classification": "RUNTIME_CLOCK_ONLY",
+        "observed_clocks": [],
+        "has_state_clock": true,
+        "has_retrieved_clock": false
+      },
+      "I23": {
+        "classification": "RUNTIME_CLOCK_ONLY",
+        "observed_clocks": [],
+        "has_state_clock": true,
+        "has_retrieved_clock": false
+      },
+      "I24": {
+        "classification": "RUNTIME_CLOCK_ONLY",
+        "observed_clocks": [],
+        "has_state_clock": true,
+        "has_retrieved_clock": false
+      },
+      "I25": {
+        "classification": "RUNTIME_CLOCK_ONLY",
+        "observed_clocks": [],
+        "has_state_clock": true,
+        "has_retrieved_clock": false
+      },
+      "I26": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "observation_date",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I27": {
+        "classification": "ALIGNED",
+        "observed_clocks": [
+          {
+            "source": "EIS",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "SPY",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "EEM",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "EMB",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "GLD",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "VXX",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "FXI",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "EWJ",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          },
+          {
+            "source": "BND",
+            "date": "2026-10-09",
+            "delta_days_vs_data_as_of": 0
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I28": {
+        "classification": "LAGGED",
+        "observed_clocks": [
+          {
+            "source": "US10Y",
+            "date": "2026-10-08",
+            "delta_days_vs_data_as_of": -1
+          },
+          {
+            "source": "KR10Y",
+            "date": "2026-08-01",
+            "delta_days_vs_data_as_of": -69
+          },
+          {
+            "source": "JP10Y",
+            "date": "2026-08-01",
+            "delta_days_vs_data_as_of": -69
+          },
+          {
+            "source": "DE10Y",
+            "date": "2026-08-01",
+            "delta_days_vs_data_as_of": -69
+          },
+          {
+            "source": "IL10Y",
+            "date": "2026-08-01",
+            "delta_days_vs_data_as_of": -69
+          },
+          {
+            "source": "TR10Y",
+            "date": "2026-08-01",
+            "delta_days_vs_data_as_of": -69
+          },
+          {
+            "source": "GB10Y",
+            "date": "2026-08-01",
+            "delta_days_vs_data_as_of": -69
+          },
+          {
+            "source": "MX10Y",
+            "date": "2026-08-01",
+            "delta_days_vs_data_as_of": -69
+          }
+        ],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I29": {
+        "classification": "DERIVED_UPSTREAM",
+        "observed_clocks": [],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I30": {
+        "classification": "DERIVED_UPSTREAM",
+        "observed_clocks": [],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I31": {
+        "classification": "DERIVED_UPSTREAM",
+        "observed_clocks": [],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I32": {
+        "classification": "DERIVED_UPSTREAM",
+        "observed_clocks": [],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I33": {
+        "classification": "DERIVED_UPSTREAM",
+        "observed_clocks": [],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I34": {
+        "classification": "DERIVED_UPSTREAM",
+        "observed_clocks": [],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      },
+      "I35": {
+        "classification": "DERIVED_UPSTREAM",
+        "observed_clocks": [],
+        "has_state_clock": false,
+        "has_retrieved_clock": false
+      }
+    }
+  },
+  "produced_outputs": {
+    "filter15_state": {
+      "exists": true,
+      "timestamp": "2026-10-09"
+    },
+    "filter18_rank_state": {
+      "exists": true,
+      "timestamp": "2026-10-10"
+    }
+  }
+}

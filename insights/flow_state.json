@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-09 16:17:22 KST",
-  "flow_state": "FLOW_BREAK",
-  "flow_score": 0,
-  "prev_flow_state": "CONFIRMED_FLOW",
-  "prev_flow_score": 6,
-  "flow_delta": -6,
-  "persistence_days": 0,
-  "transition": "CONFIRMED_FLOW -> FLOW_BREAK",
-  "transition_note": "전일 형성되던 기관성 흐름이 유지되지 못하고 소멸",
-  "raw_flow_state": "NO CLEAR FLOW",
-  "raw_flow_score": 0
+  "timestamp": "2026-10-10 15:54:39 KST",
+  "flow_state": "EARLY_TRACE",
+  "flow_score": 6,
+  "prev_flow_state": "FLOW_BREAK",
+  "prev_flow_score": 0,
+  "flow_delta": 6,
+  "persistence_days": 1,
+  "transition": "FLOW_BREAK -> EARLY_TRACE",
+  "transition_note": "기관성 흐름 초기 흔적 발생",
+  "raw_flow_state": "⚡ BUILDING",
+  "raw_flow_score": 6
 }
