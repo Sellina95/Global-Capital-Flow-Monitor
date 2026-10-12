@@ -1,5 +1,5 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-10-11
+**Date:** 2026-10-12
 **Data as of:** 2026-10-09
 
 GLOBAL CAPITAL FLOW MONITOR
@@ -25,7 +25,7 @@ Exposure Control      NORMAL
 Macro Allocation      SOFT_RISK_OFF_DISINFLATION
 
 2. EXECUTIVE VIEW
-The current strategic phase is SOFT RISK-OFF / STAGFLATION. Liquidity is ↑ Improving, while flow is ⚡ BUILDING. Positioning Z is 1.70 and credit is Calm. The canonical portfolio decision is REDUCE with an 44% exposure ceiling.
+The current strategic phase is SOFT RISK-OFF / STAGFLATION. Liquidity is ↑ Improving, while flow is ⚡ BUILDING. Positioning Z is 1.74 and credit is Calm. The canonical portfolio decision is REDUCE with an 44% exposure ceiling.
 Macro Narrative      STAGFLATION_RISK
 Tactical Signal      REDUCE / DEFENSIVE
 
@@ -38,7 +38,7 @@ US GDP Growth · 2026-10-29 · 12:30 PM GMT
 GDP QoQ       Consensus —      Previous 2.2%
 
 US CPI · 2026-10-14 · 12:30 PM GMT
-Headline YoY  Consensus 3.6%   Previous 3.4%
+Headline YoY  Consensus 3.7%   Previous 3.4%
 Headline MoM  Consensus 0.6%   Previous 0.4%
 Core YoY      Consensus 2.5%   Previous 2.4%
 Core MoM      Consensus 0.2%   Previous 0.3%
@@ -62,7 +62,7 @@ Leadership            NARROW
 Positioning           ELEVATED
 Squeeze Risk          MEDIUM
 Vol Structure         NORMAL
-Positioning Z         1.70
+Positioning Z         1.74
 Credit                Calm
 Credit Structure      CREDIT RISK-ON (risk appetite improving)
 Dealer Gamma          🟡 POSITIVE-TRANSITION
