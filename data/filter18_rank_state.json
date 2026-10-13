@@ -6,15 +6,15 @@
     "Health Care": 7.2,
     "Technology": 20.0
   },
-  "last_action": "ACCEPTED_RANK_UPDATE",
+  "last_action": "RANK_CHANGE_SUPPRESSED",
   "last_output_target_weights": {
     "Consumer Staples": 2.9,
     "Energy": 1.9,
     "Health Care": 7.2,
     "Technology": 20.0
   },
-  "last_processed_date": "2026-10-12",
-  "pending_count": 0,
-  "pending_rank": "",
+  "last_processed_date": "2026-10-13",
+  "pending_count": 1,
+  "pending_rank": "Technology|Health Care|Energy|Consumer Staples|Financials",
   "version": 1
 }
