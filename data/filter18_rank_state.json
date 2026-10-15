@@ -13,8 +13,8 @@
     "Health Care": 7.2,
     "Technology": 20.0
   },
-  "last_processed_date": "2026-10-14",
+  "last_processed_date": "2026-10-15",
   "pending_count": 1,
-  "pending_rank": "Technology|Health Care|Energy|Consumer Staples",
+  "pending_rank": "Health Care|Energy|Consumer Staples|Technology",
   "version": 1
 }
