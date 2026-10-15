@@ -2754,25 +2754,150 @@ def build(
     event_risk_html = ""
 
     if event_risk_lines:
-        event_groups = []
-        current_event = None
 
-        for line in event_risk_lines:
-            if " · " in line and line.endswith(" GMT"):
-                if current_event:
-                    event_groups.append(current_event)
+        def parse_event_groups(lines):
+            groups = []
+            current = None
 
-                parts = line.split(" · ")
-                current_event = {
-                    "title": parts[0],
-                    "datetime": " · ".join(parts[1:]),
-                    "rows": [],
-                }
-            elif current_event:
-                current_event["rows"].append(line)
+            for line in lines:
+                if " · " in line and line.endswith(" GMT"):
+                    if current:
+                        groups.append(current)
 
-        if current_event:
-            event_groups.append(current_event)
+                    parts = line.split(" · ")
+
+                    current = {
+                        "title": parts[0],
+                        "release_date": (
+                            parts[1] if len(parts) > 1 else ""
+                        ),
+                        "release_time": (
+                            parts[2] if len(parts) > 2 else ""
+                        ),
+                        "datetime": " · ".join(parts[1:]),
+                        "rows": [],
+                    }
+
+                elif current:
+                    current["rows"].append(line)
+
+            if current:
+                groups.append(current)
+
+            return groups
+
+
+        def event_sort_key(event):
+            try:
+                return datetime.strptime(
+                    event["release_date"]
+                    + " "
+                    + event["release_time"],
+                    "%Y-%m-%d %I:%M %p GMT",
+                )
+            except (TypeError, ValueError):
+                return datetime.max
+
+
+        def consensus_values(event):
+            values = {}
+
+            for row in event.get("rows", []):
+                match = re.match(
+                    r"^(.*?)\s+Consensus\s+(\S+)",
+                    row,
+                )
+
+                if match:
+                    values[match.group(1).strip()] = match.group(2)
+
+            return values
+
+
+        event_groups = parse_event_groups(event_risk_lines)
+
+        # --------------------------------------------------
+        # Previous persisted report — presentation comparison
+        # only. Never changes production state.
+        # --------------------------------------------------
+        previous_events = {}
+
+        earlier_dates = [
+            value
+            for value in _available_report_dates()
+            if value < report_date
+        ]
+
+        if earlier_dates:
+            previous_report_date = earlier_dates[-1]
+
+            previous_report_path = (
+                REPORTS_DIR
+                / f"daily_report_{previous_report_date}.md"
+            )
+
+            if previous_report_path.exists():
+                previous_text = previous_report_path.read_text(
+                    encoding="utf-8"
+                )
+
+                previous_executive = section(
+                    previous_text,
+                    0,
+                    "EXECUTIVE VIEW",
+                )
+
+                if "EVENT RISK CONTEXT" in previous_executive:
+                    previous_block = previous_executive.split(
+                        "EVENT RISK CONTEXT",
+                        1,
+                    )[1].strip()
+
+                    previous_lines = [
+                        line.strip()
+                        for line in previous_block.splitlines()
+                        if line.strip()
+                    ]
+
+                    for event in parse_event_groups(previous_lines):
+                        previous_events[
+                            (
+                                event["title"],
+                                event["release_date"],
+                            )
+                        ] = event
+
+        # Chronological order, not hard-coded PCE/GDP/CPI order.
+        event_groups.sort(key=event_sort_key)
+
+        report_day = datetime.strptime(
+            report_date,
+            "%Y-%m-%d",
+        ).date()
+
+        today_indexes = []
+        future_indexes = []
+
+        for idx, event in enumerate(event_groups):
+            try:
+                event_day = datetime.strptime(
+                    event["release_date"],
+                    "%Y-%m-%d",
+                ).date()
+            except (TypeError, ValueError):
+                continue
+
+            if event_day == report_day:
+                today_indexes.append(idx)
+            elif event_day > report_day:
+                future_indexes.append(idx)
+
+        next_datetime = None
+
+        if not today_indexes and future_indexes:
+            next_datetime = event_sort_key(
+                event_groups[future_indexes[0]]
+            )
 
         event_blocks_html = []
 
@@ -2792,18 +2917,77 @@ def build(
                 tone = "neutral"
                 badge = "MACRO"
 
-            next_badge = (
-                '<span class="pm-event-next">NEXT</span>'
-                if idx == 0
-                else ""
+            status_badge = ""
+
+            if idx in today_indexes:
+                status_badge = (
+                    '<span class="pm-event-today">'
+                    'TODAY'
+                    '</span>'
+                )
+            elif (
+                next_datetime is not None
+                and event_sort_key(event) == next_datetime
+            ):
+                status_badge = (
+                    '<span class="pm-event-next">'
+                    'NEXT'
+                    '</span>'
+                )
+
+            previous_event = previous_events.get(
+                (
+                    event["title"],
+                    event["release_date"],
+                )
             )
 
-            rows_html = "".join(
-                '<div class="pm-event-risk-row">'
-                + esc(row)
-                + '</div>'
-                for row in event["rows"]
+            previous_consensus = (
+                consensus_values(previous_event)
+                if previous_event
+                else {}
             )
+
+            row_parts = []
+
+            for row in event["rows"]:
+                row_html = esc(row)
+
+                match = re.match(
+                    r"^(.*?)\s+Consensus\s+(\S+)",
+                    row,
+                )
+
+                changed_html = ""
+
+                if match:
+                    label = match.group(1).strip()
+                    current_value = match.group(2)
+                    prior_value = previous_consensus.get(label)
+
+                    if (
+                        prior_value
+                        and prior_value != "—"
+                        and current_value != "—"
+                        and current_value != prior_value
+                    ):
+                        changed_html = (
+                            '<span class="pm-event-changed">'
+                            'CHANGED · PREV '
+                            + esc(prior_value)
+                            + '</span>'
+                        )
+
+                row_parts.append(
+                    '<div class="pm-event-risk-row">'
+                    '<span>'
+                    + row_html
+                    + '</span>'
+                    + changed_html
+                    + '</div>'
+                )
+
+            rows_html = "".join(row_parts)
 
             event_blocks_html.append(
                 '<div class="pm-event-block pm-event-' + tone + '">'
@@ -2811,7 +2995,7 @@ def build(
                 '<div>'
                 '<div class="pm-event-badges">'
                 '<span class="pm-event-type">' + badge + '</span>'
-                + next_badge +
+                + status_badge +
                 '</div>'
                 '<h3>' + esc(title) + '</h3>'
                 '<div class="pm-event-time">'
@@ -2830,8 +3014,8 @@ def build(
             '<div class="section-kicker">EVENT RISK CONTEXT</div>'
             '<h2>Upcoming Macro Events</h2>'
             '<div class="pm-event-grid">'
-            + "".join(event_blocks_html) +
-            '</div>'
+            + "".join(event_blocks_html)
+            + '</div>'
             '</section>'
         )
 
@@ -2869,6 +3053,8 @@ def build(
     .pm-event-gdp .pm-event-type{{color:#e4b95b}}
     .pm-event-cpi .pm-event-type{{color:#76a9fa}}
     .pm-event-next{{font-size:8px;font-weight:700;letter-spacing:.1em;padding:2px 5px;border-radius:4px;background:rgba(86,197,150,.12);color:var(--pm-green);border:1px solid rgba(86,197,150,.28)}}
+    .pm-event-today{{font-size:8px;font-weight:800;letter-spacing:.1em;padding:2px 6px;border-radius:4px;background:rgba(228,185,91,.16);color:var(--pm-amber);border:1px solid rgba(228,185,91,.42)}}
+    .pm-event-changed{{display:inline-block;margin-left:8px;padding:2px 5px;border-radius:4px;font-size:8px;font-weight:800;letter-spacing:.07em;color:var(--pm-red);background:rgba(228,107,107,.10);border:1px solid rgba(228,107,107,.25)}}
     .pm-event-time{{font-size:11px;color:var(--pm-neutral);opacity:.72;margin-bottom:11px}}
     .pm-event-rows{{display:grid;gap:5px}}
     .pm-event-risk-row{{font-size:11px;line-height:1.45;color:#d7dee9}}
