@@ -1,20 +1,22 @@
 {
-  "accepted_rank": "Technology|Health Care|Consumer Staples|Energy",
+  "accepted_rank": "Energy|Health Care|Consumer Discretionary|Consumer Staples|Communication Services",
   "accepted_target_weights": {
+    "Communication Services": 0.0,
+    "Consumer Discretionary": 0.0,
     "Consumer Staples": 2.9,
-    "Energy": 1.9,
-    "Health Care": 7.2,
-    "Technology": 20.0
+    "Energy": 0.0,
+    "Health Care": 9.8
   },
-  "last_action": "RANK_CHANGE_SUPPRESSED",
+  "last_action": "FORCED_DELEVERAGE_ACCEPT",
   "last_output_target_weights": {
+    "Communication Services": 0.0,
+    "Consumer Discretionary": 0.0,
     "Consumer Staples": 2.9,
-    "Energy": 1.9,
-    "Health Care": 7.2,
-    "Technology": 20.0
+    "Energy": 0.0,
+    "Health Care": 9.8
   },
-  "last_processed_date": "2026-10-16",
-  "pending_count": 1,
-  "pending_rank": "Technology|Industrials|Health Care|Consumer Staples|Communication Services",
+  "last_processed_date": "2026-10-17",
+  "pending_count": 0,
+  "pending_rank": "",
   "version": 1
 }
