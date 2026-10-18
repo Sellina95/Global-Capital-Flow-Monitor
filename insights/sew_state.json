@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-19 06:05:40 KST",
+  "timestamp": "2026-10-19 08:03:55 KST",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -15,9 +15,9 @@
       "pct_change": 0.12
     },
     "QQQ": {
-      "zscore": 0.52,
+      "zscore": 0.43,
       "state": "NORMAL",
-      "pct_change": 0.13
+      "pct_change": 0.12
     },
     "VIX": {
       "zscore": -0.06,
