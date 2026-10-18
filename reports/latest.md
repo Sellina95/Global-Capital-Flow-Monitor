@@ -1,12 +1,12 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-10-17
+**Date:** 2026-10-18
 **Data as of:** 2026-10-16
 
 GLOBAL CAPITAL FLOW MONITOR
 DAILY PM VIEW
 
 PORTFOLIO STANCE
-REDUCE · 22%
+REDUCE · 31%
 
 REGIME
 RISK-ON / REFLATION
@@ -15,17 +15,17 @@ CONVICTION
 LOW
 
 1. DECISION PATH
-Strategic Risk Budget 37.0%
-Recommended Exposure  22.0%
-Exposure Ceiling      22.0%
-Allocated Equity      12.7%
-Tactical Reserve      9.3%
-Cash                  87.3%
+Strategic Risk Budget 52.0%
+Recommended Exposure  31.0%
+Exposure Ceiling      31.0%
+Allocated Equity      14.8%
+Tactical Reserve      16.2%
+Cash                  85.2%
 Exposure Control      NORMAL
 Macro Allocation      DISINFLATION_RISK_ON
 
 2. EXECUTIVE VIEW
-The current strategic phase is RISK-ON / REFLATION. Liquidity is ↑ Improving, while flow is 🌱 LIGHT TRACE. Positioning Z is 1.25 and credit is Calm. The canonical portfolio decision is REDUCE with an 22% exposure ceiling.
+The current strategic phase is RISK-ON / REFLATION. Liquidity is ↑ Improving, while flow is 🌱 LIGHT TRACE. Positioning Z is 1.25 and credit is Calm. The canonical portfolio decision is REDUCE with an 31% exposure ceiling.
 Macro Narrative      REFLATION
 Tactical Signal      WAIT / 0%
 
@@ -72,7 +72,7 @@ Drift                 WEAK DRIFT (노이즈 가능)
 US10Y Yield          🔴 5.10% · ↑ Rising (+0.18%)
 10Y Term Premium     0.75% · -6 bp d/d
 USD                  🟡 101.84 · ↓ Weaker (-0.16%)
-Oil                  $101.41 · ↑ Rising (+3.51%)
+Oil                  $99.02 · ↑ Rising (+1.07%)
 Volatility           🟢 19.99 · ↑ Rising (+21.45%)
 HY OAS               🟢 3.23% · WATCH (-0.62%)
 
@@ -112,14 +112,14 @@ Regime Controller     DISLOCATION
 Exposure Override     DISLOCATION → Sector Weight Only (No Exposure Change)
 
 6. PORTFOLIO ALLOCATION
-Exposure Ceiling      22.0%
-Allocated Equity      12.7%
-Tactical Reserve      9.3%
-Cash                  87.3%
+Exposure Ceiling      31.0%
+Allocated Equity      14.8%
+Tactical Reserve      16.2%
+Cash                  85.2%
 
 Sector Allocation
 Health Care              9.8%
-Consumer Staples         2.9%
+Consumer Staples         5.0%
 
 Note: Tactical Reserve is undeployed capacity within the Exposure Ceiling and is included in Cash.
 
@@ -132,10 +132,10 @@ Vol Structure        COMPRESSION
 9. EXECUTION
 Sector | ETF | Weight | Action | Classification | Divergence
 Health Care | XLV | 9.8% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
-Consumer Staples | XLP | 2.9% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
+Consumer Staples | XLP | 5.0% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
 8. DECISION RATIONALE
 Decision             REDUCE
-Exposure Ceiling     22%
+Exposure Ceiling     31%
 Tactical Signal      WAIT / 0%
 Conviction           LOW
 Rationale
