@@ -3634,6 +3634,8 @@ def generate_daily_report() -> None:
 
         positioning_obs = {}
         positioning_slope_obs = {}
+        positioning_source_meta = {}
+        positioning_fetched_at = None
         gamma_source_run_date = None
 
         try:
@@ -3650,6 +3652,22 @@ def generate_daily_report() -> None:
                     "CTA_OBS_DATE",
                 ):
                     positioning_obs[k] = clean_date(_pos_last.get(k))
+
+                positioning_fetched_at = _pos_last.get(
+                    "POSITIONING_FETCHED_AT_UTC"
+                )
+
+                positioning_source_meta = {
+                    "SP500_POS_SOURCE": _pos_last.get(
+                        "SP500_POS_SOURCE"
+                    ),
+                    "US10Y_POS_SOURCE": _pos_last.get(
+                        "US10Y_POS_SOURCE"
+                    ),
+                    "DXY_POS_SOURCE": _pos_last.get(
+                        "DXY_POS_SOURCE"
+                    ),
+                }
 
                 # Legacy gamma rows may not have GAMMA_VIX_OBS_DATE.
                 # In that case, preserve the last successful gamma run date
@@ -3893,8 +3911,10 @@ def generate_daily_report() -> None:
                     "US10Y_POS_Z": positioning_obs.get("US10Y_POS_OBS_DATE"),
                     "DXY_POS_Z": positioning_obs.get("DXY_POS_OBS_DATE"),
                 },
+                retrieved_at=positioning_fetched_at,
                 raw_clock_hints={
-                    "_POS_ASOF": market_data.get("_POS_ASOF")
+                    "_POS_ASOF": market_data.get("_POS_ASOF"),
+                    "sources": positioning_source_meta,
                 },
             ),
 
@@ -4277,6 +4297,44 @@ def generate_daily_report() -> None:
             if classification == "ALIGNED":
                 severity = "PASS"
                 reason = "CLOCK_ALIGNED"
+
+            elif (
+                input_id == "I26"
+                and classification == "LEADS_CANONICAL"
+            ):
+                # I26 is previous portfolio state, not a market-data clock.
+                # It is valid when the consumed state predates report_date,
+                # even if it is later than the last market data_as_of date.
+                prev_portfolio_clock = (
+                    inputs.get("I26", {})
+                    .get("clocks", {})
+                    .get("observation_date")
+                )
+
+                try:
+                    prev_dt = pd.to_datetime(
+                        prev_portfolio_clock,
+                        errors="coerce",
+                    )
+                    report_dt = pd.to_datetime(
+                        report_date,
+                        errors="coerce",
+                    )
+
+                    if (
+                        pd.notna(prev_dt)
+                        and pd.notna(report_dt)
+                        and prev_dt < report_dt
+                    ):
+                        severity = "INFO"
+                        reason = "PREVIOUS_PORTFOLIO_STATE"
+                    else:
+                        severity = "WARN"
+                        reason = "INVALID_PREVIOUS_PORTFOLIO_STATE"
+
+                except Exception:
+                    severity = "WARN"
+                    reason = "INVALID_PREVIOUS_PORTFOLIO_STATE"
 
             elif classification == "LEADS_CANONICAL":
                 severity = "WARN"

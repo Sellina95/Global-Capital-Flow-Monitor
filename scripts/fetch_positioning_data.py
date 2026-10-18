@@ -112,7 +112,7 @@ def get_reliable_z_score(ticker_list, period="1y"):
                     f"   ✅ 데이터 수집 성공: {ticker} "
                     f"(obs_date={obs_date})"
                 )
-                return round(z_score, 2), obs_date
+                return round(z_score, 2), obs_date, ticker
             else:
                 print(f"   ⚠️ {ticker}: 데이터 부족 또는 empty")
         except Exception as e:
@@ -120,7 +120,7 @@ def get_reliable_z_score(ticker_list, period="1y"):
             continue
 
     print("   ❌ 모든 fallback ticker 실패 → 0.0 반환")
-    return 0.0, None
+    return 0.0, None, None
 
 
 def _load_last_positioning_row(output_path: str):
@@ -171,6 +171,10 @@ def _save_positioning_snapshot(results: dict, output_path: str):
         "CTA_OBS_DATE",
         "GAMMA_FETCH_OK",
         "CTA_FETCH_OK",
+        "POSITIONING_FETCHED_AT_UTC",
+        "SP500_POS_SOURCE",
+        "US10Y_POS_SOURCE",
+        "DXY_POS_SOURCE",
     ]
 
     for col in ordered_cols:
@@ -232,6 +236,9 @@ def fetch_positioning_center():
         "date": datetime.now().strftime("%Y-%m-%d"),
         "GAMMA_FETCH_OK": 0,
         "CTA_FETCH_OK": 0,
+        "POSITIONING_FETCHED_AT_UTC": pd.Timestamp.now(
+            tz="UTC"
+        ).isoformat(),
     }
 
     # --- [1] CFTC/선물 포지션 Proxy (Fallback 시스템 적용) ---
@@ -244,10 +251,11 @@ def fetch_positioning_center():
     for name, t_list in tickers_priority.items():
         print(f"\n🔎 {name} 분석 중...")
 
-        z_score, obs_date = get_reliable_z_score(t_list)
+        z_score, obs_date, source_ticker = get_reliable_z_score(t_list)
 
         results[f"{name}_Z"] = z_score
         results[f"{name}_OBS_DATE"] = obs_date
+        results[f"{name}_SOURCE"] = source_ticker
 
     # --- [2] Dealer Gamma Exposure ---
     print("\n🔎 DEALER_GAMMA_BIAS 분석 중...")
