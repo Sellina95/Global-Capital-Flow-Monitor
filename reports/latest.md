@@ -1,12 +1,12 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-10-18
+**Date:** 2026-10-19
 **Data as of:** 2026-10-16
 
 GLOBAL CAPITAL FLOW MONITOR
 DAILY PM VIEW
 
 PORTFOLIO STANCE
-REDUCE · 31%
+REDUCE · 24%
 
 REGIME
 RISK-ON / REFLATION
@@ -15,19 +15,19 @@ CONVICTION
 LOW
 
 1. DECISION PATH
-Strategic Risk Budget 52.0%
-Recommended Exposure  31.0%
-Exposure Ceiling      31.0%
+Strategic Risk Budget 40.0%
+Recommended Exposure  24.0%
+Exposure Ceiling      24.0%
 Allocated Equity      14.8%
-Tactical Reserve      16.2%
+Tactical Reserve      9.2%
 Cash                  85.2%
 Exposure Control      NORMAL
 Macro Allocation      DISINFLATION_RISK_ON
 
 2. EXECUTIVE VIEW
-The current strategic phase is RISK-ON / REFLATION. Liquidity is ↑ Improving, while flow is 🌱 LIGHT TRACE. Positioning Z is 1.25 and credit is Calm. The canonical portfolio decision is REDUCE with an 31% exposure ceiling.
+The current strategic phase is RISK-ON / REFLATION. Liquidity is ↑ Improving, while flow is 👀 EARLY TRACE. Positioning Z is 1.39 and credit is Calm. The canonical portfolio decision is REDUCE with an 24% exposure ceiling.
 Macro Narrative      REFLATION
-Tactical Signal      WAIT / 0%
+Tactical Signal      HOLD / NONE
 
 EVENT RISK CONTEXT
 US Core PCE · 2026-10-29 · 12:30 PM GMT
@@ -54,7 +54,7 @@ Dollar Liquidity     SUPPORTIVE · UP / MID
 Fed Plumbing         NET_LIQ UP · TGA ACCEL_DOWN · RRP ACCEL_DOWN
 Structure             MIXED
 Growth Sustainability FRAGILE_EXPANSION
-Institutional Flow    🌱 LIGHT TRACE
+Institutional Flow    👀 EARLY TRACE
 Flow Authenticity     REAL_ACCUMULATION
 Participation Quality COMPRESSED_OR_FAILED
 Participation Mode    FAILED_BREADTH_MODE
@@ -62,17 +62,17 @@ Leadership            FAILED_BREADTH
 Positioning           SQUEEZE_RISK
 Squeeze Risk          HIGH
 Vol Structure         COMPRESSION
-Positioning Z         1.25
+Positioning Z         1.39
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
-Dealer Gamma          🟢 POSITIVE GAMMA (WEAK)
-Drift                 WEAK DRIFT (노이즈 가능)
+Dealer Gamma          🟡 TRANSITION
+Drift                 👀 EARLY DRIFT
 
 4. CROSS-ASSET CONFIRMATION
 US10Y Yield          🔴 5.10% · ↑ Rising (+0.18%)
 10Y Term Premium     0.75% · -6 bp d/d
 USD                  🟡 101.84 · ↓ Weaker (-0.16%)
-Oil                  $99.02 · ↑ Rising (+1.07%)
+Oil                  $101.41 · ↑ Rising (+3.51%)
 Volatility           🟢 19.99 · ↑ Rising (+21.45%)
 HY OAS               🟢 3.23% · WATCH (-0.62%)
 
@@ -112,9 +112,9 @@ Regime Controller     DISLOCATION
 Exposure Override     DISLOCATION → Sector Weight Only (No Exposure Change)
 
 6. PORTFOLIO ALLOCATION
-Exposure Ceiling      31.0%
+Exposure Ceiling      24.0%
 Allocated Equity      14.8%
-Tactical Reserve      16.2%
+Tactical Reserve      9.2%
 Cash                  85.2%
 
 Sector Allocation
@@ -131,12 +131,12 @@ Vol Structure        COMPRESSION
 
 9. EXECUTION
 Sector | ETF | Weight | Action | Classification | Divergence
-Health Care | XLV | 9.8% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
 Consumer Staples | XLP | 5.0% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
+Health Care | XLV | 9.8% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
 8. DECISION RATIONALE
 Decision             REDUCE
-Exposure Ceiling     31%
-Tactical Signal      WAIT / 0%
+Exposure Ceiling     24%
+Tactical Signal      HOLD / NONE
 Conviction           LOW
 Rationale
-- Risk-On environment but institutional flow not confirmed
+- No actionable alignment
