@@ -15,8 +15,8 @@
     "Energy": 0.0,
     "Health Care": 10.1
   },
-  "last_processed_date": "2026-10-21",
+  "last_processed_date": "2026-10-22",
   "pending_count": 1,
-  "pending_rank": "Technology|Consumer Discretionary|Energy|Health Care|Consumer Staples",
+  "pending_rank": "Technology|Health Care|Consumer Staples|Consumer Discretionary|Energy",
   "version": 1
 }
