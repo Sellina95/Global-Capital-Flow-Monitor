@@ -1,12 +1,12 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-10-24
+**Date:** 2026-10-25
 **Data as of:** 2026-10-23
 
 GLOBAL CAPITAL FLOW MONITOR
 DAILY PM VIEW
 
 PORTFOLIO STANCE
-STRONG REDUCE · 15%
+STRONG REDUCE · 16%
 
 REGIME
 SOFT RISK-OFF / STAGFLATION
@@ -15,17 +15,17 @@ CONVICTION
 MEDIUM
 
 1. DECISION PATH
-Strategic Risk Budget 20.0%
-Recommended Exposure  15.0%
-Exposure Ceiling      15.0%
+Strategic Risk Budget 21.0%
+Recommended Exposure  16.0%
+Exposure Ceiling      16.0%
 Allocated Equity      14.8%
-Tactical Reserve      0.2%
+Tactical Reserve      1.2%
 Cash                  85.2%
 Exposure Control      NORMAL
 Macro Allocation      STAGFLATION_STRESS
 
 2. EXECUTIVE VIEW
-The current strategic phase is SOFT RISK-OFF / STAGFLATION. Liquidity is ↓ Tightening, while flow is ⚡ BUILDING. Positioning Z is 1.09 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 15% exposure ceiling.
+The current strategic phase is SOFT RISK-OFF / STAGFLATION. Liquidity is ↓ Tightening, while flow is ⚡ BUILDING. Positioning Z is 1.08 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 16% exposure ceiling.
 Macro Narrative      STAGFLATION_RISK
 Tactical Signal      REDUCE / DEFENSIVE
 
@@ -35,7 +35,7 @@ Core YoY      Consensus 3.1%   Previous 3%
 Core MoM      Consensus 0.3%   Previous 0.2%
 
 US GDP Growth · 2026-10-29 · 12:30 PM GMT
-GDP QoQ       Consensus 3%     Previous 2.2%
+GDP QoQ       Consensus 3.2%   Previous 2.2%
 
 US CPI · 2026-11-10 · 01:30 PM GMT
 Headline YoY  Consensus —      Previous 3.7%
@@ -62,7 +62,7 @@ Leadership            MODERATE
 Positioning           SQUEEZE_RISK
 Squeeze Risk          HIGH
 Vol Structure         COMPRESSION
-Positioning Z         1.09
+Positioning Z         1.08
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
 Dealer Gamma          🟡 TRANSITION
@@ -112,9 +112,9 @@ Regime Controller     DISLOCATION
 Exposure Override     DISLOCATION → Sector Weight Only (No Exposure Change)
 
 6. PORTFOLIO ALLOCATION
-Exposure Ceiling      15.0%
+Exposure Ceiling      16.0%
 Allocated Equity      14.8%
-Tactical Reserve      0.2%
+Tactical Reserve      1.2%
 Cash                  85.2%
 
 Sector Allocation
@@ -135,7 +135,7 @@ Consumer Staples | XLP | 5.0% | DEFENSIVE_BUFFER | HIGH_CONVICTION_ALIGNED | ALI
 Health Care | XLV | 9.8% | DEFENSIVE_QUALITY | HIGH_CONVICTION_ALIGNED | ALIGNED
 8. DECISION RATIONALE
 Decision             STRONG REDUCE
-Exposure Ceiling     15%
+Exposure Ceiling     16%
 Tactical Signal      REDUCE / DEFENSIVE
 Conviction           MEDIUM
 Rationale
