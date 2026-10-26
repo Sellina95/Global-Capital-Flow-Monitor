@@ -1,5 +1,5 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-10-25
+**Date:** 2026-10-26
 **Data as of:** 2026-10-23
 
 GLOBAL CAPITAL FLOW MONITOR
@@ -18,14 +18,14 @@ MEDIUM
 Strategic Risk Budget 21.0%
 Recommended Exposure  16.0%
 Exposure Ceiling      16.0%
-Allocated Equity      14.8%
-Tactical Reserve      1.2%
-Cash                  85.2%
+Allocated Equity      16.0%
+Tactical Reserve      0.0%
+Cash                  84.0%
 Exposure Control      NORMAL
 Macro Allocation      STAGFLATION_STRESS
 
 2. EXECUTIVE VIEW
-The current strategic phase is SOFT RISK-OFF / STAGFLATION. Liquidity is ↓ Tightening, while flow is ⚡ BUILDING. Positioning Z is 1.08 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 16% exposure ceiling.
+The current strategic phase is SOFT RISK-OFF / STAGFLATION. Liquidity is ↓ Tightening, while flow is ⚡ BUILDING. Positioning Z is 1.12 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 16% exposure ceiling.
 Macro Narrative      STAGFLATION_RISK
 Tactical Signal      REDUCE / DEFENSIVE
 
@@ -62,7 +62,7 @@ Leadership            MODERATE
 Positioning           SQUEEZE_RISK
 Squeeze Risk          HIGH
 Vol Structure         COMPRESSION
-Positioning Z         1.08
+Positioning Z         1.12
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
 Dealer Gamma          🟡 TRANSITION
@@ -113,13 +113,16 @@ Exposure Override     DISLOCATION → Sector Weight Only (No Exposure Change)
 
 6. PORTFOLIO ALLOCATION
 Exposure Ceiling      16.0%
-Allocated Equity      14.8%
-Tactical Reserve      1.2%
-Cash                  85.2%
+Allocated Equity      16.0%
+Tactical Reserve      0.0%
+Cash                  84.0%
 
 Sector Allocation
-Health Care              9.8%
+Health Care              5.1%
 Consumer Staples         5.0%
+Energy                   3.2%
+Materials                1.6%
+Utilities                1.1%
 
 Note: Tactical Reserve is undeployed capacity within the Exposure Ceiling and is included in Cash.
 
@@ -132,7 +135,10 @@ Vol Structure        COMPRESSION
 9. EXECUTION
 Sector | ETF | Weight | Action | Classification | Divergence
 Consumer Staples | XLP | 5.0% | DEFENSIVE_BUFFER | HIGH_CONVICTION_ALIGNED | ALIGNED
-Health Care | XLV | 9.8% | DEFENSIVE_QUALITY | HIGH_CONVICTION_ALIGNED | ALIGNED
+Health Care | XLV | 5.1% | DEFENSIVE_QUALITY | HIGH_CONVICTION_ALIGNED | ALIGNED
+Energy | XLE | 3.2% | SMALL | ALIGNED | ALIGNED
+Materials | XLB | 1.6% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
+Utilities | XLU | 1.1% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
 8. DECISION RATIONALE
 Decision             STRONG REDUCE
 Exposure Ceiling     16%

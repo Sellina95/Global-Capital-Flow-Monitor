@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-25 14:52:57 KST",
-  "flow_state": "EARLY_TRACE",
+  "timestamp": "2026-10-26 14:56:32 KST",
+  "flow_state": "CONFIRMED_FLOW",
   "flow_score": 5,
-  "prev_flow_state": "FLOW_FADE",
-  "prev_flow_score": 1,
-  "flow_delta": 4,
-  "persistence_days": 1,
-  "transition": "FLOW_FADE -> EARLY_TRACE",
-  "transition_note": "기관성 흐름 초기 흔적 발생",
+  "prev_flow_state": "EARLY_TRACE",
+  "prev_flow_score": 5,
+  "flow_delta": 0,
+  "persistence_days": 2,
+  "transition": "EARLY_TRACE -> CONFIRMED_FLOW",
+  "transition_note": "기관성 흐름이 높은 강도로 확인",
   "raw_flow_state": "⚡ BUILDING",
   "raw_flow_score": 5
 }
