@@ -1,33 +1,33 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-10-28
-**Data as of:** 2026-10-27
+**Date:** 2026-10-29
+**Data as of:** 2026-10-28
 
 GLOBAL CAPITAL FLOW MONITOR
 DAILY PM VIEW
 
 PORTFOLIO STANCE
-REDUCE · 37%
+REDUCE · 34%
 
 REGIME
-SOFT RISK-OFF
+RISK-ON / REFLATION
 
 CONVICTION
-MEDIUM
+LOW
 
 1. DECISION PATH
-Strategic Risk Budget 43.0%
-Recommended Exposure  37.0%
-Exposure Ceiling      37.0%
+Strategic Risk Budget 40.0%
+Recommended Exposure  34.0%
+Exposure Ceiling      34.0%
 Allocated Equity      16.0%
-Tactical Reserve      21.0%
+Tactical Reserve      18.0%
 Cash                  84.0%
 Exposure Control      NORMAL
-Macro Allocation      SOFT_RISK_OFF_DISINFLATION
+Macro Allocation      DISINFLATION_RISK_ON
 
 2. EXECUTIVE VIEW
-The current strategic phase is SOFT RISK-OFF. Liquidity is ↓ Tightening, while flow is 🔥 BUILDING HARD. Positioning Z is 1.31 and credit is Calm. The canonical portfolio decision is REDUCE with an 37% exposure ceiling.
-Macro Narrative      TIGHTENING_GROWTH_SCARE
-Tactical Signal      REDUCE / DEFENSIVE
+The current strategic phase is RISK-ON / REFLATION. Liquidity is ↓ Tightening, while flow is 🔥 BUILDING HARD. Positioning Z is 1.29 and credit is Calm. The canonical portfolio decision is REDUCE with an 34% exposure ceiling.
+Macro Narrative      REFLATION
+Tactical Signal      HOLD / NONE
 
 EVENT RISK CONTEXT
 US Core PCE · 2026-10-29 · 12:30 PM GMT
@@ -44,77 +44,77 @@ Core YoY      Consensus —      Previous 2.6%
 Core MoM      Consensus —      Previous 0.3%
 
 3. MARKET STATE
-Macro Narrative       TIGHTENING_GROWTH_SCARE
-Policy Bias           Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCI value=-0.496 (low-frequency) / DXYΔ +0.360 / US10YΔ +0.007
+Macro Narrative       REFLATION
+Policy Bias           Policy Bias: MIXED (혼조) (WEAK, score=-0.5) | REAL_RATEΔ +0.000 / FCI value=-0.487 (low-frequency) / DXYΔ -0.130 / US10YΔ +0.052
 Financial Conditions  EASY (완화)
-Real Rate             RESTRICTIVE (유인↓) · 2.66%
+Real Rate             RESTRICTIVE (유인↓) · 2.64%
 Liquidity             ↓ Tightening
 Liquidity Level       MID
 Dollar Liquidity     DRAINING · DOWN / MID
-Fed Plumbing         NET_LIQ DOWN · TGA ACCEL_UP · RRP UP
-Structure             TIGHTENING
+Fed Plumbing         NET_LIQ DOWN · TGA ACCEL_UP · RRP DOWN
+Structure             MIXED
 Growth Sustainability LATE_CYCLE_STRAIN
 Institutional Flow    🔥 BUILDING HARD
 Flow Authenticity     EARLY_ROTATION
-Participation Quality FRAGILE_PARTICIPATION
-Participation Mode    VOL_STRUCTURE_DEFENSE
-Leadership            BROAD
-Positioning           SQUEEZE_RISK
-Squeeze Risk          HIGH
-Vol Structure         COMPRESSION
-Positioning Z         1.31
+Participation Quality NEUTRAL_PARTICIPATION
+Participation Mode    BALANCED
+Leadership            MODERATE
+Positioning           ELEVATED
+Squeeze Risk          MEDIUM
+Vol Structure         NORMAL
+Positioning Z         1.29
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
 Dealer Gamma          🟡 POSITIVE-TRANSITION
 Drift                 ⚡ STRUCTURAL DRIFT
 
 4. CROSS-ASSET CONFIRMATION
-US10Y Yield          🔴 4.99% · ↑ Rising (+0.14%)
-10Y Term Premium     0.63% · -4 bp d/d
-USD                  🟡 102.32 · ↑ Stronger (+0.35%)
-Oil                  $99.90 · ↓ Falling (-1.83%)
-Volatility           🟢 17.52 · ↓ Falling (-4.73%)
-HY OAS               🟢 3.30% · WATCH (-2.37%)
+US10Y Yield          🔴 5.05% · ↑ Rising (+1.04%)
+10Y Term Premium     0.61% · -2 bp d/d
+USD                  🟡 102.19 · ↓ Weaker (-0.13%)
+Oil                  $102.78 · ↑ Rising (+2.88%)
+Volatility           🟢 16.91 · ↓ Falling (-3.48%)
+HY OAS               🟢 3.18% · WATCH (-3.64%)
 
 5. LEADERSHIP & PARTICIPATION
 
 Today's Sector Leaders
 Coverage             11/11 · same-date observations only
 Rank  Sector                     1D Return   vs SPY     Momentum
-   1  Technology                   +1.70%      +1.14%          0
-   2  Consumer Discretionary       +1.04%      +0.48%          1
-   3  Materials                    +0.78%      +0.22%          1
-   4  Utilities                    +0.71%      +0.14%          1
-   5  Industrials                  +0.57%      +0.01%         -1
-   6  Health Care                  -0.06%      -0.62%          2
-   7  Financials                   -0.25%      -0.81%          0
-   8  Communication Services       -0.26%      -0.82%         -2
-   9  Real Estate                  -0.84%      -1.40%         -1
-  10  Consumer Staples             -0.92%      -1.48%          1
-  11  Energy                       -2.05%      -2.61%          2
+   1  Technology                   +0.80%      +0.45%         -1
+   2  Financials                   +0.45%      +0.10%          1
+   3  Energy                       +0.35%      +0.01%          2
+   4  Industrials                  +0.34%      -0.00%         -1
+   5  Health Care                  +0.30%      -0.04%          2
+   6  Materials                    +0.15%      -0.19%          1
+   7  Consumer Discretionary       -0.10%      -0.45%          1
+   8  Consumer Staples             -0.36%      -0.70%          1
+   9  Communication Services       -0.42%      -0.77%         -2
+  10  Real Estate                  -0.73%      -1.07%         -1
+  11  Utilities                    -0.84%      -1.18%          1
 
 Breadth & Leadership
-RSP vs SPY         Today -0.45% | Prev -0.36% | Δ -0.09%
-QQQE vs QQQ        Today -0.21% | Prev -0.35% | Δ +0.14%
-SMH vs SPY         Today +2.46% | Prev +2.02% | Δ +0.44%
-IWM vs SPY         Today +0.59% | Prev -0.26% | Δ +0.85%
+RSP vs SPY         Today -0.39% | Prev -0.45% | Δ +0.07%
+QQQE vs QQQ        Today -0.14% | Prev -0.21% | Δ +0.07%
+SMH vs SPY         Today +1.39% | Prev +2.46% | Δ -1.07%
+IWM vs SPY         Today +0.05% | Prev +0.59% | Δ -0.54%
 
 
 6. ALLOCATION CONTEXT
 Growth vs Value       VALUE TILT
 Duration Tilt         SHORT DURATION FAVORED
-Cyclical Defensive    NEUTRAL
+Cyclical Defensive    CYCLICAL (ENERGY) BIAS
 Duration Factor       SHORT DURATION FAVORED
-Inflation Factor      NEUTRAL
-USD Factor            USD TIGHTENING
+Inflation Factor      INFLATION PRESSURE
+USD Factor            NEUTRAL
 Credit Factor         CREDIT SUPPORTIVE
-Regime Controller     DISLOCATION
-Exposure Override     DISLOCATION → Sector Weight Only (No Exposure Change)
+Regime Controller     BALANCED
+Exposure Override     BALANCED → Sector Weight Only (No Exposure Change)
 
 6. PORTFOLIO ALLOCATION
-Exposure Ceiling      37.0%
+Exposure Ceiling      34.0%
 Allocated Equity      16.0%
-Tactical Reserve      21.0%
+Tactical Reserve      18.0%
 Cash                  84.0%
 
 Sector Allocation
@@ -128,21 +128,20 @@ Note: Tactical Reserve is undeployed capacity within the Exposure Ceiling and is
 
 7. ACTIVE CONSTRAINTS
 F15 Brake Drivers    Negative Gamma
-Squeeze Risk         HIGH
-Vol Structure        COMPRESSION
+Squeeze Risk         MEDIUM
 
 
 9. EXECUTION
 Sector | ETF | Weight | Action | Classification | Divergence
-Consumer Staples | XLP | 5.0% | DEFENSIVE_BUFFER | FLOW_WEAK | NEGATIVE_DIVERGENCE
+Consumer Staples | XLP | 5.0% | WATCHLIST_SMALL | FLOW_WEAK | NEGATIVE_DIVERGENCE
 Energy | XLE | 3.2% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
-Health Care | XLV | 5.1% | DEFENSIVE_QUALITY | HIGH_CONVICTION_ALIGNED | ALIGNED
+Health Care | XLV | 5.1% | ACCUMULATE | HIGH_CONVICTION_ALIGNED | ALIGNED
 Materials | XLB | 1.6% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
-Utilities | XLU | 1.1% | MICRO | ALIGNED | ALIGNED
+Utilities | XLU | 1.1% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
 8. DECISION RATIONALE
 Decision             REDUCE
-Exposure Ceiling     37%
-Tactical Signal      REDUCE / DEFENSIVE
-Conviction           MEDIUM
+Exposure Ceiling     34%
+Tactical Signal      HOLD / NONE
+Conviction           LOW
 Rationale
-- Risk-off environment
+- No actionable alignment
