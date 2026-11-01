@@ -1,5 +1,5 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-10-31
+**Date:** 2026-11-01
 **Data as of:** 2026-10-30
 
 GLOBAL CAPITAL FLOW MONITOR
@@ -53,7 +53,7 @@ Liquidity Level       MID
 Dollar Liquidity     DRAINING · DOWN / MID
 Fed Plumbing         NET_LIQ DOWN · TGA ACCEL_UP · RRP ACCEL_UP
 Structure             EASING
-Growth Sustainability LATE_CYCLE_STRAIN
+Growth Sustainability STRUCTURAL_STRESS
 Institutional Flow    ⚡ BUILDING
 Flow Authenticity     REAL_ACCUMULATION
 Participation Quality COMPRESSED_OR_FAILED
