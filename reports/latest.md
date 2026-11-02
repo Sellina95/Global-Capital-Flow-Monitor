@@ -1,5 +1,5 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-11-01
+**Date:** 2026-11-02
 **Data as of:** 2026-10-30
 
 GLOBAL CAPITAL FLOW MONITOR
@@ -25,7 +25,7 @@ Exposure Control      NORMAL
 Macro Allocation      BALANCED
 
 2. EXECUTIVE VIEW
-The current strategic phase is TRANSITION / MIXED. Liquidity is ↓ Tightening, while flow is ⚡ BUILDING. Positioning Z is 0.92 and credit is Calm. The canonical portfolio decision is REDUCE with an 28% exposure ceiling.
+The current strategic phase is TRANSITION / MIXED. Liquidity is ↓ Tightening, while flow is 🌱 LIGHT TRACE. Positioning Z is 1.00 and credit is Calm. The canonical portfolio decision is REDUCE with an 28% exposure ceiling.
 Macro Narrative      UNKNOWN_TRANSITION
 Tactical Signal      HOLD / NONE
 
@@ -53,8 +53,8 @@ Liquidity Level       MID
 Dollar Liquidity     DRAINING · DOWN / MID
 Fed Plumbing         NET_LIQ DOWN · TGA ACCEL_UP · RRP ACCEL_UP
 Structure             EASING
-Growth Sustainability STRUCTURAL_STRESS
-Institutional Flow    ⚡ BUILDING
+Growth Sustainability LATE_CYCLE_STRAIN
+Institutional Flow    🌱 LIGHT TRACE
 Flow Authenticity     REAL_ACCUMULATION
 Participation Quality COMPRESSED_OR_FAILED
 Participation Mode    COMPRESSED_SQUEEZE
@@ -62,11 +62,11 @@ Leadership            NARROW
 Positioning           SQUEEZE_RISK
 Squeeze Risk          HIGH
 Vol Structure         COMPRESSION
-Positioning Z         0.92
+Positioning Z         1.00
 Credit                Calm
 Credit Structure      CREDIT STRESS ↑ (Risk-off warning)
-Dealer Gamma          🟡 TRANSITION
-Drift                 👀 EARLY DRIFT
+Dealer Gamma          🟢 POSITIVE GAMMA (WEAK)
+Drift                 WEAK DRIFT (노이즈 가능)
 
 4. CROSS-ASSET CONFIRMATION
 US10Y Yield          🔴 4.93% · ↓ Falling (-1.20%)
