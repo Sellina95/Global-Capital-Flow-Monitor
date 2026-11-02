@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-02 16:32:51 KST",
+  "timestamp": "2026-11-02 19:01:44 KST",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -20,9 +20,9 @@
       "pct_change": 0.4
     },
     "VIX": {
-      "zscore": -0.29,
+      "zscore": 0.31,
       "state": "NORMAL",
-      "pct_change": -0.61
+      "pct_change": -0.11
     },
     "DXY": {
       "zscore": 0.01,
