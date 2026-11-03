@@ -1,0 +1,76 @@
+{
+  "contract": "SPY_OPTIONS_GEX_SHADOW_V0",
+  "status": "OK",
+  "source": "CBOE_DELAYED",
+  "source_timestamp": "2026-11-03 05:27:35",
+  "snapshot_timestamp_utc": "2026-11-03T07:46:58.504568+00:00",
+  "underlying": "SPY",
+  "spot": 752.1,
+  "risk_free_rate": null,
+  "dividend_yield": null,
+  "horizon_days": 7,
+  "expirations_requested": [
+    "2026-11-03",
+    "2026-11-04",
+    "2026-11-05",
+    "2026-11-06",
+    "2026-11-09",
+    "2026-11-10"
+  ],
+  "expiries_successful": 6,
+  "expiries_failed": 0,
+  "contracts_total": 1374,
+  "contracts_valid": 1374,
+  "contracts_invalid": 0,
+  "contracts_missing_oi": 0,
+  "contracts_missing_iv": 0,
+  "quality": {
+    "positive_oi_contracts": 839,
+    "near_spot_contracts": 216,
+    "near_spot_positive_oi_contracts": 216
+  },
+  "total_unsigned_gex": 8674589301.53957,
+  "top3_concentration_share": 0.26721086653548826,
+  "major_gamma_zones": [
+    {
+      "strike": 750.0,
+      "unsigned_gex": 926237148.9838921,
+      "distance_pct": -0.2792181890706069
+    },
+    {
+      "strike": 740.0,
+      "unsigned_gex": 879640348.782204,
+      "distance_pct": -1.6088286132163288
+    },
+    {
+      "strike": 760.0,
+      "unsigned_gex": 512067026.337768,
+      "distance_pct": 1.050392235075126
+    },
+    {
+      "strike": 755.0,
+      "unsigned_gex": 475090650.07959604,
+      "distance_pct": 0.3855870230022651
+    },
+    {
+      "strike": 765.0,
+      "unsigned_gex": 361521895.00081503,
+      "distance_pct": 1.715197447147987
+    }
+  ],
+  "interpretation": "Unsigned option-gamma concentration map. No dealer long/short positioning is inferred.",
+  "production_impact": "NONE",
+  "quality_gate": {
+    "verdict": "PASS",
+    "reasons": [],
+    "fallback_from": [
+      {
+        "source": "YAHOO",
+        "reasons": [
+          "CALCULATION_ANOMALY",
+          "SEMANTIC_ANOMALY"
+        ]
+      }
+    ]
+  }
+}
