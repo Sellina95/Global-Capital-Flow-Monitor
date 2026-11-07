@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-07 15:58:50 KST",
+  "timestamp": "2026-11-07 18:45:16 KST",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -25,7 +25,7 @@
       "pct_change": 0.51
     },
     "DXY": {
-      "zscore": -1.35,
+      "zscore": -1.49,
       "state": "NORMAL",
       "pct_change": -0.03
     },
