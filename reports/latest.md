@@ -1,12 +1,12 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-11-07
+**Date:** 2026-11-08
 **Data as of:** 2026-11-06
 
 GLOBAL CAPITAL FLOW MONITOR
 DAILY PM VIEW
 
 PORTFOLIO STANCE
-STRONG REDUCE · 22%
+STRONG REDUCE · 23%
 
 REGIME
 SOFT RISK-OFF / STAGFLATION
@@ -15,17 +15,17 @@ CONVICTION
 MEDIUM
 
 1. DECISION PATH
-Strategic Risk Budget 29.0%
-Recommended Exposure  22.0%
-Exposure Ceiling      22.0%
+Strategic Risk Budget 30.0%
+Recommended Exposure  23.0%
+Exposure Ceiling      23.0%
 Allocated Equity      15.0%
-Tactical Reserve      7.0%
+Tactical Reserve      8.0%
 Cash                  85.0%
 Exposure Control      NORMAL
 Macro Allocation      STAGFLATION_STRESS
 
 2. EXECUTIVE VIEW
-The current strategic phase is SOFT RISK-OFF / STAGFLATION. Liquidity is ↑ Improving, while flow is 🔥 BUILDING HARD. Positioning Z is 0.37 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 22% exposure ceiling.
+The current strategic phase is SOFT RISK-OFF / STAGFLATION. Liquidity is ↑ Improving, while flow is 🔥 BUILDING HARD. Positioning Z is 0.36 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 23% exposure ceiling.
 Macro Narrative      STAGFLATION_RISK
 Tactical Signal      REDUCE / DEFENSIVE
 
@@ -62,7 +62,7 @@ Leadership            BROAD
 Positioning           STRESSED
 Squeeze Risk          HIGH
 Vol Structure         INVERTED_SHORT_TERM
-Positioning Z         0.37
+Positioning Z         0.36
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
 Dealer Gamma          🔴 NEGATIVE GAMMA
@@ -112,9 +112,9 @@ Regime Controller     BALANCED
 Exposure Override     BALANCED → Sector Weight Only (No Exposure Change)
 
 6. PORTFOLIO ALLOCATION
-Exposure Ceiling      22.0%
+Exposure Ceiling      23.0%
 Allocated Equity      15.0%
-Tactical Reserve      7.0%
+Tactical Reserve      8.0%
 Cash                  85.0%
 
 Sector Allocation
@@ -145,7 +145,7 @@ Materials | XLB | 1.5% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVER
 Utilities | XLU | 1.1% | MICRO | ALIGNED | ALIGNED
 8. DECISION RATIONALE
 Decision             STRONG REDUCE
-Exposure Ceiling     22%
+Exposure Ceiling     23%
 Tactical Signal      REDUCE / DEFENSIVE
 Conviction           MEDIUM
 Rationale
