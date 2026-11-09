@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-11-09 16:50:13 KST",
+  "timestamp": "2026-11-09 21:45:20 KST",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
   "extreme_count": 0,
-  "recommended_exposure": 68,
+  "recommended_exposure": 85,
   "deadman": false,
   "summary": "✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)",
   "deadman_reason": "Normal Operation",
@@ -20,12 +20,12 @@
       "pct_change": -0.31
     },
     "VIX": {
-      "zscore": 0.38,
+      "zscore": 0.13,
       "state": "NORMAL",
-      "pct_change": 0.51
+      "pct_change": 0.04
     },
     "DXY": {
-      "zscore": -1.35,
+      "zscore": -1.49,
       "state": "NORMAL",
       "pct_change": -0.03
     },
