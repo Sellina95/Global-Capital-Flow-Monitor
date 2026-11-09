@@ -1,5 +1,5 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-11-08
+**Date:** 2026-11-09
 **Data as of:** 2026-11-06
 
 GLOBAL CAPITAL FLOW MONITOR
@@ -18,14 +18,14 @@ MEDIUM
 Strategic Risk Budget 30.0%
 Recommended Exposure  23.0%
 Exposure Ceiling      23.0%
-Allocated Equity      15.0%
-Tactical Reserve      8.0%
-Cash                  85.0%
+Allocated Equity      18.1%
+Tactical Reserve      4.9%
+Cash                  81.9%
 Exposure Control      NORMAL
 Macro Allocation      STAGFLATION_STRESS
 
 2. EXECUTIVE VIEW
-The current strategic phase is SOFT RISK-OFF / STAGFLATION. Liquidity is ↑ Improving, while flow is 🔥 BUILDING HARD. Positioning Z is 0.36 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 23% exposure ceiling.
+The current strategic phase is SOFT RISK-OFF / STAGFLATION. Liquidity is ↑ Improving, while flow is 🔥 BUILDING HARD. Positioning Z is 0.38 and credit is Calm. The canonical portfolio decision is STRONG REDUCE with an 23% exposure ceiling.
 Macro Narrative      STAGFLATION_RISK
 Tactical Signal      REDUCE / DEFENSIVE
 
@@ -38,9 +38,9 @@ US GDP Growth · 2026-11-25 · 01:30 PM GMT
 GDP QoQ       Consensus 3.4%   Previous 2.2%
 
 US CPI · 2026-11-10 · 01:30 PM GMT
-Headline YoY  Consensus —      Previous 3.7%
+Headline YoY  Consensus 3.9%   Previous 3.7%
 Headline MoM  Consensus 0.3%   Previous 0.6%
-Core YoY      Consensus —      Previous 2.6%
+Core YoY      Consensus 2.8%   Previous 2.6%
 Core MoM      Consensus 0.2%   Previous 0.3%
 
 3. MARKET STATE
@@ -62,11 +62,11 @@ Leadership            BROAD
 Positioning           STRESSED
 Squeeze Risk          HIGH
 Vol Structure         INVERTED_SHORT_TERM
-Positioning Z         0.36
+Positioning Z         0.38
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
 Dealer Gamma          🔴 NEGATIVE GAMMA
-Drift                 👀 EARLY DRIFT
+Drift                 ⚡ STRUCTURAL DRIFT
 
 4. CROSS-ASSET CONFIRMATION
 US10Y Yield          🔴 4.86% · ↑ Rising (+0.45%)
@@ -113,18 +113,19 @@ Exposure Override     BALANCED → Sector Weight Only (No Exposure Change)
 
 6. PORTFOLIO ALLOCATION
 Exposure Ceiling      23.0%
-Allocated Equity      15.0%
-Tactical Reserve      8.0%
-Cash                  85.0%
+Allocated Equity      18.1%
+Tactical Reserve      4.9%
+Cash                  81.9%
 
 Sector Allocation
-Health Care              4.6%
+Financials               5.8%
 Consumer Staples         4.3%
-Financials               1.8%
+Health Care              1.7%
 Energy                   1.5%
 Materials                1.5%
+Consumer Discretionary   1.4%
 Utilities                1.1%
-Industrials              0.2%
+Communication Services   0.8%
 
 Note: Tactical Reserve is undeployed capacity within the Exposure Ceiling and is included in Cash.
 
@@ -136,13 +137,14 @@ Vol Structure        INVERTED_SHORT_TERM
 
 9. EXECUTION
 Sector | ETF | Weight | Action | Classification | Divergence
+Financials | XLF | 5.8% | ACCUMULATE | HIGH_CONVICTION_ALIGNED | ALIGNED
 Consumer Staples | XLP | 4.3% | DEFENSIVE_BUFFER | HIGH_CONVICTION_ALIGNED | ALIGNED
 Energy | XLE | 1.5% | MICRO | ALIGNED | ALIGNED
-Financials | XLF | 1.8% | MICRO | HIGH_CONVICTION_ALIGNED | ALIGNED
-Health Care | XLV | 4.6% | DEFENSIVE_QUALITY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
-Industrials | XLI | 0.2% | AVOID_TRAP | THEORY_TRAP | NEGATIVE_DIVERGENCE
-Materials | XLB | 1.5% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
 Utilities | XLU | 1.1% | MICRO | ALIGNED | ALIGNED
+Materials | XLB | 1.5% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
+Health Care | XLV | 1.7% | DEFENSIVE_QUALITY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVERGENCE
+Consumer Discretionary | XLY | 1.4% | MICRO | ALIGNED | ALIGNED
+Communication Services | XLC | 0.8% | NO_ACTION | NEUTRAL | ALIGNED
 8. DECISION RATIONALE
 Decision             STRONG REDUCE
 Exposure Ceiling     23%
