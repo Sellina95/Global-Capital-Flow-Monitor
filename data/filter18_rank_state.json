@@ -10,7 +10,7 @@
     "Materials": 2.4,
     "Utilities": 2.6
   },
-  "last_action": "RANK_CONFIRMED",
+  "last_action": "RANK_CHANGE_SUPPRESSED",
   "last_output_target_weights": {
     "Communication Services": 0.8,
     "Consumer Discretionary": 1.4,
@@ -21,8 +21,8 @@
     "Materials": 2.4,
     "Utilities": 2.6
   },
-  "last_processed_date": "2026-11-09",
-  "pending_count": 0,
-  "pending_rank": "",
+  "last_processed_date": "2026-11-10",
+  "pending_count": 1,
+  "pending_rank": "Financials|Consumer Discretionary|Industrials|Consumer Staples|Health Care|Materials|Real Estate|Utilities",
   "version": 1
 }
