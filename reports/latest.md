@@ -1,32 +1,32 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-11-11
-**Data as of:** 2026-11-10
+**Date:** 2026-11-12
+**Data as of:** 2026-11-11
 
 GLOBAL CAPITAL FLOW MONITOR
 DAILY PM VIEW
 
 PORTFOLIO STANCE
-REDUCE · 45%
+REDUCE · 47%
 
 REGIME
-SOFT RISK-OFF
+SOFT RISK-OFF / STAGFLATION
 
 CONVICTION
 MEDIUM
 
 1. DECISION PATH
 Strategic Risk Budget 50.0%
-Recommended Exposure  45.0%
-Exposure Ceiling      45.0%
+Recommended Exposure  47.0%
+Exposure Ceiling      47.0%
 Allocated Equity      18.1%
-Tactical Reserve      26.9%
+Tactical Reserve      28.9%
 Cash                  81.9%
 Exposure Control      NORMAL
 Macro Allocation      SOFT_RISK_OFF_DISINFLATION
 
 2. EXECUTIVE VIEW
-The current strategic phase is SOFT RISK-OFF. Liquidity is ↑ Improving, while flow is ⚡ BUILDING. Positioning Z is 0.82 and credit is Calm. The canonical portfolio decision is REDUCE with an 45% exposure ceiling.
-Macro Narrative      TIGHTENING_GROWTH_SCARE
+The current strategic phase is SOFT RISK-OFF / STAGFLATION. Liquidity is ↑ Improving, while flow is 🔥 BUILDING HARD. Positioning Z is 0.86 and credit is Calm. The canonical portfolio decision is REDUCE with an 47% exposure ceiling.
+Macro Narrative      STAGFLATION_RISK
 Tactical Signal      REDUCE / DEFENSIVE
 
 EVENT RISK CONTEXT
@@ -44,8 +44,8 @@ Core YoY      Consensus —      Previous —
 Core MoM      Consensus —      Previous 0.3%
 
 3. MARKET STATE
-Macro Narrative       TIGHTENING_GROWTH_SCARE
-Policy Bias           Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCI value=-0.459 (low-frequency) / DXYΔ +0.580 / US10YΔ +0.119
+Macro Narrative       STAGFLATION_RISK
+Policy Bias           Policy Bias: TIGHTENING (긴축) (MODERATE, score=+1.5) | REAL_RATEΔ +0.000 / FCI value=-0.459 (low-frequency) / DXYΔ +0.680 / US10YΔ +0.015
 Financial Conditions  EASY (완화)
 Real Rate             RESTRICTIVE (유인↓) · 2.66%
 Liquidity             ↑ Improving
@@ -54,26 +54,26 @@ Dollar Liquidity     SUPPORTIVE · UP / MID
 Fed Plumbing         NET_LIQ FLAT · TGA FLAT · RRP FLAT
 Structure             TIGHTENING
 Growth Sustainability FRAGILE_EXPANSION
-Institutional Flow    ⚡ BUILDING
-Flow Authenticity     REAL_ACCUMULATION
-Participation Quality COMPRESSED_OR_FAILED
-Participation Mode    COMPRESSED_SQUEEZE
+Institutional Flow    🔥 BUILDING HARD
+Flow Authenticity     EARLY_ROTATION
+Participation Quality NARROW_PARTICIPATION
+Participation Mode    SELECTIVE_ONLY
 Leadership            NARROW
-Positioning           SQUEEZE_RISK
-Squeeze Risk          HIGH
+Positioning           ELEVATED
+Squeeze Risk          MEDIUM
 Vol Structure         COMPRESSION
-Positioning Z         0.82
+Positioning Z         0.86
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
-Dealer Gamma          🟡 TRANSITION
-Drift                 👀 EARLY DRIFT
+Dealer Gamma          🟡 POSITIVE-TRANSITION
+Drift                 🔥 EXTREME DRIFT
 
 4. CROSS-ASSET CONFIRMATION
-US10Y Yield          🔴 4.98% · ↑ Rising (+2.45%)
+US10Y Yield          🔴 5.00% · ↑ Rising (+0.30%)
 10Y Term Premium     0.71% · +7 bp d/d
-USD                  🟡 102.23 · ↑ Stronger (+0.57%)
-Oil                  $86.04 · ↓ Falling (-0.93%)
-Volatility           🟢 19.46 · ↓ Falling (-2.31%)
+USD                  🟡 102.91 · ↑ Stronger (+0.67%)
+Oil                  $86.53 · ↑ Rising (+0.57%)
+Volatility           🟢 17.49 · ↓ Falling (-10.12%)
 HY OAS               🟢 3.34% · WATCH (-2.34%)
 
 5. LEADERSHIP & PARTICIPATION
@@ -81,23 +81,23 @@ HY OAS               🟢 3.34% · WATCH (-2.34%)
 Today's Sector Leaders
 Coverage             11/11 · same-date observations only
 Rank  Sector                     1D Return   vs SPY     Momentum
-   1  Financials                   +0.52%      +0.89%          2
-   2  Energy                       +0.44%      +0.80%         -1
-   3  Communication Services       +0.37%      +0.74%          0
-   4  Health Care                  +0.29%      +0.66%          2
-   5  Consumer Staples             +0.15%      +0.52%          2
-   6  Consumer Discretionary       +0.03%      +0.40%          2
-   7  Industrials                  -0.09%      +0.27%          0
-   8  Real Estate                  -0.13%      +0.23%          2
-   9  Utilities                    -0.14%      +0.23%          2
-  10  Materials                    -0.17%      +0.20%          2
-  11  Technology                   -1.15%      -0.78%         -2
+   1  Technology                   +3.23%      +1.91%         -2
+   2  Energy                       +1.86%      +0.55%         -1
+   3  Industrials                  +1.33%      +0.01%          0
+   4  Communication Services       +0.78%      -0.54%          0
+   5  Financials                   +0.58%      -0.74%          2
+   6  Consumer Staples             +0.46%      -0.86%          2
+   7  Materials                    +0.32%      -1.00%          2
+   8  Utilities                    +0.21%      -1.11%          1
+   9  Health Care                  +0.04%      -1.28%          2
+  10  Real Estate                  +0.02%      -1.30%          2
+  11  Consumer Discretionary       -0.05%      -1.37%          2
 
 Breadth & Leadership
-RSP vs SPY         Today +0.34% | Prev -0.10% | Δ +0.43%
-QQQE vs QQQ        Today +0.31% | Prev -0.39% | Δ +0.70%
-SMH vs SPY         Today -0.41% | Prev +2.69% | Δ -3.10%
-IWM vs SPY         Today -0.32% | Prev +0.86% | Δ -1.18%
+RSP vs SPY         Today -0.52% | Prev +0.34% | Δ -0.85%
+QQQE vs QQQ        Today -0.07% | Prev +0.31% | Δ -0.39%
+SMH vs SPY         Today +3.51% | Prev -0.41% | Δ +3.91%
+IWM vs SPY         Today -0.42% | Prev -0.32% | Δ -0.11%
 
 
 6. ALLOCATION CONTEXT
@@ -112,9 +112,9 @@ Regime Controller     DISLOCATION
 Exposure Override     DISLOCATION → Sector Weight Only (No Exposure Change)
 
 6. PORTFOLIO ALLOCATION
-Exposure Ceiling      45.0%
+Exposure Ceiling      47.0%
 Allocated Equity      18.1%
-Tactical Reserve      26.9%
+Tactical Reserve      28.9%
 Cash                  81.9%
 
 Sector Allocation
@@ -131,7 +131,7 @@ Note: Tactical Reserve is undeployed capacity within the Exposure Ceiling and is
 
 7. ACTIVE CONSTRAINTS
 F15 Brake Drivers    Bearish CTA
-Squeeze Risk         HIGH
+Squeeze Risk         MEDIUM
 Vol Structure        COMPRESSION
 
 
@@ -147,7 +147,7 @@ Materials | XLB | 1.5% | TACTICAL_ONLY | TACTICAL_MOMENTUM_ONLY | POSITIVE_DIVER
 Utilities | XLU | 1.1% | MICRO | ALIGNED | ALIGNED
 8. DECISION RATIONALE
 Decision             REDUCE
-Exposure Ceiling     45%
+Exposure Ceiling     47%
 Tactical Signal      REDUCE / DEFENSIVE
 Conviction           MEDIUM
 Rationale
