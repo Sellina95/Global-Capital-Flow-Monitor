@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-13 08:44:07 KST",
+  "timestamp": "2026-11-13 12:37:58 KST",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -10,12 +10,12 @@
   "deadman_reason": "Normal Operation",
   "assets": {
     "SPY": {
-      "zscore": 1.78,
-      "state": "NORMAL",
+      "zscore": 1.8,
+      "state": "WATCH",
       "pct_change": 0.01
     },
     "QQQ": {
-      "zscore": 1.02,
+      "zscore": 1.03,
       "state": "NORMAL",
       "pct_change": 0.12
     },
