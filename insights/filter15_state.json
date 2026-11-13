@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-11-11",
+  "timestamp": "2026-11-12",
   "prev_deadman": false,
   "recovery_active": false,
   "recovery_completed": false,
   "recovery_streak": 0,
-  "prev_hy_oas": 3.34,
+  "prev_hy_oas": 3.3,
   "sew_status": "NORMAL",
-  "recommended_exposure": 47
+  "recommended_exposure": 35
 }
