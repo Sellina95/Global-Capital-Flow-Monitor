@@ -8090,14 +8090,6 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
     if flow_signal in ("PRE_SHOCK", "SHOCK"):
         signals.append(f"FLOW={flow_signal}")
 
-    sew_status = str(
-        market_data.get("SEW_STATUS")
-        or market_data.get("SEW_STATE")
-        or ""
-    ).upper()
-    if sew_status in ("WATCH", "ALERT", "DEADMAN"):
-        signals.append(f"SEW={sew_status}")
-
     drift = market_data.get("DRIFT", {}) or {}
     drift_label = str(
         drift.get("label")
