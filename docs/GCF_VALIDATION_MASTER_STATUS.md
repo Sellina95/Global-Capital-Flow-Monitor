@@ -540,131 +540,63 @@ Implementation:
 
 ## Finding P2-003 — SEW_STATUS Semantic Collision
 
-Observed runtime:
-
-1. `generate_report.py` loads the real SEW monitor state:
-
-`market_data["SEW_STATUS"] = sew_status`
-
-2. Main F15 later executes and writes:
-
-`market_data["SEW_STATUS"] = status`
-
-where F15 `status` may mean:
-
-- NORMAL
-- RISK_COMPRESSION
-- HARD_DEADMAN
-- RECOVERY_STAGE_1
-- RECOVERY_STAGE_2
-- RECOVERY_REBRAKE
-
-Therefore the same key can represent two different concepts:
-
-A. SEW monitor status
-
-B. F15 exposure-control status
-
-Potential consequence:
-
-Downstream code reading `SEW_STATUS` after F15 may believe it is
-reading the original SEW monitor state when it is actually reading
-the F15 state.
-
-Risk:
-
-- semantic ambiguity
-- downstream action/report mislabelling
-- loss of original SEW status after F15 execution
-
 Status:
 
-OPEN — FIX CANDIDATE
+COMPLETED
 
-Required next audit:
+Original finding:
 
-Identify every downstream read of `SEW_STATUS`
-and determine which meaning each consumer expects.
+Production previously overloaded `SEW_STATUS` with two incompatible
+semantic contracts:
 
+- SEW intraday anomaly / shock state
+- F15 portfolio exposure-control state
 
-### P2-003 Runtime Consumer Conclusion
+This could cause downstream consumers to interpret an F15 state as
+the original SEW monitor state.
 
-Finding:
+Resolution:
 
-`SEW_STATUS` is overloaded with two different meanings.
+Production authority is now explicitly separated:
 
-Original meaning:
+- `SEW_STATUS` = SEW intraday anomaly / shock state only.
+- `FILTER15_EXPOSURE_CONTROL_STATUS` = F15 portfolio exposure-control state only.
+- PM Final Brief reads the dedicated F15 control-status field.
+- Geo no longer uses SEW as portfolio exposure authority or as a
+  transmission qualifier for exposure reduction.
 
-SEW monitor state:
+Historical reconstruction was also corrected:
 
-- STABLE
-- WATCH
-- ALERT
-- DEADMAN
-- RISK_COMPRESSION
+- historical SEW values are not reconstructed as `f15.exposure_control`.
+- historical SEW values are not reconstructed as
+  `constraint.exposure_control`.
+- where no canonical historical F15 control-state evidence exists,
+  F15 exposure control remains `UNAVAILABLE` rather than being inferred
+  from a different signal.
 
-Later meaning after F15:
+Regression protection:
 
-F15 exposure-control state:
+- `tests/test_sew_f15_semantic_separation.py`: 3 / 3 PASS.
+- `tests/test_exposure_lineage.py`: 3 / 3 PASS.
+- Python compile check: PASS.
+- `git diff --check`: PASS.
 
-- NORMAL
-- RISK_COMPRESSION
-- HARD_DEADMAN
-- RECOVERY_STAGE_1
-- RECOVERY_STAGE_2
-- RECOVERY_REBRAKE
+Canonical semantic contract:
 
-Observed consumer mismatch:
+SEW
+→ intraday anomaly / shock observation
+→ alert / contextual evidence
+→ no F15 semantic substitution
 
-1. Geo overlay expects actual SEW monitor states:
+F15
+→ portfolio exposure-control authority
+→ dedicated `FILTER15_EXPOSURE_CONTROL_STATUS`
 
-   WATCH / ALERT / DEADMAN
+Decision:
 
-   but reads:
-
-   `market_data["SEW_STATUS"]`
-
-   after F15 may already have overwritten that key.
-
-2. Decision Layer correctly reads:
-
-   `market_data["SEW_STATE"]["status"]`
-
-   and therefore preserves original SEW semantics.
-
-3. PM Final Brief reads:
-
-   `market_data["SEW_STATUS"]`
-
-   as `exposure_control`, indicating that this consumer is effectively
-   treating the key as F15 exposure-control status.
-
-Conclusion:
-
-The same flat key is serving two incompatible semantic contracts.
-
-Impact:
-
-POTENTIAL DECISION IMPACT
-
-Geo transmission confirmation may fail to observe a real SEW
-WATCH / ALERT / DEADMAN state because F15 replaced the flat key
-before Geo execution.
-
-Classification:
-
-FIX
-
-Do not implement remediation yet.
-
-Required remediation design:
-
-Separate canonical fields, for example:
-
-- SEW monitor status
-- F15 exposure-control status
-
-and explicitly map every consumer to the correct authority.
+RESOLVED — SEW and F15 now retain separate runtime and historical
+semantic identities. Missing historical F15 state is represented as
+unavailable rather than reconstructed from SEW.
 
 
 ### P2-002 Runtime Lineage Conclusion
@@ -956,26 +888,33 @@ F13
 - risk budget
 - `SEW_STATUS`
 
-Therefore P2-003 has confirmed downstream decision relevance:
+Historical audit conclusion:
 
-`FINAL_ACTION` expects SEW semantics such as:
+P2-003 originally had downstream decision relevance because
+`FINAL_ACTION` consumed the overloaded `SEW_STATUS` field.
+
+At discovery time, `FINAL_ACTION` expected SEW semantics such as:
 
 - STABLE
 - WATCH
 - ALERT
 - DEADMAN
 
-but `SEW_STATUS` may already contain F15 exposure-control status.
+while the same flat key could already contain F15 exposure-control
+status.
 
-No separate FINAL_ACTION authority conflict was identified.
+Current remediation status:
+
+RESOLVED
+
+- SEW and F15 now use separate semantic fields.
+- direct SEW portfolio-action gates were removed from Final Action.
+- SEW no longer substitutes for F15 exposure-control authority.
+- no separate FINAL_ACTION authority conflict remains.
 
 Classification:
 
-DOCUMENT
-
-Dependency:
-
-P2-003 must be fixed during remediation.
+DOCUMENT — historical finding resolved through P2-001 / P2-003 remediation.
 
 ---
 
@@ -986,13 +925,13 @@ Phase 2 topology / semantic discovery is complete.
 ## Findings
 
 P2-001 — F15 vs SEW exposure engine duplication
-Decision: DOCUMENT
+Decision: RESOLVED / COMPLETED
 
 P2-002 — RECOMMENDED_EXPOSURE pre/post Geo semantic mutation
-Decision: FIX
+Decision: RESOLVED / COMPLETED
 
 P2-003 — SEW_STATUS semantic collision
-Decision: FIX
+Decision: RESOLVED / COMPLETED
 
 P2-004 — Missing Positioning converted to neutral
 Decision: FIX
@@ -1007,7 +946,7 @@ Liquidity semantic audit
 Decision: KEEP
 
 FINAL_ACTION lineage
-Decision: DOCUMENT; dependent on P2-003 remediation
+Decision: DOCUMENT — P2-003 dependency resolved
 
 ## Phase Status
 

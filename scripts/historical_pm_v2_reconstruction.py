@@ -253,7 +253,8 @@ def _legacy_engine_values(text: str) -> dict[str, object]:
     put("decision.conviction", text, "Tactical Confidence", "Rally Confidence")
     put("f13.risk_budget", f13, "Risk Budget (0~100)")
     put("f15.recommended_exposure", f15, "📊 Recommended Exposure", "Recommended Exposure")
-    put("f15.exposure_control", text, "SEW")
+    # P2-003: historical SEW is not F15 exposure control.
+    # Leave f15.exposure_control unavailable unless canonical F15 evidence exists.
     vix_level = _explicit_label(f15, "VIX Level")
     if vix_level:
         change = _explicit_label(f15, "Change")
@@ -369,7 +370,10 @@ def _canonical_values(row: dict[str, str]) -> dict[str, object]:
         "f18.allocated_equity": _pct(row["allocated_equity_18"]),
         "f18.tactical_reserve": _pct(row["tactical_reserve"]),
         "f18.cash": _pct(row["cash_weight"]),
-        "f15.exposure_control": row["sew_status"] or UNAVAILABLE,
+        # P2-003: parity CSV has no canonical historical F15 control-state
+        # field. SEW is a separate intraday anomaly state and must not be used
+        # as a proxy for F15 exposure control.
+        "f15.exposure_control": UNAVAILABLE,
         "f18.macro_allocation": row["macro_profile"] or UNAVAILABLE,
         "executive.macro_narrative": row["macro_narrative"] or UNAVAILABLE,
         "market.macro_narrative": row["macro_narrative"] or UNAVAILABLE,
@@ -515,17 +519,8 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
         }
 
     if persisted_diagnostics_text:
-        sew_match = re.search(
-            r"(?im)^-\s*\*\*SEW:\*\*\s*STABLE\s*/\s*NORMAL\s*$",
-            persisted_diagnostics_text,
-        )
-        if sew_match:
-            supplemental_values["constraint.exposure_control"] = {
-                "value": "NORMAL",
-                "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
-                "authority_sha256": persisted_diagnostics_hash,
-                "reason": "Explicit same-date SEW state: STABLE / NORMAL.",
-            }
+        # P2-003: SEW is intraday anomaly evidence, not F15 exposure control.
+        # Do not reconstruct constraint.exposure_control from SEW.
 
         vol_match = re.search(
             r"(?im)^-\s*Term Structure:\s*VIX3M-VIX=[^\n]*?→\s*(healthy contango / stable structure)\s*$",
@@ -565,20 +560,10 @@ def reconstruct_report(path: Path, parity: dict[str, dict[str, str]], parity_has
                 "reason": "Explicit same-date Credit Stress verdict.",
             }
 
-        # Explicit SEW state -> Exposure Control
-    sew_match = re.search(
-        r"(?im)^-\s*\*\*SEW:\*\*\s*(RISK_COMPRESSION|DEADMAN|STABLE)(?:\s*[|/]\s*[^\n]+)?",
-        persisted_diagnostics_text,
-    )
-    if sew_match:
-        sew_state = sew_match.group(1)
-        exposure_value = "NORMAL" if sew_state == "STABLE" else sew_state
-        supplemental_values["constraint.exposure_control"] = {
-            "value": exposure_value,
-            "authority": str(persisted_diagnostics_path.relative_to(ROOT)),
-            "authority_sha256": persisted_diagnostics_hash,
-            "reason": f"Explicit same-date SEW state: {sew_state}.",
-        }
+        # P2-003: do not infer F15 exposure-control state from SEW.
+        # Historical SEW is preserved only as SEW evidence. If no canonical
+        # same-date F15 control state exists, exposure control remains
+        # UNAVAILABLE rather than being reconstructed from a different signal.
 
     # Explicit/stable VIX term structure -> Vol Structure NORMAL
     # Preserve stronger exact same-date recovered engine state when present.
