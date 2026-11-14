@@ -261,10 +261,16 @@ Potential risk:
 - duplicate exposure definitions
 
 Status:
-OPEN
+COMPLETED
+
+Resolution:
+- F15 is the sole Production portfolio exposure-control authority.
+- SEW is alert/evidence-only and has no executable portfolio-action authority.
+- F15 exposure-control state is separated from `SEW_STATUS` via `FILTER15_EXPOSURE_CONTROL_STATUS`.
+- Resolved by commits `03a647ce` and `398e5c71`.
 
 Decision:
-NOT YET CLASSIFIED
+RESOLVED — F15 is the sole exposure authority; SEW is alert/evidence-only.
 
 ---
 
@@ -447,7 +453,7 @@ Use only these final classifications:
 
 | ID | Phase | Finding | Status | Final Decision |
 |---|---|---|---|---|
-| P2-001 | 2 | F15 vs SEW exposure engine duplication | OPEN | TBD |
+| P2-001 | 2 | F15 vs SEW exposure engine duplication | COMPLETED | F15 = exposure authority; SEW = alert/evidence only |
 | P2-002 | 2 | RECOMMENDED_EXPOSURE pre/post Geo semantics | OPEN | TBD |
 
 ---
