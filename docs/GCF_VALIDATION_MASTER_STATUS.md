@@ -300,10 +300,18 @@ A value may be presented as “F15 Exposure”
 even though it has already been changed by Geo.
 
 Status:
-OPEN
+COMPLETED
+
+Resolution:
+- F15 raw authority output is preserved explicitly as `F15_RECOMMENDED_EXPOSURE`.
+- Geo pre/post-constraint exposure is preserved as `GEO_BASE_F15_EXPOSURE` and `GEO_ADJUSTED_EXPOSURE`.
+- F18 records its actual upstream executable input as `F18_CONSUMED_EXPOSURE`.
+- `RECOMMENDED_EXPOSURE` remains the backward-compatible executable field to avoid unnecessary Production consumer migration.
+- `BASE_RECOMMENDED_EXPOSURE` is retained for compatibility but is explicitly documented as the exposure entering the F18 regime controller, not raw F15 exposure.
+- Geo behavior and SEW non-authority are protected by `tests/test_exposure_lineage.py` (3 regression tests PASS).
 
 Decision:
-NOT YET CLASSIFIED
+RESOLVED — exposure calculation behavior is unchanged; F15 → Geo → F18 lineage is now explicitly observable.
 
 ---
 
@@ -454,7 +462,7 @@ Use only these final classifications:
 | ID | Phase | Finding | Status | Final Decision |
 |---|---|---|---|---|
 | P2-001 | 2 | F15 vs SEW exposure engine duplication | COMPLETED | F15 = exposure authority; SEW = alert/evidence only |
-| P2-002 | 2 | RECOMMENDED_EXPOSURE pre/post Geo semantics | OPEN | TBD |
+| P2-002 | 2 | RECOMMENDED_EXPOSURE mutation / lineage ambiguity | COMPLETED | F15 raw → Geo adjusted → F18 consumed lineage explicit |
 
 ---
 
@@ -498,42 +506,35 @@ decision has been made and recorded here.
 
 ### P2-001 — F15 vs SEW Exposure Engine Duplication
 
-Runtime evidence confirms two separate functions:
+Final runtime contract:
 
-Daily portfolio authority:
+- F15 is the sole Production portfolio exposure-control authority.
+- SEW is an intraday anomaly monitor and alert/evidence-only layer.
+- SEW does not directly set portfolio exposure.
+- SEW does not directly force Final Action portfolio changes.
+- SEW does not qualify Geo transmission for executable exposure reduction.
+- Institutional Flow may still use SEW as observational/context evidence.
+- F15 exposure-control status is stored separately in
+  `FILTER15_EXPOSURE_CONTROL_STATUS`.
 
-`filters/strategist_filters.py::volatility_controlled_exposure_filter`
+Regression protection:
 
-SEW intraday monitor:
+- `tests/test_exposure_lineage.py` verifies that SEW alone cannot confirm
+  Geo transmission or reduce executable exposure.
 
-`scripts/monitor_sew.py::volatility_controlled_exposure_filter`
+Status:
 
-Observed boundary:
+COMPLETED
 
-- SEW calculates its own `recommended_exposure` for intraday monitoring,
-  alerting, and `sew_state.json`.
-- Daily Production loads SEW state as contextual risk information.
-- Daily portfolio exposure is independently produced by the main F15.
-- F18 consumes the main Production `RECOMMENDED_EXPOSURE`.
-- The SEW monitor exposure is not observed as the canonical portfolio exposure.
+Decision:
 
-Conclusion:
+RESOLVED — F15 is the sole exposure authority; SEW is alert/evidence-only.
 
-The existence of two exposure functions is not, by itself,
-a portfolio-authority conflict.
+Implementation:
 
-Classification:
-
-DOCUMENT
-
-Reason:
-
-They operate on different runtime horizons and purposes,
-but identical function naming can create maintenance ambiguity.
-
-Production change:
-
-NONE at this stage.
+- `03a647ce` — Make SEW intraday monitor alert-only
+- `398e5c71` — Separate SEW alerts from portfolio action authority
+- `a85fae57` — Remove SEW from Geo exposure authority
 
 ---
 

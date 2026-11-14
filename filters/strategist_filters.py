@@ -5016,6 +5016,11 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     exposure = _clamp(exposure)
 
+    # P2-002 lineage:
+    # F15_RECOMMENDED_EXPOSURE is the immutable F15 authority output.
+    # RECOMMENDED_EXPOSURE remains the backward-compatible executable
+    # exposure field and may subsequently be constrained by Geo.
+    market_data["F15_RECOMMENDED_EXPOSURE"] = exposure
     market_data["RECOMMENDED_EXPOSURE"] = exposure
     market_data["PREV_EXPOSURE"] = exposure
     # P2-003: F15 exposure-control state must not overwrite
@@ -6913,6 +6918,11 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
     # 18.5) Execution Weight Allocation Logic
     # -------------------------
     final_exposure = float(market_data.get("RECOMMENDED_EXPOSURE", 50.0))
+
+    # P2-002 lineage: this is the executable exposure actually consumed
+    # by F18 after any upstream Geo constraint.
+    market_data["F18_CONSUMED_EXPOSURE"] = final_exposure
+
     #final_exposure = 70 # test only
     # -------------------------
     # 18.45) Regime Controller Exposure Override
@@ -6930,6 +6940,8 @@ def sector_allocation_filter(market_data: Dict[str, Any]) -> str:
      
     final_exposure = round(max(0.0, min(final_exposure, 100.0)), 1)
     
+    # Legacy compatibility fields. BASE_RECOMMENDED_EXPOSURE is the
+    # exposure entering the F18 regime controller, not raw F15 exposure.
     market_data["BASE_RECOMMENDED_EXPOSURE"] = base_final_exposure
     market_data["REGIME_ADJUSTED_EXPOSURE"] = final_exposure
     market_data["EXPOSURE_OVERRIDE_REASON"] = exposure_override_reason
@@ -8164,6 +8176,10 @@ def apply_geo_overlay_to_final_state(market_data: Dict[str, Any]) -> Dict[str, A
     state["geo_base_f15_exposure"] = base_exposure
     state["geo_final_exposure"] = final_exposure
     state["geo_transmission_confirmed"] = transmission_confirmed
+
+    # P2-002 lineage: preserve both sides of the Geo constraint.
+    market_data["GEO_BASE_F15_EXPOSURE"] = base_exposure
+    market_data["GEO_ADJUSTED_EXPOSURE"] = final_exposure
 
     market_data["FINAL_STATE"] = state
     market_data["GEO_OVERLAY"] = overlay
