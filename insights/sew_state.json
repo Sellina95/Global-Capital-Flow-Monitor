@@ -1,13 +1,14 @@
 {
-  "timestamp": "2026-11-14 13:33:51 KST",
+  "timestamp": "2026-11-14 16:30:32 KST",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
   "extreme_count": 0,
-  "recommended_exposure": 85,
+  "recommended_exposure": null,
+  "portfolio_authority": false,
   "deadman": false,
-  "summary": "✅ 이상징후 없음 (5개 자산 정상 범위 / z-score 발작 없음)",
-  "deadman_reason": "Normal Operation",
+  "summary": "✅ SEW STABLE — 이상징후 없음 (5개 자산 정상 범위)",
+  "deadman_reason": "Normal intraday conditions",
   "assets": {
     "SPY": {
       "zscore": -0.74,
@@ -20,9 +21,9 @@
       "pct_change": 0.19
     },
     "VIX": {
-      "zscore": -0.49,
+      "zscore": -0.59,
       "state": "NORMAL",
-      "pct_change": -2.08
+      "pct_change": 2.17
     },
     "DXY": {
       "zscore": -0.26,

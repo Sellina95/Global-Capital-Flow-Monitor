@@ -1,0 +1,58 @@
+{
+  "contract": "TLT_OPTIONS_GEX_SHADOW_V0",
+  "status": "OK",
+  "source": "YAHOO",
+  "snapshot_timestamp_utc": "2026-11-14T07:30:32.099368+00:00",
+  "underlying": "TLT",
+  "spot": 79.37999725341797,
+  "risk_free_rate": 0.04122000217437744,
+  "dividend_yield": 0.02699448,
+  "horizon_days": 7,
+  "expirations_requested": [
+    "2026-11-16",
+    "2026-11-18",
+    "2026-11-20"
+  ],
+  "expiries_successful": 3,
+  "expiries_failed": 0,
+  "contracts_total": 208,
+  "contracts_valid": 196,
+  "contracts_invalid": 12,
+  "contracts_missing_oi": 0,
+  "contracts_missing_iv": 0,
+  "total_unsigned_gex": 800928394.9486222,
+  "top3_concentration_share": 0.672348064673231,
+  "major_gamma_zones": [
+    {
+      "strike": 80.0,
+      "unsigned_gex": 247316463.46398777,
+      "distance_pct": 0.7810566490733084
+    },
+    {
+      "strike": 79.0,
+      "unsigned_gex": 211672149.6971687,
+      "distance_pct": -0.4787065590401096
+    },
+    {
+      "strike": 81.0,
+      "unsigned_gex": 79514043.12438694,
+      "distance_pct": 2.0408198571867153
+    },
+    {
+      "strike": 82.0,
+      "unsigned_gex": 56424751.415838405,
+      "distance_pct": 3.3005830653001444
+    },
+    {
+      "strike": 78.0,
+      "unsigned_gex": 31468423.345425006,
+      "distance_pct": -1.7384697671535276
+    }
+  ],
+  "interpretation": "Unsigned option-gamma concentration map. No dealer long/short positioning is inferred.",
+  "production_impact": "NONE",
+  "quality_gate": {
+    "verdict": "PASS",
+    "reasons": []
+  }
+}
