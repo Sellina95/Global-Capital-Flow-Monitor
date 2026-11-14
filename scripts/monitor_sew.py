@@ -452,7 +452,7 @@ def save_sew_state(
     event_type: str,
     spike_count: int,
     extreme_count: int,
-    recommended_exposure: int,
+    recommended_exposure: Optional[int],
     deadman: bool,
     summary: str,
     deadman_reason: str,
@@ -475,7 +475,10 @@ def save_sew_state(
         "event_type": event_type,
         "spike_count": spike_count,
         "extreme_count": extreme_count,
+        # Alert-only contract:
+        # SEW observes intraday anomalies but has no portfolio authority.
         "recommended_exposure": recommended_exposure,
+        "portfolio_authority": False,
         "deadman": deadman,
         "summary": summary,
         "deadman_reason": deadman_reason,
@@ -810,44 +813,105 @@ def check_market_anomaly():
     credit_level_txt = f"{credit_level:.2f}%" if credit_level is not None else "N/A"
 
     corr_msg = correlation_break_filter(market_snap)
-    recommended_exp, status_msg = volatility_controlled_exposure_filter(market_snap, context)
 
-    # ---------------------------
-    # SEW 상태 판단
-    # ---------------------------
-    hard_deadman = recommended_exp == 0 and (
-        "HARD DEADMAN" in status_msg
-        or credit.get("is_credit_fracture")
+    # ========================================================
+    # SEW ALERT-ONLY CONTRACT
+    # ========================================================
+    # SEW is an intraday anomaly monitor.
+    #
+    # It may classify and alert:
+    #   STABLE / WATCH / ALERT / DEADMAN / RISK_COMPRESSION
+    #
+    # It MUST NOT:
+    #   - set portfolio exposure
+    #   - override F15
+    #   - change F18 allocation
+    #
+    # Portfolio authority belongs to the daily Production risk engine.
+    # ========================================================
+
+    pos_z = float(context.get("SP500_POS_Z", 0.0) or 0.0)
+    pos_slope = float(market_snap.get("POS_SLOPE", 0.0) or 0.0)
+
+    # HARD intraday warning.
+    # This is an ALERT classification only, not a liquidation instruction.
+    hard_deadman = bool(
+        credit.get("is_credit_fracture")
         or is_spiking
     )
 
-    soft_risk = (
-        recommended_exp < 85
-        and recommended_exp > 0
-        and (
-            "CROWDING RISK" in status_msg
-            or "POSITIONING SLOPE RISK" in status_msg
-            or "CREDIT STRESS" in status_msg
-        )
+    # Softer abnormal-risk context.
+    soft_risk = bool(
+        credit.get("is_credit_stress")
+        or abs(pos_z) > 2.0
+        or abs(pos_slope) > 0.5
     )
 
     deadman = hard_deadman
+    recommended_exp = None
 
     if hard_deadman:
         sew_status = "DEADMAN"
-        sew_summary = "🚨 HARD DEADMAN 발동 (익스포저 0% / 자산 보호 모드)"
+
+        reasons = []
+        if credit.get("is_credit_fracture"):
+            reasons.append(
+                f"Credit Fracture HY_OAS={credit_level_txt}"
+            )
+        if is_spiking:
+            reasons.append(
+                f"Cross-Asset Shock spike={spike_count}, extreme={extreme_count}"
+            )
+
+        status_msg = " / ".join(reasons) if reasons else "Intraday anomaly"
+
+        sew_summary = (
+            "🚨 SEW HARD DEADMAN — 장중 실시간 이상징후 감지. "
+            "평소 시장 범위를 벗어난 움직임이 관측되고 있습니다. "
+            "금일 시장 변동성과 포지션 리스크에 주의하십시오. "
+            "SEW는 총노출을 직접 변경하지 않습니다."
+        )
+
     elif soft_risk:
         sew_status = "RISK_COMPRESSION"
-        sew_summary = f"⚠️ Risk Compression 발동 (권장 익스포저 {recommended_exp}%)"
+
+        reasons = []
+        if credit.get("is_credit_stress"):
+            reasons.append(f"Credit Stress HY_OAS={credit_level_txt}")
+        if abs(pos_z) > 2.0:
+            reasons.append(f"POS_Z Extreme={pos_z:.2f}")
+        if abs(pos_slope) > 0.5:
+            reasons.append(f"POS_SLOPE={pos_slope:.2f}")
+
+        status_msg = " / ".join(reasons) if reasons else "Elevated risk context"
+
+        sew_summary = (
+            "⚠️ SEW RISK WARNING — 장중 위험 신호가 평소보다 높습니다. "
+            "포트폴리오 노출은 변경하지 않으며 주의 신호만 제공합니다."
+        )
+
     elif extreme_count >= 1:
         sew_status = "ALERT"
-        sew_summary = "🚨 실시간 발작 감지 (EXTREME z-score 발생 / 즉시 모니터링 필요)"
+        status_msg = f"EXTREME z-score detected ({extreme_count})"
+        sew_summary = (
+            "🚨 SEW ALERT — 실시간 비정상 움직임 감지. "
+            "시장 변동성 확대 여부를 확인하십시오."
+        )
+
     elif spike_count >= 2:
         sew_status = "WATCH"
-        sew_summary = "⚠️ 다중 자산 경미한 이상반응 감지 (ALERT 2건 이상)"
+        status_msg = f"Multiple ALERT z-scores detected ({spike_count})"
+        sew_summary = (
+            "⚠️ SEW WATCH — 복수 자산에서 비정상 움직임이 관측되었습니다."
+        )
+
     else:
         sew_status = "STABLE"
-        sew_summary = f"✅ 이상징후 없음 ({len(z_map)}개 자산 정상 범위 / z-score 발작 없음)"
+        status_msg = "Normal intraday conditions"
+        sew_summary = (
+            f"✅ SEW STABLE — 이상징후 없음 "
+            f"({len(z_map)}개 자산 정상 범위)"
+        )
 
     # ---------------------------
     # DEADMAN lifecycle observability
@@ -921,7 +985,7 @@ def check_market_anomaly():
                 f"flow_delta={transition_info.get('flow_delta', 0)} | "
                 f"persistence={transition_info.get('persistence_days', 0)} | "
                 f"flow_alert={flow_alert_level} | "
-                f"Exp={recommended_exp}% | "
+                f"PortfolioAction=NONE | "
                 f"{status_msg} | "
                 f"spike={spike_count} extreme={extreme_count} | "
                 f"corr_break={'YES' if bool(corr_msg) else 'NO'} | "
@@ -937,7 +1001,7 @@ def check_market_anomaly():
                 f"credit={credit_state}({credit_level_txt}) | "
                 f"flow={prev_flow_state}->{current_flow_state} | "
                 f"flow_alert={flow_alert_level} | "
-                f"Exp={recommended_exp}% | "
+                f"PortfolioAction=NONE | "
                 f"spike={spike_count} extreme={extreme_count} | "
                 f"corr_break={'YES' if bool(corr_msg) else 'NO'} | "
                 f"z={z_map}\n"
@@ -950,7 +1014,10 @@ def check_market_anomaly():
     # 이메일은 HARD DEADMAN급만 발송
     # ---------------------------
     if should_email_alert:
-        subject = f"🚨 [SEW HARD ALERT] {sew_status} | {event_type} | Credit {credit_state} | Exp {recommended_exp}%"
+        subject = (
+            f"🚨 [SEW HARD ALERT] {sew_status} | "
+            f"{event_type} | Credit {credit_state}"
+        )
 
         body = f"""
 [Digital War Room - HARD Risk Alert]
@@ -959,7 +1026,7 @@ def check_market_anomaly():
 POS_Z 단독 과열이나 일반 flow 변화는 이메일 발송 대상에서 제외됩니다.
 
 ─────────────────────────────────────────
-📢 실시간 요약 (Exposure: {recommended_exp}%)
+📢 실시간 이상징후 요약
 ─────────────────────────────────────────
 - 일시: {now_str}
 - 시스템 상태: {status_msg}
@@ -996,9 +1063,10 @@ POS_Z 단독 과열이나 일반 flow 변화는 이메일 발송 대상에서 �
 ─────────────────────────────────────────
 🧠 전략적 가이드
 ─────────────────────────────────────────
-💡 HARD risk event입니다.
-💡 권장 익스포저가 {recommended_exp}%로 산출되었습니다.
+💡 SEW가 장중 HARD risk anomaly를 감지했습니다.
+💡 이 신호는 실시간 경보이며 포트폴리오 총노출을 직접 변경하지 않습니다.
 💡 크레딧 붕괴 또는 cross-asset shock 여부를 최우선 확인하십시오.
+💡 금일 시장이 평소와 다른 상태일 수 있으므로 변동성과 포지션 리스크에 주의하십시오.
 ─────────────────────────────────────────
         """.strip()
 
@@ -1008,7 +1076,7 @@ POS_Z 단독 과열이나 일반 flow 변화는 이메일 발송 대상에서 �
 
         print(
             f"DEBUG: should_email_alert={should_email_alert}, "
-            f"recommended_exp={recommended_exp}, "
+            f"portfolio_authority=NONE, "
             f"event_type={event_type}, "
             f"sew_status={sew_status}, "
             f"credit={credit_state}({credit_level_txt}), "
