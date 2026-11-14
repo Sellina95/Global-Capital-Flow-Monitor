@@ -37,7 +37,7 @@ def generate_pm_final_brief(market_data):
     # --------------------------------------------------
     risk_budget = final_state.get("risk_budget")
     recommended_exposure = market_data.get("RECOMMENDED_EXPOSURE")
-    exposure_control = market_data.get("SEW_STATUS")
+    exposure_control = market_data.get("FILTER15_EXPOSURE_CONTROL_STATUS")
     macro_allocation_profile = market_data.get("MACRO_REGIME_PROFILE")
 
     action = final_decision.get("action", "N/A")

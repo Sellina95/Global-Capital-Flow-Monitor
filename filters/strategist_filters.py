@@ -5018,7 +5018,9 @@ def volatility_controlled_exposure_filter(market_data: Dict[str, Any]) -> str:
 
     market_data["RECOMMENDED_EXPOSURE"] = exposure
     market_data["PREV_EXPOSURE"] = exposure
-    market_data["SEW_STATUS"] = status
+    # P2-003: F15 exposure-control state must not overwrite
+    # the independent intraday SEW monitor status.
+    market_data["FILTER15_EXPOSURE_CONTROL_STATUS"] = status
 
     # 다음 실행으로 넘길 Filter15 persistent state.
     market_data["FILTER15_PREV_DEADMAN"] = bool(hard_deadman)
@@ -8564,15 +8566,9 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
     print(" is_early_trace =", is_early_trace)
     print(" pos_z =", pos_z)
 
-    # 1) Shock 최우선
-    if is_sew_alert or is_sew_deadman:
-        action = "REDUCE"
-        size = "RISK CUT"
-        confidence = "HIGH"
-        reason.append("SEW shock → emergency risk cut")
-
-    # 2) 구조 붕괴 Exit
-    elif is_gamma_negative and flow_score <= 4:
+    # SEW is alert-only and has no portfolio-action authority.
+    # 1) 구조 붕괴 Exit
+    if is_gamma_negative and flow_score <= 4:
         action = "EXIT"
         size = "FULL"
         confidence = "HIGH"
@@ -8590,7 +8586,6 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         is_risk_on
         and is_early_trace
         and (is_gamma_positive or is_gamma_transition)
-        and (is_sew_stable or is_sew_watch)
     ):
         action = "HOLD"
         size = "MAINTAIN"
@@ -8602,7 +8597,6 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         is_risk_on
         and flow_score >= 7
         and is_gamma_positive
-        and (is_sew_stable or is_sew_watch)
     ):
         action = "ADD"
         size = "MEDIUM (30~60%)"
@@ -8614,7 +8608,6 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         is_risk_on
         and flow_score >= 6
         and (is_gamma_transition or is_gamma_positive)
-        and is_sew_stable
     ):
         action = "ADD"
         size = "MEDIUM (20~40%)"
@@ -8626,7 +8619,6 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         is_risk_on
         and flow_score >= 4
         and (is_gamma_transition or is_gamma_positive)
-        and is_sew_stable
     ):
         action = "EARLY BUY"
         size = "SMALL (10~20%)"
@@ -8634,7 +8626,7 @@ def final_action_engine(market_data: Dict[str, Any]) -> Dict[str, Any]:
         reason.append("Flow building + gamma turning + no shock")
 
     # 8) Risk-On인데 흐름 약함
-    elif is_risk_on and flow_score < 4 and is_sew_stable:
+    elif is_risk_on and flow_score < 4:
         action = "WAIT"
         size = "0%"
         confidence = "LOW"
