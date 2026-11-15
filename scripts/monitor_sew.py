@@ -515,6 +515,7 @@ def save_flow_state(
 
     payload = {
         "timestamp": timestamp,
+        "observation_date": transition_info.get("observation_date"),
         "flow_state": transition_info.get("flow_state", current_state),
         "flow_score": transition_info.get("flow_score", current_score),
         "prev_flow_state": transition_info.get("prev_flow_state", "N/A"),
@@ -537,6 +538,8 @@ def classify_flow_transition(
     current_flow_state: str,
     current_flow_score: int,
     prev_persistence_days: int = 0,
+    prev_observation_date: str = None,
+    current_observation_date: str = None,
 ) -> Dict[str, Any]:
     prev_state = str(prev_flow_state or "N/A").upper()
     current_state = str(current_flow_state or "N/A").upper()
@@ -582,7 +585,19 @@ def classify_flow_transition(
         transition_note = "기관성 흐름 상태 유지"
         persistence_days = prev_persistence_days if current_flow_score >= 2 else 0
 
+    # persistence_days counts distinct observation dates, not monitor runs.
+    if current_flow_score >= 2:
+        if not prev_observation_date:
+            persistence_days = 1
+        elif current_observation_date == prev_observation_date:
+            persistence_days = max(1, prev_persistence_days)
+        elif current_observation_date:
+            persistence_days = max(1, prev_persistence_days) + 1
+    else:
+        persistence_days = 0
+
     return {
+        "observation_date": current_observation_date,
         "flow_state": transition_state,
         "flow_score": current_flow_score,
         "prev_flow_state": prev_flow_state,
@@ -753,6 +768,8 @@ def check_market_anomaly():
         current_flow_state=current_flow_state,
         current_flow_score=current_flow_score,
         prev_persistence_days=prev_persistence_days,
+        prev_observation_date=prev_flow.get("observation_date"),
+        current_observation_date=now_str[:10],
     )
 
     flow_change_alert, flow_alert_level, flow_alert_msg = evaluate_flow_change(

@@ -8418,6 +8418,8 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
         current_flow_state=flow_state,
         current_flow_score=flow_score,
         prev_persistence_days=prev_persistence_days,
+        prev_observation_date=prev_flow.get("observation_date"),
+        current_observation_date=pd.Timestamp.now(tz="Asia/Seoul").strftime("%Y-%m-%d"),
     )
 
     market_data["INSTITUTIONAL_FLOW"] = {

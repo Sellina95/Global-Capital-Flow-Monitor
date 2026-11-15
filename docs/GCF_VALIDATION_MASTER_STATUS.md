@@ -1319,3 +1319,28 @@ Regression:
 - `tests/test_positioning_missing_semantics.py`: PASS
 
 Decision: RESOLVED — missing positioning evidence is distinct from neutral positioning.
+
+---
+
+## Remediation — P2-005 Flow Persistence Semantics
+
+Status: COMPLETED
+
+`persistence_days` previously changed with monitor execution count rather
+than distinct observation dates. Multiple intraday runs could therefore
+inflate apparent flow persistence.
+
+Current contract:
+
+- same observation date: persistence does not increment
+- next distinct observation date with continuing flow: +1
+- flow disappearance: reset to 0
+- legacy state without `observation_date`: restart at 1
+- `observation_date` is persisted in `flow_state.json`
+
+The persisted lifecycle authority remains `scripts/monitor_sew.py`.
+
+Regression:
+- `tests/test_flow_persistence_semantics.py`: PASS
+
+Decision: RESOLVED — persistence now represents distinct observation-day persistence, not run count.
