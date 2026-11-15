@@ -1,5 +1,5 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-11-14
+**Date:** 2026-11-15
 **Data as of:** 2026-11-13
 
 GLOBAL CAPITAL FLOW MONITOR
@@ -108,8 +108,8 @@ Duration Factor       SHORT DURATION FAVORED
 Inflation Factor      NEUTRAL
 USD Factor            NEUTRAL
 Credit Factor         CREDIT SUPPORTIVE
-Regime Controller     BALANCED
-Exposure Override     BALANCED → Sector Weight Only (No Exposure Change)
+Regime Controller     DISLOCATION
+Exposure Override     DISLOCATION → Sector Weight Only (No Exposure Change)
 
 6. PORTFOLIO ALLOCATION
 Exposure Ceiling      45.0%
