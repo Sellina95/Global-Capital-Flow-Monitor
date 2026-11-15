@@ -1274,3 +1274,26 @@ AUDIT CLOSED
 
 REMEDIATION PENDING
 
+
+---
+
+## Remediation — SEW / Institutional Flow Semantic Separation
+
+Status: COMPLETED
+
+Institutional Flow is intended to measure institutional accumulation / flow evidence.
+
+SEW is an intraday anomaly monitor, not capital-flow evidence.
+Therefore SEW `STABLE`, `WATCH`, or `ALERT` no longer adds to or subtracts
+from the core `INSTITUTIONAL_FLOW` score.
+
+SEW metadata remains available as context, but has no direct Flow-score authority.
+
+Regression:
+- `tests/test_institutional_flow_semantics.py`: PASS
+- existing SEW/F15 and exposure-lineage regressions: PASS
+
+Decision: RESOLVED — SEW context is separated from Institutional Flow scoring.
+
+Note: P4-001 remains OPEN. It separately concerns multiple F13 additive
+uses of Institutional Flow evidence.

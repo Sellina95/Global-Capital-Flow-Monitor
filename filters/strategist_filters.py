@@ -8294,13 +8294,8 @@ def institutional_flow_engine_filter(market_data: Dict[str, Any]) -> str:
         flow_score += 1
         reasons.append("Gamma acceleration regime")
 
-    # 5) SEW relationship
-    if sew_status == "STABLE":
-        flow_score += 1
-        reasons.append("No shock yet")
-    elif sew_status in ["WATCH", "ALERT"]:
-        flow_score -= 1
-        reasons.append("Shock already leaking into tape")
+    # 5) SEW context only
+    # SEW is an intraday anomaly monitor and does not modify core flow score.
 
     # 6) Positioning penalty
     if pos_z >= 2.0:
