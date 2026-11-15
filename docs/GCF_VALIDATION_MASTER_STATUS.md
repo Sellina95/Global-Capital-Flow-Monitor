@@ -1297,3 +1297,25 @@ Decision: RESOLVED — SEW context is separated from Institutional Flow scoring.
 
 Note: P4-001 remains OPEN. It separately concerns multiple F13 additive
 uses of Institutional Flow evidence.
+
+---
+
+## Remediation — P2-004 Positioning Missingness Preservation
+
+Status: COMPLETED
+
+Positioning retrieval failure is no longer converted into a neutral 0.0 signal.
+
+Current contract:
+
+- valid POS_Z = 0.0 means genuine numerical neutrality
+- failed/unavailable POS_Z = None / missing
+- missingness is preserved through Production report attachment
+
+This remediation does not define F13/F15 behavior when positioning is unavailable.
+That downstream fallback policy remains part of P2-006.
+
+Regression:
+- `tests/test_positioning_missing_semantics.py`: PASS
+
+Decision: RESOLVED — missing positioning evidence is distinct from neutral positioning.

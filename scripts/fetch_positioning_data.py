@@ -119,8 +119,8 @@ def get_reliable_z_score(ticker_list, period="1y"):
             print(f"   ⚠️ {ticker} 시도 실패: {e}")
             continue
 
-    print("   ❌ 모든 fallback ticker 실패 → 0.0 반환")
-    return 0.0, None, None
+    print("   ❌ 모든 fallback ticker 실패 → unavailable")
+    return None, None, None
 
 
 def _load_last_positioning_row(output_path: str):

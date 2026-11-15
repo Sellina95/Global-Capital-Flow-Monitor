@@ -2226,9 +2226,9 @@ def attach_positioning_layer(market_data: Dict[str, Any]) -> Dict[str, Any]:
     pos_df = load_positioning_df()
 
     defaults = {
-    "SP500_POS_Z": 0.0,
-    "US10Y_POS_Z": 0.0,
-    "DXY_POS_Z": 0.0,
+    "SP500_POS_Z": None,
+    "US10Y_POS_Z": None,
+    "DXY_POS_Z": None,
     "DEALER_GAMMA_BIAS": 1.0,
     "DEALER_GAMMA_LABEL": "NEUTRAL_OPTION_POSITIONING",
     "CTA_MOMENTUM_SCORE": 0.0,
