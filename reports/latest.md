@@ -1,5 +1,5 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-11-15
+**Date:** 2026-11-16
 **Data as of:** 2026-11-13
 
 GLOBAL CAPITAL FLOW MONITOR
@@ -25,7 +25,7 @@ Exposure Control      NORMAL
 Macro Allocation      SOFT_RISK_OFF_DISINFLATION
 
 2. EXECUTIVE VIEW
-The current strategic phase is SOFT RISK-OFF. Liquidity is ↑ Improving, while flow is 👀 EARLY TRACE. Positioning Z is 0.78 and credit is Calm. The canonical portfolio decision is REDUCE with an 45% exposure ceiling.
+The current strategic phase is SOFT RISK-OFF. Liquidity is ↑ Improving, while flow is 👀 EARLY TRACE. Positioning Z is 0.70 and credit is Calm. The canonical portfolio decision is REDUCE with an 45% exposure ceiling.
 Macro Narrative      TIGHTENING_GROWTH_SCARE
 Tactical Signal      REDUCE / DEFENSIVE
 
@@ -62,7 +62,7 @@ Leadership            MEGACAP_ONLY
 Positioning           ELEVATED
 Squeeze Risk          MEDIUM
 Vol Structure         COMPRESSION
-Positioning Z         0.78
+Positioning Z         0.70
 Credit                Calm
 Credit Structure      CREDIT NEUTRAL
 Dealer Gamma          🟡 TRANSITION
