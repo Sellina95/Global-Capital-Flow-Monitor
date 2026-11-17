@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-11-16 16:50:30 KST",
-  "observation_date": "2026-11-16",
-  "flow_state": "FLOW_FADE",
+  "timestamp": "2026-11-17 17:58:37 KST",
+  "observation_date": "2026-11-17",
+  "flow_state": "👀 EARLY TRACE",
   "flow_score": 3,
   "prev_flow_state": "FLOW_FADE",
-  "prev_flow_score": 4,
-  "flow_delta": -1,
-  "persistence_days": 2,
-  "transition": "FLOW_FADE -> FLOW_FADE",
-  "transition_note": "기관성 흐름은 남아 있으나 강도 약화",
+  "prev_flow_score": 3,
+  "flow_delta": 0,
+  "persistence_days": 3,
+  "transition": "FLOW_FADE -> 👀 EARLY TRACE",
+  "transition_note": "기관성 흐름 상태 유지",
   "raw_flow_state": "👀 EARLY TRACE",
   "raw_flow_score": 3
 }
