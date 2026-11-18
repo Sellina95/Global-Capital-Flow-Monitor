@@ -1,39 +1,39 @@
 {
-  "timestamp": "2026-11-17 17:58:37 KST",
-  "status": "STABLE",
+  "timestamp": "2026-11-18 17:24:36 KST",
+  "status": "DEADMAN",
   "event_type": "NORMAL",
-  "spike_count": 0,
+  "spike_count": 3,
   "extreme_count": 0,
   "recommended_exposure": null,
   "portfolio_authority": false,
-  "deadman": false,
-  "summary": "✅ SEW STABLE — 이상징후 없음 (5개 자산 정상 범위)",
-  "deadman_reason": "Normal intraday conditions",
+  "deadman": true,
+  "summary": "🚨 SEW HARD DEADMAN — 장중 실시간 이상징후 감지. 평소 시장 범위를 벗어난 움직임이 관측되고 있습니다. 금일 시장 변동성과 포지션 리스크에 주의하십시오. SEW는 총노출을 직접 변경하지 않습니다.",
+  "deadman_reason": "Cross-Asset Shock spike=3, extreme=0",
   "assets": {
     "SPY": {
-      "zscore": 0.5,
-      "state": "NORMAL",
+      "zscore": 3.26,
+      "state": "ALERT",
       "pct_change": 0.19
     },
     "QQQ": {
-      "zscore": -0.31,
-      "state": "NORMAL",
-      "pct_change": 0.15
+      "zscore": 3.49,
+      "state": "ALERT",
+      "pct_change": 0.39
     },
     "VIX": {
-      "zscore": 0.38,
+      "zscore": -0.34,
       "state": "NORMAL",
-      "pct_change": 1.09
+      "pct_change": -2.94
     },
     "DXY": {
-      "zscore": -0.1,
-      "state": "NORMAL",
+      "zscore": 2.8,
+      "state": "ALERT",
       "pct_change": 0.05
     },
     "WTI": {
-      "zscore": -0.53,
+      "zscore": 0.12,
       "state": "NORMAL",
-      "pct_change": -0.06
+      "pct_change": -0.03
     }
   }
 }
