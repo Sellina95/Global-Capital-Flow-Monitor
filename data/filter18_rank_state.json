@@ -1,28 +1,28 @@
 {
-  "accepted_rank": "Financials|Consumer Staples|Energy|Utilities|Materials|Health Care|Consumer Discretionary|Communication Services",
+  "accepted_rank": "Consumer Staples|Utilities|Financials|Health Care|Industrials|Real Estate|Consumer Discretionary|Materials",
   "accepted_target_weights": {
-    "Communication Services": 0.8,
-    "Consumer Discretionary": 1.4,
-    "Consumer Staples": 5.5,
-    "Energy": 2.8,
-    "Financials": 5.8,
-    "Health Care": 1.7,
-    "Materials": 2.4,
-    "Utilities": 2.6
+    "Consumer Discretionary": 0.0,
+    "Consumer Staples": 0.0,
+    "Financials": 0.0,
+    "Health Care": 0.0,
+    "Industrials": 0.0,
+    "Materials": 0.0,
+    "Real Estate": 0.0,
+    "Utilities": 0.0
   },
-  "last_action": "RANK_CHANGE_SUPPRESSED",
+  "last_action": "FORCED_DELEVERAGE_ACCEPT",
   "last_output_target_weights": {
-    "Communication Services": 0.8,
-    "Consumer Discretionary": 1.4,
-    "Consumer Staples": 5.5,
-    "Energy": 2.8,
-    "Financials": 5.8,
-    "Health Care": 1.7,
-    "Materials": 2.4,
-    "Utilities": 2.6
+    "Consumer Discretionary": 0.0,
+    "Consumer Staples": 0.0,
+    "Financials": 0.0,
+    "Health Care": 0.0,
+    "Industrials": 0.0,
+    "Materials": 0.0,
+    "Real Estate": 0.0,
+    "Utilities": 0.0
   },
-  "last_processed_date": "2026-11-20",
-  "pending_count": 1,
-  "pending_rank": "Consumer Staples|Utilities|Health Care|Financials|Industrials|Consumer Discretionary|Real Estate",
+  "last_processed_date": "2026-11-21",
+  "pending_count": 0,
+  "pending_rank": "",
   "version": 1
 }
