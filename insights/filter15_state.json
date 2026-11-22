@@ -1,7 +1,7 @@
 {
   "timestamp": "2026-11-20",
   "prev_deadman": true,
-  "recovery_active": false,
+  "recovery_active": true,
   "recovery_completed": false,
   "recovery_streak": 0,
   "prev_hy_oas": 3.52,

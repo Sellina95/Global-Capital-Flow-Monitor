@@ -10,7 +10,7 @@
     "Real Estate": 0.0,
     "Utilities": 0.0
   },
-  "last_action": "FORCED_DELEVERAGE_ACCEPT",
+  "last_action": "ACCEPTED_RANK_UPDATE",
   "last_output_target_weights": {
     "Consumer Discretionary": 0.0,
     "Consumer Staples": 0.0,
@@ -21,7 +21,7 @@
     "Real Estate": 0.0,
     "Utilities": 0.0
   },
-  "last_processed_date": "2026-11-21",
+  "last_processed_date": "2026-11-22",
   "pending_count": 0,
   "pending_rank": "",
   "version": 1

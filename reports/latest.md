@@ -1,5 +1,5 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-11-21
+**Date:** 2026-11-22
 **Data as of:** 2026-11-20
 
 GLOBAL CAPITAL FLOW MONITOR
@@ -21,11 +21,11 @@ Exposure Ceiling      0.0%
 Allocated Equity      0.0%
 Tactical Reserve      0.0%
 Cash                  100.0%
-Exposure Control      HARD_DEADMAN
+Exposure Control      RECOVERY_REBRAKE
 Macro Allocation      BALANCED
 
 2. EXECUTIVE VIEW
-The current strategic phase is TRANSITION / MIXED. Liquidity is ↑ Improving, while flow is 🌱 LIGHT TRACE. Positioning Z is -0.88 and credit is Calm. The canonical portfolio decision is REDUCE with an 0% exposure ceiling.
+The current strategic phase is TRANSITION / MIXED. Liquidity is ↑ Improving, while flow is 🌱 LIGHT TRACE. Positioning Z is -0.89 and credit is Calm. The canonical portfolio decision is REDUCE with an 0% exposure ceiling.
 Macro Narrative      UNKNOWN_TRANSITION
 Tactical Signal      HOLD / NONE
 
@@ -62,7 +62,7 @@ Leadership            MODERATE
 Positioning           STRESSED
 Squeeze Risk          HIGH
 Vol Structure         DISLOCATION
-Positioning Z         -0.88
+Positioning Z         -0.89
 Credit                Calm
 Credit Structure      CREDIT STRESS ↑ (Risk-off warning)
 Dealer Gamma          🟡 VOL STRESS TRANSITION
@@ -72,7 +72,7 @@ Drift                 👀 EARLY DRIFT
 US10Y Yield          🔴 4.91% · ↓ Falling (-2.77%)
 10Y Term Premium     0.70% · +0 bp d/d
 USD                  🟡 103.81 · ↓ Weaker (-0.09%)
-Oil                  $83.98 · ↑ Rising (+0.93%)
+Oil                  $83.41 · ↑ Rising (+0.24%)
 Volatility           🔴 35.89 · ↑ Rising (+26.20%)
 HY OAS               🟢 3.52% · WATCH (+1.44%)
 
@@ -125,7 +125,8 @@ Note: Tactical Reserve is undeployed capacity within the Exposure Ceiling and is
 7. ACTIVE CONSTRAINTS
 F15 Brake Drivers    Extreme VIX, VIX Spike, VIX Convexity Shock, Bearish CTA
 F15 Deadman          VIX Panic (35.89)
-Exposure Control     HARD_DEADMAN
+F15 Recovery         ACTIVE · streak=0
+Exposure Control     RECOVERY_REBRAKE
 Squeeze Risk         HIGH
 Vol Structure        DISLOCATION
 
