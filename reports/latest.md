@@ -1,5 +1,5 @@
 # Global Capital Flow – Daily PM View
-**Date:** 2026-11-22
+**Date:** 2026-11-23
 **Data as of:** 2026-11-20
 
 GLOBAL CAPITAL FLOW MONITOR
@@ -25,7 +25,7 @@ Exposure Control      RECOVERY_REBRAKE
 Macro Allocation      BALANCED
 
 2. EXECUTIVE VIEW
-The current strategic phase is TRANSITION / MIXED. Liquidity is ↑ Improving, while flow is 🌱 LIGHT TRACE. Positioning Z is -0.89 and credit is Calm. The canonical portfolio decision is REDUCE with an 0% exposure ceiling.
+The current strategic phase is TRANSITION / MIXED. Liquidity is ↑ Improving, while flow is 🌱 LIGHT TRACE. Positioning Z is -0.47 and credit is Calm. The canonical portfolio decision is REDUCE with an 0% exposure ceiling.
 Macro Narrative      UNKNOWN_TRANSITION
 Tactical Signal      HOLD / NONE
 
@@ -35,7 +35,7 @@ Core YoY      Consensus 3.2%   Previous 3.1%
 Core MoM      Consensus 0.3%   Previous 0.3%
 
 US GDP Growth · 2026-11-25 · 01:30 PM GMT
-GDP QoQ       Consensus 3.5%   Previous 2.2%
+GDP QoQ       Consensus 3.4%   Previous 2.2%
 
 US CPI · 2026-12-10 · 01:30 PM GMT
 Headline YoY  Consensus —      Previous —
@@ -62,7 +62,7 @@ Leadership            MODERATE
 Positioning           STRESSED
 Squeeze Risk          HIGH
 Vol Structure         DISLOCATION
-Positioning Z         -0.89
+Positioning Z         -0.47
 Credit                Calm
 Credit Structure      CREDIT STRESS ↑ (Risk-off warning)
 Dealer Gamma          🟡 VOL STRESS TRANSITION
@@ -72,7 +72,7 @@ Drift                 👀 EARLY DRIFT
 US10Y Yield          🔴 4.91% · ↓ Falling (-2.77%)
 10Y Term Premium     0.70% · +0 bp d/d
 USD                  🟡 103.81 · ↓ Weaker (-0.09%)
-Oil                  $83.41 · ↑ Rising (+0.24%)
+Oil                  $83.98 · ↑ Rising (+0.93%)
 Volatility           🔴 35.89 · ↑ Rising (+26.20%)
 HY OAS               🟢 3.52% · WATCH (+1.44%)
 
