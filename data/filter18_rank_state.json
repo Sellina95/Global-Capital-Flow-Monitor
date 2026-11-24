@@ -10,7 +10,7 @@
     "Real Estate": 0.0,
     "Utilities": 0.0
   },
-  "last_action": "ACCEPTED_RANK_UPDATE",
+  "last_action": "RANK_CHANGE_SUPPRESSED",
   "last_output_target_weights": {
     "Consumer Discretionary": 0.0,
     "Consumer Staples": 0.0,
@@ -21,8 +21,8 @@
     "Real Estate": 0.0,
     "Utilities": 0.0
   },
-  "last_processed_date": "2026-11-23",
-  "pending_count": 0,
-  "pending_rank": "",
+  "last_processed_date": "2026-11-24",
+  "pending_count": 1,
+  "pending_rank": "Consumer Staples|Utilities|Financials|Health Care|Industrials|Communication Services|Consumer Discretionary|Materials",
   "version": 1
 }

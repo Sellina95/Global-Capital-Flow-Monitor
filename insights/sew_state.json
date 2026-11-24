@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-23 17:51:00 KST",
+  "timestamp": "2026-11-24 19:47:56 KST",
   "status": "STABLE",
   "event_type": "NORMAL",
   "spike_count": 0,
@@ -11,29 +11,29 @@
   "deadman_reason": "Normal intraday conditions",
   "assets": {
     "SPY": {
-      "zscore": 0.71,
+      "zscore": 0.39,
       "state": "NORMAL",
-      "pct_change": -0.09
+      "pct_change": -0.25
     },
     "QQQ": {
-      "zscore": 0.25,
+      "zscore": 0.78,
       "state": "NORMAL",
-      "pct_change": -0.2
+      "pct_change": -0.33
     },
     "VIX": {
-      "zscore": 0.47,
+      "zscore": 0.16,
       "state": "NORMAL",
-      "pct_change": 5.44
+      "pct_change": 1.12
     },
     "DXY": {
-      "zscore": -0.79,
+      "zscore": -0.86,
       "state": "NORMAL",
       "pct_change": -0.02
     },
     "WTI": {
-      "zscore": -0.29,
+      "zscore": 0.72,
       "state": "NORMAL",
-      "pct_change": 0.28
+      "pct_change": 0.12
     }
   }
 }
