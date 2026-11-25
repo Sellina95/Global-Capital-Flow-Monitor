@@ -21,8 +21,8 @@
     "Real Estate": 0.0,
     "Utilities": 0.0
   },
-  "last_processed_date": "2026-11-24",
+  "last_processed_date": "2026-11-25",
   "pending_count": 1,
-  "pending_rank": "Consumer Staples|Utilities|Financials|Health Care|Industrials|Communication Services|Consumer Discretionary|Materials",
+  "pending_rank": "Consumer Staples|Financials|Utilities|Health Care|Consumer Discretionary|Real Estate|Materials|Industrials",
   "version": 1
 }
