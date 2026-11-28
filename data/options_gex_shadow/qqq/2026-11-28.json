@@ -1,0 +1,60 @@
+{
+  "contract": "QQQ_OPTIONS_GEX_SHADOW_V0",
+  "status": "OK",
+  "source": "YAHOO",
+  "snapshot_timestamp_utc": "2026-11-28T08:48:10.900271+00:00",
+  "underlying": "QQQ",
+  "spot": 650.989990234375,
+  "risk_free_rate": 0.041529998779296876,
+  "dividend_yield": 0.0027921065,
+  "horizon_days": 7,
+  "expirations_requested": [
+    "2026-11-30",
+    "2026-12-01",
+    "2026-12-02",
+    "2026-12-03",
+    "2026-12-04"
+  ],
+  "expiries_successful": 5,
+  "expiries_failed": 0,
+  "contracts_total": 1560,
+  "contracts_valid": 1543,
+  "contracts_invalid": 17,
+  "contracts_missing_oi": 0,
+  "contracts_missing_iv": 0,
+  "total_unsigned_gex": 2081302637.710823,
+  "top3_concentration_share": 0.4031587944923864,
+  "major_gamma_zones": [
+    {
+      "strike": 660.0,
+      "unsigned_gex": 351803420.98553574,
+      "distance_pct": 1.3840473587590996
+    },
+    {
+      "strike": 650.0,
+      "unsigned_gex": 338801265.8483781,
+      "distance_pct": -0.15207457091906962
+    },
+    {
+      "strike": 640.0,
+      "unsigned_gex": 148490775.55940568,
+      "distance_pct": -1.6881965005972388
+    },
+    {
+      "strike": 630.0,
+      "unsigned_gex": 125018540.96631977,
+      "distance_pct": -3.224318430275408
+    },
+    {
+      "strike": 675.0,
+      "unsigned_gex": 90058779.82685818,
+      "distance_pct": 3.688230253276359
+    }
+  ],
+  "interpretation": "Unsigned option-gamma concentration map. No dealer long/short positioning is inferred.",
+  "production_impact": "NONE",
+  "quality_gate": {
+    "verdict": "PASS",
+    "reasons": []
+  }
+}
